@@ -1,0 +1,59 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Category {
+  id       String    @id @default(uuid())
+  name     String    @unique
+  articles Article[] @relation("ArticleCategories")
+  articles Article[]
+}
+
+model User {
+  id        String      @id @default(uuid())
+  email     String?     @unique
+  topics    UserTopic[]
+  createdAt DateTime    @default(now())
+}
+
+model UserTopic {
+  id             String    @id @default(uuid())
+  userId         String
+  user           User      @relation(fields: [userId], references: [id])
+  topicName      String
+  lastNotifiedAt DateTime?
+  article        Article?  @relation(fields: [articleId], references: [id])
+  articleId      String?
+
+  @@unique([userId, topicName])
+}
+
+model Article {
+  id             String   @id @default(uuid())
+  title          String
+  contentSnippet String   @db.Text
+  url            String   @unique
+  source         String
+  sourceCountry  String?
+  publishedAt    DateTime
+  fetchedAt      DateTime @default(now())
+
+  categories           Category[] @relation("ArticleCategories")
+  entities             String[]
+  sentimentScore       Float?
+  biasNote             String?
+  perspectiveCountries String[]
+
+  matchedTopics UserTopic[]
+
+  rawMetadata Json?
+  category    Category? @relation(fields: [categoryId], references: [id])
+  categoryId  String?
+
+  @@index([publishedAt])
+  @@index([sourceCountry])
+}
