@@ -10,7 +10,6 @@ model Category {
   id       String    @id @default(uuid())
   name     String    @unique
   articles Article[] @relation("ArticleCategories")
-  articles Article[]
 }
 
 model User {
@@ -51,8 +50,6 @@ model Article {
   matchedTopics UserTopic[]
 
   rawMetadata Json?
-  category    Category? @relation(fields: [categoryId], references: [id])
-  categoryId  String?
 
   @@index([publishedAt])
   @@index([sourceCountry])
