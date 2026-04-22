@@ -1,4 +1,4 @@
-# Phase 0: Foundation Setup
+# Phase 0.5: Foundation Setup
 
 - **Completed:** Supabase project created, Prisma initialized, base schema migrated.
 - **Key Learnings:**
