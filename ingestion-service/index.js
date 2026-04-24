@@ -2,6 +2,9 @@ import { prisma } from "./db/client.js";
 import fetchRSSStream from "./sources/rss.js";
 import hashSnippet from "./utils/hashSnippet.js";
 import normalizeUrl from "./utils/normalizeUrl.js";
+import { createArticleProcessor } from "./ai/processor.js";
+
+const aiProcessor = createArticleProcessor();
 
 const sources = [
   //   {
@@ -50,7 +53,7 @@ async function run() {
       //   console.log(`- ${normUrl} \n`);
 
       // Dedup 1: URL
-      const existingUrl = await prisma.article.findUnique({
+      const existingUrl = await prisma.rawArticle.findUnique({
         where: { url: normUrl },
         select: { id: true },
       });
@@ -58,7 +61,7 @@ async function run() {
 
       // Dedup 2: Content Hash (fallback)
       const hash = hashSnippet(item.title + item.contentSnippet);
-      const existingHash = await prisma.article.findFirst({
+      const existingHash = await prisma.rawArticle.findFirst({
         where: { contentHash: hash },
         select: { id: true },
       });
@@ -69,7 +72,7 @@ async function run() {
       item.contentHash = hash;
       
       try {
-        await prisma.article.create({
+        const rawArticle = await prisma.rawArticle.create({
           data: {
             title: item.title,
             url: item.url,
@@ -81,11 +84,17 @@ async function run() {
           },
         });
         console.log(`+ Inserted: ${item.title}`);
+        
+        // Add to AI Processing Queue
+        await aiProcessor.add(rawArticle);
       } catch (err) {
         console.error(`- Failed to insert: ${item.title}`, err.message);
       }
     }
   }
+
+  console.log('🤖 Flushing remaining AI tasks...');
+  await aiProcessor.flush();
 
   console.log(
     `✅ Ingestion complete in ${((Date.now() - startTime) / 1000).toFixed(1)}s`,

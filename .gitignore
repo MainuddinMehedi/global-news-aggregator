@@ -16,3 +16,6 @@ build/
 .DS_Store
 
 /generated/prisma
+
+
+/docs/news-automation-planning-md-files/

@@ -1,92 +1,119 @@
-import pLimit from "p-limit";
-import { prisma } from "../db/client.js";
+import { processArticleWithAI } from './client.js';
+import { prisma } from '../db/client.js';
 
-const limit = pLimit(3); // Max 3 concurrent AI/DB ops
-const AI_BUFFER_SIZE = 5;
-
-export function createAIBuffer() {
+export function createArticleProcessor(batchSize = parseInt(process.env.AI_BATCH_SIZE) || 5) {
   const buffer = [];
   let processing = false;
 
-  async function flush() {
+  async function processSingle(rawArticle) {
+    let aiResponse;
+    try {
+      aiResponse = await processArticleWithAI(rawArticle);
+    } catch (err) {
+      console.error(`⚠️ AI processing failed for: ${rawArticle.title}`, err.message);
+      throw err;
+    }
+
+    let parsed;
+    try {
+      parsed = JSON.parse(aiResponse.content.replace(/```json|```/g, '').trim());
+    } catch (err) {
+      console.warn(`⚠️ Invalid JSON from AI for: ${rawArticle.title}`);
+      parsed = { categories: ['other'], entities: [], sentimentScore: 0, biasNote: '', perspectiveCountries: [] };
+    }
+
+    // Create categories if not exist, then connect
+    const categoryOps = parsed.categories.map(cat => ({
+      where: { name: cat },
+      create: { name: cat }
+    }));
+
+    try {
+      await prisma.$transaction(async (tx) => {
+        // Create ProcessedArticle
+        await tx.processedArticle.create({
+          data: {
+            rawArticleId: rawArticle.id,
+            categories: { connectOrCreate: categoryOps },
+            entities: parsed.entities || [],
+            sentimentScore: parsed.sentimentScore || null,
+            biasNote: parsed.biasNote || null,
+            perspectiveCountries: parsed.perspectiveCountries || [],
+            model: aiResponse.model,
+          }
+        });
+
+        // Log AI Usage
+        const today = new Date().toISOString().split('T')[0];
+        
+        // Very rough cost estimate (e.g., $0.0006 per 1K tokens for LLaMA 3 70b)
+        const costPer1k = 0.0006;
+        const estimatedCost = (aiResponse.tokensUsed / 1000) * costPer1k;
+
+        await tx.aiUsage.create({
+          data: {
+            date: today,
+            provider: aiResponse.provider,
+            model: aiResponse.model,
+            tokensUsed: aiResponse.tokensUsed,
+            estimatedCost: estimatedCost,
+            success: true,
+          }
+        });
+      });
+
+    } catch (err) {
+      console.error(`⚠️ Failed to save processed article or usage: ${rawArticle.title}`, err.message);
+      throw err;
+    }
+
+    return { rawId: rawArticle.id, success: true };
+  }
+
+  async function _flush() {
     if (buffer.length === 0 || processing) return;
     processing = true;
 
-    const batch = buffer.splice(0, AI_BUFFER_SIZE);
-    await Promise.all(
-      batch.map((article) => limit(() => processAndSave(article))),
-    );
-
-    processing = false;
-  }
-
-  async function processAndSave(article) {
-    const prompt = `You are a geopolitical news analyst. Process this article:
-                    TITLE: ${article.title}
-                    CONTENT: ${article.contentSnippet}
-                    SOURCE: ${article.source} (Country: ${article.sourceCountry})
-                    Return valid JSON only.`;
+    const batch = buffer.splice(0, batchSize);
+    console.log(`🤖 Processing batch of ${batch.length} articles...`);
 
     try {
-      const res = await fetch(
-        `${process.env.AI_BASE_URL}/v1/chat/completions`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${process.env.AI_API_KEY}`,
-          },
-          body: JSON.stringify({
-            model: process.env.AI_MODEL,
-            messages: [{ role: "user", content: prompt }],
-            temperature: 0.2,
-          }),
-        },
+      const results = await Promise.allSettled(
+        batch.map(article => processSingle(article))
       );
 
-      const data = await res.json();
-      let parsed;
-
-      try {
-        parsed = JSON.parse(
-          data.choices[0].message.content.replace(/```json|```/g, ""),
-        );
-      } catch {
-        parsed = {
-          categories: ["other"],
-          entities: [],
-          sentimentScore: 0,
-          biasNote: "",
-          perspectiveCountries: [],
-        };
-      }
-
-      await prisma.article.create({
-        data: {
-          ...article,
-          categories: {
-            connectOrCreate: parsed.categories.map((c) => ({
-              where: { name: c },
-              create: { name: c },
-            })),
-          },
-          entities: parsed.entities,
-          sentimentScore: parsed.sentimentScore,
-          biasNote: parsed.biasNote,
-          perspectiveCountries: parsed.perspectiveCountries,
-          contentHash: null, // Will be set if needed, or compute beforehand
-        },
-      });
+      const success = results.filter(r => r.status === 'fulfilled').length;
+      console.log(`✅ Batch done: ${success}/${batch.length} succeeded`);
     } catch (err) {
-      console.error(`[AI/DB Error] ${article.title}:`, err.message);
+      console.error('❌ Batch processing failed:', err);
+    } finally {
+      processing = false;
+      // Auto-flush remaining if any
+      if (buffer.length > 0) _flush();
     }
   }
 
   return {
-    push(article) {
-      buffer.push(article);
-      if (buffer.length >= AI_BUFFER_SIZE) flush();
+    async add(rawArticle) {
+      // Pre-check: skip if already processed (by rawArticleId)
+      const exists = await prisma.processedArticle.findUnique({
+        where: {
+          rawArticleId: rawArticle.id,
+        }
+      });
+      
+      if (exists) {
+        console.log(`⏭️ Already processed: ${rawArticle.title}`);
+        return;
+      }
+
+      buffer.push(rawArticle);
+      if (buffer.length >= batchSize && !processing) {
+        _flush();
+      }
     },
-    flush,
+    async flush() {
+      if (buffer.length > 0) await _flush();
+    }
   };
 }

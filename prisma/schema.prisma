@@ -11,7 +11,7 @@ datasource db {
 model Category {
   id       String    @id @default(uuid())
   name     String    @unique
-  articles Article[] @relation("ArticleCategories")
+  articles ProcessedArticle[] @relation("ProcessedArticleCategories")
 }
 
 model User {
@@ -27,13 +27,13 @@ model UserTopic {
   user           User      @relation(fields: [userId], references: [id])
   topicName      String
   lastNotifiedAt DateTime?
-  article        Article?  @relation(fields: [articleId], references: [id])
+  article        ProcessedArticle?  @relation(fields: [articleId], references: [id])
   articleId      String?
 
   @@unique([userId, topicName])
 }
 
-model Article {
+model RawArticle {
   id             String   @id @default(uuid())
   title          String
   contentSnippet String   @db.Text
@@ -42,19 +42,39 @@ model Article {
   sourceCountry  String?
   publishedAt    DateTime
   fetchedAt      DateTime @default(now())
+  contentHash    String?  @unique
+  rawMetadata    Json?
 
-  categories           Category[] @relation("ArticleCategories")
+  processedArticle ProcessedArticle?
+
+  @@index([publishedAt])
+  @@index([sourceCountry])
+}
+
+model ProcessedArticle {
+  id                   String   @id @default(uuid())
+  rawArticleId         String   @unique
+  rawArticle           RawArticle @relation(fields: [rawArticleId], references: [id], onDelete: Cascade)
+  categories           Category[] @relation("ProcessedArticleCategories")
   entities             String[]
   sentimentScore       Float?
   biasNote             String?
   perspectiveCountries String[]
+  model                String?
+  processedAt          DateTime @default(now())
 
   matchedTopics UserTopic[]
+}
 
-  rawMetadata Json?
+model AiUsage {
+  id            String   @id @default(uuid())
+  date          String   // Format: YYYY-MM-DD for easy querying
+  provider      String
+  model         String
+  tokensUsed    Int
+  estimatedCost Float
+  success       Boolean
+  createdAt     DateTime @default(now())
 
-  contentHash String? @unique
-
-  @@index([publishedAt])
-  @@index([sourceCountry])
+  @@index([date])
 }
