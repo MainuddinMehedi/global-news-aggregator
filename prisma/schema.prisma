@@ -4,6 +4,8 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model Category {
@@ -50,6 +52,8 @@ model Article {
   matchedTopics UserTopic[]
 
   rawMetadata Json?
+
+  contentHash String? @unique
 
   @@index([publishedAt])
   @@index([sourceCountry])

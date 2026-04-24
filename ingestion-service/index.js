@@ -1,4 +1,4 @@
-import { createAIBuffer } from "./ai/processor.js";
+import { prisma } from "./db/client.js";
 import fetchRSSStream from "./sources/rss.js";
 import hashSnippet from "./utils/hashSnippet.js";
 import normalizeUrl from "./utils/normalizeUrl.js";
@@ -29,7 +29,7 @@ const sources = [
   // { name: "TechCrunch", sourceCountry: "USA", url: "https://techcrunch.com/feed/" },
 ];
 
-const buffer = createAIBuffer();
+const startTime = Date.now();
 
 async function run() {
   const allItems = [];
@@ -64,14 +64,29 @@ async function run() {
       });
       if (existingHash) continue;
 
-      // Push to AI buffer & continue streaming
+      // Save directly to DB
       item.url = normUrl;
       item.contentHash = hash;
-      buffer.push(item);
+      
+      try {
+        await prisma.article.create({
+          data: {
+            title: item.title,
+            url: item.url,
+            contentSnippet: item.contentSnippet,
+            source: item.source,
+            sourceCountry: item.sourceCountry,
+            publishedAt: item.publishedAt,
+            contentHash: item.contentHash,
+          },
+        });
+        console.log(`+ Inserted: ${item.title}`);
+      } catch (err) {
+        console.error(`- Failed to insert: ${item.title}`, err.message);
+      }
     }
   }
 
-  await buffer.flush();
   console.log(
     `✅ Ingestion complete in ${((Date.now() - startTime) / 1000).toFixed(1)}s`,
   );
