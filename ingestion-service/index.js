@@ -1,36 +1,12 @@
 import { prisma } from "./db/client.js";
 import fetchRSSStream from "./sources/rss.js";
+import { getActiveFeeds } from "./sources/feeds.js";
 import hashSnippet from "./utils/hashSnippet.js";
 import normalizeUrl from "./utils/normalizeUrl.js";
 import { createArticleProcessor } from "./ai/processor.js";
 
 const aiProcessor = createArticleProcessor();
-
-const sources = [
-  //   {
-  //     name: "Jagonews24",
-  // sourceCountry: "Bangladesh",
-  //     url: "https://www.jagonews24.com/rss/rss.xml",
-  //   },
-  {
-    name: "The Daily Star",
-    sourceCountry: "Bangladesh",
-    url: "https://www.thedailystar.net/frontpage/rss.xml",
-  },
-  // { name: "Al Jazeera", sourceCountry: "Qatar", url: "https://www.aljazeera.com/xml/rss/all.xml" },
-  //   {
-  //     name: "BD24 Live",
-  //     sourceCountry: "Bangladesh",
-  //     url: "https://www.bd24live.com/feed",
-  //   },
-  //   { name: "Dhaka Tribune", sourceCountry: "Bangladesh", url: "https://www.dhakatribune.com/feed/" },
-  //   {
-  //     name: "UN News",
-  //     sourceCountry: "Global",
-  //     url: "https://news.un.org/feed/subscribe/en/news/region/global/feed/rss.xml",
-  //   },
-  // { name: "TechCrunch", sourceCountry: "USA", url: "https://techcrunch.com/feed/" },
-];
+const sources = getActiveFeeds();
 
 const startTime = Date.now();
 
