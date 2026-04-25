@@ -6,7 +6,15 @@ const DEFAULT_CONFIG = {
   reservedOutputTokens: parseInt(process.env.AI_RESERVED_OUTPUT_TOKENS) || 800,
 };
 
-// Use the cl100k_base encoding, which is compatible with Llama 3.3
+// Safety multiplier to account for the tokenizer gap between cl100k_base (used here)
+// and Llama's native tokenizer (used by Groq). Llama's tokenizer is less efficient,
+// producing ~30-50% more tokens for the same text. This multiplier inflates estimates
+// so the rate limiter can pace API calls accurately.
+const TOKEN_MULTIPLIER = parseFloat(process.env.AI_TOKEN_MULTIPLIER) || 1.4;
+
+// cl100k_base is an OpenAI tokenizer — it does NOT match Llama's tokenizer exactly,
+// but it's close enough for batch composition. The TOKEN_MULTIPLIER above compensates
+// for the gap when reporting estimates to the rate limiter.
 const enc = get_encoding("cl100k_base");
 
 export function countTokens(text = "") {
@@ -77,6 +85,10 @@ export function createNextBatch(articles, systemPromptTokens = 0, config = DEFAU
   return {
     batch,
     remainingArticles,
-    estimatedTokens: currentTokens
+    // Raw cl100k estimate (for logging)
+    rawEstimatedTokens: currentTokens,
+    // Inflated estimate accounting for Llama tokenizer gap (for rate limiter)
+    estimatedTokens: Math.ceil(currentTokens * TOKEN_MULTIPLIER),
   };
 }
+

@@ -36,7 +36,7 @@ export function createArticleProcessor(batchSize = parseInt(process.env.AI_BATCH
       try {
         let aiResponse;
         try {
-          aiResponse = await processBatchWithAI(batch);
+          aiResponse = await processBatchWithAI(batch, estimatedTokens);
         } catch (err) {
           console.error(`⚠️ AI batch processing failed`, err.message);
           throw err;
@@ -118,9 +118,6 @@ export function createArticleProcessor(batchSize = parseInt(process.env.AI_BATCH
 
         console.log(`✅ Batch done: ${successCount}/${batch.length} succeeded`);
 
-        // Add a small delay to avoid hitting RPM limits in bursts
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
       } catch (err) {
         console.error('❌ Batch processing failed:', err);
       }

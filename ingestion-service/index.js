@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { prisma } from "./db/client.js";
 import fetchRSSStream from "./sources/rss.js";
 import { getActiveFeeds } from "./sources/feeds.js";
@@ -5,13 +6,29 @@ import hashSnippet from "./utils/hashSnippet.js";
 import normalizeUrl from "./utils/normalizeUrl.js";
 import { createArticleProcessor } from "./ai/processor.js";
 
-const aiProcessor = createArticleProcessor();
+// ── CLI Flags ────────────────────────────────────────────────
+const args = process.argv.slice(2);
+const skipAI = args.includes("--skip-ai");
+const aiLimitArg = args.find((a) => a.startsWith("--ai-limit="));
+const aiLimit = aiLimitArg ? parseInt(aiLimitArg.split("=")[1]) : Infinity;
+
+const aiProcessor = skipAI ? null : createArticleProcessor();
 const sources = getActiveFeeds();
 
 const startTime = Date.now();
 
 async function run() {
-  const allItems = [];
+  // ── Log run mode ──
+  if (skipAI) {
+    console.log("🚀 Running in RAW-ONLY mode (--skip-ai): no AI processing\n");
+  } else if (aiLimit < Infinity) {
+    console.log(`🚀 Running with AI limit: ${aiLimit} articles max\n`);
+  }
+
+  let totalFetched = 0;
+  let totalInserted = 0;
+  let totalDupes = 0;
+  let aiQueued = 0;
 
   for (const src of sources) {
     console.log(`\n📡 Streaming..: ${src.name} (${src.sourceCountry})\n`);
@@ -21,19 +38,20 @@ async function run() {
       src.sourceCountry,
       src.url,
     )) {
-      allItems.push(item);
+      totalFetched++;
 
       const normUrl = normalizeUrl(item.url);
       if (!normUrl) continue;
-
-      //   console.log(`- ${normUrl} \n`);
 
       // Dedup 1: URL
       const existingUrl = await prisma.rawArticle.findUnique({
         where: { url: normUrl },
         select: { id: true },
       });
-      if (existingUrl) continue;
+      if (existingUrl) {
+        totalDupes++;
+        continue;
+      }
 
       // Dedup 2: Content Hash (fallback)
       const hash = hashSnippet(item.title + item.contentSnippet);
@@ -41,12 +59,15 @@ async function run() {
         where: { contentHash: hash },
         select: { id: true },
       });
-      if (existingHash) continue;
+      if (existingHash) {
+        totalDupes++;
+        continue;
+      }
 
       // Save directly to DB
       item.url = normUrl;
       item.contentHash = hash;
-      
+
       try {
         const rawArticle = await prisma.rawArticle.create({
           data: {
@@ -59,27 +80,39 @@ async function run() {
             contentHash: item.contentHash,
           },
         });
+        totalInserted++;
         console.log(`+ Inserted: ${item.title}`);
-        
-        // Add to AI Processing Queue
-        await aiProcessor.add(rawArticle);
+
+        // Add to AI Processing Queue (if enabled and under limit)
+        if (aiProcessor && aiQueued < aiLimit) {
+          await aiProcessor.add(rawArticle);
+          aiQueued++;
+        }
       } catch (err) {
         console.error(`- Failed to insert: ${item.title}`, err.message);
       }
     }
   }
 
-  console.log('🤖 Flushing remaining AI tasks...');
-  await aiProcessor.flush();
+  if (aiProcessor) {
+    console.log("\n🤖 Flushing remaining AI tasks...");
+    await aiProcessor.flush();
+  }
 
-  console.log(
-    `✅ Ingestion complete in ${((Date.now() - startTime) / 1000).toFixed(1)}s`,
-  );
+  const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+
+  console.log(`\n${"─".repeat(50)}`);
+  console.log(`✅ Ingestion complete in ${elapsed}s`);
+  console.log(`   📥 Fetched: ${totalFetched} items from ${sources.length} sources`);
+  console.log(`   ➕ Inserted: ${totalInserted} new articles`);
+  console.log(`   🔁 Duplicates skipped: ${totalDupes}`);
+  if (!skipAI) {
+    console.log(`   🤖 AI queued: ${aiQueued}${aiLimit < Infinity ? ` (limit: ${aiLimit})` : ""}`);
+  }
+  console.log(`${"─".repeat(50)}\n`);
+
   await prisma.$disconnect();
-
-  //   console.log("\n\n=== All Fetched Items ===");
-  //   console.log("first item - ", allItems);
-  console.log("Total items fetched - ", allItems.length);
 }
 
 run().catch((err) => console.error("Worker encountered an error:", err));
+

@@ -1,6 +1,4 @@
-import pLimit from 'p-limit';
-
-const limit = pLimit(parseInt(process.env.AI_CONCURRENCY_LIMIT) || 3);
+import { waitForCapacity, recordUsage, logHeaders } from './rateLimiter.js';
 
 const primaryConfig = {
   baseUrl: process.env.AI_PRIMARY_BASE_URL,
@@ -91,23 +89,42 @@ async function requestAI(config, prompt, retries = 0) {
 
     if (!res.ok) throw new Error(`API Error ${res.status}: ${await res.text()}`);
 
+    // Log rate limit headers from Groq
+    logHeaders(res.headers);
+
     const data = await res.json();
+    const actualTokens = data.usage?.total_tokens || 0;
+
+    // Record actual usage in the rate limiter window
+    recordUsage(actualTokens);
+
     return {
       content: data.choices[0].message.content,
-      model: config.model,
+      model: data.model || config.model,
       provider: config.provider,
-      tokensUsed: data.usage?.total_tokens || 0
+      tokensUsed: actualTokens,
     };
   } catch (err) {
     if (config === primaryConfig && fallbackConfig.apiKey) {
-      console.warn(`⚠️ Primary (${primaryConfig.provider}) failed, switching to fallback (${fallbackConfig.provider})... Error: ${err.message}`);
+      console.warn(`⚠️ Primary (${primaryConfig.provider}/${primaryConfig.model}) failed, switching to fallback (${fallbackConfig.provider}/${fallbackConfig.model})... Error: ${err.message}`);
       return requestAI(fallbackConfig, prompt, 0);
     }
     throw err;
   }
 }
 
-export function processBatchWithAI(batch) {
+/**
+ * Process a batch of articles with AI.
+ * Waits for rate limiter capacity before sending the request.
+ * @param {Array} batch - Articles to process
+ * @param {number} estimatedTokens - Estimated total tokens (from tokenBatcher, with multiplier)
+ */
+export async function processBatchWithAI(batch, estimatedTokens = 0) {
   const prompt = buildBatchPrompt(batch);
-  return limit(() => requestAI(primaryConfig, prompt));
+
+  // Wait for rate limiter capacity before sending
+  await waitForCapacity(estimatedTokens);
+
+  return requestAI(primaryConfig, prompt);
 }
+
