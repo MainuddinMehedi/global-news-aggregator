@@ -82,6 +82,7 @@ export function createArticleProcessor(batchSize = parseInt(process.env.AI_BATCH
                   entities: articleParsed.entities || [],
                   sentimentScore: articleParsed.sentimentScore || null,
                   biasNote: articleParsed.biasNote || null,
+                  biasCategory: articleParsed.biasCategory || null,
                   perspectiveCountries: articleParsed.perspectiveCountries || [],
                   model: aiResponse.model,
                 }

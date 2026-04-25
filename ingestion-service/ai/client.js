@@ -32,7 +32,8 @@ For EACH article, do the following:
 2. Extract named entities (countries, organizations, people) - max 10
 3. Score sentiment: -1.0 (very negative) to +1.0 (very positive)
 4. Note any detectable bias or perspective (e.g., "Western-centric", "state-media tone")
-5. List countries whose perspective is represented (ISO codes if possible)
+5. Classify bias category: exactly one of "Western", "Eastern", "Non-Western", "Neutral"
+6. List countries whose perspective is represented (ISO codes if possible)
 
 OUTPUT FORMAT (strict JSON, no markdown):
 You must return a JSON object with a single key "results", which is an array of objects. 
@@ -46,6 +47,7 @@ Each object MUST correspond to the article in the same order, and include the ar
       "entities": ["China", "UN", "Xi Jinping"],
       "sentimentScore": 0.3,
       "biasNote": "Neutral reporting with slight institutional framing",
+      "biasCategory": "Western",
       "perspectiveCountries": ["CN", "US"]
     }
   ]
