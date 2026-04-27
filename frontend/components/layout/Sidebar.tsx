@@ -6,10 +6,10 @@ import {
   MessageSquare,
   BarChart2,
   Settings,
-  Globe2,
   ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAppStore } from "@/lib/store";
 
 const navItems = [
   { id: "/", label: "Feed", icon: Newspaper, badge: 0 },
@@ -21,22 +21,18 @@ const navItems = [
 export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
+  const { sidebarCollapsed } = useAppStore();
 
   return (
-    <aside className="w-16 lg:w-60 flex-shrink-0 border-r border-border bg-card flex flex-col justify-between transition-all duration-300">
-      <div>
-        {/* Logo */}
-        <div className="h-16 flex items-center justify-center lg:justify-start lg:px-5 border-b border-border">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
-            <Globe2 className="w-5 h-5 text-white" />
-          </div>
-          <span className="ml-3 font-bold text-lg hidden lg:block tracking-tight">
-            GlobalAgg<span className="text-blue-500">.</span>
-          </span>
-        </div>
-
+    <aside 
+      className={cn(
+        "flex-shrink-0 border-r border-border bg-card flex flex-col justify-between transition-all duration-300 ease-in-out",
+        sidebarCollapsed ? "w-16" : "w-60"
+      )}
+    >
+      <div className="flex-1 overflow-y-auto scrollbar-hide py-4">
         {/* Navigation */}
-        <nav className="p-2.5 space-y-1">
+        <nav className="px-2.5 space-y-1">
           {navItems.map((item) => {
             const isActive = pathname === item.id;
             const Icon = item.icon;
@@ -51,10 +47,10 @@ export function Sidebar() {
                     : "text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-100 border-transparent"
                 )}
               >
-                <Icon className="w-5 h-5 lg:mr-3 flex-shrink-0" />
-                <span className="hidden lg:block">{item.label}</span>
-                {item.badge > 0 && (
-                  <span className="hidden lg:flex ml-auto bg-zinc-800 text-zinc-300 py-0.5 px-2 rounded-full text-xs font-mono">
+                <Icon className={cn("w-5 h-5 flex-shrink-0", !sidebarCollapsed && "mr-3")} />
+                {!sidebarCollapsed && <span>{item.label}</span>}
+                {!sidebarCollapsed && item.badge > 0 && (
+                  <span className="ml-auto bg-zinc-800 text-zinc-300 py-0.5 px-2 rounded-full text-xs font-mono">
                     {item.badge}
                   </span>
                 )}
@@ -75,14 +71,16 @@ export function Sidebar() {
               : "text-zinc-400 hover:text-zinc-100"
           )}
         >
-          <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-emerald-400 to-cyan-500 flex items-center justify-center text-white font-bold text-xs">
+          <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-emerald-400 to-cyan-500 flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
             U
           </div>
-          <div className="ml-3 hidden lg:block text-left">
-            <div className="text-sm font-medium text-zinc-200">You</div>
-            <div className="text-xs text-zinc-500">Free Tier</div>
-          </div>
-          <ChevronRight className="w-4 h-4 ml-auto hidden lg:block text-zinc-600" />
+          {!sidebarCollapsed && (
+            <div className="ml-3 text-left">
+              <div className="text-sm font-medium text-zinc-200">You</div>
+              <div className="text-xs text-zinc-500">Free Tier</div>
+            </div>
+          )}
+          {!sidebarCollapsed && <ChevronRight className="w-4 h-4 ml-auto text-zinc-600" />}
         </button>
       </div>
     </aside>

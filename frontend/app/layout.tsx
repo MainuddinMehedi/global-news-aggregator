@@ -35,15 +35,15 @@ export default function RootLayout({
       <body className="overflow-hidden">
         <Providers>
           <TooltipProvider>
-            <div className="flex h-screen w-full">
-              <Sidebar />
-              <main className="flex-1 flex flex-col min-w-0 bg-background relative">
-                <TopHeader />
-                <div className="flex-1 overflow-y-auto scrollbar-hide">
+            <div className="flex flex-col h-screen w-full">
+              <TopHeader />
+              <div className="flex flex-1 overflow-hidden">
+                <Sidebar />
+                <main className="flex-1 flex flex-col min-w-0 bg-background relative overflow-y-auto scrollbar-hide">
                   {children}
-                </div>
-              </main>
-              <RightPanel />
+                </main>
+                <RightPanel />
+              </div>
             </div>
             <ArticleDetailModal />
             <ChatSlideOver />

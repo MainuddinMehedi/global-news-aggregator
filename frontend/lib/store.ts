@@ -18,6 +18,10 @@ interface AppState {
   searchQuery: string;
   setCategory: (cat: string) => void;
   setSearchQuery: (q: string) => void;
+
+  // Sidebar state
+  sidebarCollapsed: boolean;
+  toggleSidebar: () => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -38,4 +42,8 @@ export const useAppStore = create<AppState>((set) => ({
   searchQuery: "",
   setCategory: (cat) => set({ activeCategory: cat }),
   setSearchQuery: (q) => set({ searchQuery: q }),
+
+  // Sidebar state
+  sidebarCollapsed: false,
+  toggleSidebar: () => set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
 }));

@@ -19,8 +19,14 @@ const categories = [
 
 export default function FeedPage() {
   const { activeCategory, setCategory } = useAppStore();
-  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, error } =
-    useArticles();
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+    error,
+  } = useArticles();
 
   // Infinite scroll sentinel
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -33,7 +39,7 @@ export default function FeedPage() {
           fetchNextPage();
         }
       },
-      { threshold: 0.1 }
+      { threshold: 0.1 },
     );
     observer.observe(sentinelRef.current);
     return () => observer.disconnect();
@@ -42,7 +48,7 @@ export default function FeedPage() {
   const articles = data?.pages.flatMap((page) => page.articles) ?? [];
 
   return (
-    <div className="p-4 lg:p-6 space-y-6">
+    <div className="pl-4 pr-2 lg:pl-6 lg:pr-2 py-4 lg:py-6 space-y-6">
       {/* Filter Bar */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center space-x-2 overflow-x-auto pb-2 scrollbar-hide">
@@ -99,7 +105,7 @@ export default function FeedPage() {
       )}
 
       {articles.length > 0 && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
           {articles.map((article) => (
             <ArticleCard key={article.id} article={article} />
           ))}

@@ -19,7 +19,7 @@ export function ArticleDetailModal() {
 
   return (
     <Dialog open={!!selectedArticle} onOpenChange={() => closeArticleDetail()}>
-      <DialogContent className="max-w-3xl bg-zinc-900 border-zinc-700 text-zinc-100 max-h-[90vh] overflow-y-auto p-0 gap-0">
+      <DialogContent className="max-w-[90vw] max-h-[80vh] bg-zinc-900 border-zinc-700 text-zinc-100 overflow-y-auto p-0 gap-0">
         {/* Header */}
         <DialogHeader className="p-6 border-b border-zinc-800 bg-zinc-900 sticky top-0 z-10">
           <div className="flex items-center space-x-2 mb-2">
