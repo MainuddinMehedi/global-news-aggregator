@@ -1,0 +1,60 @@
+name: News Ingestion Pipeline
+
+on:
+  schedule:
+    # Runs every 30 minutes
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+    # Allows manual trigger from the Actions tab
+    inputs:
+      ai_limit:
+        description: 'Max articles to process with AI'
+        required: false
+        default: '20'
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Generate Prisma Client
+        run: npx prisma generate
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      - name: Run Ingestion Script
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            npm run ingest -- --ai-limit=${{ github.event.inputs.ai_limit }}
+          else
+            npm run ingest -- --ai-limit=20
+          fi
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          AI_PRIMARY_PROVIDER: ${{ secrets.AI_PRIMARY_PROVIDER }}
+          AI_PRIMARY_MODEL: ${{ secrets.AI_PRIMARY_MODEL }}
+          AI_PRIMARY_BASE_URL: ${{ secrets.AI_PRIMARY_BASE_URL }}
+          AI_PRIMARY_API_KEY: ${{ secrets.AI_PRIMARY_API_KEY }}
+          AI_FALLBACK_PROVIDER: ${{ secrets.AI_FALLBACK_PROVIDER }}
+          AI_FALLBACK_MODEL: ${{ secrets.AI_FALLBACK_MODEL }}
+          AI_FALLBACK_BASE_URL: ${{ secrets.AI_FALLBACK_BASE_URL }}
+          AI_FALLBACK_API_KEY: ${{ secrets.AI_FALLBACK_API_KEY }}
+          AI_TPM_LIMIT: ${{ secrets.AI_TPM_LIMIT }}
+          AI_RPM_LIMIT: ${{ secrets.AI_RPM_LIMIT }}
+          AI_TOKEN_MULTIPLIER: ${{ secrets.AI_TOKEN_MULTIPLIER }}
+          AI_BATCH_SIZE: ${{ secrets.AI_BATCH_SIZE }}
+          AI_CONCURRENCY_LIMIT: ${{ secrets.AI_CONCURRENCY_LIMIT }}
+          AI_TIMEOUT_MS: ${{ secrets.AI_TIMEOUT_MS }}
+          AI_RETRY_ATTEMPTS: ${{ secrets.AI_RETRY_ATTEMPTS }}

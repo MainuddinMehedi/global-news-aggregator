@@ -7,7 +7,10 @@
     "doc": "docs"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "ingest": "node ingestion-service/index.js",
+    "ingest:raw": "node ingestion-service/index.js --skip-ai",
+    "backlog": "node ingestion-service/processBacklog.js"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^6.19.3",
