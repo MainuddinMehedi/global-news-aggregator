@@ -3,17 +3,14 @@ name: News Ingestion Pipeline
 on:
   schedule:
     # Runs every 30 minutes
-    - cron: '*/30 * * * *'
+    - cron: "*/30 * * * *"
   workflow_dispatch:
     # Allows manual trigger from the Actions tab
     inputs:
       ai_limit:
-        description: 'Max articles to process with AI'
+        description: "Max articles to process with AI"
         required: false
-        default: '20'
-
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+        default: "20"
 
 jobs:
   ingest:
@@ -21,13 +18,13 @@ jobs:
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
-          node-version: '25'
-          cache: 'npm'
+          node-version: "25"
+          cache: "npm"
 
       - name: Install Dependencies
         run: npm install
