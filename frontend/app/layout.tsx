@@ -20,7 +20,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "GlobalAgg — Global News Aggregator",
+  title: "Global News Aggregator",
   description:
     "Multi-perspective global news aggregation with AI-powered bias detection and analysis.",
 };
