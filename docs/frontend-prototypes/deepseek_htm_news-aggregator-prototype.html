@@ -1,0 +1,1764 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global News Aggregator — Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            /* Dark theme (luma-inspired dark + emerald) */
+            --bg-base: #09090b;
+            --bg-surface: #18181b;
+            --bg-surface-hover: #1f1f23;
+            --bg-surface-raised: #232328;
+            --bg-overlay: #27272d;
+            --border-default: #2a2a32;
+            --border-subtle: #23232b;
+            --border-strong: #3a3a44;
+            --text-primary: #fafafa;
+            --text-secondary: #a1a1aa;
+            --text-tertiary: #6b6b76;
+            --text-on-emphasis: #fafafa;
+            --accent: #10b981;
+            --accent-foreground: #fafafa;
+            --accent-muted: #065f46;
+            --accent-soft: #064e3b40;
+            --accent-glow: #34d39940;
+            --accent-500: #10b981;
+            --accent-600: #059669;
+            --accent-400: #34d399;
+            --accent-700: #047857;
+            --red-500: #ef4444;
+            --red-soft: #7f1d1d40;
+            --amber-500: #f59e0b;
+            --amber-soft: #78350f40;
+            --blue-500: #3b82f6;
+            --blue-soft: #1e3a5f40;
+            --radius-sm: 6px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --radius-xl: 16px;
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+            --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.6);
+            --shadow-glow: 0 0 20px var(--accent-glow);
+            --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-smooth: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+            --sidebar-width: 260px;
+            --topbar-height: 56px;
+        }
+
+        [data-theme="light"] {
+            --bg-base: #faf9f7;
+            --bg-surface: #ffffff;
+            --bg-surface-hover: #f4f3f1;
+            --bg-surface-raised: #fefefe;
+            --bg-overlay: #f8f7f5;
+            --border-default: #e4e3e0;
+            --border-subtle: #eeece9;
+            --border-strong: #d4d3cf;
+            --text-primary: #1a1a1c;
+            --text-secondary: #5c5c64;
+            --text-tertiary: #94949c;
+            --text-on-emphasis: #ffffff;
+            --accent-soft: #d1fae5;
+            --accent-glow: #10b98130;
+            --red-soft: #fef2f2;
+            --amber-soft: #fffbeb;
+            --blue-soft: #eff6ff;
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
+            --shadow-md: 0 6px 20px rgba(0, 0, 0, 0.08);
+            --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.1);
+            --shadow-glow: 0 0 24px var(--accent-glow);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        html {
+            font-size: 15px;
+            scroll-behavior: smooth;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        body {
+            font-family: var(--font-sans);
+            background: var(--bg-base);
+            color: var(--text-primary);
+            display: flex;
+            min-height: 100vh;
+            overflow-x: hidden;
+            line-height: 1.5;
+            letter-spacing: -0.01em;
+        }
+
+        /* ─── SIDEBAR ─────────────────────────── */
+        .sidebar {
+            width: var(--sidebar-width);
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            background: var(--bg-surface);
+            border-right: 1px solid var(--border-default);
+            display: flex;
+            flex-direction: column;
+            z-index: 100;
+            transition: transform var(--transition-smooth);
+            padding: 0;
+            overflow-y: auto;
+        }
+        .sidebar-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 18px 20px;
+            border-bottom: 1px solid var(--border-subtle);
+            font-weight: 700;
+            font-size: 1.15rem;
+            letter-spacing: -0.02em;
+            color: var(--text-primary);
+        }
+        .sidebar-logo .logo-icon {
+            width: 34px;
+            height: 34px;
+            border-radius: var(--radius-md);
+            background: linear-gradient(135deg, var(--accent-500), var(--accent-600));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            flex-shrink: 0;
+        }
+        .sidebar-nav {
+            flex: 1;
+            padding: 12px 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .sidebar-nav a {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            border-radius: var(--radius-md);
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.9rem;
+            transition: all var(--transition-fast);
+            cursor: pointer;
+            position: relative;
+            letter-spacing: -0.01em;
+        }
+        .sidebar-nav a:hover {
+            background: var(--bg-surface-hover);
+            color: var(--text-primary);
+        }
+        .sidebar-nav a.active {
+            background: var(--accent-soft);
+            color: var(--accent-500);
+            font-weight: 600;
+            box-shadow: inset 2px 0 0 var(--accent-500);
+        }
+        .sidebar-nav a .nav-icon {
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+            opacity: 0.7;
+            transition: opacity var(--transition-fast);
+        }
+        .sidebar-nav a.active .nav-icon {
+            opacity: 1;
+        }
+        .sidebar-nav a .badge {
+            margin-left: auto;
+            background: var(--accent-500);
+            color: #fff;
+            font-size: 0.7rem;
+            font-weight: 600;
+            padding: 2px 7px;
+            border-radius: 10px;
+            min-width: 20px;
+            text-align: center;
+        }
+        .sidebar-section-label {
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--text-tertiary);
+            padding: 16px 14px 6px;
+        }
+        .sidebar-footer {
+            padding: 14px 20px;
+            border-top: 1px solid var(--border-subtle);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+        .sidebar-footer .avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: var(--accent-600);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-weight: 600;
+            font-size: 0.75rem;
+        }
+
+        /* ─── MAIN CONTENT ──────────────────── */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            flex: 1;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            transition: margin var(--transition-smooth);
+        }
+        .topbar {
+            height: var(--topbar-height);
+            background: var(--bg-surface);
+            border-bottom: 1px solid var(--border-default);
+            display: flex;
+            align-items: center;
+            padding: 0 24px;
+            gap: 16px;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        .topbar .breadcrumb {
+            font-size: 0.85rem;
+            color: var(--text-tertiary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .topbar .breadcrumb span {
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+        .topbar-spacer {
+            flex: 1;
+        }
+        .topbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 14px;
+            border-radius: var(--radius-md);
+            font-family: var(--font-sans);
+            font-weight: 500;
+            font-size: 0.85rem;
+            cursor: pointer;
+            border: 1px solid var(--border-default);
+            background: var(--bg-surface);
+            color: var(--text-primary);
+            transition: all var(--transition-fast);
+            white-space: nowrap;
+            letter-spacing: -0.01em;
+            text-decoration: none;
+        }
+        .btn:hover {
+            background: var(--bg-surface-hover);
+            border-color: var(--border-strong);
+        }
+        .btn-primary {
+            background: var(--accent-500);
+            border-color: var(--accent-500);
+            color: #fff;
+            font-weight: 600;
+        }
+        .btn-primary:hover {
+            background: var(--accent-600);
+            border-color: var(--accent-600);
+            box-shadow: var(--shadow-glow);
+        }
+        .btn-ghost {
+            background: transparent;
+            border-color: transparent;
+            color: var(--text-secondary);
+        }
+        .btn-ghost:hover {
+            background: var(--bg-surface-hover);
+            color: var(--text-primary);
+        }
+        .btn-sm {
+            padding: 5px 10px;
+            font-size: 0.78rem;
+            border-radius: var(--radius-sm);
+        }
+        .btn-xs {
+            padding: 3px 7px;
+            font-size: 0.7rem;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+        .btn-icon {
+            width: 36px;
+            height: 36px;
+            padding: 0;
+            border-radius: var(--radius-md);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .page-content {
+            padding: 24px 28px;
+            flex: 1;
+            max-width: 1200px;
+            width: 100%;
+        }
+        .page-header {
+            margin-bottom: 24px;
+        }
+        .page-header h1 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            letter-spacing: -0.03em;
+            margin-bottom: 4px;
+            color: var(--text-primary);
+        }
+        .page-header p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* ─── CARDS ─────────────────────────── */
+        .card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-default);
+            border-radius: var(--radius-lg);
+            padding: 18px 20px;
+            transition: all var(--transition-fast);
+            box-shadow: var(--shadow-sm);
+        }
+        .card:hover {
+            border-color: var(--border-strong);
+            box-shadow: var(--shadow-md);
+        }
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 16px;
+        }
+        .card-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .card-title {
+            font-weight: 600;
+            font-size: 1rem;
+            letter-spacing: -0.02em;
+            color: var(--text-primary);
+            line-height: 1.35;
+            flex: 1;
+        }
+        .card-title a {
+            color: inherit;
+            text-decoration: none;
+        }
+        .card-title a:hover {
+            color: var(--accent-500);
+        }
+        .card-meta {
+            font-size: 0.78rem;
+            color: var(--text-tertiary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 8px;
+        }
+        .card-snippet {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            padding: 3px 8px;
+            border-radius: 5px;
+            font-weight: 600;
+            font-size: 0.7rem;
+            letter-spacing: 0.01em;
+            white-space: nowrap;
+            text-transform: uppercase;
+        }
+        .badge-emerald {
+            background: var(--accent-soft);
+            color: var(--accent-500);
+            border: 1px solid var(--accent-500);
+        }
+        .badge-amber {
+            background: var(--amber-soft);
+            color: var(--amber-500);
+            border: 1px solid var(--amber-500);
+        }
+        .badge-blue {
+            background: var(--blue-soft);
+            color: var(--blue-500);
+            border: 1px solid var(--blue-500);
+        }
+        .badge-red {
+            background: var(--red-soft);
+            color: var(--red-500);
+            border: 1px solid var(--red-500);
+        }
+        .badge-neutral {
+            background: var(--bg-surface-hover);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-default);
+        }
+        .bias-indicator {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            cursor: help;
+        }
+        .bias-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .bias-dot.left {
+            background: #3b82f6;
+        }
+        .bias-dot.center {
+            background: #10b981;
+        }
+        .bias-dot.right {
+            background: #ef4444;
+        }
+        .bias-dot.mixed {
+            background: #f59e0b;
+        }
+
+        /* ─── FILTER BAR ────────────────────── */
+        .filter-bar {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+            align-items: center;
+        }
+        .filter-pill {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            border: 1px solid var(--border-default);
+            background: var(--bg-surface);
+            color: var(--text-secondary);
+            transition: all var(--transition-fast);
+            white-space: nowrap;
+        }
+        .filter-pill:hover {
+            border-color: var(--accent-500);
+            color: var(--accent-500);
+        }
+        .filter-pill.active {
+            background: var(--accent-500);
+            border-color: var(--accent-500);
+            color: #fff;
+            font-weight: 600;
+        }
+
+        /* ─── TOAST / NOTIFICATION ──────────── */
+        .toast-container {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            z-index: 200;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            pointer-events: none;
+        }
+        .toast {
+            pointer-events: auto;
+            background: var(--bg-surface-raised);
+            border: 1px solid var(--border-strong);
+            border-radius: var(--radius-lg);
+            padding: 14px 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: var(--shadow-lg);
+            animation: slideIn 0.3s ease;
+            font-size: 0.85rem;
+            max-width: 380px;
+        }
+        .toast .toast-icon {
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+            color: var(--accent-500);
+        }
+        .toast-success {
+            border-left: 3px solid var(--accent-500);
+        }
+        .toast-warning {
+            border-left: 3px solid var(--amber-500);
+        }
+        .toast-error {
+            border-left: 3px solid var(--red-500);
+        }
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(60px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        @keyframes pulse {
+            0%,
+            100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent-500);
+            animation: pulse 1.5s infinite;
+            display: inline-block;
+            box-shadow: 0 0 8px var(--accent-glow);
+        }
+
+        /* ─── CHAT ──────────────────────────── */
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - var(--topbar-height) - 100px);
+            max-height: 650px;
+            border: 1px solid var(--border-default);
+            border-radius: var(--radius-xl);
+            background: var(--bg-surface);
+            overflow: hidden;
+            box-shadow: var(--shadow-md);
+        }
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+        .chat-msg {
+            display: flex;
+            gap: 10px;
+            max-width: 85%;
+            animation: fadeUp 0.3s ease;
+        }
+        .chat-msg.user {
+            align-self: flex-end;
+            flex-direction: row-reverse;
+        }
+        .chat-msg.assistant {
+            align-self: flex-start;
+        }
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .chat-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: 700;
+        }
+        .chat-avatar.user-avatar {
+            background: var(--accent-600);
+            color: #fff;
+        }
+        .chat-avatar.ai-avatar {
+            background: var(--bg-overlay);
+            color: var(--accent-500);
+            border: 1px solid var(--border-strong);
+        }
+        .chat-bubble {
+            padding: 12px 16px;
+            border-radius: var(--radius-lg);
+            font-size: 0.88rem;
+            line-height: 1.5;
+            letter-spacing: -0.01em;
+        }
+        .chat-msg.user .chat-bubble {
+            background: var(--accent-600);
+            color: #fff;
+            border-bottom-right-radius: 4px;
+        }
+        .chat-msg.assistant .chat-bubble {
+            background: var(--bg-surface-hover);
+            color: var(--text-primary);
+            border: 1px solid var(--border-default);
+            border-bottom-left-radius: 4px;
+        }
+        .tool-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: var(--radius-md);
+            background: var(--accent-soft);
+            color: var(--accent-500);
+            font-size: 0.75rem;
+            font-weight: 500;
+            animation: pulse 2s infinite;
+        }
+        .chat-input-wrap {
+            padding: 14px 20px;
+            border-top: 1px solid var(--border-default);
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            background: var(--bg-surface);
+        }
+        .chat-input {
+            flex: 1;
+            padding: 10px 16px;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-default);
+            background: var(--bg-base);
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+            font-size: 0.88rem;
+            outline: none;
+            transition: border var(--transition-fast);
+            resize: none;
+        }
+        .chat-input:focus {
+            border-color: var(--accent-500);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        /* ─── VOICE CALL ────────────────────── */
+        .call-interface {
+            text-align: center;
+            padding: 40px 20px;
+            background: var(--bg-surface);
+            border-radius: var(--radius-xl);
+            border: 1px solid var(--border-default);
+            max-width: 500px;
+            margin: 0 auto;
+            box-shadow: var(--shadow-md);
+        }
+        .call-status {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin: 16px 0;
+            color: var(--accent-500);
+        }
+        .call-controls-row {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            margin-top: 24px;
+        }
+        .call-btn {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            font-size: 1.4rem;
+            transition: all var(--transition-fast);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .call-btn.end {
+            background: #ef4444;
+            color: #fff;
+            box-shadow: 0 4px 15px #ef444460;
+        }
+        .call-btn.end:hover {
+            background: #dc2626;
+            transform: scale(1.05);
+        }
+        .call-btn.mute {
+            background: var(--bg-overlay);
+            color: var(--text-primary);
+            border: 1px solid var(--border-strong);
+        }
+        .call-btn.mute:hover {
+            background: var(--bg-surface-hover);
+        }
+        .transcript-preview {
+            background: var(--bg-base);
+            border-radius: var(--radius-lg);
+            padding: 16px;
+            margin-top: 20px;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            text-align: left;
+            max-height: 120px;
+            overflow-y: auto;
+            border: 1px solid var(--border-default);
+        }
+
+        /* ─── TOPIC MANAGER ─────────────────── */
+        .topic-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 16px;
+            border: 1px solid var(--border-default);
+            border-radius: var(--radius-lg);
+            margin-bottom: 8px;
+            background: var(--bg-surface);
+            transition: all var(--transition-fast);
+        }
+        .topic-row:hover {
+            border-color: var(--border-strong);
+            box-shadow: var(--shadow-sm);
+        }
+        .topic-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .topic-name {
+            font-weight: 600;
+            font-size: 0.9rem;
+            letter-spacing: -0.01em;
+        }
+        .topic-meta {
+            font-size: 0.75rem;
+            color: var(--text-tertiary);
+        }
+        .toggle-switch {
+            width: 42px;
+            height: 24px;
+            border-radius: 12px;
+            background: var(--border-default);
+            cursor: pointer;
+            position: relative;
+            transition: background var(--transition-fast);
+            flex-shrink: 0;
+        }
+        .toggle-switch.active {
+            background: var(--accent-500);
+        }
+        .toggle-switch::after {
+            content: '';
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #fff;
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            transition: transform var(--transition-fast);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        }
+        .toggle-switch.active::after {
+            transform: translateX(18px);
+        }
+
+        /* ─── SETTINGS ──────────────────────── */
+        .settings-group {
+            margin-bottom: 24px;
+        }
+        .settings-group h3 {
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-tertiary);
+            margin-bottom: 12px;
+        }
+        .settings-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 0;
+            border-bottom: 1px solid var(--border-subtle);
+            gap: 16px;
+        }
+        .settings-label {
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+        .settings-desc {
+            font-size: 0.78rem;
+            color: var(--text-tertiary);
+        }
+
+        /* ─── QUOTA BANNER ──────────────────── */
+        .quota-banner {
+            background: var(--amber-soft);
+            border: 1px solid var(--amber-500);
+            border-radius: var(--radius-lg);
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.82rem;
+            color: var(--amber-500);
+            font-weight: 500;
+            margin-bottom: 16px;
+        }
+        .quota-banner .quota-icon {
+            flex-shrink: 0;
+            width: 20px;
+            height: 20px;
+        }
+
+        /* ─── ERROR BOUNDARY FALLBACK ───────── */
+        .error-fallback {
+            background: var(--red-soft);
+            border: 1px solid var(--red-500);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            text-align: center;
+            color: var(--red-500);
+        }
+        .error-fallback h3 {
+            margin-bottom: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+        .error-fallback p {
+            font-size: 0.85rem;
+            margin-bottom: 12px;
+        }
+
+        /* ─── SR-ONLY / ARIA LIVE ───────────── */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+        [aria-live] {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
+        /* ─── SKELETON LOADING ──────────────── */
+        .skeleton {
+            background: linear-gradient(90deg, var(--bg-surface-hover) 25%, var(--bg-overlay) 50%, var(--bg-surface-hover) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: var(--radius-sm);
+        }
+        @keyframes shimmer {
+            0% {
+                background-position: -200% 0;
+            }
+            100% {
+                background-position: 200% 0;
+            }
+        }
+        .skeleton-line {
+            height: 14px;
+            margin-bottom: 8px;
+            border-radius: 4px;
+        }
+        .skeleton-line.short {
+            width: 60%;
+        }
+
+        /* ─── RESPONSIVE ────────────────────── */
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            .sidebar.open {
+                transform: translateX(0);
+            }
+            .main-content {
+                margin-left: 0;
+            }
+            .card-grid {
+                grid-template-columns: 1fr;
+            }
+            .page-content {
+                padding: 16px;
+            }
+            .topbar {
+                padding: 0 12px;
+            }
+            .mobile-menu-btn {
+                display: flex !important;
+            }
+        }
+        .mobile-menu-btn {
+            display: none;
+            width: 36px;
+            height: 36px;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-default);
+            background: var(--bg-surface);
+            color: var(--text-primary);
+        }
+        @media (min-width: 769px) {
+            .mobile-menu-btn {
+                display: none !important;
+            }
+            .sidebar {
+                transform: translateX(0) !important;
+            }
+        }
+
+        /* ─── TRANSITIONS ──────────────────── */
+        .page-view {
+            display: none;
+            animation: fadeIn 0.25s ease;
+        }
+        .page-view.active {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(4px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .cursor-highlight {
+            background: var(--accent-soft);
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-weight: 600;
+            color: var(--accent-500);
+        }
+
+        /* scrollbar */
+        ::-webkit-scrollbar {
+            width: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-strong);
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ══════════════════════════════════════ -->
+    <!-- SIDEBAR -->
+    <!-- ══════════════════════════════════════ -->
+    <aside class="sidebar" id="sidebar" role="navigation" aria-label="Main navigation">
+        <div class="sidebar-logo">
+            <div class="logo-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="2" x2="12" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
+            </div>
+            News<span style="color:var(--accent-400)">Agg</span>
+        </div>
+        <nav class="sidebar-nav">
+            <span class="sidebar-section-label">Main</span>
+            <a class="active" data-view="dashboard" onclick="switchView('dashboard', this)" aria-current="page">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+                Dashboard
+                <span class="badge" id="live-badge">3</span>
+            </a>
+            <a data-view="stories" onclick="switchView('stories', this)">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                Stories
+            </a>
+            <a data-view="chat" onclick="switchView('chat', this)">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                AI Chat
+            </a>
+            <a data-view="call" onclick="switchView('call', this)">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.08 4.18 2 2 0 0 1 4.08 2h3a2 2 0 0 1 2 1.72c.127.96.362 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.338 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                Voice Call
+            </a>
+            <span class="sidebar-section-label">Manage</span>
+            <a data-view="topics" onclick="switchView('topics', this)">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+                Locked Topics
+            </a>
+            <a data-view="settings" onclick="switchView('settings', this)">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                Settings
+            </a>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="avatar">U</div>
+            <span>User Account</span>
+        </div>
+    </aside>
+
+    <!-- ══════════════════════════════════════ -->
+    <!-- MAIN CONTENT -->
+    <!-- ══════════════════════════════════════ -->
+    <div class="main-content" id="main-content">
+        <!-- TOPBAR -->
+        <header class="topbar" role="banner">
+            <button class="mobile-menu-btn" onclick="toggleSidebar()" aria-label="Toggle menu">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+            </button>
+            <div class="breadcrumb">
+                <span id="breadcrumb-label">Dashboard</span>
+            </div>
+            <div class="topbar-spacer"></div>
+            <div class="topbar-actions">
+                <span style="display:flex;align-items:center;gap:6px;font-size:0.8rem;color:var(--text-tertiary);">
+                    <span class="live-dot" title="SSE connected"></span> Live
+                </span>
+                <button class="btn btn-ghost btn-icon" onclick="toggleTheme()" title="Toggle theme" aria-label="Toggle theme">
+                    <svg id="theme-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+                </button>
+            </div>
+        </header>
+
+        <!-- PAGE CONTENT AREA -->
+        <div class="page-content">
+
+            <!-- ═══════════════ DASHBOARD VIEW ═══════════════ -->
+            <div class="page-view active" id="view-dashboard">
+                <div class="page-header">
+                    <h1>Your News Feed</h1>
+                    <p>Real-time curated articles with bias awareness &middot; <span class="cursor-highlight">Cursor pagination active</span></p>
+                </div>
+                <!-- Quota Warning Banner -->
+                <div class="quota-banner" id="quota-banner">
+                    <svg class="quota-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    <span><strong>AI Quota:</strong> 72% used this month (≈$2.18 remaining). <a href="#" onclick="switchView('settings', document.querySelector('[data-view=settings]'))" style="color:var(--amber-500);font-weight:600;">Manage usage →</a></span>
+                </div>
+                <!-- Filter Bar -->
+                <div class="filter-bar" role="group" aria-label="Category filters">
+                    <button class="filter-pill active">All</button>
+                    <button class="filter-pill">World</button>
+                    <button class="filter-pill">Politics</button>
+                    <button class="filter-pill">Technology</button>
+                    <button class="filter-pill">Climate</button>
+                    <button class="filter-pill">Business</button>
+                    <button class="filter-pill">Health</button>
+                    <button class="filter-pill" style="margin-left:auto;display:flex;align-items:center;gap:4px;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+                        More Filters
+                    </button>
+                </div>
+                <!-- Article Cards Grid -->
+                <div class="card-grid" id="article-grid" role="feed" aria-label="News articles feed">
+                    <!-- Article 1 -->
+                    <article class="card" tabindex="0">
+                        <div class="card-header">
+                            <div class="card-title"><a href="#">Global Climate Summit Reaches Historic Accord on Emissions</a></div>
+                            <span class="badge badge-emerald" title="Center-left bias">Center-Left</span>
+                        </div>
+                        <div class="card-meta">
+                            <span>BBC News</span> &middot; <span>18 min ago</span> &middot;
+                            <span class="bias-indicator" title="Source diversity: High | Framing: Neutral">
+                                <span class="bias-dot center"></span> Bias Score: 2.1
+                            </span>
+                        </div>
+                        <p class="card-snippet">World leaders have reached a landmark agreement at the COP30 summit, pledging to cut global emissions by 55% by 2035. The deal includes binding enforcement mechanisms and a $200 billion climate fund for developing nations.</p>
+                        <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;">
+                            <span class="badge badge-neutral">Climate</span>
+                            <span class="badge badge-neutral">World</span>
+                            <button class="btn btn-xs btn-ghost" style="margin-left:auto;" onclick="lockTopic('Climate Summit')" aria-label="Lock topic Climate Summit">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> Lock
+                            </button>
+                        </div>
+                    </article>
+                    <!-- Article 2 -->
+                    <article class="card" tabindex="0">
+                        <div class="card-header">
+                            <div class="card-title"><a href="#">Tech Giants Face New AI Regulation Framework in EU</a></div>
+                            <span class="badge badge-blue" title="Center bias">Center</span>
+                        </div>
+                        <div class="card-meta">
+                            <span>Reuters</span> &middot; <span>42 min ago</span> &middot;
+                            <span class="bias-indicator" title="Source diversity: Medium | Framing: Balanced">
+                                <span class="bias-dot center"></span> Bias Score: 0.8
+                            </span>
+                        </div>
+                        <p class="card-snippet">The European Commission has unveiled a comprehensive AI regulatory package that imposes strict transparency requirements on large language models and mandates independent audits for high-risk AI systems.</p>
+                        <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;">
+                            <span class="badge badge-neutral">Technology</span>
+                            <span class="badge badge-neutral">Politics</span>
+                            <button class="btn btn-xs btn-ghost" style="margin-left:auto;" onclick="lockTopic('AI Regulation')" aria-label="Lock topic AI Regulation">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> Lock
+                            </button>
+                        </div>
+                    </article>
+                    <!-- Article 3 -->
+                    <article class="card" tabindex="0">
+                        <div class="card-header">
+                            <div class="card-title"><a href="#">Markets Rally as Fed Signals Rate Stability Through Q3</a></div>
+                            <span class="badge badge-amber" title="Right-leaning bias">Right-Leaning</span>
+                        </div>
+                        <div class="card-meta">
+                            <span>Wall Street Journal</span> &middot; <span>1 hr ago</span> &middot;
+                            <span class="bias-indicator" title="Source diversity: Medium | Framing: Pro-market">
+                                <span class="bias-dot right"></span> Bias Score: 4.7
+                            </span>
+                        </div>
+                        <p class="card-snippet">Stock markets surged across Asia and Europe following the Federal Reserve's announcement that interest rates will remain steady. Analysts project sustained growth in tech and energy sectors through the third quarter.</p>
+                        <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;">
+                            <span class="badge badge-neutral">Business</span>
+                            <span class="badge badge-neutral">World</span>
+                            <button class="btn btn-xs btn-ghost" style="margin-left:auto;" onclick="lockTopic('Fed Rates')" aria-label="Lock topic Fed Rates">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> Lock
+                            </button>
+                        </div>
+                    </article>
+                    <!-- Article 4 - skeleton loader for infinite scroll -->
+                    <div class="card" aria-busy="true" aria-label="Loading more articles">
+                        <div class="skeleton skeleton-line" style="width:80%;height:18px;"></div>
+                        <div class="skeleton skeleton-line" style="width:60%;height:13px;margin-top:8px;"></div>
+                        <div class="skeleton skeleton-line" style="width:100%;height:13px;margin-top:6px;"></div>
+                        <div class="skeleton skeleton-line" style="width:90%;height:13px;margin-top:6px;"></div>
+                        <div class="skeleton skeleton-line short" style="height:13px;margin-top:6px;"></div>
+                    </div>
+                </div>
+                <div style="text-align:center;padding:20px;color:var(--text-tertiary);font-size:0.85rem;">
+                    <span class="cursor-highlight">Cursor:</span> last_id=art_042 &middot; Scroll down to load more (infinite scroll active)
+                </div>
+            </div>
+
+            <!-- ═══════════════ STORIES VIEW ═══════════════ -->
+            <div class="page-view" id="view-stories">
+                <div class="page-header">
+                    <h1>Story Clusters</h1>
+                    <p>AI-grouped narratives across sources &middot; <span class="cursor-highlight">"use cache" enabled · stale: 300s</span></p>
+                </div>
+                <div class="card-grid">
+                    <div class="card" style="border-left:3px solid var(--accent-500);">
+                        <div class="card-header">
+                            <div class="card-title">Iran Nuclear Deal Negotiations</div>
+                            <span class="badge badge-emerald">12 articles</span>
+                        </div>
+                        <div class="card-meta">
+                            <span>Last 48 hours</span> &middot; <span>Sources: BBC, Reuters, Al Jazeera, CNN</span>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:8px;margin-top:8px;">
+                            <span style="font-size:0.75rem;color:var(--text-tertiary);">Source Diversity:</span>
+                            <div style="width:80px;height:6px;border-radius:3px;background:var(--border-default);overflow:hidden;">
+                                <div style="width:85%;height:100%;background:var(--accent-500);border-radius:3px;"></div>
+                            </div>
+                            <span style="font-weight:600;font-size:0.8rem;color:var(--accent-500);">85%</span>
+                        </div>
+                        <button class="btn btn-sm btn-primary" style="margin-top:12px;">View Timeline</button>
+                    </div>
+                    <div class="card" style="border-left:3px solid var(--blue-500);">
+                        <div class="card-header">
+                            <div class="card-title">SpaceX Starship Orbital Test</div>
+                            <span class="badge badge-blue">8 articles</span>
+                        </div>
+                        <div class="card-meta">
+                            <span>Last 24 hours</span> &middot; <span>Sources: NASA, Space.com, Ars Technica</span>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:8px;margin-top:8px;">
+                            <span style="font-size:0.75rem;color:var(--text-tertiary);">Source Diversity:</span>
+                            <div style="width:80px;height:6px;border-radius:3px;background:var(--border-default);overflow:hidden;">
+                                <div style="width:62%;height:100%;background:var(--blue-500);border-radius:3px;"></div>
+                            </div>
+                            <span style="font-weight:600;font-size:0.8rem;color:var(--blue-500);">62%</span>
+                        </div>
+                        <button class="btn btn-sm btn-primary" style="margin-top:12px;">View Timeline</button>
+                    </div>
+                    <div class="card" style="border-left:3px solid var(--amber-500);">
+                        <div class="card-header">
+                            <div class="card-title">US Election Campaign Updates</div>
+                            <span class="badge badge-amber">24 articles</span>
+                        </div>
+                        <div class="card-meta">
+                            <span>Last 72 hours</span> &middot; <span>Sources: Fox, MSNBC, NPR, Politico</span>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:8px;margin-top:8px;">
+                            <span style="font-size:0.75rem;color:var(--text-tertiary);">Source Diversity:</span>
+                            <div style="width:80px;height:6px;border-radius:3px;background:var(--border-default);overflow:hidden;">
+                                <div style="width:93%;height:100%;background:var(--amber-500);border-radius:3px;"></div>
+                            </div>
+                            <span style="font-weight:600;font-size:0.8rem;color:var(--amber-500);">93%</span>
+                        </div>
+                        <button class="btn btn-sm btn-primary" style="margin-top:12px;">View Timeline</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ═══════════════ AI CHAT VIEW ═══════════════ -->
+            <div class="page-view" id="view-chat">
+                <div class="page-header">
+                    <h1>AI News Analyst</h1>
+                    <p>Streaming responses with <span class="cursor-highlight">tool calling</span> — search articles, lock topics, compare sources</p>
+                </div>
+                <!-- Error Boundary Wrapper (simulated) -->
+                <div id="chat-error-boundary">
+                    <div class="chat-container">
+                        <div class="chat-messages" id="chat-messages" role="log" aria-label="Chat messages" aria-live="polite">
+                            <div class="chat-msg assistant">
+                                <div class="chat-avatar ai-avatar">AI</div>
+                                <div class="chat-bubble">
+                                    Hello! I'm your AI news analyst. I can search articles, lock topics for you, and compare sources. Try asking:
+                                    <br><br>• "Summarize the latest on the Iran nuclear deal"
+                                    <br>• "Compare how BBC and Fox cover climate change"
+                                    <br>• "Lock the topic 'AI Regulation' for me"
+                                </div>
+                            </div>
+                            <div class="chat-msg user">
+                                <div class="chat-avatar user-avatar">U</div>
+                                <div class="chat-bubble">Summarize the top 3 US articles on the Iran deal from the last week.</div>
+                            </div>
+                            <div class="chat-msg assistant">
+                                <div class="chat-avatar ai-avatar">AI</div>
+                                <div class="chat-bubble">
+                                    <div class="tool-indicator" style="margin-bottom:8px;">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                                        Searching database...
+                                    </div>
+                                    <span style="color:var(--accent-400);font-weight:600;">✓ Found 7 articles</span><br><br>
+                                    <strong>1. "Iran Deal Talks Resume in Vienna"</strong> (NPR, Center-left, Bias: 1.9)<br>
+                                    Diplomats report progress on enrichment limits. Key sticking point: sanctions relief timeline.<br><br>
+                                    <strong>2. "US-Iran Relations: A Delicate Balance"</strong> (Reuters, Center, Bias: 0.6)<br>
+                                    Analysis of shifting geopolitical dynamics and the role of EU mediators.<br><br>
+                                    <strong>3. "Congress Divided on Iran Approach"</strong> (Politico, Center, Bias: 2.3)<br>
+                                    Bipartisan tensions emerge as deadline approaches for congressional review.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="chat-input-wrap">
+                            <input type="text" class="chat-input" id="chat-input" placeholder="Ask about news, compare sources, or lock a topic..." aria-label="Chat message input" onkeydown="if(event.key==='Enter')sendChatMessage()">
+                            <button class="btn btn-primary btn-sm" onclick="sendChatMessage()" aria-label="Send message">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <!-- Error fallback (hidden by default, shown to demo error boundary) -->
+                <div class="error-fallback" id="chat-error-fallback" style="display:none;">
+                    <h3>⚠️ AI service temporarily unavailable</h3>
+                    <p>You can still browse news and lock topics. The chat service will be back shortly.</p>
+                    <button class="btn btn-sm btn-primary" onclick="resetChatError()">Retry Connection</button>
+                    <a href="#" class="btn btn-sm btn-ghost" onclick="switchView('dashboard', document.querySelector('[data-view=dashboard]'))">Go to Feed</a>
+                </div>
+                <button class="btn btn-sm btn-ghost" style="margin-top:12px;" onclick="simulateChatError()" title="Demo: trigger error boundary">⚠️ Simulate Chat Error</button>
+            </div>
+
+            <!-- ═══════════════ VOICE CALL VIEW ═══════════════ -->
+            <div class="page-view" id="view-call">
+                <div class="page-header">
+                    <h1>AI Voice Call</h1>
+                    <p>LiveKit-powered WebRTC voice interaction &middot; <span class="cursor-highlight">Free tier: 50k min/month</span></p>
+                </div>
+                <div class="call-interface" id="call-interface">
+                    <div style="font-size:3rem;margin-bottom:8px;">🎙️</div>
+                    <div class="call-status" id="call-status">Ready to connect</div>
+                    <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:8px;">
+                        Room: <code style="background:var(--bg-base);padding:3px 8px;border-radius:4px;">news-call-room-42</code>
+                    </p>
+                    <div class="call-controls-row">
+                        <button class="call-btn mute" id="mute-btn" onclick="toggleMute()" aria-label="Toggle mute" title="Mute">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+                        </button>
+                        <button class="call-btn end" id="end-call-btn" onclick="toggleCall()" aria-label="Start call">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2A19.79 19.79 0 0 1 11.19 18.9 19.5 19.5 0 0 1 5.19 12.9 19.79 19.79 0 0 1 2.08 4.18 2 2 0 0 1 4.08-1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                        </button>
+                    </div>
+                    <div class="transcript-preview" id="transcript-preview" aria-live="polite">
+                        <em style="color:var(--text-tertiary);">Transcript will appear here during the call...</em>
+                    </div>
+                    <p style="margin-top:14px;font-size:0.8rem;color:var(--text-tertiary);">
+                        Fallback: <a href="#" style="color:var(--accent-500);" onclick="switchView('chat', document.querySelector('[data-view=chat]'))">Switch to Text Chat →</a>
+                    </p>
+                </div>
+                <!-- Voice error fallback -->
+                <div class="error-fallback" id="call-error-fallback" style="display:none;max-width:500px;margin:20px auto;">
+                    <h3>⚠️ Voice call failed</h3>
+                    <p>Microphone access denied or connection issue. You can continue with text chat.</p>
+                    <button class="btn btn-sm btn-primary" onclick="switchView('chat', document.querySelector('[data-view=chat]'))">Switch to Text Chat</button>
+                </div>
+                <button class="btn btn-sm btn-ghost" style="margin-top:12px;" onclick="simulateCallError()">⚠️ Simulate Call Error</button>
+            </div>
+
+            <!-- ═══════════════ TOPICS VIEW ═══════════════ -->
+            <div class="page-view" id="view-topics">
+                <div class="page-header">
+                    <h1>Locked Topics</h1>
+                    <p>Manage your topic subscriptions &middot; <span class="cursor-highlight">SSE notifications active</span></p>
+                </div>
+                <!-- Add topic form -->
+                <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;">
+                    <input type="text" class="chat-input" id="new-topic-input" placeholder="Enter a topic to lock..." style="max-width:340px;" aria-label="New topic name">
+                    <button class="btn btn-primary btn-sm" onclick="addTopic()">+ Lock Topic</button>
+                </div>
+                <!-- Topic list -->
+                <div id="topic-list">
+                    <div class="topic-row">
+                        <div class="topic-info">
+                            <span class="topic-name">Iran Nuclear Deal</span>
+                            <span class="topic-meta">Last match: 18 min ago · 7 articles</span>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:10px;">
+                            <span class="live-dot" title="SSE active"></span>
+                            <div class="toggle-switch active" onclick="this.classList.toggle('active')" role="switch" aria-checked="true" tabindex="0" aria-label="Toggle notifications for Iran Nuclear Deal"></div>
+                            <button class="btn btn-xs btn-ghost" style="color:var(--red-500);" onclick="this.closest('.topic-row').remove()">✕</button>
+                        </div>
+                    </div>
+                    <div class="topic-row">
+                        <div class="topic-info">
+                            <span class="topic-name">AI Regulation</span>
+                            <span class="topic-meta">Last match: 42 min ago · 4 articles</span>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:10px;">
+                            <span class="live-dot" title="SSE active"></span>
+                            <div class="toggle-switch active" onclick="this.classList.toggle('active')" role="switch" aria-checked="true" tabindex="0" aria-label="Toggle notifications for AI Regulation"></div>
+                            <button class="btn btn-xs btn-ghost" style="color:var(--red-500);" onclick="this.closest('.topic-row').remove()">✕</button>
+                        </div>
+                    </div>
+                    <div class="topic-row">
+                        <div class="topic-info">
+                            <span class="topic-name">Climate Summit</span>
+                            <span class="topic-meta">Last match: 18 min ago · 3 articles</span>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:10px;">
+                            <span class="live-dot" title="SSE active"></span>
+                            <div class="toggle-switch active" onclick="this.classList.toggle('active')" role="switch" aria-checked="true" tabindex="0" aria-label="Toggle notifications for Climate Summit"></div>
+                            <button class="btn btn-xs btn-ghost" style="color:var(--red-500);" onclick="this.closest('.topic-row').remove()">✕</button>
+                        </div>
+                    </div>
+                </div>
+                <p style="font-size:0.8rem;color:var(--text-tertiary);margin-top:12px;" id="no-topics-msg" style="display:none;">No locked topics yet. Add one above or use the AI chat to lock topics automatically.</p>
+            </div>
+
+            <!-- ═══════════════ SETTINGS VIEW ═══════════════ -->
+            <div class="page-view" id="view-settings">
+                <div class="page-header">
+                    <h1>Settings</h1>
+                    <p>Preferences, quota monitoring, and API configuration</p>
+                </div>
+                <div class="card" style="max-width:640px;margin-bottom:20px;">
+                    <div class="settings-group">
+                        <h3>Appearance</h3>
+                        <div class="settings-row">
+                            <div>
+                                <div class="settings-label">Theme</div>
+                                <div class="settings-desc">Toggle between dark and light mode</div>
+                            </div>
+                            <button class="btn btn-sm" onclick="toggleTheme()">Toggle Theme</button>
+                        </div>
+                        <div class="settings-row">
+                            <div>
+                                <div class="settings-label">Bias Display</div>
+                                <div class="settings-desc">Show bias badges and scores on articles</div>
+                            </div>
+                            <div class="toggle-switch active" onclick="this.classList.toggle('active')" role="switch" aria-checked="true" tabindex="0"></div>
+                        </div>
+                    </div>
+                    <div class="settings-group">
+                        <h3>AI Usage & Quota</h3>
+                        <div class="settings-row">
+                            <div>
+                                <div class="settings-label">Monthly AI Budget</div>
+                                <div class="settings-desc">Estimated spend this month: <strong style="color:var(--amber-500);">$3.82 / $5.00</strong></div>
+                            </div>
+                            <span style="font-weight:700;color:var(--amber-500);">76%</span>
+                        </div>
+                        <div style="background:var(--bg-base);border-radius:var(--radius-md);padding:12px;margin:8px 0;font-size:0.8rem;">
+                            <strong>💡 Save quota:</strong> Be specific — "Summarize the top 3 US articles on Iran deal" uses fewer tokens than "Tell me everything about Iran."
+                        </div>
+                        <div style="display:flex;justify-content:space-between;font-size:0.78rem;color:var(--text-tertiary);padding:4px 0;">
+                            <span>Total API calls today: 47</span>
+                            <span>Tokens used: ~82,400</span>
+                        </div>
+                    </div>
+                    <div class="settings-group">
+                        <h3>Notifications</h3>
+                        <div class="settings-row">
+                            <div>
+                                <div class="settings-label">SSE Real-time Updates</div>
+                                <div class="settings-desc">Receive live article notifications</div>
+                            </div>
+                            <div class="toggle-switch active" onclick="this.classList.toggle('active')" role="switch" aria-checked="true" tabindex="0"></div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Admin usage dashboard preview -->
+                <div class="card" style="max-width:640px;">
+                    <div class="settings-group">
+                        <h3>🔒 Admin: Usage Dashboard</h3>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:0.85rem;">
+                            <div style="background:var(--bg-base);padding:14px;border-radius:var(--radius-md);text-align:center;">
+                                <div style="font-size:1.6rem;font-weight:700;color:var(--accent-500);">47</div>
+                                <div style="color:var(--text-tertiary);">API calls today</div>
+                            </div>
+                            <div style="background:var(--bg-base);padding:14px;border-radius:var(--radius-md);text-align:center;">
+                                <div style="font-size:1.6rem;font-weight:700;color:var(--accent-500);">~$0.12</div>
+                                <div style="color:var(--text-tertiary);">Est. cost today</div>
+                            </div>
+                            <div style="background:var(--bg-base);padding:14px;border-radius:var(--radius-md);text-align:center;">
+                                <div style="font-size:1.6rem;font-weight:700;">312</div>
+                                <div style="color:var(--text-tertiary);">Calls this week</div>
+                            </div>
+                            <div style="background:var(--bg-base);padding:14px;border-radius:var(--radius-md);text-align:center;">
+                                <div style="font-size:1.6rem;font-weight:700;color:var(--amber-500);">$3.82</div>
+                                <div style="color:var(--text-tertiary);">Month total</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div><!-- /page-content -->
+    </div><!-- /main-content -->
+
+    <!-- ══════════════════════════════════════ -->
+    <!-- TOAST CONTAINER -->
+    <!-- ══════════════════════════════════════ -->
+    <div class="toast-container" id="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+    <!-- ══════════════════════════════════════ -->
+    <!-- ARIA LIVE REGION (screen reader) -->
+    <!-- ══════════════════════════════════════ -->
+    <div id="aria-announcer" aria-live="polite" aria-atomic="true" class="sr-only"></div>
+
+    <!-- ══════════════════════════════════════ -->
+    <!-- SCRIPTS -->
+    <!-- ══════════════════════════════════════ -->
+    <script>
+        // ─── STATE ─────────────────────────────
+        let currentView = 'dashboard';
+        let isCallActive = false;
+        let isMuted = false;
+        let callInterval = null;
+        const transcriptLines = [
+            "AI: Hello, I'm ready to help you analyze the news.",
+            "AI: I found 7 articles about the Iran nuclear deal from the past week.",
+            "AI: Would you like me to compare how different sources cover this topic?",
+            "You: Yes, compare BBC and Reuters coverage.",
+            "AI: BBC emphasizes diplomatic progress, while Reuters focuses on economic implications...",
+        ];
+        let transcriptIndex = 0;
+
+        // ─── VIEW SWITCHING ──────────────────
+        function switchView(viewName, navEl) {
+            document.querySelectorAll('.page-view').forEach(v => v.classList.remove('active'));
+            const target = document.getElementById('view-' + viewName);
+            if (target) target.classList.add('active');
+
+            document.querySelectorAll('.sidebar-nav a').forEach(a => a.classList.remove('active'));
+            if (navEl) navEl.classList.add('active');
+
+            document.getElementById('breadcrumb-label').textContent =
+                viewName.charAt(0).toUpperCase() + viewName.slice(1);
+            currentView = viewName;
+
+            // Close mobile sidebar
+            if (window.innerWidth <= 768) {
+                document.getElementById('sidebar').classList.remove('open');
+            }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('open');
+        }
+
+        // ─── THEME TOGGLE ────────────────────
+        function toggleTheme() {
+            const html = document.documentElement;
+            const current = html.getAttribute('data-theme');
+            const next = current === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', next);
+            const icon = document.getElementById('theme-icon');
+            if (next === 'light') {
+                icon.innerHTML =
+                    '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>';
+            } else {
+                icon.innerHTML =
+                    '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>';
+            }
+        }
+
+        // ─── TOAST NOTIFICATIONS ─────────────
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'toast toast-' + type;
+            const icons = {
+                success: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--accent-500);"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
+                warning: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--amber-500);"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+                error: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--red-500);"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
+            };
+            toast.innerHTML = `<span class="toast-icon">${icons[type] || icons.success}</span> ${message}`;
+            container.appendChild(toast);
+            // Announce to screen readers
+            document.getElementById('aria-announcer').textContent = message;
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(60px)';
+                toast.style.transition = 'all 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+
+        // ─── SSE SIMULATION ──────────────────
+        function simulateSSEEvent() {
+            const titles = [
+                'Breaking: Major earthquake detected in Pacific region',
+                'New study reveals breakthrough in battery technology',
+                'UN Security Council convenes emergency session',
+                'Global markets respond to trade policy shift',
+                'Historic peace agreement signed in Middle East',
+            ];
+            const title = titles[Math.floor(Math.random() * titles.length)];
+            showToast(`🔔 New article: "${title}"`, 'success');
+            const badge = document.getElementById('live-badge');
+            badge.textContent = parseInt(badge.textContent) + 1;
+            document.getElementById('aria-announcer').textContent = 'New article: ' + title;
+        }
+        // Auto-simulate SSE events every 20-40 seconds
+        setInterval(() => {
+            if (Math.random() > 0.5) simulateSSEEvent();
+        }, 25000);
+        // Initial SSE simulation after 8 seconds
+        setTimeout(simulateSSEEvent, 8000);
+
+        // ─── CHAT ────────────────────────────
+        function sendChatMessage() {
+            const input = document.getElementById('chat-input');
+            const msg = input.value.trim();
+            if (!msg) return;
+            const messagesContainer = document.getElementById('chat-messages');
+            // Add user message
+            const userMsg = document.createElement('div');
+            userMsg.className = 'chat-msg user';
+            userMsg.innerHTML =
+                '<div class="chat-avatar user-avatar">U</div><div class="chat-bubble">' + escapeHTML(msg) + '</div>';
+            messagesContainer.appendChild(userMsg);
+            input.value = '';
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            // Simulate AI response with tool calling indicator
+            setTimeout(() => {
+                const aiMsg = document.createElement('div');
+                aiMsg.className = 'chat-msg assistant';
+                aiMsg.innerHTML =
+                    '<div class="chat-avatar ai-avatar">AI</div><div class="chat-bubble"><div class="tool-indicator">🔍 Searching database...</div></div>';
+                messagesContainer.appendChild(aiMsg);
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                // Simulate tool completion
+                setTimeout(() => {
+                    const bubble = aiMsg.querySelector('.chat-bubble');
+                    bubble.innerHTML =
+                        '<span style="color:var(--accent-400);font-weight:600;">✓ Tool: search_articles completed</span><br><br>I found several relevant articles matching your query. The top results cover multiple perspectives from across the political spectrum. Would you like me to lock this topic for notifications?';
+                }, 1800);
+            }, 600);
+        }
+
+        function escapeHTML(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        function simulateChatError() {
+            document.getElementById('chat-error-boundary').style.display = 'none';
+            document.getElementById('chat-error-fallback').style.display = 'block';
+            showToast('AI chat service disconnected', 'error');
+        }
+
+        function resetChatError() {
+            document.getElementById('chat-error-boundary').style.display = 'block';
+            document.getElementById('chat-error-fallback').style.display = 'none';
+            showToast('AI chat service restored', 'success');
+        }
+
+        // ─── VOICE CALL ──────────────────────
+        function toggleCall() {
+            const btn = document.getElementById('end-call-btn');
+            const status = document.getElementById('call-status');
+            const transcript = document.getElementById('transcript-preview');
+            if (!isCallActive) {
+                // Start call
+                isCallActive = true;
+                btn.style.background = '#dc2626';
+                btn.innerHTML =
+                    '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="1" x2="23" y2="23"/><path d="M10.68 13.32a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92v3a2 2 0 0 1-2.18 2A19.79 19.79 0 0 1 11.19 18.9"/></svg>';
+                status.textContent = 'Connected · Listening...';
+                status.style.color = 'var(--accent-500)';
+                transcript.innerHTML = '<em style="color:var(--text-tertiary);">Transcript will appear here...</em>';
+                transcriptIndex = 0;
+                showToast('Voice call connected via LiveKit', 'success');
+                // Simulate transcript feed
+                callInterval = setInterval(() => {
+                    if (transcriptIndex < transcriptLines.length) {
+                        const line = transcriptLines[transcriptIndex];
+                        if (transcriptIndex === 0) transcript.innerHTML = '';
+                        transcript.innerHTML += '<div style="margin-bottom:4px;">' + line + '</div>';
+                        transcript.scrollTop = transcript.scrollHeight;
+                        transcriptIndex++;
+                    }
+                }, 2000);
+            } else {
+                // End call
+                isCallActive = false;
+                btn.style.background = '#ef4444';
+                btn.innerHTML =
+                    '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2A19.79 19.79 0 0 1 11.19 18.9 19.5 19.5 0 0 1 5.19 12.9 19.79 19.79 0 0 1 2.08 4.18 2 2 0 0 1 4.08-1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>';
+                status.textContent = 'Call ended';
+                status.style.color = 'var(--text-secondary)';
+                if (callInterval) clearInterval(callInterval);
+                showToast('Voice call ended', 'warning');
+            }
+        }
+
+        function toggleMute() {
+            isMuted = !isMuted;
+            const btn = document.getElementById('mute-btn');
+            if (isMuted) {
+                btn.style.background = 'var(--red-soft)';
+                btn.style.borderColor = 'var(--red-500)';
+                btn.style.color = 'var(--red-500)';
+                btn.innerHTML =
+                    '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"/><path d="M17 16.95A7 7 0 0 1 5 13v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>';
+            } else {
+                btn.style.background = 'var(--bg-overlay)';
+                btn.style.borderColor = 'var(--border-strong)';
+                btn.style.color = 'var(--text-primary)';
+                btn.innerHTML =
+                    '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>';
+            }
+        }
+
+        function simulateCallError() {
+            document.getElementById('call-interface').style.display = 'none';
+            document.getElementById('call-error-fallback').style.display = 'block';
+            if (isCallActive) toggleCall();
+            showToast('Voice call failed — microphone access denied', 'error');
+        }
+
+        // ─── TOPICS ──────────────────────────
+        function addTopic() {
+            const input = document.getElementById('new-topic-input');
+            const name = input.value.trim();
+            if (!name) return;
+            const list = document.getElementById('topic-list');
+            const row = document.createElement('div');
+            row.className = 'topic-row';
+            row.innerHTML = `
+            <div class="topic-info">
+              <span class="topic-name">${escapeHTML(name)}</span>
+              <span class="topic-meta">Last match: just now · 0 articles</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span class="live-dot" title="SSE active"></span>
+              <div class="toggle-switch active" onclick="this.classList.toggle('active')" role="switch" aria-checked="true" tabindex="0"></div>
+              <button class="btn btn-xs btn-ghost" style="color:var(--red-500);" onclick="this.closest('.topic-row').remove()">✕</button>
+            </div>`;
+            list.appendChild(row);
+            input.value = '';
+            showToast('Topic "' + name + '" locked for notifications', 'success');
+            document.getElementById('aria-announcer').textContent = 'Topic ' + name +
+            ' locked. You will receive notifications for new articles.';
+        }
+
+        function lockTopic(topicName) {
+            showToast('🔒 Topic "' + topicName + '" locked! You\'ll get notifications.', 'success');
+            document.getElementById('aria-announcer').textContent = 'Topic ' + topicName +
+            ' locked for notifications.';
+        }
+
+        // ─── FILTER PILLS ────────────────────
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('filter-pill') && !e.target.closest('[style*="margin-left:auto"]')) {
+                document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+                e.target.classList.add('active');
+            }
+        });
+
+        // ─── KEYBOARD NAVIGATION ─────────────
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                document.getElementById('sidebar').classList.remove('open');
+            }
+            // Ctrl+1-6 for view switching
+            const views = ['dashboard', 'stories', 'chat', 'call', 'topics', 'settings'];
+            if (e.ctrlKey && e.key >= '1' && e.key <= '6') {
+                e.preventDefault();
+                const idx = parseInt(e.key) - 1;
+                const navEl = document.querySelector('[data-view="' + views[idx] + '"]');
+                switchView(views[idx], navEl);
+            }
+        });
+
+        // ─── INIT ────────────────────────────
+        console.log('%c🌍 Global News Aggregator %cv2.1',
+            'font-size:1.2rem;font-weight:700;color:#10b981;', 'color:#a1a1aa;');
+        console.log('%cFeatures: SSE · Cursor Pagination · AI Tool Calling · LiveKit Voice · ARIA Live · Error Boundaries · CSP · Rate Limiting · Quota Monitoring',
+            'font-size:0.75rem;color:#6b6b76;');
+        console.log('%cTheme: Luma Dark + Emerald · Font: Inter · Icons: Lucide', 'color:#34d399;');
+        console.log('%cPress Ctrl+1-6 to switch views · Click "Simulate" buttons to demo error states',
+            'color:#a1a1aa;');
+    </script>
+</body>
+</html>
