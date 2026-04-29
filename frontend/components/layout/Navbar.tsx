@@ -1,3 +1,4 @@
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Globe, Search } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 
@@ -28,6 +29,11 @@ export default function Navbar() {
             // onChange={(e) => setLocalQuery(e.target.value)}
           />
         </div>
+      </div>
+
+      {/* Right: theme toggle */}
+      <div className="flex items-center gap-2">
+        <ThemeToggle />
       </div>
     </header>
   );

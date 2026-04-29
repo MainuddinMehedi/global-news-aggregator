@@ -1,8 +1,9 @@
+import { Providers } from "@/components/providers/theme-provider";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 import type { Metadata } from "next";
 import { Figtree, Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
-import { cn } from "@/lib/utils";
-import { TooltipProvider } from "@/components/ui/tooltip";
 
 const figtree = Figtree({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -38,9 +39,12 @@ export default function RootLayout({
         jetbrainsMono.variable,
         "font-sans",
       )}
+      suppressHydrationWarning
     >
-      <body className="">
-        <TooltipProvider>{children}</TooltipProvider>
+      <body className="bg-background text-foreground">
+        <Providers>
+          <TooltipProvider>{children}</TooltipProvider>
+        </Providers>
       </body>
     </html>
   );
