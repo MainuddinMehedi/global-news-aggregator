@@ -1,20 +1,9 @@
-import ArticleCard from "@/components/articles/ArticleCard";
-
-export default function Home() {
+export default function Feed() {
   return (
     <div className="flex flex-1 w-full">
       {/*Feed: Main content area*/}
       <div className="w-[75%] p-5">
         <h1>Welcome to the News Aggregator</h1>
-
-        {/*Articles*/}
-        <div>
-          {[...Array(5)].map((_, i) => (
-            <div key={i} className="mb-5">
-              <ArticleCard />
-            </div>
-          ))}
-        </div>
       </div>
 
       {/* Information Widgets */}

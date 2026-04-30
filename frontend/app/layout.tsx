@@ -4,12 +4,15 @@ import { cn } from "@/lib/utils";
 import type { Metadata } from "next";
 import { Figtree, Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
+import Navbar from "@/components/layout/Navbar";
+import Footer from "@/components/layout/Footer";
+import Sidebar from "@/components/layout/Sidebar";
 
 const figtree = Figtree({ subsets: ["latin"], variable: "--font-sans" });
 
 const inter = Inter({
   subsets: ["latin"],
-  variable: "--font-sans",
+  variable: "--font-inter",
 });
 
 const jetbrainsMono = JetBrains_Mono({
@@ -43,7 +46,24 @@ export default function RootLayout({
     >
       <body className="bg-background text-foreground">
         <Providers>
-          <TooltipProvider>{children}</TooltipProvider>
+          <TooltipProvider>
+            <div className="flex flex-col h-screen">
+              <Navbar />
+
+              <main className="flex flex-1 overflow-hidden">
+                {/*Sidebar*/}
+                <div className="w-[16%] border-r border-border hidden md:block overflow-y-auto">
+                  <Sidebar />
+                </div>
+
+                {/* Main Content Area */}
+                <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
+                  <div className="flex-1">{children}</div>
+                  <Footer />
+                </div>
+              </main>
+            </div>
+          </TooltipProvider>
         </Providers>
       </body>
     </html>
