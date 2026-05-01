@@ -4,8 +4,14 @@ import { BiasDistributionWidget } from "@/components/widgets/BiasDistributionWid
 import { DiversityInsightWidget } from "@/components/widgets/DiversityInsightWidget";
 import { EventClustersWidget } from "@/components/widgets/EventClustersWidget";
 import { PerspectiveWidget } from "@/components/widgets/PerspectiveWidget";
+import { getArticles } from "@/queries/articles";
+import { Article } from "@/types/article";
 
-export default function Home() {
+export default async function Home() {
+  const articles = await getArticles();
+
+  console.log("articles: ", articles);
+
   return (
     <div className="flex flex-1 w-full">
       {/*Feed: Main content area*/}
@@ -14,9 +20,9 @@ export default function Home() {
 
         {/*Articles*/}
         <div>
-          {[...Array(5)].map((_, i) => (
+          {articles.map((article, i) => (
             <div key={i} className="mb-5">
-              <ArticleCard />
+              <ArticleCard article={article} />
             </div>
           ))}
         </div>

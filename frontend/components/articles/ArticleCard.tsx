@@ -1,8 +1,9 @@
 import { Sparkles } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { SentimentBadge } from "./SentimentBadge";
+import { Article } from "@/types/article";
 
-export default function ArticleCard() {
+export default function ArticleCard({ article }: { article: Article }) {
   return (
     <div
       className="bg-card border border-border rounded-xl p-4 hover:border-zinc-600 transition-all duration-200 group cursor-pointer flex flex-col h-full"
@@ -11,8 +12,7 @@ export default function ArticleCard() {
       {/* Title row with AI button */}
       <div className="flex items-start justify-between gap-2 mb-2">
         <h3 className="text-base font-semibold text-zinc-100 leading-snug group-hover:text-blue-400 transition-colors line-clamp-2 flex-1">
-          {/*{article.title}*/}
-          Global Climate Summit Reaches Historic Accord on Emissions
+          {article.title}
         </h3>
         <button
           // onClick={(e) => {
@@ -52,13 +52,17 @@ export default function ArticleCard() {
       </p>
 
       {/* Category tags */}
-      {[...Array(3)].map((_, i) => (
-        <div key={i} className="flex flex-wrap gap-1 mb-3">
-          <span className="px-2 py-0.5 rounded bg-zinc-800/80 text-zinc-400 text-[10px] font-medium capitalize">
+      <div className="flex flex-wrap gap-1 mb-3">
+        {[...Array(3)].map((_, i) => (
+          <span
+            key={i}
+            className="px-2 py-0.5 rounded bg-zinc-800/80 text-zinc-400 text-[10px] font-medium capitalize"
+          >
             cat
           </span>
-        </div>
-      ))}
+        ))}
+      </div>
+
       {/*{article.categories.length > 0 && (
         <div className="flex flex-wrap gap-1 mb-3">
           {article.categories.slice(0, 3).map((cat) => (

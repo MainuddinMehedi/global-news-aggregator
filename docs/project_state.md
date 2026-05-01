@@ -21,18 +21,19 @@ graph LR
     DB1 -.- DB2
 ```
 
-| Layer | Tech Stack |
-|---|---|
-| **Database** | Supabase PostgreSQL, Prisma ORM v6.19 (root) / v7.8 (frontend) |
-| **Ingestion** | Node.js ESM, `rss-parser`, `tiktoken`, `p-limit`, raw `fetch` for AI APIs |
-| **AI Processing** | Groq (primary) + OpenRouter (fallback), batch prompt → JSON |
-| **Frontend** | Next.js 16, React 19, TailwindCSS 4, shadcn/ui, Lucide icons |
+| Layer             | Tech Stack                                                                |
+| ----------------- | ------------------------------------------------------------------------- |
+| **Database**      | Supabase PostgreSQL, Prisma ORM v6.19 (root) / v7.8 (frontend)            |
+| **Ingestion**     | Node.js ESM, `rss-parser`, `tiktoken`, `p-limit`, raw `fetch` for AI APIs |
+| **AI Processing** | Groq (primary) + OpenRouter (fallback), batch prompt → JSON               |
+| **Frontend**      | Next.js 16, React 19, TailwindCSS 4, shadcn/ui, Lucide icons              |
 
 ---
 
 ## What's Working ✅
 
 ### Ingestion Pipeline (fully functional)
+
 - **RSS streaming** from configured sources — currently only **The Daily Star (Bangladesh)** is active; 6+ others are commented out (Al Jazeera, Dhaka Tribune, UN News, TechCrunch, etc.)
 - **Two-layer deduplication**: URL normalization + content hash (`title + contentSnippet`)
 - **Database persistence**: new articles saved as `RawArticle` rows
@@ -43,15 +44,17 @@ graph LR
 - **Latest run**: 10 articles fetched, 10/10 inserted, 10/10 AI-processed in 13.8s
 
 ### Database Schema (5 models, migrated)
-| Model | Purpose |
-|---|---|
-| `RawArticle` | Raw RSS data with URL + content hash dedup |
-| `ProcessedArticle` | AI enrichment (categories, entities, sentiment, bias, perspective countries) |
-| `Category` | Many-to-many with ProcessedArticle |
-| `User` / `UserTopic` | User alert subscriptions (schema only, not wired) |
-| `AiUsage` | Per-batch AI cost/token tracking |
+
+| Model                | Purpose                                                                      |
+| -------------------- | ---------------------------------------------------------------------------- |
+| `RawArticle`         | Raw RSS data with URL + content hash dedup                                   |
+| `ProcessedArticle`   | AI enrichment (categories, entities, sentiment, bias, perspective countries) |
+| `Category`           | Many-to-many with ProcessedArticle                                           |
+| `User` / `UserTopic` | User alert subscriptions (schema only, not wired)                            |
+| `AiUsage`            | Per-batch AI cost/token tracking                                             |
 
 ### Frontend (basic, functional)
+
 - **API route** `/api/articles` — queries `ProcessedArticle` joined with `RawArticle` and `Category`, supports `?category=` and `?country=` filters
 - **Client page** — card grid showing title, source, date, snippet, sentiment badge, bias note
 - **Category filter dropdown** (hardcoded: all / geopolitics / bangladesh / technology)
@@ -61,17 +64,17 @@ graph LR
 
 ## What's Partially Built / Rough Edges ⚠️
 
-| Item | Status |
-|---|---|
-| **Prisma version mismatch** | Root uses `^6.19.3`, frontend uses `^7.8.0` — potential schema/client drift |
-| **Frontend Prisma client** | Uses a separate [lib/prisma](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/frontend/lib) (not the shared [lib/db.ts](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/lib/db.ts)) — two separate Prisma setups |
-| **Category filter** | Hardcoded options in the dropdown; not dynamically fetched from DB |
-| **Frontend design** | Functional but basic — TailwindCSS card grid, no dark mode, no animations, "Testing ingestion workflow output" subtitle |
-| **RSS sources** | Only 1 of 7+ sources enabled — the rest are commented out |
-| **Ingestion scheduling** | Manual `node ingestion-service/index.js` — no cron, no n8n workflow, no scheduler |
-| **`n8n-workflows/`** | Directory exists but is empty |
-| **`infra/`** | Directory exists but is empty |
-| **`docs/`** | Only `phase-0.md` written; no Phase 1+ documentation |
+| Item                        | Status                                                                                                                                                                                                                                                                                                                  |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Prisma version mismatch** | Root uses `^6.19.3`, frontend uses `^7.8.0` — potential schema/client drift                                                                                                                                                                                                                                             |
+| **Frontend Prisma client**  | Uses a separate [lib/prisma](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/frontend/lib) (not the shared [lib/db.ts](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/lib/db.ts)) — two separate Prisma setups |
+| **Category filter**         | Hardcoded options in the dropdown; not dynamically fetched from DB                                                                                                                                                                                                                                                      |
+| **Frontend design**         | Functional but basic — TailwindCSS card grid, no dark mode, no animations, "Testing ingestion workflow output" subtitle                                                                                                                                                                                                 |
+| **RSS sources**             | Only 1 of 7+ sources enabled — the rest are commented out                                                                                                                                                                                                                                                               |
+| **Ingestion scheduling**    | Manual `node ingestion-service/index.js` — no cron, no n8n workflow, no scheduler                                                                                                                                                                                                                                       |
+| **`n8n-workflows/`**        | Directory exists but is empty                                                                                                                                                                                                                                                                                           |
+| **`infra/`**                | Directory exists but is empty                                                                                                                                                                                                                                                                                           |
+| **`docs/`**                 | Only `phase-0.md` written; no Phase 1+ documentation                                                                                                                                                                                                                                                                    |
 
 ---
 
@@ -135,3 +138,26 @@ global-news-aggregator/
 4. **Wire up notifications** — Discord/email alerts for tracked topics
 5. **Unify Prisma versions** across root and frontend
 6. **Add tests and CI/CD**
+
+---
+
+To make the data from your Prisma database available in your Next.js 16 frontend, you generally need to follow these conceptual steps:
+
+**1. Create a Prisma Client Instance for the Frontend**
+Because Next.js reloads frequently in development, you need to create a "singleton" instance of the Prisma Client inside your `frontend` directory. This ensures you only create one active connection to the database at a time and prevents connection pool exhaustion.
+
+**2. Fetch the Data (Choose an Approach)**
+With the Next.js App Router, you have two primary ways to get that data from Prisma into your UI:
+
+- **Approach A: Server Components (Recommended & Fastest)**
+  Since Server Components run securely on the server, you can import your Prisma client directly into your page files (e.g., `app/page.tsx`). You simply `await` the database query right inside the component and pass the raw data down to your visual components.
+- **Approach B: API Route Handlers (Best for Client-side fetching)**
+  If you have highly interactive components that need to fetch data on the fly (like infinite scrolling or complex client-side filters), you will create an API route (e.g., `app/api/articles/route.ts`). This route uses Prisma to query the database and returns the data as JSON.
+
+**3. Consume and Render the Data in the UI**
+
+- If you used **Server Components**, you already have the data and can just map over it to render your UI elements (like your `ArticleCard`).
+- If you used **API Routes**, you will need to use a fetching mechanism (like the native `fetch` API, SWR, or React Query) inside your React components to call your new API endpoint, store the result in React state, and then render it.
+
+**4. Handle Filtering and Pagination**
+As your database grows, you won't want to load every article at once. You will need to implement logic (either via URL search parameters in Server Components or query strings in API routes) to tell Prisma to `take` a limited number of records and `skip` others, or to `where` filter by specific categories or countries.
