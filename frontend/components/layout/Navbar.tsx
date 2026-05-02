@@ -1,9 +1,11 @@
 import MobileNavDrawer from "@/components/layout/MobileNavDrawer";
 import { SearchBar } from "@/components/layout/SearchBar";
+import { Skeleton } from "@/components/ui/skeleton";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Bell, Globe } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import Link from "next/link";
+import { Suspense } from "react";
 
 export default function Navbar() {
   return (
@@ -31,15 +33,26 @@ export default function Navbar() {
       {/* Center: full search bar on desktop, empty space on mobile */}
       <div className="flex-1 flex justify-center px-4">
         <div className="relative w-full max-w-md hidden md:block">
-          <SearchBar />
+          {/*
+            Suspense required: SearchBar uses useSearchParams() (runtime API).
+            Skeleton matches the input height so there is no layout shift.
+          */}
+          <Suspense fallback={<Skeleton className="h-9 w-full rounded-lg" />}>
+            <SearchBar />
+          </Suspense>
         </div>
       </div>
 
       {/* Right: search icon (mobile) + notifications + theme toggle */}
       <div className="flex items-center gap-1">
-        {/* Search icon: only visible on mobile, SearchBar renders the overlay */}
+        {/*
+          Mobile SearchBar needs its own Suspense for the same reason.
+          Skeleton matches the icon-button size.
+        */}
         <div className="md:hidden">
-          <SearchBar />
+          <Suspense fallback={<Skeleton className="h-9 w-9 rounded-lg" />}>
+            <SearchBar />
+          </Suspense>
         </div>
 
         <button className="relative p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors">

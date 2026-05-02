@@ -1,3 +1,4 @@
+import { cacheLife, cacheTag } from "next/cache";
 import prisma from "@/lib/prisma";
 import { Article } from "@/types/article";
 
@@ -19,6 +20,10 @@ export async function getArticles({
   articles: Article[];
   nextCursor: string | null;
 }> {
+  "use cache";
+  cacheTag("articles");
+  cacheLife("minutes");
+
   const categoryFilter =
     category !== "all"
       ? [

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import ArticleCard from "@/components/articles/ArticleCard";
+import { ArticleCardSkeleton } from "@/components/Feed/FeedSkeleton";
 import { Article } from "@/types/article";
 import { useSetArticleCount } from "@/store";
 
@@ -88,15 +89,21 @@ export default function ArticleFeed({
         ))
       )}
 
-      {/* Sentinel: watched by IntersectionObserver to trigger next page fetch */}
-      <div ref={sentinelRef} className="flex items-center justify-center py-6">
+      {/* Sentinel watched by IntersectionObserver */}
+      <div ref={sentinelRef}>
         {isLoading && (
-          <div className="w-5 h-5 border-2 border-muted-foreground/30 border-t-muted-foreground rounded-full animate-spin" />
+          <div className="space-y-5 pb-5">
+            <ArticleCardSkeleton />
+            <ArticleCardSkeleton />
+            <ArticleCardSkeleton />
+          </div>
         )}
         {!cursor && !isLoading && articles.length > 0 && (
-          <p className="text-xs text-muted-foreground">
-            {"You're all caught up"}
-          </p>
+          <div className="flex items-center justify-center py-6">
+            <p className="text-xs text-muted-foreground">
+              {"You're all caught up"}
+            </p>
+          </div>
         )}
       </div>
     </div>
