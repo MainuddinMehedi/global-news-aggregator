@@ -4,6 +4,8 @@ import { SentimentBadge } from "./SentimentBadge";
 import { Article } from "@/types/article";
 
 export default function ArticleCard({ article }: { article: Article }) {
+  // console.log("article in articleCard: ", article);
+
   return (
     <div
       className="bg-card border border-border rounded-xl p-4 hover:border-zinc-600 transition-all duration-200 group cursor-pointer flex flex-col h-full"

@@ -5,10 +5,18 @@ import { DiversityInsightWidget } from "@/components/widgets/DiversityInsightWid
 import { EventClustersWidget } from "@/components/widgets/EventClustersWidget";
 import { PerspectiveWidget } from "@/components/widgets/PerspectiveWidget";
 import { getArticles } from "@/queries/articles";
-import { Article } from "@/types/article";
 
-export default async function Home() {
-  const articles = await getArticles();
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  const params = await searchParams;
+  const category =
+    typeof params.category === "string" ? params.category : "all";
+  const sort = typeof params.sort === "string" ? params.sort : "latest";
+
+  const articles = await getArticles({ category, sort });
 
   console.log("articles: ", articles);
 
