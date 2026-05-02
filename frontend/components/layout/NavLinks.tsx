@@ -32,11 +32,25 @@ const navItems = [
   { id: "/settings", label: "Settings", icon: Settings, badge: 0 },
 ];
 
-export default function NavLinks() {
+interface NavLinksProps {
+  /**
+   * When true (e.g. inside the mobile Sheet drawer), always show icon + label
+   * regardless of viewport width. Defaults to false (responsive: icon-only at
+   * md, full labels at lg+).
+   */
+  alwaysFull?: boolean;
+  /** Called when any nav link is clicked — used by the mobile drawer to close itself. */
+  onNavigate?: () => void;
+}
+
+export default function NavLinks({
+  alwaysFull = false,
+  onNavigate,
+}: NavLinksProps) {
   const pathname = usePathname();
 
   return (
-    <nav className="space-y-2">
+    <nav className="space-y-1">
       {navItems.map((item) => {
         const isActive =
           item.id === "/" ? pathname === "/" : pathname.startsWith(item.id);
@@ -45,9 +59,13 @@ export default function NavLinks() {
           <Link
             key={item.id}
             href={item.id}
-            // className="w-full flex items-center gap-2 px-2 py-3 rounded-lg text-sm font-medium hover:bg-sidebar-accent group hover:text-sidebar-accent-foreground transition-all duration-200"
+            onClick={onNavigate}
             className={cn(
-              "w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm transition-all duration-200",
+              "w-full flex items-center gap-3 py-2.5 rounded-lg text-sm transition-all duration-200",
+              // Responsive layout only when not forced full
+              alwaysFull
+                ? "justify-start px-3"
+                : "justify-center px-2 lg:justify-start lg:px-3",
               // Default state
               "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
               // Active state
@@ -55,10 +73,21 @@ export default function NavLinks() {
                 "bg-sidebar-accent text-sidebar-accent-foreground font-medium",
             )}
           >
-            <HugeiconsIcon icon={item.icon} />
-            <span>{item.label}</span>
+            <HugeiconsIcon icon={item.icon} className="shrink-0 w-4.5 h-4.5" />
+
+            {/* Label: always visible in drawer, responsive in sidebar */}
+            <span className={alwaysFull ? "block" : "hidden lg:block"}>
+              {item.label}
+            </span>
+
+            {/* Badge: always visible in drawer, responsive in sidebar */}
             {item.badge > 0 && (
-              <span className="ml-auto bg-primary text-primary-foreground py-0.5 px-2 rounded-full text-xs font-mono">
+              <span
+                className={cn(
+                  "ml-auto bg-primary text-primary-foreground py-0.5 px-2 rounded-full text-xs font-mono",
+                  alwaysFull ? "flex" : "hidden lg:flex",
+                )}
+              >
                 {item.badge}
               </span>
             )}

@@ -15,24 +15,32 @@ export default async function Home({
   const category =
     typeof params.category === "string" ? params.category : "all";
   const sort = typeof params.sort === "string" ? params.sort : "latest";
+  const search = typeof params.search === "string" ? params.search : "";
 
-  const articles = await getArticles({ category, sort });
+  const articles = await getArticles({ category, sort, search });
 
   console.log("articles: ", articles);
 
   return (
     <div className="flex flex-1 w-full">
       {/*Feed: Main content area*/}
-      <div className="w-[72%] p-5 space-y-5">
-        <Filters />
+      <div className="flex-1 min-w-0 p-5 space-y-5">
+        <Filters totalArticles={articles.length} />
 
         {/*Articles*/}
         <div>
-          {articles.map((article, i) => (
-            <div key={i} className="mb-5">
-              <ArticleCard article={article} />
-            </div>
-          ))}
+          {articles.length === 0 && search ? (
+            <p className="text-muted-foreground text-sm py-10 text-center">
+              No articles found for{" "}
+              <span className="text-foreground font-medium">"{search}"</span>
+            </p>
+          ) : (
+            articles.map((article, i) => (
+              <div key={i} className="mb-5">
+                <ArticleCard article={article} />
+              </div>
+            ))
+          )}
         </div>
 
         {/* Infinite scroll sentinel */}
@@ -43,9 +51,9 @@ export default async function Home({
         </div>*/}
       </div>
 
-      {/* Information Widgets */}
-      <div className="hidden lg:block lg:w-[28%] p-4 pl-1 relative">
-        <aside className="sticky top-5 hidden xl:flex flex-col space-y-4 overflow-y-auto max-h-[calc(100vh-6rem)] scrollbar-hide pb-10">
+      {/* Information Widgets — only on xl+ */}
+      <div className="hidden xl:flex xl:w-72 shrink-0 p-4 pl-1">
+        <aside className="sticky top-5 flex flex-col space-y-4 overflow-y-auto w-full max-h-[calc(100vh-6rem)] scrollbar-hide pb-10">
           <PerspectiveWidget />
           <EventClustersWidget />
           <BiasDistributionWidget />

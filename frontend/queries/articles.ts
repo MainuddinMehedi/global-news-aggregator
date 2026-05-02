@@ -4,34 +4,76 @@ import { Article } from "@/types/article";
 interface getArticlesParams {
   category: string;
   sort: string;
+  search: string;
 }
 
-export async function getArticles({ category, sort }: getArticlesParams) {
+export async function getArticles({
+  category,
+  sort,
+  search,
+}: getArticlesParams) {
   const categoryFilter =
     category !== "all"
-      ? {
-          categories: {
-            some: {
-              name: category,
+      ? [
+          {
+            categories: {
+              some: {
+                name: category,
+              },
             },
           },
-        }
-      : {};
+        ]
+      : [];
 
+  // sort options
   const orderBy =
     sort === "bias"
       ? { sentimentScore: "desc" as const }
       : { rawArticle: { publishedAt: "desc" as const } };
 
+  // search filter
+  const searchFilter =
+    search.trim() !== ""
+      ? [
+          {
+            OR: [
+              {
+                rawArticle: {
+                  title: { contains: search, mode: "insensitive" as const },
+                },
+              },
+              {
+                rawArticle: {
+                  contentSnippet: {
+                    contains: search,
+                    mode: "insensitive" as const,
+                  },
+                },
+              },
+              {
+                rawArticle: {
+                  source: { contains: search, mode: "insensitive" as const },
+                },
+              },
+            ],
+          },
+        ]
+      : [];
+
   const articles = await prisma.processedArticle.findMany({
     take: 20,
     where: {
-      rawArticle: {
-        source: {
-          not: "Jagonews24",
+      AND: [
+        {
+          rawArticle: {
+            source: {
+              not: "Jagonews24",
+            },
+          },
         },
-      },
-      ...categoryFilter,
+        ...categoryFilter,
+        ...searchFilter,
+      ],
     },
     orderBy,
     include: {
@@ -44,7 +86,7 @@ export async function getArticles({ category, sort }: getArticlesParams) {
     id: article.id,
     title: article.rawArticle.title,
     source: article.rawArticle.source,
-    publishedAt: article.rawArticle.publishedAt,
+    publishedAt: article.rawArticle.publishedAt.toISOString(),
     contentSnippet: article.rawArticle.contentSnippet,
     biasNote: article.biasNote,
     biasCategory: article.biasCategory,

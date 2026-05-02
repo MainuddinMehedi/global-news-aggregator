@@ -51,8 +51,8 @@ export default function RootLayout({
               <Navbar />
 
               <main className="flex flex-1 overflow-hidden">
-                {/*Sidebar*/}
-                <div className="w-[16%] border-r border-border hidden md:block overflow-y-auto">
+                {/* Sidebar: icon-only at md (w-14), full labels at lg (w-56) */}
+                <div className="hidden md:flex md:w-14 lg:w-56 shrink-0 border-r border-border overflow-y-auto">
                   <Sidebar />
                 </div>
 
