@@ -1,4 +1,4 @@
-import ArticleCard from "@/components/articles/ArticleCard";
+import ArticleFeed from "@/components/Feed/ArticleFeed";
 import Filters from "@/components/Feed/Filters";
 import { BiasDistributionWidget } from "@/components/widgets/BiasDistributionWidget";
 import { DiversityInsightWidget } from "@/components/widgets/DiversityInsightWidget";
@@ -17,38 +17,30 @@ export default async function Home({
   const sort = typeof params.sort === "string" ? params.sort : "latest";
   const search = typeof params.search === "string" ? params.search : "";
 
-  const articles = await getArticles({ category, sort, search });
-
-  console.log("articles: ", articles);
+  const { articles, nextCursor } = await getArticles({
+    category,
+    sort,
+    search,
+  });
 
   return (
     <div className="flex flex-1 w-full">
-      {/*Feed: Main content area*/}
+      {/* Feed: Main content area */}
       <div className="flex-1 min-w-0 p-5 space-y-5">
-        <Filters totalArticles={articles.length} />
+        <Filters />
 
-        {/*Articles*/}
-        <div>
-          {articles.length === 0 && search ? (
-            <p className="text-muted-foreground text-sm py-10 text-center">
-              No articles found for{" "}
-              <span className="text-foreground font-medium">"{search}"</span>
-            </p>
-          ) : (
-            articles.map((article, i) => (
-              <div key={i} className="mb-5">
-                <ArticleCard article={article} />
-              </div>
-            ))
-          )}
-        </div>
-
-        {/* Infinite scroll sentinel */}
-        {/*<div ref={sentinelRef} className="h-10 flex items-center justify-center">
-          {isFetchingNextPage && (
-            <Loader2 className="w-5 h-5 text-zinc-600 animate-spin" />
-          )}
-        </div>*/}
+        {/*
+          key forces a full remount when filters change, resetting the article
+          list and cursor so the new first page doesn't append to the old one.
+        */}
+        <ArticleFeed
+          key={`${category}|${sort}|${search}`}
+          initialArticles={articles}
+          initialCursor={nextCursor}
+          category={category}
+          sort={sort}
+          search={search}
+        />
       </div>
 
       {/* Information Widgets — only on xl+ */}

@@ -1,17 +1,24 @@
 import prisma from "@/lib/prisma";
 import { Article } from "@/types/article";
 
+const TAKE = 20;
+
 interface getArticlesParams {
   category: string;
   sort: string;
   search: string;
+  cursor?: string;
 }
 
 export async function getArticles({
   category,
   sort,
   search,
-}: getArticlesParams) {
+  cursor,
+}: getArticlesParams): Promise<{
+  articles: Article[];
+  nextCursor: string | null;
+}> {
   const categoryFilter =
     category !== "all"
       ? [
@@ -25,13 +32,15 @@ export async function getArticles({
         ]
       : [];
 
-  // sort options
+  // id tiebreaker makes cursor position unambiguous when publishedAt ties
   const orderBy =
     sort === "bias"
-      ? { sentimentScore: "desc" as const }
-      : { rawArticle: { publishedAt: "desc" as const } };
+      ? [{ sentimentScore: "desc" as const }, { id: "asc" as const }]
+      : [
+          { rawArticle: { publishedAt: "desc" as const } },
+          { id: "asc" as const },
+        ];
 
-  // search filter
   const searchFilter =
     search.trim() !== ""
       ? [
@@ -60,8 +69,10 @@ export async function getArticles({
         ]
       : [];
 
-  const articles = await prisma.processedArticle.findMany({
-    take: 20,
+  // Fetch TAKE + 1 to detect whether a next page exists without a COUNT query
+  const raw = await prisma.processedArticle.findMany({
+    take: TAKE + 1,
+    ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     where: {
       AND: [
         {
@@ -82,7 +93,11 @@ export async function getArticles({
     },
   });
 
-  const preparedArticles = articles.map((article) => ({
+  const hasMore = raw.length > TAKE;
+  const trimmed = hasMore ? raw.slice(0, TAKE) : raw;
+  const nextCursor = hasMore ? trimmed[trimmed.length - 1].id : null;
+
+  const articles = trimmed.map((article) => ({
     id: article.id,
     title: article.rawArticle.title,
     source: article.rawArticle.source,
@@ -98,5 +113,5 @@ export async function getArticles({
     sourceCountry: article.rawArticle.sourceCountry,
   }));
 
-  return preparedArticles;
+  return { articles, nextCursor };
 }

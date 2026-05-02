@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
-export default function CategoryFilterPills({
+export default function CategoryFilter({
   categories,
 }: {
   categories: string[];
