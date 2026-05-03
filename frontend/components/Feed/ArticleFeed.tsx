@@ -5,6 +5,9 @@ import ArticleCard from "@/components/articles/ArticleCard";
 import { ArticleCardSkeleton } from "@/components/Feed/FeedSkeleton";
 import { Article } from "@/types/article";
 import { useSetArticleCount } from "@/store";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { RefreshIcon } from "@hugeicons/core-free-icons";
+import { Button } from "../ui/button";
 
 interface ArticleFeedProps {
   initialArticles: Article[];
@@ -24,6 +27,7 @@ export default function ArticleFeed({
   const [articles, setArticles] = useState(initialArticles);
   const [cursor, setCursor] = useState(initialCursor);
   const [isLoading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
   const setArticleCount = useSetArticleCount();
 
@@ -33,7 +37,8 @@ export default function ArticleFeed({
   }, [articles.length, setArticleCount]);
 
   const fetchNextPage = useCallback(async () => {
-    if (!cursor || isLoading) return;
+    // Prevent fetching if already loading or if there's an active error
+    if (!cursor || isLoading || error) return;
     setLoading(true);
 
     try {
@@ -47,24 +52,38 @@ export default function ArticleFeed({
       setCursor(nextCursor);
     } catch (err) {
       console.error("Failed to load more articles:", err);
+      setError(
+        err instanceof Error
+          ? `Failed to load more articles: ${err.message}`
+          : "An unexpected error occurred.",
+      );
     } finally {
       setLoading(false);
     }
-  }, [cursor, isLoading, category, sort, search]);
+  }, [cursor, isLoading, error, category, sort, search]);
 
+  // Intersection observer logic
   useEffect(() => {
     const el = sentinelRef.current;
-    if (!el) return;
+    if (!el || error) return;
 
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) fetchNextPage();
       },
-      { rootMargin: "300px" },
+      { rootMargin: "100px" }, // was 300px
     );
     observer.observe(el);
     return () => observer.disconnect();
-  }, [fetchNextPage]);
+  }, [fetchNextPage, error]);
+
+  const handleRetry = () => {
+    setError(null);
+    // Push the fetch to the end of the event loop to ensure state clears first
+    setTimeout(() => {
+      fetchNextPage();
+    }, 0);
+  };
 
   return (
     <div>
@@ -89,23 +108,42 @@ export default function ArticleFeed({
         ))
       )}
 
+      {/* Pagination error state */}
+      {error && (
+        <div className="flex flex-col items-center justify-center py-6 px-4 text-center bg-destructive/5 rounded-xl border border-destructive/10 mb-5">
+          <p className="text-sm font-medium text-destructive mb-3">
+            Failed to load more articles. Please check your connection.
+          </p>
+          <Button
+            onClick={handleRetry}
+            variant="default"
+            className="rounded-full px-6"
+          >
+            <HugeiconsIcon icon={RefreshIcon} className="mr-2 h-4 w-4" />
+            Retry
+          </Button>
+        </div>
+      )}
+
       {/* Sentinel watched by IntersectionObserver */}
-      <div ref={sentinelRef}>
-        {isLoading && (
-          <div className="space-y-5 pb-5">
-            <ArticleCardSkeleton />
-            <ArticleCardSkeleton />
-            <ArticleCardSkeleton />
-          </div>
-        )}
-        {!cursor && !isLoading && articles.length > 0 && (
-          <div className="flex items-center justify-center py-6">
-            <p className="text-xs text-muted-foreground">
-              {"You're all caught up"}
-            </p>
-          </div>
-        )}
-      </div>
+      {!error && (
+        <div ref={sentinelRef}>
+          {isLoading && (
+            <div className="space-y-5 pb-5">
+              <ArticleCardSkeleton />
+              <ArticleCardSkeleton />
+              <ArticleCardSkeleton />
+            </div>
+          )}
+          {!cursor && !isLoading && articles.length > 0 && (
+            <div className="flex items-center justify-center py-6">
+              <p className="text-xs text-muted-foreground">
+                {"You're all caught up"}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

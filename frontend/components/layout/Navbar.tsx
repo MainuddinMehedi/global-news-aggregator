@@ -33,10 +33,6 @@ export default function Navbar() {
       {/* Center: full search bar on desktop, empty space on mobile */}
       <div className="flex-1 flex justify-center px-4">
         <div className="relative w-full max-w-md hidden md:block">
-          {/*
-            Suspense required: SearchBar uses useSearchParams() (runtime API).
-            Skeleton matches the input height so there is no layout shift.
-          */}
           <Suspense fallback={<Skeleton className="h-9 w-full rounded-lg" />}>
             <SearchBar />
           </Suspense>
@@ -45,10 +41,6 @@ export default function Navbar() {
 
       {/* Right: search icon (mobile) + notifications + theme toggle */}
       <div className="flex items-center gap-1">
-        {/*
-          Mobile SearchBar needs its own Suspense for the same reason.
-          Skeleton matches the icon-button size.
-        */}
         <div className="md:hidden">
           <Suspense fallback={<Skeleton className="h-9 w-9 rounded-lg" />}>
             <SearchBar />

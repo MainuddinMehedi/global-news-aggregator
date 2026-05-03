@@ -1,4 +1,5 @@
 import ArticleFeed from "@/components/Feed/ArticleFeed";
+import FeedError from "@/components/Feed/FeedError";
 import Filters from "@/components/Feed/Filters";
 import { BiasDistributionWidget } from "@/components/widgets/BiasDistributionWidget";
 import { DiversityInsightWidget } from "@/components/widgets/DiversityInsightWidget";
@@ -7,6 +8,7 @@ import { PerspectiveWidget } from "@/components/widgets/PerspectiveWidget";
 import { getArticles, getArticleById } from "@/queries/articles";
 import { ArticleDetailsModal } from "@/components/articles/ArticleDetailsModal";
 import { Suspense } from "react";
+import { Article } from "@/types/article";
 
 export default async function Home({
   searchParams,
@@ -21,13 +23,28 @@ export default async function Home({
   const articleId =
     typeof params.article === "string" ? params.article : undefined;
 
-  const { articles, nextCursor } = await getArticles({
-    category,
-    sort,
-    search,
-  });
+  let articles: Article[] = [];
+  let nextCursor = null;
+  let selectedArticle = null;
+  let error: string | null = null;
 
-  const selectedArticle = articleId ? await getArticleById(articleId) : null;
+  try {
+    // Fetch articles and (if needed) the selected article in parallel
+    const [result, selected] = await Promise.all([
+      getArticles({ category, sort, search }),
+      articleId ? getArticleById(articleId) : Promise.resolve(null),
+    ]);
+
+    articles = result.articles;
+    nextCursor = result.nextCursor;
+    selectedArticle = selected;
+  } catch (e) {
+    console.error("Home Page Fetch Error:", e);
+    error =
+      e instanceof Error
+        ? e.message
+        : "Failed to load articles. Please try again later.";
+  }
 
   return (
     <div className="flex flex-1 w-full">
@@ -35,18 +52,22 @@ export default async function Home({
       <div className="flex-1 min-w-0 p-5 space-y-5">
         <Filters />
 
-        {/*
-          key forces a full remount when filters change, resetting the article
-          list and cursor so the new first page doesn't append to the old one.
-        */}
-        <ArticleFeed
-          key={`${category}|${sort}|${search}`}
-          initialArticles={articles}
-          initialCursor={nextCursor}
-          category={category}
-          sort={sort}
-          search={search}
-        />
+        {error ? (
+          <FeedError message={error} />
+        ) : (
+          /*
+            key forces a full remount when filters change, resetting the article
+            list and cursor so the new first page doesn't append to the old one.
+          */
+          <ArticleFeed
+            key={`${category}|${sort}|${search}`}
+            initialArticles={articles}
+            initialCursor={nextCursor}
+            category={category}
+            sort={sort}
+            search={search}
+          />
+        )}
       </div>
 
       {/* Information Widgets — only on xl+ */}
