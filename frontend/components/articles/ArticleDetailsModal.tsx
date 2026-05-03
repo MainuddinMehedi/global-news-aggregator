@@ -66,7 +66,7 @@ export function ArticleDetailsModal({ article }: { article: Article | null }) {
         {/* Content area */}
         <div className="flex-1 overflow-y-auto px-5 py- space-y-5 bg-card">
           {/* AI Analysis Section */}
-          <div className="mb- p-4 bg-emerald-500/5 dark:bg-emerald-500/10 border border-emerald-500/20 rounded-xl relative">
+          {/*<div className="mb- p-4 bg-emerald-500/5 dark:bg-emerald-500/10 border border-emerald-500/20 rounded-xl relative">
             <button
               className="absolute top-3 right-3 p-1.5 hover:bg-emerald-500/10 rounded-md text-emerald-500 hover:text-emerald-400 transition-colors opacity-80 hover:opacity-100"
               title="Discuss with AI"
@@ -103,7 +103,83 @@ export function ArticleDetailsModal({ article }: { article: Article | null }) {
                 {article.biasNote}
               </div>
             )}
+          </div>*/}
+
+          {/*-----------------------*/}
+          <div className="p-4 bg-emerald-500/5 border border-emerald-500/20 rounded-lg">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center space-x-2">
+                <HugeiconsIcon
+                  icon={Sparkles}
+                  className="w-4 h-4 text-emerald-400"
+                />
+                <span className="text-xs font-bold text-emerald-300">
+                  AI Analysis
+                </span>
+              </div>
+              <button
+                className="flex items-center space-x-1 px-2.5 py-1.5 rounded-md bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20 transition-colors text-xs font-medium"
+                title="Discuss with AI"
+              >
+                <HugeiconsIcon icon={Sparkles} className="w-4 h-4" />
+                <span>Discuss with AI</span>
+              </button>
+            </div>
+
+            {/*Framing + perspective countries */}
+            <div className="grid grid-cols-3">
+              <div>
+                <span className="text-xs text-muted-foreground/80 tracking-tighter uppercase">
+                  Framing
+                </span>
+                <p className="text-sm text-zinc-300 mt-1">
+                  {article.biasNote || "Analysis pending..."}
+                </p>
+              </div>
+              <div className="mx-auto">
+                <span className="text-xs text-muted-foreground/80 tracking-tighter uppercase">
+                  Perspective Countries
+                </span>
+                <p className="text-sm text-zinc-300 mt-1">
+                  {article.perspectiveCountries.length > 0
+                    ? article.perspectiveCountries.join(", ")
+                    : "Not analyzed"}
+                </p>
+              </div>
+              <div className="mx-auto space-y-2">
+                <span className="text-xs block text-muted-foreground/80 tracking-tighter uppercase">
+                  Bias Category:
+                </span>
+                <Badge variant={getBiasBadgeVariant(article.biasCategory)}>
+                  {article.biasCategory || "Neutral"}
+                </Badge>
+              </div>
+            </div>
+
+            {/* Loaded Terms/entities section */}
+            <div className="mt-3 pt-3 border-t border-emerald-500/10">
+              <span className="text-xs text-zinc-500 tracking-tighter uppercase">
+                {/*Loaded Terms*/}
+                Entities
+              </span>
+
+              {article.entities && article.entities.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  {article.entities.map((entity, i) => (
+                    <Badge
+                      key={i}
+                      variant="outline"
+                      className="text-muted-foreground"
+                    >
+                      {entity}
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
+
+          {/*-----------------------*/}
 
           {/* Main Snippet */}
           <div className="prose dark:prose-invert max-w-none mb-">
@@ -112,11 +188,12 @@ export function ArticleDetailsModal({ article }: { article: Article | null }) {
             </p>
           </div>
 
-          {/* Tags & Entities */}
+          {/* Categories */}
           <div className="grid grid-cols-1 gap-6 pt-5 mt- border-t border-border/50">
             <div className="space-y-3">
               <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                Tags & Entities
+                {/*Tags & Entities*/}
+                Categories
               </h4>
 
               {article.categories && article.categories.length > 0 && (
@@ -125,7 +202,7 @@ export function ArticleDetailsModal({ article }: { article: Article | null }) {
                     <Badge
                       key={cat.id}
                       variant="outline"
-                      className="capitalize"
+                      className="capitalize text-muted-foreground"
                     >
                       {cat.name}
                     </Badge>
@@ -133,7 +210,7 @@ export function ArticleDetailsModal({ article }: { article: Article | null }) {
                 </div>
               )}
 
-              {article.entities && article.entities.length > 0 && (
+              {/*{article.entities && article.entities.length > 0 && (
                 <div className="flex flex-wrap gap-1.5 mt-2">
                   {article.entities.map((entity, i) => (
                     <Badge key={i} variant="purple">
@@ -141,7 +218,7 @@ export function ArticleDetailsModal({ article }: { article: Article | null }) {
                     </Badge>
                   ))}
                 </div>
-              )}
+              )}*/}
             </div>
           </div>
         </div>

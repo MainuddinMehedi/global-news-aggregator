@@ -41,6 +41,7 @@ export default function ArticleFeed({
     if (!cursor || isLoading || error) return;
     setLoading(true);
 
+    // fetch articles | catch errors
     try {
       const params = new URLSearchParams({ category, sort, search, cursor });
       const res = await fetch(`/api/articles?${params}`);
@@ -77,6 +78,7 @@ export default function ArticleFeed({
     return () => observer.disconnect();
   }, [fetchNextPage, error]);
 
+  // Pagination fetch retry logic
   const handleRetry = () => {
     setError(null);
     // Push the fetch to the end of the event loop to ensure state clears first
