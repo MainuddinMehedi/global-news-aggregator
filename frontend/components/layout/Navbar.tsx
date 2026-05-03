@@ -10,7 +10,7 @@ import { Suspense } from "react";
 export default function Navbar() {
   return (
     // sticky already establishes the containing block for the SearchBar overlay
-    <header className="h-16 border-b border-sidebar-primary-foreground bg-background/80 backdrop-blur-md flex items-center justify-between px-4 lg:px-6 sticky top-0 z-20 w-full">
+    <header className="h-16 border-b border-secondary bg-background/80 backdrop-blur-md flex items-center justify-between px-4 lg:px-6 sticky top-0 z-20 w-full">
       {/* Left: hamburger (mobile only) + logo */}
       <div className="flex items-center gap-1">
         <MobileNavDrawer />

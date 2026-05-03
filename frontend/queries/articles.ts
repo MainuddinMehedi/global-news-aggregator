@@ -2,14 +2,14 @@ import { cacheLife, cacheTag } from "next/cache";
 import prisma from "@/lib/prisma";
 import { Article } from "@/types/article";
 
-const TAKE = 20;
-
 interface getArticlesParams {
   category: string;
   sort: string;
   search: string;
   cursor?: string;
 }
+
+const TAKE = 20;
 
 export async function getArticles({
   category,
@@ -79,17 +79,7 @@ export async function getArticles({
     take: TAKE + 1,
     ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     where: {
-      AND: [
-        {
-          rawArticle: {
-            source: {
-              not: "Jagonews24",
-            },
-          },
-        },
-        ...categoryFilter,
-        ...searchFilter,
-      ],
+      AND: [...categoryFilter, ...searchFilter],
     },
     orderBy,
     include: {
@@ -102,6 +92,7 @@ export async function getArticles({
   const trimmed = hasMore ? raw.slice(0, TAKE) : raw;
   const nextCursor = hasMore ? trimmed[trimmed.length - 1].id : null;
 
+  // preparing the articles array
   const articles = trimmed.map((article) => ({
     id: article.id,
     title: article.rawArticle.title,
@@ -119,4 +110,44 @@ export async function getArticles({
   }));
 
   return { articles, nextCursor };
+}
+
+// {
+//   rawArticle: {
+//     source: {
+//       not: "Jagonews24",
+//     },
+//   },
+// },
+
+export async function getArticleById(id: string): Promise<Article | null> {
+  "use cache";
+  cacheTag(`article-${id}`);
+  cacheLife("days");
+
+  const raw = await prisma.processedArticle.findUnique({
+    where: { id },
+    include: {
+      rawArticle: true,
+      categories: true,
+    },
+  });
+
+  if (!raw) return null;
+
+  return {
+    id: raw.id,
+    title: raw.rawArticle.title,
+    source: raw.rawArticle.source,
+    publishedAt: raw.rawArticle.publishedAt.toISOString(),
+    contentSnippet: raw.rawArticle.contentSnippet,
+    biasNote: raw.biasNote,
+    biasCategory: raw.biasCategory,
+    sentimentScore: raw.sentimentScore,
+    perspectiveCountries: raw.perspectiveCountries,
+    url: raw.rawArticle.url,
+    categories: raw.categories,
+    entities: raw.entities,
+    sourceCountry: raw.rawArticle.sourceCountry,
+  };
 }

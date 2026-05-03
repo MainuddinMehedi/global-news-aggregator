@@ -20,12 +20,6 @@ export function SentimentBadge({
       : label === "Negative"
         ? "text-rose-600"
         : "text-zinc-600";
-  const bgColor =
-    label === "Positive"
-      ? "bg-emerald-50"
-      : label === "Negative"
-        ? "bg-rose-50"
-        : "bg-zinc-50";
 
   return (
     <span

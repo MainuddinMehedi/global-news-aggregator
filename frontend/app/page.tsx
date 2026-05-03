@@ -4,7 +4,9 @@ import { BiasDistributionWidget } from "@/components/widgets/BiasDistributionWid
 import { DiversityInsightWidget } from "@/components/widgets/DiversityInsightWidget";
 import { EventClustersWidget } from "@/components/widgets/EventClustersWidget";
 import { PerspectiveWidget } from "@/components/widgets/PerspectiveWidget";
-import { getArticles } from "@/queries/articles";
+import { getArticles, getArticleById } from "@/queries/articles";
+import { ArticleDetailsModal } from "@/components/articles/ArticleDetailsModal";
+import { Suspense } from "react";
 
 export default async function Home({
   searchParams,
@@ -16,12 +18,16 @@ export default async function Home({
     typeof params.category === "string" ? params.category : "all";
   const sort = typeof params.sort === "string" ? params.sort : "latest";
   const search = typeof params.search === "string" ? params.search : "";
+  const articleId =
+    typeof params.article === "string" ? params.article : undefined;
 
   const { articles, nextCursor } = await getArticles({
     category,
     sort,
     search,
   });
+
+  const selectedArticle = articleId ? await getArticleById(articleId) : null;
 
   return (
     <div className="flex flex-1 w-full">
@@ -52,6 +58,13 @@ export default async function Home({
           <DiversityInsightWidget />
         </aside>
       </div>
+
+      {/* Details Modal */}
+      {articleId && (
+        <Suspense fallback={null}>
+          <ArticleDetailsModal article={selectedArticle} />
+        </Suspense>
+      )}
     </div>
   );
 }
