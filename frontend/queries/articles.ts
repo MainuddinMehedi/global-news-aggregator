@@ -74,42 +74,47 @@ export async function getArticles({
         ]
       : [];
 
-  // Fetch TAKE + 1 to detect whether a next page exists without a COUNT query
-  const raw = await prisma.processedArticle.findMany({
-    take: TAKE + 1,
-    ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
-    where: {
-      AND: [...categoryFilter, ...searchFilter],
-    },
-    orderBy,
-    include: {
-      rawArticle: true,
-      categories: true,
-    },
-  });
+  try {
+    // Fetch TAKE + 1 to detect whether a next page exists without a COUNT query
+    const raw = await prisma.processedArticle.findMany({
+      take: TAKE + 1,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+      where: {
+        AND: [...categoryFilter, ...searchFilter],
+      },
+      orderBy,
+      include: {
+        rawArticle: true,
+        categories: true,
+      },
+    });
 
-  const hasMore = raw.length > TAKE;
-  const trimmed = hasMore ? raw.slice(0, TAKE) : raw;
-  const nextCursor = hasMore ? trimmed[trimmed.length - 1].id : null;
+    const hasMore = raw.length > TAKE;
+    const trimmed = hasMore ? raw.slice(0, TAKE) : raw;
+    const nextCursor = hasMore ? trimmed[trimmed.length - 1].id : null;
 
-  // preparing the articles array
-  const articles = trimmed.map((article) => ({
-    id: article.id,
-    title: article.rawArticle.title,
-    source: article.rawArticle.source,
-    publishedAt: article.rawArticle.publishedAt.toISOString(),
-    contentSnippet: article.rawArticle.contentSnippet,
-    biasNote: article.biasNote,
-    biasCategory: article.biasCategory,
-    sentimentScore: article.sentimentScore,
-    perspectiveCountries: article.perspectiveCountries,
-    url: article.rawArticle.url,
-    categories: article.categories,
-    entities: article.entities,
-    sourceCountry: article.rawArticle.sourceCountry,
-  }));
+    // preparing the articles array
+    const articles = trimmed.map((article) => ({
+      id: article.id,
+      title: article.rawArticle.title,
+      source: article.rawArticle.source,
+      publishedAt: article.rawArticle.publishedAt.toISOString(),
+      contentSnippet: article.rawArticle.contentSnippet,
+      biasNote: article.biasNote,
+      biasCategory: article.biasCategory,
+      sentimentScore: article.sentimentScore,
+      perspectiveCountries: article.perspectiveCountries,
+      url: article.rawArticle.url,
+      categories: article.categories,
+      entities: article.entities,
+      sourceCountry: article.rawArticle.sourceCountry,
+    }));
 
-  return { articles, nextCursor };
+    return { articles, nextCursor };
+  } catch (error) {
+    console.log("getArticles error:", error);
+    throw new Error("Failed to fetch articles from the database");
+  }
 }
 
 // {
@@ -125,29 +130,34 @@ export async function getArticleById(id: string): Promise<Article | null> {
   cacheTag(`article-${id}`);
   cacheLife("days");
 
-  const raw = await prisma.processedArticle.findUnique({
-    where: { id },
-    include: {
-      rawArticle: true,
-      categories: true,
-    },
-  });
+  try {
+    const raw = await prisma.processedArticle.findUnique({
+      where: { id },
+      include: {
+        rawArticle: true,
+        categories: true,
+      },
+    });
 
-  if (!raw) return null;
+    if (!raw) return null;
 
-  return {
-    id: raw.id,
-    title: raw.rawArticle.title,
-    source: raw.rawArticle.source,
-    publishedAt: raw.rawArticle.publishedAt.toISOString(),
-    contentSnippet: raw.rawArticle.contentSnippet,
-    biasNote: raw.biasNote,
-    biasCategory: raw.biasCategory,
-    sentimentScore: raw.sentimentScore,
-    perspectiveCountries: raw.perspectiveCountries,
-    url: raw.rawArticle.url,
-    categories: raw.categories,
-    entities: raw.entities,
-    sourceCountry: raw.rawArticle.sourceCountry,
-  };
+    return {
+      id: raw.id,
+      title: raw.rawArticle.title,
+      source: raw.rawArticle.source,
+      publishedAt: raw.rawArticle.publishedAt.toISOString(),
+      contentSnippet: raw.rawArticle.contentSnippet,
+      biasNote: raw.biasNote,
+      biasCategory: raw.biasCategory,
+      sentimentScore: raw.sentimentScore,
+      perspectiveCountries: raw.perspectiveCountries,
+      url: raw.rawArticle.url,
+      categories: raw.categories,
+      entities: raw.entities,
+      sourceCountry: raw.rawArticle.sourceCountry,
+    };
+  } catch (error) {
+    console.log("getArticleById error: ", error);
+    throw new Error("Failed to fetch article from the database");
+  }
 }

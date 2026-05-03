@@ -10,9 +10,9 @@ export default function Error({
   reset: () => void;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center p-8">
+    <div className="flex flex-col items-center justify-center border overflow-hidden p-8">
       <h2 className="text-xl font-bold">Something went wrong!</h2>
-      <p className="text-muted-foreground">{error.message}</p>
+      <p className="text-wrap text-muted-foreground">{error.message}</p>
       <Button onClick={() => reset()} className="mt-4">
         Try again
       </Button>
