@@ -1,123 +1,91 @@
-"use client";
+import ArticleFeed from "@/components/Feed/ArticleFeed";
+import FeedError from "@/components/Feed/FeedError";
+import Filters from "@/components/Feed/Filters";
+import { BiasDistributionWidget } from "@/components/widgets/BiasDistributionWidget";
+import { DiversityInsightWidget } from "@/components/widgets/DiversityInsightWidget";
+import { EventClustersWidget } from "@/components/widgets/EventClustersWidget";
+import { PerspectiveWidget } from "@/components/widgets/PerspectiveWidget";
+import { getArticles, getArticleById } from "@/queries/articles";
+import { ArticleDetailsModal } from "@/components/articles/ArticleDetailsModal";
+import { Suspense } from "react";
+import { Article } from "@/types/article";
 
-import { useArticles } from "@/hooks/useArticles";
-import { ArticleCard } from "@/components/articles/ArticleCard";
-import { useAppStore } from "@/lib/store";
-import { Loader2 } from "lucide-react";
-import { useEffect, useRef } from "react";
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  const params = await searchParams;
+  const category =
+    typeof params.category === "string" ? params.category : "all";
+  const sort = typeof params.sort === "string" ? params.sort : "latest";
+  const search = typeof params.search === "string" ? params.search : "";
+  const articleId =
+    typeof params.article === "string" ? params.article : undefined;
 
-const categories = [
-  "all",
-  "geopolitics",
-  "bangladesh",
-  "technology",
-  "conflict",
-  "economy",
-  "environment",
-  "health",
-];
+  let articles: Article[] = [];
+  let nextCursor = null;
+  let selectedArticle = null;
+  let error: string | null = null;
 
-export default function FeedPage() {
-  const { activeCategory, setCategory } = useAppStore();
-  const {
-    data,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-    isLoading,
-    error,
-  } = useArticles();
+  try {
+    // Fetch articles and (if needed) the selected article in parallel
+    const [result, selected] = await Promise.all([
+      getArticles({ category, sort, search }),
+      articleId ? getArticleById(articleId) : Promise.resolve(null),
+    ]);
 
-  // Infinite scroll sentinel
-  const sentinelRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!sentinelRef.current || !hasNextPage) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
-          fetchNextPage();
-        }
-      },
-      { threshold: 0.1 },
-    );
-    observer.observe(sentinelRef.current);
-    return () => observer.disconnect();
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
-
-  const articles = data?.pages.flatMap((page) => page.articles) ?? [];
+    articles = result.articles;
+    nextCursor = result.nextCursor;
+    selectedArticle = selected;
+  } catch (e) {
+    console.error("Home Page Fetch Error:", e);
+    error =
+      e instanceof Error
+        ? e.message
+        : "Failed to load articles. Please try again later.";
+  }
 
   return (
-    <div className="pl-4 pr-2 lg:pl-6 lg:pr-2 py-4 lg:py-6 space-y-6">
-      {/* Filter Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center space-x-2 overflow-x-auto pb-2 scrollbar-hide">
-          {categories.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setCategory(cat)}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all whitespace-nowrap capitalize ${
-                activeCategory === cat
-                  ? "bg-zinc-100 text-zinc-900"
-                  : "bg-zinc-900 text-zinc-400 hover:text-zinc-200 border border-zinc-800"
-              }`}
-            >
-              {cat === "all" ? "All" : cat}
-            </button>
-          ))}
-        </div>
-        <div className="flex items-center space-x-2">
-          <span className="text-xs text-zinc-500 uppercase font-bold tracking-wider">
-            Sort:
-          </span>
-          <select className="bg-zinc-900 border border-zinc-800 text-zinc-300 text-xs rounded-md py-1.5 px-2 focus:outline-none">
-            <option>Latest</option>
-            <option>Relevance</option>
-            <option>Bias Score</option>
-          </select>
-        </div>
-      </div>
+    <div className="flex flex-1 w-full">
+      {/* Feed: Main content area */}
+      <div className="flex-1 min-w-0 p-5 space-y-5">
+        <Filters />
 
-      {/* Loading State */}
-      {isLoading && (
-        <div className="flex justify-center items-center py-20">
-          <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
-        </div>
-      )}
-
-      {/* Error State */}
-      {error && (
-        <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-sm text-red-400 text-center">
-          Failed to load articles. Check your connection and try again.
-        </div>
-      )}
-
-      {/* Articles Grid */}
-      {!isLoading && articles.length === 0 && (
-        <div className="text-center text-zinc-500 py-20 bg-card rounded-xl border border-border">
-          <p className="text-lg font-medium mb-2">No articles found</p>
-          <p className="text-sm">
-            {activeCategory !== "all"
-              ? `No articles in the "${activeCategory}" category. Try "All".`
-              : "Run the ingestion service to populate the feed."}
-          </p>
-        </div>
-      )}
-
-      {articles.length > 0 && (
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-          {articles.map((article) => (
-            <ArticleCard key={article.id} article={article} />
-          ))}
-        </div>
-      )}
-
-      {/* Infinite scroll sentinel */}
-      <div ref={sentinelRef} className="h-10 flex items-center justify-center">
-        {isFetchingNextPage && (
-          <Loader2 className="w-5 h-5 text-zinc-600 animate-spin" />
+        {error ? (
+          <FeedError message={error} />
+        ) : (
+          /*
+            key forces a full remount when filters change, resetting the article
+            list and cursor so the new first page doesn't append to the old one.
+          */
+          <ArticleFeed
+            key={`${category}|${sort}|${search}`}
+            initialArticles={articles}
+            initialCursor={nextCursor}
+            category={category}
+            sort={sort}
+            search={search}
+          />
         )}
       </div>
+
+      {/* Information Widgets — only on xl+ */}
+      <div className="hidden xl:flex xl:w-72 shrink-0 p-4 pl-1">
+        <aside className="sticky top-5 flex flex-col space-y-4 overflow-y-auto w-full max-h-[calc(100vh-6rem)] scrollbar-hide pb-10">
+          <PerspectiveWidget />
+          <EventClustersWidget />
+          <BiasDistributionWidget />
+          <DiversityInsightWidget />
+        </aside>
+      </div>
+
+      {/* Details Modal */}
+      {articleId && (
+        <Suspense fallback={null}>
+          <ArticleDetailsModal article={selectedArticle} />
+        </Suspense>
+      )}
     </div>
   );
 }

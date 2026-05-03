@@ -1,20 +1,26 @@
-import { processBatchWithAI } from './client.js';
-import { createNextBatch } from './tokenBatcher.js';
-import { prisma } from '../db/client.js';
+import { processBatchWithAI } from "./client.js";
+import { createNextBatch } from "./tokenBatcher.js";
+import { prisma } from "../db/client.js";
+import { ALLOWED_CATEGORIES } from "./categories.js";
 
-export function createArticleProcessor(batchSize = parseInt(process.env.AI_BATCH_SIZE) || 5) {
+export function createArticleProcessor(
+  batchSize = parseInt(process.env.AI_BATCH_SIZE) || 5,
+) {
   const buffer = [];
   let currentBatchPromise = null;
 
   async function _flush() {
     if (buffer.length === 0) return;
-    
+
     if (currentBatchPromise) {
       await currentBatchPromise;
       return _flush();
     }
 
-    const { batch, remainingArticles, estimatedTokens } = createNextBatch(buffer, 800);
+    const { batch, remainingArticles, estimatedTokens } = createNextBatch(
+      buffer,
+      800,
+    );
     // update buffer
     buffer.length = 0;
     buffer.push(...remainingArticles);
@@ -23,14 +29,18 @@ export function createArticleProcessor(batchSize = parseInt(process.env.AI_BATCH
       if (buffer.length > 0) {
         // First article might be too large and stuck? Actually prepareArticle handles it or drops it.
         // If batch is empty but buffer isn't, maybe we need to drop the first to unblock.
-        console.warn(`⚠️ Batch empty but buffer has ${buffer.length} items. Dropping first item to unblock.`);
+        console.warn(
+          `⚠️ Batch empty but buffer has ${buffer.length} items. Dropping first item to unblock.`,
+        );
         buffer.shift();
         return _flush();
       }
       return;
     }
 
-    console.log(`🤖 Processing batch of ${batch.length} articles (Estimated tokens: ${estimatedTokens})...`);
+    console.log(
+      `🤖 Processing batch of ${batch.length} articles (Estimated tokens: ${estimatedTokens})...`,
+    );
 
     currentBatchPromise = (async () => {
       try {
@@ -44,9 +54,11 @@ export function createArticleProcessor(batchSize = parseInt(process.env.AI_BATCH
 
         let parsed;
         try {
-          parsed = JSON.parse(aiResponse.content.replace(/```json|```/g, '').trim());
+          parsed = JSON.parse(
+            aiResponse.content.replace(/```json|```/g, "").trim(),
+          );
           if (!parsed.results || !Array.isArray(parsed.results)) {
-             throw new Error("Invalid format: missing 'results' array");
+            throw new Error("Invalid format: missing 'results' array");
           }
         } catch (err) {
           console.warn(`⚠️ Invalid JSON from AI for batch`);
@@ -54,7 +66,7 @@ export function createArticleProcessor(batchSize = parseInt(process.env.AI_BATCH
         }
 
         const resultsMap = new Map();
-        parsed.results.forEach(res => {
+        parsed.results.forEach((res) => {
           if (res && res.id) resultsMap.set(res.id, res);
         });
 
@@ -63,43 +75,69 @@ export function createArticleProcessor(batchSize = parseInt(process.env.AI_BATCH
         // Save to DB sequentially to prevent 'connectOrCreate' unique constraint race conditions
         for (const article of batch) {
           const rawArticle = article;
-          const articleParsed = resultsMap.get(rawArticle.id) || { 
-            categories: ['other'], entities: [], sentimentScore: 0, biasNote: '', perspectiveCountries: [] 
+          const articleParsed = resultsMap.get(rawArticle.id) || {
+            categories: ["other"],
+            entities: [],
+            sentimentScore: 0,
+            biasNote: "",
+            perspectiveCountries: [],
           };
-          
-          const categoryOps = (articleParsed.categories || ['other']).map(cat => ({
+
+          const rawCats = articleParsed.categories || [];
+          const validCats = rawCats.filter((c) =>
+            ALLOWED_CATEGORIES.includes(c),
+          );
+          const finalCats = validCats.length > 0 ? validCats : ["other"];
+
+          if (rawCats.length !== validCats.length) {
+            const dropped = rawCats.filter(
+              (c) => !ALLOWED_CATEGORIES.includes(c),
+            );
+            console.warn(
+              `⚠️ Dropped unrecognized categories for "${rawArticle.title}": [${dropped.join(", ")}]`,
+            );
+          }
+
+          const categoryOps = finalCats.map((cat) => ({
             where: { name: cat },
-            create: { name: cat }
+            create: { name: cat },
           }));
 
           try {
-            await prisma.$transaction(async (tx) => {
-              // Create ProcessedArticle
-              await tx.processedArticle.create({
-                data: {
-                  rawArticleId: rawArticle.id,
-                  categories: { connectOrCreate: categoryOps },
-                  entities: articleParsed.entities || [],
-                  sentimentScore: articleParsed.sentimentScore || null,
-                  biasNote: articleParsed.biasNote || null,
-                  biasCategory: articleParsed.biasCategory || null,
-                  perspectiveCountries: articleParsed.perspectiveCountries || [],
-                  model: aiResponse.model,
-                }
-              });
-            }, {
-              timeout: 15000,
-            });
-            
+            await prisma.$transaction(
+              async (tx) => {
+                // Create ProcessedArticle
+                await tx.processedArticle.create({
+                  data: {
+                    rawArticleId: rawArticle.id,
+                    categories: { connectOrCreate: categoryOps },
+                    entities: articleParsed.entities || [],
+                    sentimentScore: articleParsed.sentimentScore || null,
+                    biasNote: articleParsed.biasNote || null,
+                    biasCategory: articleParsed.biasCategory || null,
+                    perspectiveCountries:
+                      articleParsed.perspectiveCountries || [],
+                    model: aiResponse.model,
+                  },
+                });
+              },
+              {
+                timeout: 15000,
+              },
+            );
+
             successCount++;
           } catch (err) {
-            console.error(`⚠️ Failed to save processed article: ${rawArticle.title}`, err.message);
+            console.error(
+              `⚠️ Failed to save processed article: ${rawArticle.title}`,
+              err.message,
+            );
           }
         }
 
         // Log AI Usage ONCE per batch
         try {
-          const today = new Date().toISOString().split('T')[0];
+          const today = new Date().toISOString().split("T")[0];
           const costPer1k = 0.0006;
           const estimatedCost = (aiResponse.tokensUsed / 1000) * costPer1k;
 
@@ -111,16 +149,15 @@ export function createArticleProcessor(batchSize = parseInt(process.env.AI_BATCH
               tokensUsed: aiResponse.tokensUsed,
               estimatedCost: estimatedCost,
               success: true,
-            }
+            },
           });
         } catch (err) {
           console.error(`⚠️ Failed to log AI usage for batch`, err.message);
         }
 
         console.log(`✅ Batch done: ${successCount}/${batch.length} succeeded`);
-
       } catch (err) {
-        console.error('❌ Batch processing failed:', err);
+        console.error("❌ Batch processing failed:", err);
       }
     })();
 
@@ -138,9 +175,9 @@ export function createArticleProcessor(batchSize = parseInt(process.env.AI_BATCH
       const exists = await prisma.processedArticle.findUnique({
         where: {
           rawArticleId: rawArticle.id,
-        }
+        },
       });
-      
+
       if (exists) {
         console.log(`⏭️ Already processed: ${rawArticle.title}`);
         return;
@@ -154,6 +191,6 @@ export function createArticleProcessor(batchSize = parseInt(process.env.AI_BATCH
     async flush() {
       if (currentBatchPromise) await currentBatchPromise;
       if (buffer.length > 0) await _flush();
-    }
+    },
   };
 }

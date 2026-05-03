@@ -1,87 +1,111 @@
-"use client";
-
-import { Sparkles, Eye } from "lucide-react";
-import { cn, formatRelativeTime, type Article } from "@/lib/utils";
-import { BiasIndicator } from "./BiasIndicator";
+import { Sparkles } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import { SentimentBadge } from "./SentimentBadge";
-import { useAppStore } from "@/lib/store";
+import { Article } from "@/types/article";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import Link from "next/link";
+import { formatRelativeTime, getBiasBadgeVariant } from "@/lib/utils";
 
-interface ArticleCardProps {
-  article: Article;
-}
-
-export function ArticleCard({ article }: ArticleCardProps) {
-  const { openArticleDetail, openChat } = useAppStore();
-
+export default function ArticleCard({ article }: { article: Article }) {
   return (
-    <div
-      className="bg-card border border-border rounded-xl p-4 hover:border-zinc-600 transition-all duration-200 group cursor-pointer flex flex-col h-full"
-      onClick={() => openArticleDetail(article)}
-    >
-      {/* Title row with AI button */}
-      <div className="flex items-start justify-between gap-2 mb-2">
-        <h3 className="text-base font-semibold text-zinc-100 leading-snug group-hover:text-blue-400 transition-colors line-clamp-2 flex-1">
-          {article.title}
-        </h3>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            openChat(article);
-          }}
-          className="flex-shrink-0 p-1.5 rounded-md text-zinc-600 hover:text-purple-400 hover:bg-purple-500/10 transition-all opacity-0 group-hover:opacity-100"
-          title="Ask AI about this article"
-        >
-          <Sparkles className="w-4 h-4" />
-        </button>
-      </div>
+    <Card className="h-full flex flex-col gap-3 group hover:border-primary/50 transition-colors duration-200">
+      <CardHeader className="">
+        <div className="flex items-start justify-between gap-2">
+          <Link
+            href={`/?article=${article.id}`}
+            scroll={false}
+            className="flex-1"
+          >
+            <CardTitle className="text-lg font-semibold leading-snug group-hover:text-emerald-700 dark:group-hover:text-emerald-500 transition-colors line-clamp-2">
+              {article.title}
+            </CardTitle>
+          </Link>
+          <div className="flex items-center gap-2">
+            {article.biasCategory && (
+              <Badge variant={getBiasBadgeVariant(article.biasCategory)}>
+                {article.biasCategory}
+              </Badge>
+            )}
 
-      {/* Source · Time · Sentiment */}
-      <div className="flex items-center space-x-2 mb-3 text-xs">
-        <div className="w-5 h-5 rounded bg-zinc-800 flex items-center justify-center text-[9px] font-bold text-zinc-500">
-          {article.source.substring(0, 2).toUpperCase()}
-        </div>
-        <span className="font-medium text-zinc-400">{article.source}</span>
-        <span className="text-zinc-700">·</span>
-        <span className="text-zinc-600 font-mono text-[10px]">
-          {formatRelativeTime(article.publishedAt)}
-        </span>
-        <span className="text-zinc-700">·</span>
-        <SentimentBadge score={article.sentimentScore} />
-      </div>
-
-      {/* Snippet */}
-      <p className="text-sm text-zinc-500 line-clamp-3 mb-3 flex-1">
-        {article.contentSnippet}
-      </p>
-
-      {/* Category tags */}
-      {article.categories.length > 0 && (
-        <div className="flex flex-wrap gap-1 mb-3">
-          {article.categories.slice(0, 3).map((cat) => (
-            <span
-              key={cat.id}
-              className="px-2 py-0.5 rounded bg-zinc-800/80 text-zinc-400 text-[10px] font-medium capitalize"
+            <Link
+              href={`/?chat=${article.id}`}
+              scroll={false}
+              className="shrink-0 p-1.5 rounded-md text-muted-foreground hover:text-emerald-500 hover:bg-accent transition-all opacity-80 group-hover:opacity-100"
+              title="Ask AI about this article"
             >
-              {cat.name}
-            </span>
-          ))}
+              <HugeiconsIcon icon={Sparkles} className="w-4 h-4" />
+            </Link>
+          </div>
         </div>
-      )}
+      </CardHeader>
+
+      <CardContent className="flex-1 flex flex-col space-y-3">
+        {/* Source · Time · Sentiment */}
+        <div className="flex items-center space-x-2 text-xs">
+          <div className="w-5 h-5 rounded bg-secondary flex items-center justify-center text-[9px] font-bold text-secondary-foreground">
+            {article.source.substring(0, 2).toUpperCase()}
+          </div>
+          <span className="font-medium text-muted-foreground">
+            {article.source}
+          </span>
+          <span className="text-border">·</span>
+          <span className="text-muted-foreground font-mono text-[10px]">
+            {formatRelativeTime(article.publishedAt)}
+          </span>
+          <span className="text-border">·</span>
+          <SentimentBadge score={article.sentimentScore || 0} />
+        </div>
+
+        {/* Snippet */}
+        <Link
+          href={`/?article=${article.id}`}
+          scroll={false}
+          className="flex-1 block"
+        >
+          <p className="text-sm text-muted-foreground line-clamp-3">
+            {article.contentSnippet}
+          </p>
+        </Link>
+
+        {/* Category tags */}
+        {article.categories && article.categories.length > 0 && (
+          <div className="flex flex-wrap gap-1 mt-auto">
+            {article.categories.slice(0, 3).map((cat) => (
+              <Badge
+                key={cat.id}
+                variant="outline"
+                className="capitalize text-muted-foreground"
+              >
+                {cat.name}
+              </Badge>
+            ))}
+          </div>
+        )}
+      </CardContent>
 
       {/* Footer: Bias + Perspective */}
-      <div className="flex items-center justify-between mt-auto pt-3 border-t border-zinc-800/50">
-        <div className="flex items-center space-x-2">
-          <BiasIndicator biasCategory={article.biasCategory} />
-          {article.perspectiveCountries.length > 0 && (
-            <div className="flex items-center space-x-1">
-              <Eye className="w-3 h-3 text-zinc-600" />
-              <span className="text-[10px] text-zinc-600">
-                {article.perspectiveCountries.slice(0, 3).join(", ")}
-              </span>
-            </div>
+      {/*<CardFooter className="border-t flex items-center justify-between mt-auto">
+        <div className="flex items-center space-x-2 w-full justify-between">
+          {article.biasCategory && (
+            <span className="text-[10px] font-medium text-muted-foreground bg-secondary/50 px-2 py-0.5 rounded">
+              {article.biasCategory}
+            </span>
           )}
+          {article.perspectiveCountries &&
+            article.perspectiveCountries.length > 0 && (
+              <div className="flex items-center space-x-1 ml-auto">
+                <HugeiconsIcon
+                  icon={Globe}
+                  className="w-3 h-3 text-muted-foreground"
+                />
+                <span className="text-[10px] text-muted-foreground">
+                  {article.perspectiveCountries.slice(0, 3).join(", ")}
+                </span>
+              </div>
+            )}
         </div>
-      </div>
-    </div>
+      </CardFooter>*/}
+    </Card>
   );
 }

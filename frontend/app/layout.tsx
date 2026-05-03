@@ -1,17 +1,20 @@
-import type { Metadata } from "next";
-import { Inter, JetBrains_Mono } from "next/font/google";
-import "./globals.css";
-import { Providers } from "@/components/Providers";
-import { Sidebar } from "@/components/layout/Sidebar";
-import { TopHeader } from "@/components/layout/TopHeader";
-import { RightPanel } from "@/components/layout/RightPanel";
-import { ArticleDetailModal } from "@/components/articles/ArticleDetailModal";
-import { ChatSlideOver } from "@/components/chat/ChatSlideOver";
+import { Providers } from "@/components/providers/theme-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
+import type { Metadata } from "next";
+import { Figtree, Inter, JetBrains_Mono } from "next/font/google";
+import { Suspense } from "react";
+import "./globals.css";
+import Navbar from "@/components/layout/Navbar";
+import Footer from "@/components/layout/Footer";
+import Sidebar from "@/components/layout/Sidebar";
+import FeedSkeleton from "@/components/Feed/FeedSkeleton";
+
+const figtree = Figtree({ subsets: ["latin"], variable: "--font-sans" });
 
 const inter = Inter({
   subsets: ["latin"],
-  variable: "--font-sans",
+  variable: "--font-inter",
 });
 
 const jetbrainsMono = JetBrains_Mono({
@@ -20,40 +23,56 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "GlobalAgg — Global News Aggregator",
+  title: "Global News Aggregator",
   description:
     "Multi-perspective global news aggregation with AI-powered bias detection and analysis.",
 };
 
 export default function RootLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode;
-}) {
+}>) {
   return (
     <html
       lang="en"
-      className={`dark ${inter.variable} ${jetbrainsMono.variable}`}
+      className={cn(
+        "h-full",
+        "antialiased",
+        figtree.variable,
+        inter.variable,
+        jetbrainsMono.variable,
+        "font-sans",
+      )}
+      suppressHydrationWarning
     >
-      <body className="overflow-hidden">
+      <body className="bg-background text-foreground">
         <Providers>
           <TooltipProvider>
-            <div className="flex flex-col h-screen w-full">
-              <TopHeader />
+            <div className="flex flex-col h-screen">
+              <Navbar />
 
-              <div className="flex flex-1 overflow-hidden">
-                <Sidebar />
+              <main className="flex flex-1 overflow-hidden">
+                {/* Sidebar: icon-only at md (w-14), full labels at lg (w-56) */}
+                <div className="hidden md:flex md:w-14 lg:w-56 shrink-0 border-r border-border overflow-y-auto">
+                  <Sidebar />
+                </div>
 
-                <main className="flex-1 flex flex-col min-w-0 bg-background relative overflow-y-auto scrollbar-hide">
-                  {children}
-                </main>
-
-                <RightPanel />
-              </div>
+                {/* Main Content Area */}
+                <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
+                  {/*
+                    Suspense boundary: Navbar/Sidebar/Footer form the static shell
+                    (prerendered at build time). The page content streams in at
+                    request time since pages read runtime APIs like searchParams.
+                    FeedSkeleton holds the correct shape while the page loads.
+                  */}
+                  <Suspense fallback={<FeedSkeleton />}>
+                    <div className="flex-1">{children}</div>
+                  </Suspense>
+                  <Footer />
+                </div>
+              </main>
             </div>
-
-            <ArticleDetailModal />
-            <ChatSlideOver />
           </TooltipProvider>
         </Providers>
       </body>

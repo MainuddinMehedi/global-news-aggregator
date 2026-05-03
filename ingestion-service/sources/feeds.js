@@ -32,7 +32,7 @@ const feeds = [
     name: "Jagonews24",
     sourceCountry: "Bangladesh",
     url: "https://www.jagonews24.com/rss/rss.xml",
-    enabled: true,
+    enabled: false,
   },
 
   // ── International ────────────────────────────────────────

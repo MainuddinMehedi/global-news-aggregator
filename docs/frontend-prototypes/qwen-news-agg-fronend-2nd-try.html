@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global News Aggregator | v1.2</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            900: '#0c4a6e',
+                        },
+                        dark: {
+                            bg: '#09090b', // Zinc 950
+                            card: '#18181b', // Zinc 900
+                            border: '#27272a', // Zinc 800
+                            muted: '#71717a', // Zinc 500
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        [x-cloak] { display: none !important; }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #18181b; }
+        ::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #52525b; }
+
+        .glass-panel {
+            background: rgba(24, 24, 27, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(39, 39, 42, 0.5);
+        }
+    </style>
+</head>
+<body class="bg-dark-bg text-zinc-100 font-sans antialiased overflow-hidden" x-data="newsApp()" x-init="init()">
+
+    <div class="flex h-screen w-full">
+
+        <!-- Sidebar Navigation -->
+        <aside class="w-20 lg:w-64 flex-shrink-0 border-r border-dark-border bg-dark-card flex flex-col justify-between transition-all duration-300">
+            <div>
+                <!-- Logo -->
+                <div class="h-16 flex items-center justify-center lg:justify-start lg:px-6 border-b border-dark-border">
+                    <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
+                        <i data-lucide="globe-2" class="w-5 h-5 text-white"></i>
+                    </div>
+                    <span class="ml-3 font-bold text-lg hidden lg:block tracking-tight">GlobalAgg<span class="text-blue-500">.</span></span>
+                </div>
+
+                <!-- Nav Items -->
+                <nav class="p-3 space-y-1">
+                    <template x-for="item in navItems" :key="item.id">
+                        <button
+                            @click="currentView = item.id"
+                            :class="currentView === item.id ? 'bg-blue-600/10 text-blue-400 border-blue-500/50' : 'text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-100 border-transparent'"
+                            class="w-full flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 border border-transparent group"
+                        >
+                            <i :data-lucide="item.icon" class="w-5 h-5 lg:mr-3 flex-shrink-0"></i>
+                            <span class="hidden lg:block" x-text="item.label"></span>
+                            <span x-show="item.badge > 0" class="hidden lg:flex ml-auto bg-zinc-800 text-zinc-300 py-0.5 px-2 rounded-full text-xs font-mono" x-text="item.badge"></span>
+                        </button>
+                    </template>
+                </nav>
+            </div>
+
+            <!-- User Profile / Settings -->
+            <div class="p-3 border-t border-dark-border">
+                <button @click="currentView = 'settings'" :class="currentView === 'settings' ? 'bg-zinc-800 text-zinc-100' : 'text-zinc-400 hover:text-zinc-100'" class="w-full flex items-center px-3 py-2 rounded-lg text-sm transition-colors">
+                    <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-emerald-400 to-cyan-500 flex items-center justify-center text-white font-bold text-xs">YO</div>
+                    <div class="ml-3 hidden lg:block text-left">
+                        <div class="text-sm font-medium text-zinc-200">You</div>
+                        <div class="text-xs text-zinc-500">Pro Plan</div>
+                    </div>
+                    <i data-lucide="chevron-right" class="w-4 h-4 ml-auto hidden lg:block text-zinc-600"></i>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 flex flex-col min-w-0 bg-dark-bg relative">
+
+            <!-- Top Header -->
+            <header class="h-16 border-b border-dark-border bg-dark-bg/80 backdrop-blur-md flex items-center justify-between px-4 lg:px-6 sticky top-0 z-20">
+                <div class="flex items-center flex-1 max-w-2xl">
+                    <div class="relative w-full max-w-md">
+                        <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500"></i>
+                        <input type="text" placeholder="Search articles, stories, entities..."
+                            class="w-full bg-zinc-900 border border-zinc-800 rounded-lg py-2 pl-10 pr-4 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all"
+                            x-model="searchQuery">
+                    </div>
+                </div>
+
+                <div class="flex items-center space-x-3">
+                    <button class="relative p-2 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 rounded-lg transition-colors">
+                        <i data-lucide="bell" class="w-5 h-5"></i>
+                        <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+                    </button>
+                    <button class="p-2 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 rounded-lg transition-colors">
+                        <i data-lucide="moon" class="w-5 h-5"></i>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Dynamic Content -->
+            <div class="flex-1 overflow-y-auto scrollbar-hide p-4 lg:p-6">
+
+                <!-- VIEW: FEED -->
+                <div x-show="currentView === 'feed'" x-transition.opacity class="space-y-6">
+
+                    <!-- Filter Bar -->
+                    <div class="flex flex-wrap items-center justify-between gap-4">
+                        <div class="flex items-center space-x-2 overflow-x-auto pb-2 scrollbar-hide">
+                            <template x-for="cat in categories" :key="cat">
+                                <button @click="activeCategory = cat"
+                                    :class="activeCategory === cat ? 'bg-zinc-100 text-zinc-900' : 'bg-zinc-900 text-zinc-400 hover:text-zinc-200 border border-zinc-800'"
+                                    class="px-3 py-1.5 rounded-md text-xs font-medium transition-all whitespace-nowrap"
+                                    x-text="cat">
+                                </button>
+                            </template>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-xs text-zinc-500 uppercase font-bold tracking-wider">Sort:</span>
+                            <select class="bg-zinc-900 border border-zinc-800 text-zinc-300 text-xs rounded-md py-1.5 px-2 focus:outline-none">
+                                <option>Latest</option>
+                                <option>Relevance</option>
+                                <option>Bias Score</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Feed Grid -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+                        <template x-for="article in filteredArticles" :key="article.id">
+                            <div class="bg-dark-card border border-dark-border rounded-xl p-4 hover:border-zinc-600 transition-all duration-200 group cursor-pointer flex flex-col h-full"
+                                @click="openArticle(article)">
+
+                                <!-- Card Header -->
+                                <div class="flex items-start justify-between mb-3">
+                                    <div class="flex items-center space-x-2">
+                                        <div class="w-6 h-6 rounded bg-zinc-800 flex items-center justify-center text-[10px] font-bold text-zinc-400" x-text="article.source.substring(0,2).toUpperCase()"></div>
+                                        <span class="text-xs font-medium text-zinc-400" x-text="article.source"></span>
+                                    </div>
+                                    <span class="text-[10px] text-zinc-600 font-mono" x-text="formatTime(article.publishedAt)"></span>
+                                </div>
+
+                                <!-- Content -->
+                                <h3 class="text-base font-semibold text-zinc-100 leading-snug mb-2 group-hover:text-blue-400 transition-colors" x-text="article.title"></h3>
+                                <p class="text-sm text-zinc-500 line-clamp-3 mb-4 flex-1" x-text="article.snippet"></p>
+
+                                <!-- Footer / Badges -->
+                                <div class="flex items-center justify-between mt-auto pt-3 border-t border-zinc-800/50">
+                                    <!-- Bias Badge -->
+                                    <div class="flex items-center space-x-2">
+                                        <span class="px-2 py-0.5 rounded text-[10px] font-medium border"
+                                            :class="{
+                                                'bg-blue-500/10 text-blue-400 border-blue-500/20': article.bias === 'Western',
+                                                'bg-red-500/10 text-red-400 border-red-500/20': article.bias === 'Eastern',
+                                                'bg-emerald-500/10 text-emerald-400 border-emerald-500/20': article.bias === 'Non-Western',
+                                                'bg-zinc-700/30 text-zinc-400 border-zinc-600': article.bias === 'Neutral'
+                                            }"
+                                            x-text="article.bias">
+                                        </span>
+                                        <!-- Perspective Indicator -->
+                                        <div class="flex items-center space-x-1" title="Perspective Lens">
+                                            <i data-lucide="eye" class="w-3 h-3 text-zinc-600"></i>
+                                            <span class="text-[10px] text-zinc-600" x-text="article.perspectiveLens"></span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Story Link -->
+                                    <div x-show="article.storyId" class="flex items-center space-x-1 text-zinc-600 hover:text-purple-400 transition-colors">
+                                        <i data-lucide="git-branch" class="w-3 h-3"></i>
+                                        <span class="text-[10px]">Story</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- VIEW: STORIES (Clustering) -->
+                <div x-show="currentView === 'stories'" x-cloak class="space-y-6">
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-xl font-bold text-zinc-100">Story Clusters</h2>
+                        <div class="flex items-center space-x-2 text-xs text-zinc-500">
+                            <span class="flex items-center"><div class="w-2 h-2 rounded-full bg-purple-500 mr-1"></div> Tier 1 Clusters</span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                        <template x-for="story in stories" :key="story.id">
+                            <div class="bg-dark-card border border-dark-border rounded-xl overflow-hidden hover:border-purple-500/30 transition-all">
+                                <div class="p-5 border-b border-dark-border bg-zinc-900/50">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <div class="flex items-center space-x-2">
+                                            <span class="px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 text-[10px] font-bold border border-purple-500/20">STORY</span>
+                                            <span class="text-xs text-zinc-500" x-text="story.articleCount + ' Articles'"></span>
+                                        </div>
+                                        <span class="text-xs text-zinc-600 font-mono" x-text="story.timeWindow"></span>
+                                    </div>
+                                    <h3 class="text-lg font-bold text-zinc-100 mb-1" x-text="story.title"></h3>
+                                    <p class="text-sm text-zinc-500" x-text="story.summary"></p>
+                                </div>
+
+                                <!-- Timeline -->
+                                <div class="p-5">
+                                    <h4 class="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-4">Key Developments</h4>
+                                    <div class="relative border-l border-zinc-800 ml-2 space-y-6 pl-6">
+                                        <template x-for="(dev, index) in story.keyDevelopments" :key="index">
+                                            <div class="relative">
+                                                <div class="absolute -left-[31px] top-1 w-3 h-3 rounded-full bg-zinc-900 border-2 border-zinc-600"></div>
+                                                <div class="text-sm text-zinc-300 mb-1" x-text="dev.title"></div>
+                                                <div class="text-xs text-zinc-600" x-text="dev.date"></div>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- VIEW: TOPICS (Topic Locking) -->
+                <div x-show="currentView === 'topics'" x-cloak class="max-w-4xl mx-auto space-y-6">
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-xl font-bold text-zinc-100">Locked Topics</h2>
+                        <button class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors flex items-center">
+                            <i data-lucide="plus" class="w-3 h-3 mr-1"></i> Lock New Topic
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <template x-for="topic in topics" :key="topic.name">
+                            <div class="bg-dark-card border border-dark-border rounded-xl p-4 flex items-center justify-between group hover:border-zinc-600">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-10 h-10 rounded-lg bg-zinc-800 flex items-center justify-center text-zinc-400 group-hover:text-blue-400 transition-colors">
+                                        <i data-lucide="lock" class="w-5 h-5"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="font-medium text-zinc-200" x-text="topic.name"></h3>
+                                        <div class="flex items-center space-x-2 mt-1">
+                                            <span class="text-[10px] text-zinc-500" x-text="topic.matchCount + ' Matches'"></span>
+                                            <span class="w-1 h-1 rounded-full bg-zinc-700"></span>
+                                            <span class="text-[10px] text-zinc-500">Last: 2h ago</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <button class="p-2 text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 rounded-lg transition-colors relative">
+                                        <i data-lucide="bell" class="w-4 h-4"></i>
+                                        <span x-show="topic.unread > 0" class="absolute top-1 right-1 w-2 h-2 bg-blue-500 rounded-full"></span>
+                                    </button>
+                                    <!-- Toggle Switch -->
+                                    <div class="relative inline-block w-10 h-5 align-middle select-none transition duration-200 ease-in">
+                                        <input type="checkbox" :checked="topic.active" class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer transition-all duration-300" :class="topic.active ? 'right-0 border-blue-500' : 'left-0 border-zinc-600'"/>
+                                        <label class="toggle-label block overflow-hidden h-5 rounded-full cursor-pointer" :class="topic.active ? 'bg-blue-500' : 'bg-zinc-700'"></label>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- VIEW: AI CHAT -->
+                <div x-show="currentView === 'chat'" x-cloak class="flex h-[calc(100vh-8rem)] gap-4">
+                    <!-- Chat Area -->
+                    <div class="flex-1 flex flex-col bg-dark-card border border-dark-border rounded-xl overflow-hidden">
+                        <div class="p-4 border-b border-dark-border bg-zinc-900/50 flex items-center justify-between">
+                            <div class="flex items-center space-x-2">
+                                <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                                <span class="text-sm font-medium text-zinc-200">AI Analyst</span>
+                            </div>
+                            <span class="text-[10px] text-zinc-600 font-mono">Model: qwen-3.6</span>
+                        </div>
+
+                        <div class="flex-1 overflow-y-auto p-4 space-y-4">
+                            <template x-for="msg in chatMessages" :key="msg.id">
+                                <div class="flex items-start space-x-3" :class="msg.role === 'user' ? 'flex-row-reverse space-x-reverse' : ''">
+                                    <div class="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold"
+                                         :class="msg.role === 'user' ? 'bg-blue-600 text-white' : 'bg-purple-600 text-white'">
+                                        <span x-text="msg.role === 'user' ? 'YO' : 'AI'"></span>
+                                    </div>
+                                    <div class="max-w-[80%] rounded-xl p-3 text-sm"
+                                         :class="msg.role === 'user' ? 'bg-blue-600/10 text-blue-100 border border-blue-500/20' : 'bg-zinc-800 text-zinc-200 border border-zinc-700'">
+                                        <p x-text="msg.text"></p>
+                                        <!-- Source Citations -->
+                                        <div x-show="msg.sources && msg.sources.length > 0" class="mt-2 pt-2 border-t border-zinc-700/50 flex flex-wrap gap-1">
+                                            <template x-for="src in msg.sources">
+                                                <span class="text-[10px] bg-zinc-900 px-1.5 py-0.5 rounded text-zinc-400 border border-zinc-800" x-text="src"></span>
+                                            </template>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+
+                        <div class="p-4 border-t border-dark-border bg-zinc-900/30">
+                            <div class="relative">
+                                <input type="text" placeholder="Ask about the 'Middle East Escalation' story..."
+                                    class="w-full bg-zinc-900 border border-zinc-700 rounded-lg py-3 pl-4 pr-12 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 transition-all"
+                                    @keydown.enter="sendChatMessage($event.target.value); $event.target.value = ''">
+                                <button class="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 bg-zinc-800 text-zinc-400 hover:text-zinc-100 rounded-md transition-colors">
+                                    <i data-lucide="send" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Context Sidebar -->
+                    <div class="w-64 hidden xl:flex flex-col space-y-4">
+                        <div class="bg-dark-card border border-dark-border rounded-xl p-4">
+                            <h3 class="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">Context</h3>
+                            <div class="space-y-3">
+                                <div class="text-xs text-zinc-500">Active Story</div>
+                                <div class="text-sm font-medium text-zinc-200 bg-zinc-800/50 p-2 rounded border border-zinc-700">Middle East Escalation</div>
+
+                                <div class="text-xs text-zinc-500 mt-2">Selected Articles</div>
+                                <div class="space-y-2">
+                                    <div class="flex items-center space-x-2 text-xs text-zinc-400 p-1 hover:bg-zinc-800 rounded cursor-pointer">
+                                        <div class="w-2 h-2 rounded-full bg-blue-500"></div>
+                                        <span>Al Jazeera (09:42)</span>
+                                    </div>
+                                    <div class="flex items-center space-x-2 text-xs text-zinc-400 p-1 hover:bg-zinc-800 rounded cursor-pointer">
+                                        <div class="w-2 h-2 rounded-full bg-red-500"></div>
+                                        <span>TASS (10:15)</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VIEW: ANALYTICS -->
+                <div x-show="currentView === 'analytics'" x-cloak class="space-y-6">
+                    <h2 class="text-xl font-bold text-zinc-100">Analytics Dashboard</h2>
+
+                    <!-- Stats Grid -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="bg-dark-card border border-dark-border rounded-xl p-4">
+                            <div class="text-xs text-zinc-500 mb-1">Total Articles</div>
+                            <div class="text-2xl font-bold text-zinc-100">12,450</div>
+                            <div class="text-xs text-emerald-400 mt-1 flex items-center"><i data-lucide="trending-up" class="w-3 h-3 mr-1"></i> +12% today</div>
+                        </div>
+                        <div class="bg-dark-card border border-dark-border rounded-xl p-4">
+                            <div class="text-xs text-zinc-500 mb-1">Stories Clustered</div>
+                            <div class="text-2xl font-bold text-zinc-100">842</div>
+                            <div class="text-xs text-blue-400 mt-1 flex items-center"><i data-lucide="layers" class="w-3 h-3 mr-1"></i> 6.8% of feed</div>
+                        </div>
+                        <div class="bg-dark-card border border-dark-border rounded-xl p-4">
+                            <div class="text-xs text-zinc-500 mb-1">AI Cost (Mo)</div>
+                            <div class="text-2xl font-bold text-zinc-100">$14.20</div>
+                            <div class="text-xs text-zinc-500 mt-1">~$0.001 / article</div>
+                        </div>
+                        <div class="bg-dark-card border border-dark-border rounded-xl p-4">
+                            <div class="text-xs text-zinc-500 mb-1">Avg Bias Score</div>
+                            <div class="text-2xl font-bold text-zinc-100">0.42</div>
+                            <div class="text-xs text-amber-400 mt-1">Moderate skew</div>
+                        </div>
+                    </div>
+
+                    <!-- Charts Area -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div class="bg-dark-card border border-dark-border rounded-xl p-6">
+                            <h3 class="text-sm font-bold text-zinc-200 mb-4">Perspective Distribution</h3>
+                            <div class="h-48 flex items-end justify-between space-x-2">
+                                <template x-for="bar in chartData" :key="bar.label">
+                                    <div class="flex-1 flex flex-col items-center group">
+                                        <div class="w-full bg-zinc-800 rounded-t-sm relative overflow-hidden group-hover:bg-zinc-700 transition-colors" :style="`height: ${bar.value}%`">
+                                            <div class="absolute bottom-0 w-full transition-all duration-500"
+                                                 :class="bar.color"
+                                                 :style="`height: 100%`"></div>
+                                        </div>
+                                        <span class="text-[10px] text-zinc-500 mt-2" x-text="bar.label"></span>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+
+                        <div class="bg-dark-card border border-dark-border rounded-xl p-6">
+                            <h3 class="text-sm font-bold text-zinc-200 mb-4">Ingestion Rate</h3>
+                            <div class="h-48 flex items-center justify-center border border-zinc-800 rounded-lg bg-zinc-900/50">
+                                <span class="text-xs text-zinc-600">[ Chart Placeholder: Articles per Hour ]</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VIEW: SETTINGS -->
+                <div x-show="currentView === 'settings'" x-cloak class="max-w-2xl mx-auto space-y-6">
+                    <h2 class="text-xl font-bold text-zinc-100">Settings</h2>
+
+                    <div class="bg-dark-card border border-dark-border rounded-xl p-6 space-y-6">
+                        <div>
+                            <h3 class="text-sm font-bold text-zinc-200 mb-4">Data Sources</h3>
+                            <div class="space-y-3">
+                                <div class="flex items-center justify-between p-3 bg-zinc-900/50 rounded-lg border border-zinc-800">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-2 h-2 rounded-full bg-emerald-500"></div>
+                                        <span class="text-sm text-zinc-300">Al Jazeera (RSS)</span>
+                                    </div>
+                                    <div class="text-xs text-zinc-500">Status: Active</div>
+                                </div>
+                                <div class="flex items-center justify-between p-3 bg-zinc-900/50 rounded-lg border border-zinc-800">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-2 h-2 rounded-full bg-emerald-500"></div>
+                                        <span class="text-sm text-zinc-300">TASS (RSS)</span>
+                                    </div>
+                                    <div class="text-xs text-zinc-500">Status: Active</div>
+                                </div>
+                                <div class="flex items-center justify-between p-3 bg-zinc-900/50 rounded-lg border border-zinc-800">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
+                                        <span class="text-sm text-zinc-300">Reuters (API)</span>
+                                    </div>
+                                    <div class="text-xs text-red-400">Error: 403</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="border-t border-zinc-800 pt-6">
+                            <h3 class="text-sm font-bold text-zinc-200 mb-4">AI Configuration</h3>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs text-zinc-500 mb-1">Model</label>
+                                    <select class="w-full bg-zinc-900 border border-zinc-700 rounded-md py-2 px-3 text-sm text-zinc-300">
+                                        <option>qwen-3.6</option>
+                                        <option>gpt-4o-mini</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-zinc-500 mb-1">Batch Size</label>
+                                    <input type="number" value="5" class="w-full bg-zinc-900 border border-zinc-700 rounded-md py-2 px-3 text-sm text-zinc-300">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+
+        <!-- Right Insights Panel (Dashboard Context) -->
+        <aside class="w-72 border-l border-dark-border bg-dark-card hidden xl:flex flex-col">
+            <div class="p-5 border-b border-dark-border">
+                <h3 class="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-4">Source Perspective</h3>
+                <div class="space-y-3">
+                    <template x-for="src in sourcePerspectives" :key="src.name">
+                        <div class="flex items-center justify-between group cursor-pointer">
+                            <div class="flex items-center space-x-2">
+                                <div class="w-2 h-2 rounded-full" :class="src.color"></div>
+                                <span class="text-sm text-zinc-300 group-hover:text-zinc-100" x-text="src.name"></span>
+                            </div>
+                            <span class="text-xs text-zinc-600 font-mono" x-text="src.articles"></span>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+            <div class="p-5 flex-1 overflow-y-auto">
+                <h3 class="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-4">Bias Distribution</h3>
+
+                <!-- Donut Chart Simulation -->
+                <div class="relative w-40 h-40 mx-auto mb-6">
+                    <svg viewBox="0 0 36 36" class="w-full h-full transform -rotate-90">
+                        <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#27272a" stroke-width="4" />
+                        <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#3b82f6" stroke-width="4" stroke-dasharray="40, 100" stroke-dashoffset="0" />
+                        <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#10b981" stroke-width="4" stroke-dasharray="30, 100" stroke-dashoffset="-40" />
+                        <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#ef4444" stroke-width="4" stroke-dasharray="20, 100" stroke-dashoffset="-70" />
+                    </svg>
+                    <div class="absolute inset-0 flex flex-col items-center justify-center">
+                        <span class="text-2xl font-bold text-zinc-100">12</span>
+                        <span class="text-[10px] text-zinc-500">Sources</span>
+                    </div>
+                </div>
+
+                <div class="space-y-2 text-xs">
+                    <div class="flex items-center justify-between text-zinc-400">
+                        <span class="flex items-center"><span class="w-2 h-2 rounded-full bg-blue-500 mr-2"></span>Western</span>
+                        <span>40%</span>
+                    </div>
+                    <div class="flex items-center justify-between text-zinc-400">
+                        <span class="flex items-center"><span class="w-2 h-2 rounded-full bg-emerald-500 mr-2"></span>Non-Western</span>
+                        <span>30%</span>
+                    </div>
+                    <div class="flex items-center justify-between text-zinc-400">
+                        <span class="flex items-center"><span class="w-2 h-2 rounded-full bg-red-500 mr-2"></span>Eastern</span>
+                        <span>20%</span>
+                    </div>
+                    <div class="flex items-center justify-between text-zinc-400">
+                        <span class="flex items-center"><span class="w-2 h-2 rounded-full bg-zinc-500 mr-2"></span>Wire</span>
+                        <span>10%</span>
+                    </div>
+                </div>
+
+                <div class="mt-8 p-4 bg-blue-500/5 border border-blue-500/10 rounded-lg">
+                    <div class="flex items-center space-x-2 mb-2">
+                        <i data-lucide="info" class="w-4 h-4 text-blue-400"></i>
+                        <span class="text-xs font-bold text-blue-300">Diversity Score</span>
+                    </div>
+                    <p class="text-[10px] text-zinc-500 leading-relaxed">
+                        Your current feed covers 4 distinct geopolitical perspectives. Balanced coverage detected for "Middle East Escalation".
+                    </p>
+                </div>
+            </div>
+        </aside>
+
+    </div>
+
+    <!-- Article Detail Modal -->
+    <div x-show="selectedArticle" class="fixed inset-0 z-50 flex items-center justify-center p-4" x-cloak>
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="selectedArticle = null"></div>
+        <div class="relative w-full max-w-3xl bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col" x-show="selectedArticle" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100">
+
+            <!-- Modal Header -->
+            <div class="p-6 border-b border-zinc-800 flex items-start justify-between bg-zinc-900">
+                <div>
+                    <div class="flex items-center space-x-2 mb-2">
+                        <span class="text-xs font-bold text-zinc-500 uppercase" x-text="selectedArticle?.source"></span>
+                        <span class="text-[10px] text-zinc-600" x-text="selectedArticle?.publishedAt"></span>
+                    </div>
+                    <h2 class="text-xl font-bold text-zinc-100 leading-tight" x-text="selectedArticle?.title"></h2>
+                </div>
+                <button @click="selectedArticle = null" class="p-2 text-zinc-500 hover:text-zinc-100 hover:bg-zinc-800 rounded-lg">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="p-6 overflow-y-auto flex-1 space-y-6">
+                <p class="text-sm text-zinc-300 leading-relaxed" x-text="selectedArticle?.fullContent"></p>
+
+                <!-- AI Analysis Box -->
+                <div class="p-4 bg-purple-500/5 border border-purple-500/20 rounded-lg">
+                    <div class="flex items-center space-x-2 mb-3">
+                        <i data-lucide="sparkles" class="w-4 h-4 text-purple-400"></i>
+                        <span class="text-xs font-bold text-purple-300">AI Analysis</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <span class="text-[10px] text-zinc-500 uppercase">Framing</span>
+                            <p class="text-xs text-zinc-300 mt-1" x-text="selectedArticle?.aiAnalysis?.framing"></p>
+                        </div>
+                        <div>
+                            <span class="text-[10px] text-zinc-500 uppercase">Perspective Lens</span>
+                            <p class="text-xs text-zinc-300 mt-1" x-text="selectedArticle?.aiAnalysis?.perspective"></p>
+                        </div>
+                    </div>
+                    <div class="mt-3 pt-3 border-t border-purple-500/10">
+                        <span class="text-[10px] text-zinc-500 uppercase">Loaded Terms</span>
+                        <div class="flex flex-wrap gap-1 mt-1">
+                            <template x-for="term in selectedArticle?.aiAnalysis?.loadedTerms">
+                                <span class="text-[10px] bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded border border-zinc-700" x-text="term"></span>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Related Story Timeline -->
+                <div x-show="selectedArticle?.storyId">
+                    <h3 class="text-xs font-bold text-zinc-500 uppercase mb-3">Related Story Timeline</h3>
+                    <div class="flex items-center space-x-2 overflow-x-auto pb-2">
+                        <div class="flex-shrink-0 w-32 p-3 bg-zinc-800 rounded-lg border border-zinc-700 text-center">
+                            <div class="text-[10px] text-zinc-500">Apr 8</div>
+                            <div class="text-xs text-zinc-300 mt-1">Ceasefire Announced</div>
+                        </div>
+                        <div class="w-4 h-px bg-zinc-700"></div>
+                        <div class="flex-shrink-0 w-32 p-3 bg-blue-500/10 rounded-lg border border-blue-500/30 text-center">
+                            <div class="text-[10px] text-blue-400 font-bold">Apr 9 (Now)</div>
+                            <div class="text-xs text-blue-200 mt-1">Current Article</div>
+                        </div>
+                        <div class="w-4 h-px bg-zinc-700"></div>
+                        <div class="flex-shrink-0 w-32 p-3 bg-zinc-800 rounded-lg border border-zinc-700 text-center opacity-50">
+                            <div class="text-[10px] text-zinc-500">Future</div>
+                            <div class="text-xs text-zinc-300 mt-1">Developments...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function newsApp() {
+            return {
+                currentView: 'feed',
+                searchQuery: '',
+                activeCategory: 'All',
+                selectedArticle: null,
+
+                navItems: [
+                    { id: 'feed', label: 'Feed', icon: 'newspaper', badge: 12 },
+                    { id: 'stories', label: 'Stories', icon: 'git-branch', badge: 3 },
+                    { id: 'topics', label: 'Topics', icon: 'lock', badge: 0 },
+                    { id: 'chat', label: 'AI Chat', icon: 'message-square', badge: 0 },
+                    { id: 'analytics', label: 'Analytics', icon: 'bar-chart-2', badge: 0 },
+                    { id: 'settings', label: 'Settings', icon: 'settings', badge: 0 },
+                ],
+
+                categories: ['All', 'Geopolitics', 'Bangladesh', 'Technology', 'Conflict', 'Economy'],
+
+                sourcePerspectives: [
+                    { name: 'Al Jazeera', articles: 142, color: 'bg-emerald-500' },
+                    { name: 'TASS', articles: 98, color: 'bg-red-500' },
+                    { name: 'BBC News', articles: 156, color: 'bg-blue-500' },
+                    { name: 'Reuters', articles: 210, color: 'bg-orange-500' },
+                    { name: 'Xinhua', articles: 85, color: 'bg-red-700' },
+                ],
+
+                chartData: [
+                    { label: 'Mon', value: 65, color: 'bg-blue-500' },
+                    { label: 'Tue', value: 85, color: 'bg-blue-500' },
+                    { label: 'Wed', value: 45, color: 'bg-blue-500' },
+                    { label: 'Thu', value: 95, color: 'bg-blue-500' },
+                    { label: 'Fri', value: 75, color: 'bg-blue-500' },
+                    { label: 'Sat', value: 35, color: 'bg-blue-500' },
+                    { label: 'Sun', value: 55, color: 'bg-blue-500' },
+                ],
+
+                topics: [
+                    { name: 'iran-israel', active: true, matchCount: 45, unread: 3 },
+                    { name: 'bangladesh-budget', active: true, matchCount: 12, unread: 0 },
+                    { name: 'us-china-trade', active: false, matchCount: 89, unread: 0 },
+                    { name: 'ukraine-russia', active: true, matchCount: 120, unread: 12 },
+                ],
+
+                stories: [
+                    {
+                        id: 's1',
+                        title: 'Middle East Escalation: US-Iran Ceasefire Fragile',
+                        summary: 'Tensions remain high despite a declared ceasefire, with sporadic strikes in Lebanon and diplomatic friction over the Strait of Hormuz.',
+                        articleCount: 18,
+                        timeWindow: 'Apr 8 - Apr 9, 2026',
+                        keyDevelopments: [
+                            { title: 'Ceasefire Announced', date: 'Apr 8, 14:00' },
+                            { title: 'Israel Strikes Beirut', date: 'Apr 8, 22:30' },
+                            { title: 'US Fleet Positions', date: 'Apr 9, 06:00' },
+                            { title: 'Diplomatic Talks Stall', date: 'Apr 9, 10:15' },
+                        ]
+                    },
+                    {
+                        id: 's2',
+                        title: 'Bangladesh Economic Reforms & IMF Deal',
+                        summary: 'The interim government moves forward with structural reforms agreed upon with the IMF, sparking mixed reactions from local industries.',
+                        articleCount: 7,
+                        timeWindow: 'Apr 5 - Apr 9, 2026',
+                        keyDevelopments: [
+                            { title: 'IMF Mission Arrives', date: 'Apr 5' },
+                            { title: 'Subsidy Cuts Announced', date: 'Apr 7' },
+                            { title: 'Protests in Dhaka', date: 'Apr 8' },
+                        ]
+                    }
+                ],
+
+                articles: [
+                    {
+                        id: 'a1', title: 'Why Israel\'s attacks on Lebanon could cripple US-Iran ceasefire',
+                        source: 'Al Jazeera', bias: 'Non-Western', perspectiveLens: 'Regional Impact',
+                        snippet: 'Ceasefire dispute escalates as US and Israel exclude Lebanon, raising fears of a broader regional conflict.',
+                        fullContent: 'The fragile ceasefire between the US and Iran is facing immediate strain as Israeli strikes continue in Lebanon. Al Jazeera reports that the exclusion of Lebanon from the truce agreement has sparked outrage in Beirut and Damascus, with fears that the conflict could spiral out of control. Regional analysts suggest this move undermines the diplomatic efforts led by Qatar and Oman.',
+                        publishedAt: '2h ago', category: 'Geopolitics', storyId: 's1',
+                        aiAnalysis: { framing: 'Regional escalation focus', perspective: 'Global South', loadedTerms: ['Cripple', 'Broader conflict', 'Diplomatic tensions'] }
+                    },
+                    {
+                        id: 'a2', title: 'At least 182 killed across Lebanon in large wave of Israeli strikes',
+                        source: 'BBC News', bias: 'Western', perspectiveLens: 'Humanitarian',
+                        snippet: 'Attacks hit the southern suburbs of Beirut, southern Lebanon and the eastern Bekaa Valley, hours after a US-Iran ceasefire was announced.',
+                        fullContent: 'BBC Verify analysis confirms at least 182 casualties following coordinated Israeli strikes across Lebanon. The attacks targeted southern suburbs of Beirut and the Bekaa Valley. Western officials have expressed concern over the proportionality of the response, though stopped short of condemning the action entirely.',
+                        publishedAt: '4h ago', category: 'Conflict', storyId: 's1',
+                        aiAnalysis: { framing: 'Humanitarian impact', perspective: 'Western', loadedTerms: ['Killed', 'Large wave', 'Attacks'] }
+                    },
+                    {
+                        id: 'a3', title: 'Israeli strikes on Lebanon could derail US-Iran ceasefire — Politico',
+                        source: 'TASS', bias: 'Eastern', perspectiveLens: 'Diplomatic Process',
+                        snippet: 'The publication cited an EU official who noted that Brussels, together with international partners, must speak out more actively on Lebanon and work to resume negotiations.',
+                        fullContent: 'TASS cites Western media reports indicating that the continuation of hostilities in Lebanon threatens the broader US-Iran agreement. Russian diplomatic sources emphasize that a comprehensive ceasefire must include all regional actors, not just the primary combatants.',
+                        publishedAt: '5h ago', category: 'Geopolitics', storyId: 's1',
+                        aiAnalysis: { framing: 'Diplomatic failure', perspective: 'Eastern', loadedTerms: ['Derail', 'International partners', 'Resume negotiations'] }
+                    },
+                    {
+                        id: 'a4', title: 'Bangladesh IMF deal: Subsidy cuts to hit the poor hardest',
+                        source: 'Dhaka Tribune', bias: 'Non-Western', perspectiveLens: 'Local Economy',
+                        snippet: 'As part of the IMF structural adjustment program, the government has announced significant cuts to fuel and fertilizer subsidies.',
+                        fullContent: 'The interim government in Dhaka has confirmed subsidy reductions as a condition for the IMF loan package. Critics argue this will disproportionately affect rural farmers and low-income households. The government maintains these reforms are necessary to stabilize the foreign exchange reserves.',
+                        publishedAt: '6h ago', category: 'Bangladesh', storyId: 's2',
+                        aiAnalysis: { framing: 'Economic hardship', perspective: 'Local', loadedTerms: ['Hit the poor', 'Subsidy cuts', 'Stabilize'] }
+                    },
+                    {
+                        id: 'a5', title: 'US Navy deploys carrier group to Strait of Hormuz amid tensions',
+                        source: 'Reuters', bias: 'Neutral', perspectiveLens: 'Military Posture',
+                        snippet: 'The USS Gerald R. Ford has been repositioned to the Gulf region following threats to close the strategic waterway.',
+                        fullContent: 'Reuters reports the deployment of the USS Gerald R. Ford carrier strike group to the Strait of Hormuz. The move comes after Iranian officials threatened to restrict shipping traffic if sanctions are not lifted. This deployment signals a continued US military presence despite the ceasefire agreement.',
+                        publishedAt: '1h ago', category: 'Geopolitics', storyId: 's1',
+                        aiAnalysis: { framing: 'Military deterrence', perspective: 'Neutral', loadedTerms: ['Deploys', 'Tensions', 'Strategic waterway'] }
+                    },
+                     {
+                        id: 'a6', title: 'China calls for immediate halt to all hostilities in Middle East',
+                        source: 'Xinhua', bias: 'Eastern', perspectiveLens: 'Sovereignty',
+                        snippet: 'Beijing urges all parties to respect Lebanon\'s sovereignty and cease fire immediately.',
+                        fullContent: 'Xinhua reports that the Chinese Foreign Ministry has issued a statement calling for an immediate halt to all military operations in Lebanon. China emphasizes the principle of sovereignty and non-interference, criticizing what it terms "selective application of international law" by Western powers.',
+                        publishedAt: '3h ago', category: 'Geopolitics', storyId: 's1',
+                        aiAnalysis: { framing: 'Sovereignty defense', perspective: 'Eastern', loadedTerms: ['Sovereignty', 'Selective application', 'Non-interference'] }
+                    }
+                ],
+
+                chatMessages: [
+                    { id: 1, role: 'ai', text: 'Hello! I\'ve analyzed the latest 50 articles in your feed. The "Middle East Escalation" story is currently dominating with 18 articles. Western sources focus on the humanitarian toll, while Eastern sources emphasize the diplomatic breakdown. How can I help you dig deeper?', sources: ['Al Jazeera', 'TASS', 'BBC'] },
+                    { id: 2, role: 'user', text: 'Compare how Al Jazeera and TASS are framing the ceasefire violations.' },
+                    { id: 3, role: 'ai', text: 'Both sources highlight the violations, but with different emphases:\n\n1. **Al Jazeera** focuses on the *regional impact*, specifically the exclusion of Lebanon from the truce and the potential for a broader conflict.\n2. **TASS** emphasizes the *diplomatic failure*, citing Western media to suggest the US is losing control of the narrative and that a comprehensive deal is impossible without including all actors.\n\nWould you like me to generate a summary timeline of these events?', sources: [] }
+                ],
+
+                init() {
+                    lucide.createIcons();
+                    // Watch for view changes to refresh icons
+                    this.$watch('currentView', () => {
+                        setTimeout(() => lucide.createIcons(), 50);
+                    });
+                },
+
+                get filteredArticles() {
+                    let filtered = this.articles;
+                    if (this.activeCategory !== 'All') {
+                        filtered = filtered.filter(a => a.category === this.activeCategory);
+                    }
+                    if (this.searchQuery) {
+                        const q = this.searchQuery.toLowerCase();
+                        filtered = filtered.filter(a =>
+                            a.title.toLowerCase().includes(q) ||
+                            a.snippet.toLowerCase().includes(q) ||
+                            a.source.toLowerCase().includes(q)
+                        );
+                    }
+                    return filtered;
+                },
+
+                openArticle(article) {
+                    this.selectedArticle = article;
+                },
+
+                sendChatMessage(text) {
+                    if (!text.trim()) return;
+                    this.chatMessages.push({ id: Date.now(), role: 'user', text: text, sources: [] });
+
+                    // Simulate AI response
+                    setTimeout(() => {
+                        this.chatMessages.push({
+                            id: Date.now() + 1,
+                            role: 'ai',
+                            text: 'I\'m processing that request based on the current feed context. It looks like you are interested in the geopolitical dynamics of this topic. Let me synthesize the bias indicators...',
+                            sources: ['Reuters', 'Al Jazeera']
+                        });
+                        // Scroll to bottom would go here
+                    }, 1000);
+                },
+
+                formatTime(time) {
+                    return time; // Mock function
+                }
+            }
+        }
+    </script>
+</body>
+</html>

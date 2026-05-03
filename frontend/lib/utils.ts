@@ -1,71 +1,45 @@
-import { clsx, type ClassValue } from "clsx"
-import { twMerge } from "tailwind-merge"
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+  return twMerge(clsx(inputs));
 }
 
-/** Format a Date into relative time (e.g. "2h ago", "3d ago") */
-export function formatRelativeTime(date: Date | string): string {
+export function formatRelativeTime(dateString: string): string {
+  const date = new Date(dateString);
   const now = new Date();
-  const d = typeof date === "string" ? new Date(date) : date;
-  const diffMs = now.getTime() - d.getTime();
-  const diffMin = Math.floor(diffMs / 60000);
-  const diffHr = Math.floor(diffMin / 60);
-  const diffDay = Math.floor(diffHr / 24);
+  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
 
-  if (diffMin < 1) return "just now";
-  if (diffMin < 60) return `${diffMin}m ago`;
-  if (diffHr < 24) return `${diffHr}h ago`;
-  if (diffDay < 7) return `${diffDay}d ago`;
-  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  if (diffInSeconds < 60) return `${diffInSeconds}s ago`;
+  const diffInMinutes = Math.floor(diffInSeconds / 60);
+  if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+  const diffInHours = Math.floor(diffInMinutes / 60);
+  if (diffInHours < 24) return `${diffInHours}h ago`;
+  const diffInDays = Math.floor(diffInHours / 24);
+  if (diffInDays < 30) return `${diffInDays}d ago`;
+  const diffInMonths = Math.floor(diffInDays / 30);
+  if (diffInMonths < 12) return `${diffInMonths}mo ago`;
+  const diffInYears = Math.floor(diffInDays / 365);
+  return `${diffInYears}y ago`;
 }
 
-/** Bias category → Tailwind classes for color-coded badges */
-export const biasStyles: Record<string, { bg: string; text: string; border: string }> = {
-  Western: {
-    bg: "bg-blue-500/10",
-    text: "text-blue-400",
-    border: "border-blue-500/20",
-  },
-  Eastern: {
-    bg: "bg-red-500/10",
-    text: "text-red-400",
-    border: "border-red-500/20",
-  },
-  "Non-Western": {
-    bg: "bg-emerald-500/10",
-    text: "text-emerald-400",
-    border: "border-emerald-500/20",
-  },
-  Neutral: {
-    bg: "bg-zinc-700/30",
-    text: "text-zinc-400",
-    border: "border-zinc-600",
-  },
-};
+export function getBiasBadgeVariant(
+  biasCategory: string | null | undefined,
+): "emerald" | "amber" | "blue" | "red" | "neutral" {
+  if (!biasCategory) return "neutral";
+  const lower = biasCategory.toLowerCase();
 
-/** Get sentiment label and color from score */
-export function getSentimentInfo(score: number | null | undefined) {
-  if (score == null) return { label: "N/A", color: "text-zinc-500", bgColor: "bg-zinc-800" };
-  if (score > 0.2) return { label: "Positive", color: "text-emerald-400", bgColor: "bg-emerald-500/10" };
-  if (score < -0.2) return { label: "Negative", color: "text-rose-400", bgColor: "bg-rose-500/10" };
-  return { label: "Neutral", color: "text-zinc-400", bgColor: "bg-zinc-800" };
-}
+  // Perspective mapping (based on PerspectiveWidget colors)
+  if (lower.includes("non-western")) return "emerald";
+  if (lower.includes("western")) return "blue";
+  if (lower.includes("eastern")) return "red";
+  if (lower.includes("wire")) return "amber";
 
-/** Article type shared across components */
-export interface Article {
-  id: string;
-  title: string;
-  source: string;
-  publishedAt: string;
-  contentSnippet: string;
-  biasNote: string | null;
-  biasCategory: string | null;
-  sentimentScore: number | null;
-  perspectiveCountries: string[];
-  url: string;
-  categories: { id: string; name: string }[];
-  entities: string[];
-  sourceCountry: string | null;
+  // Standard bias mapping
+  if (lower.includes("left")) return "blue";
+  if (lower.includes("right")) return "red";
+  if (lower.includes("center") || lower.includes("least")) return "emerald";
+  if (lower.includes("mixed")) return "amber";
+
+  return "neutral";
 }

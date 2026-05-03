@@ -1,4 +1,4 @@
-import { cn, getSentimentInfo } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 
 interface SentimentBadgeProps {
   score: number | null | undefined;
@@ -11,14 +11,22 @@ export function SentimentBadge({
   showScore = true,
   className,
 }: SentimentBadgeProps) {
-  const { label, color, bgColor } = getSentimentInfo(score);
+  // const { label, color, bgColor } = getSentimentInfo(score);
+  const label =
+    score != null ? (score > 0 ? "Positive" : "Negative") : "Neutral";
+  const color =
+    label === "Positive"
+      ? "text-emerald-600"
+      : label === "Negative"
+        ? "text-rose-600"
+        : "text-zinc-600";
 
   return (
     <span
       className={cn(
         "inline-flex items-center space-x-1 text-[10px] font-medium",
         color,
-        className
+        className,
       )}
     >
       <span
@@ -28,9 +36,7 @@ export function SentimentBadge({
           "bg-zinc-500": label === "Neutral" || label === "N/A",
         })}
       />
-      {showScore && score != null && (
-        <span>{score.toFixed(2)}</span>
-      )}
+      {showScore && score != null && <span>{score.toFixed(2)}</span>}
     </span>
   );
 }
