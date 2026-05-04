@@ -9,6 +9,8 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import Sidebar from "@/components/layout/Sidebar";
 import FeedSkeleton from "@/components/Feed/FeedSkeleton";
+import ChatFAB from "@/components/chat/ChatFAB";
+import ChatSidebar from "@/components/chat/ChatSidebar";
 
 const figtree = Figtree({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -60,12 +62,6 @@ export default function RootLayout({
 
                 {/* Main Content Area */}
                 <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-                  {/*
-                    Suspense boundary: Navbar/Sidebar/Footer form the static shell
-                    (prerendered at build time). The page content streams in at
-                    request time since pages read runtime APIs like searchParams.
-                    FeedSkeleton holds the correct shape while the page loads.
-                  */}
                   <Suspense fallback={<FeedSkeleton />}>
                     <div className="flex-1">{children}</div>
                   </Suspense>
@@ -74,6 +70,10 @@ export default function RootLayout({
               </main>
             </div>
           </TooltipProvider>
+
+          {/* Global chat sidebar — available on every page */}
+          <ChatFAB />
+          <ChatSidebar />
         </Providers>
       </body>
     </html>

@@ -1,11 +1,20 @@
-import { Sparkles } from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
+"use client";
+
 import { SentimentBadge } from "./SentimentBadge";
 import { Article } from "@/types/article";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { formatRelativeTime, getBiasBadgeVariant } from "@/lib/utils";
+import AiButton from "./AiButton";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Globe } from "@hugeicons/core-free-icons";
 
 export default function ArticleCard({ article }: { article: Article }) {
   return (
@@ -28,14 +37,7 @@ export default function ArticleCard({ article }: { article: Article }) {
               </Badge>
             )}
 
-            <Link
-              href={`/?chat=${article.id}`}
-              scroll={false}
-              className="shrink-0 p-1.5 rounded-md text-muted-foreground hover:text-primary hover:bg-accent transition-all opacity-80 group-hover:opacity-100"
-              title="Ask AI about this article"
-            >
-              <HugeiconsIcon icon={Sparkles} className="w-4 h-4" />
-            </Link>
+            <AiButton article={article} />
           </div>
         </div>
       </CardHeader>
@@ -69,29 +71,21 @@ export default function ArticleCard({ article }: { article: Article }) {
         </Link>
 
         {/* Category tags */}
-        {article.categories && article.categories.length > 0 && (
-          <div className="flex flex-wrap gap-1 mt-auto">
-            {article.categories.slice(0, 3).map((cat) => (
-              <Badge
-                key={cat.id}
-                variant="outline"
-                className="capitalize text-muted-foreground"
-              >
-                {cat.name}
-              </Badge>
-            ))}
-          </div>
-        )}
-      </CardContent>
-
-      {/* Footer: Bias + Perspective */}
-      {/*<CardFooter className="border-t flex items-center justify-between mt-auto">
-        <div className="flex items-center space-x-2 w-full justify-between">
-          {article.biasCategory && (
-            <span className="text-[10px] font-medium text-muted-foreground bg-secondary/50 px-2 py-0.5 rounded">
-              {article.biasCategory}
-            </span>
+        <div className="flex justify-between items-center">
+          {article.categories && article.categories.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-auto">
+              {article.categories.slice(0, 3).map((cat) => (
+                <Badge
+                  key={cat.id}
+                  variant="outline"
+                  className="capitalize text-muted-foreground"
+                >
+                  {cat.name}
+                </Badge>
+              ))}
+            </div>
           )}
+
           {article.perspectiveCountries &&
             article.perspectiveCountries.length > 0 && (
               <div className="flex items-center space-x-1 ml-auto">
@@ -105,7 +99,7 @@ export default function ArticleCard({ article }: { article: Article }) {
               </div>
             )}
         </div>
-      </CardFooter>*/}
+      </CardContent>
     </Card>
   );
 }

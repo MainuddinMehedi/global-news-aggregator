@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import type { Article } from "@/types/article";
 
 // ─── Feed slice ───────────────────────────────────────────────────────────────
 interface FeedSlice {
@@ -18,7 +19,19 @@ interface UserSlice {
   setUser: (user: null) => void;
 }
 
-type AppStore = FeedSlice & NotificationSlice & UserSlice;
+// ─── Chat sidebar slice ──────────────────────────────────────────────────────
+interface ChatSidebarSlice {
+  isChatOpen: boolean;
+  /** Article context when opened from an article card's AI button */
+  contextArticle: Article | null;
+  openChat: () => void;
+  closeChat: () => void;
+  /** Open sidebar with a specific article pre-loaded as context */
+  openChatWithContext: (article: Article) => void;
+  clearChatContext: () => void;
+}
+
+type AppStore = FeedSlice & NotificationSlice & UserSlice & ChatSidebarSlice;
 
 export const useAppStore = create<AppStore>()((set) => ({
   // ── Feed ──
@@ -32,6 +45,14 @@ export const useAppStore = create<AppStore>()((set) => ({
   // ── User ──
   user: null,
   setUser: (user) => set({ user }),
+
+  // ── Chat sidebar ──
+  isChatOpen: false,
+  contextArticle: null,
+  openChat: () => set({ isChatOpen: true }),
+  closeChat: () => set({ isChatOpen: false, contextArticle: null }),
+  openChatWithContext: (article) => set({ isChatOpen: true, contextArticle: article }),
+  clearChatContext: () => set({ contextArticle: null }),
 }));
 
 // ─── Selector hooks ───────────────────────────────────────────────────────────
@@ -43,3 +64,10 @@ export const useArticleCount    = () => useAppStore((s) => s.articleCount);
 export const useSetArticleCount = () => useAppStore((s) => s.setArticleCount);
 export const useUnreadCount     = () => useAppStore((s) => s.unreadCount);
 export const useSetUnreadCount  = () => useAppStore((s) => s.setUnreadCount);
+
+export const useIsChatOpen        = () => useAppStore((s) => s.isChatOpen);
+export const useOpenChat          = () => useAppStore((s) => s.openChat);
+export const useCloseChat         = () => useAppStore((s) => s.closeChat);
+export const useOpenChatWithContext = () => useAppStore((s) => s.openChatWithContext);
+export const useClearChatContext   = () => useAppStore((s) => s.clearChatContext);
+export const useChatContextArticle = () => useAppStore((s) => s.contextArticle);

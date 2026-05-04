@@ -43,10 +43,6 @@ const INITIAL_MESSAGES: Message[] = [
   },
 ];
 
-// ---------------------------------------------------------------------------
-// Component
-// ---------------------------------------------------------------------------
-
 export default function ChatInterface() {
   const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
   const [contexts, setContexts] = useState<ContextItem[]>([]);
