@@ -462,6 +462,26 @@
         -ms-overflow-style: none; /* IE and Edge */
         scrollbar-width: none; /* Firefox */
     }
+    .hide-scrollbar {
+        overflow: -moz-scrollbars-none;
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+    .hide-scrollbar::-webkit-scrollbar {
+        display: none;
+    }
+}
+
+/* Voice waveform bar animation */
+@keyframes voice-bar {
+    0%, 100% { height: 4px; }
+    50%       { height: 32px; }
+}
+
+@layer utilities {
+    .animate-voice-bar {
+        animation: voice-bar ease-in-out infinite;
+    }
 }
 
 @layer base {
