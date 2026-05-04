@@ -2,12 +2,12 @@
 
 import { cn } from "@/lib/utils";
 import {
-  AllBookmarkIcon,
   GitMerge,
   MessageSquare,
   Newspaper,
   PresentationBarChart02FreeIcons,
-  Settings,
+  RssLockedIcon,
+  Settings
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import Link from "next/link";
@@ -16,17 +16,19 @@ import { usePathname } from "next/navigation";
 const navItems = [
   { id: "/", label: "Feed", icon: Newspaper, badge: 5 },
   { id: "/stories", label: "Stories", icon: GitMerge, badge: 0 },
+  {
+    id: "/locked-topics",
+    label: "Locked Topics",
+    // icon: AllBookmarkIcon,
+    // icon: EarthLockIcon,
+    icon: RssLockedIcon,
+    badge: 0,
+  },
   { id: "/chat", label: "AI Chat", icon: MessageSquare, badge: 0 },
   {
     id: "/analytics",
     label: "Analytics",
     icon: PresentationBarChart02FreeIcons,
-    badge: 0,
-  },
-  {
-    id: "/locked-topics",
-    label: "Locked Topics",
-    icon: AllBookmarkIcon,
     badge: 0,
   },
   { id: "/settings", label: "Settings", icon: Settings, badge: 0 },
