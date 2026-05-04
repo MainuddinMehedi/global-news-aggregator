@@ -58,10 +58,10 @@ export default function LockedTopicsPage() {
             <HugeiconsIcon icon={LockedIcon} className="h-3.5 w-3.5" />
             Monitoring
           </div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+          <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl lg:text-5xl">
             Locked Topics
           </h1>
-          <p className="max-w-xl text-base leading-relaxed text-muted-foreground">
+          <p className="max-w-2xl text-base leading-relaxed text-muted-foreground">
             Pin specific geopolitical themes to ensure they are persistently
             tracked. You will receive notifications when significant matches are
             found.
@@ -115,7 +115,7 @@ export default function LockedTopicsPage() {
 
                 {/* Topic Info */}
                 <div className="flex flex-col gap-1.5">
-                  <h3 className="text-base font-semibold leading-none text-foreground transition-colors group-hover:text-primary">
+                  <h3 className="text-sm font-semibold leading-none text-foreground/90 transition-colors group-hover:text-foreground">
                     {topic.name}
                   </h3>
                   <div className="flex items-center gap-2.5 text-xs font-medium text-muted-foreground">

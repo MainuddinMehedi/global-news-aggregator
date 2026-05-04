@@ -17,7 +17,7 @@ export default function ArticleCard({ article }: { article: Article }) {
             scroll={false}
             className="flex-1"
           >
-            <CardTitle className="text-lg font-semibold leading-snug group-hover:text-emerald-700 dark:group-hover:text-emerald-500 transition-colors line-clamp-2">
+            <CardTitle className="text-lg font-bold leading-snug group-hover:text-primary dark:group-hover:text-primary transition-colors line-clamp-2">
               {article.title}
             </CardTitle>
           </Link>
@@ -31,7 +31,7 @@ export default function ArticleCard({ article }: { article: Article }) {
             <Link
               href={`/?chat=${article.id}`}
               scroll={false}
-              className="shrink-0 p-1.5 rounded-md text-muted-foreground hover:text-emerald-500 hover:bg-accent transition-all opacity-80 group-hover:opacity-100"
+              className="shrink-0 p-1.5 rounded-md text-muted-foreground hover:text-primary hover:bg-accent transition-all opacity-80 group-hover:opacity-100"
               title="Ask AI about this article"
             >
               <HugeiconsIcon icon={Sparkles} className="w-4 h-4" />
@@ -63,7 +63,7 @@ export default function ArticleCard({ article }: { article: Article }) {
           scroll={false}
           className="flex-1 block"
         >
-          <p className="text-sm text-muted-foreground line-clamp-3">
+          <p className="text-sm leading-relaxed text-muted-foreground line-clamp-3">
             {article.contentSnippet}
           </p>
         </Link>
