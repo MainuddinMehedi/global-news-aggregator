@@ -72,8 +72,10 @@ export default function RootLayout({
           </TooltipProvider>
 
           {/* Global chat sidebar — available on every page */}
-          <ChatFAB />
-          <ChatSidebar />
+          <Suspense fallback={null}>
+            <ChatFAB />
+            <ChatSidebar />
+          </Suspense>
         </Providers>
       </body>
     </html>

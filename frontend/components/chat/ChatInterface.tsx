@@ -117,6 +117,7 @@ export default function ChatInterface() {
   // Context management
   // ---------------------------------------------------------------------------
 
+  // TODO-NOTE: Manage context through zustand as you need to have the context in floating chat and chat page both.
   const addContext = useCallback(() => {
     // TODO: Open a real picker / search dialog.
     // For now, add a placeholder so the panel is explorable.
