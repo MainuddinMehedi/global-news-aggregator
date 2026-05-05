@@ -1,33 +1,8 @@
-const stories = [
-  {
-    id: "story-1",
-    title: "Middle East escalation",
-    summary:
-      "A surge of regional reporting shows mounting tensions across the Levant, with new diplomatic pressure and rising cross-border incidents shaping the narrative.",
-    articleCount: 13,
-    timeWindow: "Last 12 hours",
-    keyDevelopments: [
-      { title: "UN calls for urgent de-escalation", date: "May 3" },
-      { title: "Multiple outlets report fresh troop movements", date: "May 3" },
-      { title: "Satellite imagery confirms border buildup", date: "May 2" },
-    ],
-  },
-  {
-    id: "story-2",
-    title: "Energy security under pressure",
-    summary:
-      "Global outlets highlight a new energy corridor debate, exposing competing narratives on supply resilience and geopolitical leverage.",
-    articleCount: 9,
-    timeWindow: "Last 18 hours",
-    keyDevelopments: [
-      { title: "Pipeline sanctions discussed in Brussels", date: "May 3" },
-      { title: "Markets react to southern supply shifts", date: "May 2" },
-      { title: "Analysts warn of extended volatility", date: "May 1" },
-    ],
-  },
-];
+import { getStoryClusters } from "@/queries/stories";
 
-export default function Page() {
+export default async function Page() {
+  const stories = await getStoryClusters();
+
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       {/* Header Section */}

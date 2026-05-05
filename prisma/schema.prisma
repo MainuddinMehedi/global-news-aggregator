@@ -65,6 +65,7 @@ model ProcessedArticle {
   processedAt          DateTime @default(now())
 
   matchedTopics UserTopic[]
+  storyClusters StoryCluster[] @relation("ArticleStoryClusters")
 }
 
 model AiUsage {
@@ -78,4 +79,17 @@ model AiUsage {
   createdAt     DateTime @default(now())
 
   @@index([date])
+}
+
+model StoryCluster {
+  id              String   @id @default(uuid())
+  title           String
+  summary         String   @db.Text
+  timeWindow      String?
+  keyDevelopments Json?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  articles        ProcessedArticle[] @relation("ArticleStoryClusters")
 }

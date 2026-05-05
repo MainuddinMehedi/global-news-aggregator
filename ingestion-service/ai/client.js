@@ -145,3 +145,70 @@ export async function processBatchWithAI(batch, estimatedTokens = 0) {
 
   return requestAI(primaryConfig, prompt);
 }
+
+export function buildClusteringPrompt(articles, activeClusters) {
+  const articlesContext = articles
+    .map(
+      (a, i) => `
+[ARTICLE ${i + 1}]
+- ID: ${a.id}
+- Title: ${a.title}
+- Summary: ${a.contentSnippet}
+`,
+    )
+    .join("\n");
+
+  const clustersContext = activeClusters.length === 0 ? "No active clusters." : activeClusters
+    .map(
+      (c) => `
+[CLUSTER]
+- ID: ${c.id}
+- Title: ${c.title}
+- Summary: ${c.summary}
+`,
+    )
+    .join("\n");
+
+  return `You are a geopolitical news analyst organizing articles into evolving story clusters.
+
+ACTIVE CLUSTERS:
+${clustersContext}
+
+NEW ARTICLES TO CLUSTER:
+${articlesContext}
+
+TASK:
+For each article, decide if it belongs to an EXISTING cluster or if it represents a major NEW developing story.
+- If it matches an active cluster, assign its ID.
+- If it's a completely new, major geopolitical event, propose a new cluster. (Do not create new clusters for minor, isolated events; those can be assigned to null/unclustered).
+
+OUTPUT FORMAT (strict JSON, no markdown):
+{
+  "assignments": [
+    {
+      "articleId": "article-id-here",
+      "clusterId": "cluster-id-here" // use existing ID, or null if it doesn't fit anywhere and isn't major
+    }
+  ],
+  "newClusters": [
+    {
+      "tempId": "temp-1",
+      "title": "Short, punchy title for new story",
+      "summary": "1-2 sentence summary of this new evolving narrative",
+      "timeWindow": "Just Started",
+      "keyDevelopments": [
+        { "title": "First major event of this story", "date": "Month Day" }
+      ],
+      "articleIds": ["article-id-that-started-this"]
+    }
+  ]
+}`;
+}
+
+export async function processClusteringBatchWithAI(batch, activeClusters, estimatedTokens = 0) {
+  const prompt = buildClusteringPrompt(batch, activeClusters);
+  
+  await waitForCapacity(estimatedTokens);
+  
+  return requestAI(primaryConfig, prompt);
+}

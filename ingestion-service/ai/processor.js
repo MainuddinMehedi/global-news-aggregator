@@ -1,4 +1,4 @@
-import { processBatchWithAI } from "./client.js";
+import { processBatchWithAI, processClusteringBatchWithAI } from "./client.js";
 import { createNextBatch } from "./tokenBatcher.js";
 import { prisma } from "../db/client.js";
 import { ALLOWED_CATEGORIES } from "./categories.js";
@@ -71,6 +71,7 @@ export function createArticleProcessor(
         });
 
         let successCount = 0;
+        const successfullyProcessedArticles = [];
 
         // Save to DB sequentially to prevent 'connectOrCreate' unique constraint race conditions
         for (const article of batch) {
@@ -127,6 +128,7 @@ export function createArticleProcessor(
             );
 
             successCount++;
+            successfullyProcessedArticles.push(rawArticle);
           } catch (err) {
             console.error(
               `⚠️ Failed to save processed article: ${rawArticle.title}`,
@@ -156,6 +158,105 @@ export function createArticleProcessor(
         }
 
         console.log(`✅ Batch done: ${successCount}/${batch.length} succeeded`);
+
+        // ==========================================
+        // 2. PASS: STORY CLUSTERING
+        // ==========================================
+        if (successfullyProcessedArticles.length > 0) {
+          try {
+            console.log(`🤖 Running clustering pass for ${successfullyProcessedArticles.length} articles...`);
+            
+            // Fetch active clusters to provide context to the AI
+            const activeClusters = await prisma.storyCluster.findMany({
+              where: { isActive: true },
+              orderBy: { updatedAt: 'desc' },
+              take: 20
+            });
+
+            // Make the clustering AI request
+            const clusteringResponse = await processClusteringBatchWithAI(successfullyProcessedArticles, activeClusters, 500);
+
+            let clusterData;
+            try {
+              clusterData = JSON.parse(
+                clusteringResponse.content.replace(/```json|```/g, "").trim()
+              );
+            } catch (err) {
+              console.warn(`⚠️ Invalid JSON from clustering AI`);
+              clusterData = { assignments: [], newClusters: [] };
+            }
+
+            const { assignments = [], newClusters = [] } = clusterData;
+
+            // Save new clusters
+            for (const nc of newClusters) {
+              try {
+                // Ensure articleIds is an array and filter out any invalid/null IDs
+                const validArticleIds = Array.isArray(nc.articleIds) ? nc.articleIds.filter(id => id) : [];
+                const articlesToConnect = validArticleIds.map(id => ({ rawArticleId: id }));
+
+                await prisma.storyCluster.create({
+                  data: {
+                    title: nc.title,
+                    summary: nc.summary,
+                    timeWindow: nc.timeWindow || "Just Started",
+                    keyDevelopments: nc.keyDevelopments || [],
+                    articles: {
+                      connect: articlesToConnect
+                    }
+                  }
+                });
+                console.log(`+ Created new cluster: "${nc.title}"`);
+              } catch (err) {
+                 console.error(`⚠️ Failed to create new cluster: ${nc.title}`, err.message);
+              }
+            }
+
+            // Update existing cluster assignments
+            for (const assignment of assignments) {
+               if (!assignment.clusterId || !assignment.articleId) continue;
+               try {
+                 await prisma.processedArticle.update({
+                   where: { rawArticleId: assignment.articleId },
+                   data: {
+                     storyClusters: {
+                       connect: { id: assignment.clusterId }
+                     }
+                   }
+                 });
+                 // Touch the cluster's updatedAt
+                 await prisma.storyCluster.update({
+                   where: { id: assignment.clusterId },
+                   data: { updatedAt: new Date() }
+                 });
+               } catch (err) {
+                 console.error(`⚠️ Failed to assign article ${assignment.articleId} to cluster ${assignment.clusterId}`, err.message);
+               }
+            }
+
+            // Log AI Usage for clustering
+            try {
+              const today = new Date().toISOString().split("T")[0];
+              const costPer1k = 0.0006;
+              const estimatedCost = (clusteringResponse.tokensUsed / 1000) * costPer1k;
+              await prisma.aiUsage.create({
+                data: {
+                  date: today,
+                  provider: clusteringResponse.provider,
+                  model: clusteringResponse.model,
+                  tokensUsed: clusteringResponse.tokensUsed,
+                  estimatedCost: estimatedCost,
+                  success: true,
+                },
+              });
+            } catch (err) {
+              console.error(`⚠️ Failed to log AI usage for clustering batch`, err.message);
+            }
+
+          } catch (err) {
+             console.error(`❌ Clustering pass failed:`, err);
+          }
+        }
       } catch (err) {
         console.error("❌ Batch processing failed:", err);
       }
