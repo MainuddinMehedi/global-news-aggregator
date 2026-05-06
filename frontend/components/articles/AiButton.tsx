@@ -1,3 +1,5 @@
+"use client";
+
 import { useOpenChatWithContext } from "@/store";
 import { Article } from "@/types/article";
 import { Sparkles } from "@hugeicons/core-free-icons";

@@ -81,11 +81,11 @@ export default async function Home({
       </div>
 
       {/* Details Modal */}
-      {articleId && (
+      {/* {articleId && (
         <Suspense fallback={null}>
           <ArticleDetailsModal article={selectedArticle} />
         </Suspense>
-      )}
+      )} */}
     </div>
   );
 }
