@@ -9,8 +9,8 @@ datasource db {
 }
 
 model Category {
-  id       String    @id @default(uuid())
-  name     String    @unique
+  id       String             @id @default(uuid())
+  name     String             @unique
   articles ProcessedArticle[] @relation("ProcessedArticleCategories")
 }
 
@@ -22,30 +22,30 @@ model User {
 }
 
 model UserTopic {
-  id             String    @id @default(uuid())
+  id             String            @id @default(uuid())
   userId         String
-  user           User      @relation(fields: [userId], references: [id])
+  user           User              @relation(fields: [userId], references: [id])
   topicName      String
   lastNotifiedAt DateTime?
-  article        ProcessedArticle?  @relation(fields: [articleId], references: [id])
+  article        ProcessedArticle? @relation(fields: [articleId], references: [id])
   articleId      String?
 
   @@unique([userId, topicName])
 }
 
 model RawArticle {
-  id             String   @id @default(uuid())
-  title          String
-  contentSnippet String   @db.Text
-  extractedContent String? @db.Text
-  url            String   @unique
-  slug           String?  @unique
-  source         String
-  sourceCountry  String?
-  publishedAt    DateTime
-  fetchedAt      DateTime @default(now())
-  contentHash    String?  @unique
-  rawMetadata    Json?
+  id               String   @id @default(uuid())
+  title            String
+  contentSnippet   String   @db.Text
+  extractedContent String?  @db.Text
+  url              String   @unique
+  slug             String?  @unique
+  source           String
+  sourceCountry    String?
+  publishedAt      DateTime
+  fetchedAt        DateTime @default(now())
+  contentHash      String?  @unique
+  rawMetadata      Json?
 
   processedArticle ProcessedArticle?
 
@@ -54,17 +54,17 @@ model RawArticle {
 }
 
 model ProcessedArticle {
-  id                   String   @id @default(uuid())
-  rawArticleId         String   @unique
+  id                   String     @id @default(uuid())
+  rawArticleId         String     @unique
   rawArticle           RawArticle @relation(fields: [rawArticleId], references: [id], onDelete: Cascade)
   categories           Category[] @relation("ProcessedArticleCategories")
   entities             String[]
   sentimentScore       Float?
   biasNote             String?
-  biasCategory         String?   // "Western", "Eastern", "Non-Western", "Neutral"
+  biasCategory         String? // "Western", "Eastern", "Non-Western", "Neutral"
   perspectiveCountries String[]
   model                String?
-  processedAt          DateTime @default(now())
+  processedAt          DateTime   @default(now())
 
   matchedTopics UserTopic[]
   storyClusters StoryCluster[] @relation("ArticleStoryClusters")
@@ -72,7 +72,7 @@ model ProcessedArticle {
 
 model AiUsage {
   id            String   @id @default(uuid())
-  date          String   // Format: YYYY-MM-DD for easy querying
+  date          String // Format: YYYY-MM-DD for easy querying
   provider      String
   model         String
   tokensUsed    Int
@@ -84,14 +84,35 @@ model AiUsage {
 }
 
 model StoryCluster {
-  id              String   @id @default(uuid())
+  id              String  @id @default(uuid())
+  slug            String  @unique
   title           String
-  summary         String   @db.Text
+  summary         String  @db.Text
   timeWindow      String?
   keyDevelopments Json?
-  isActive        Boolean  @default(true)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  isActive        Boolean @default(true)
 
-  articles        ProcessedArticle[] @relation("ArticleStoryClusters")
+  // Intelligence
+  impact       String?
+  impactScore  Float?
+  status       String?
+  whyItMatters String? @db.Text
+
+  regions String[]
+  themes  String[]
+
+  // Signals
+  articleCount Int      @default(0)
+  sourceCount  Int?
+  topSources   String[]
+
+  lastActivityAt DateTime?
+  activityScore  Float?
+
+  trendData Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  articles ProcessedArticle[] @relation("ArticleStoryClusters")
 }

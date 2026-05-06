@@ -158,18 +158,21 @@ export function buildClusteringPrompt(articles, activeClusters) {
     )
     .join("\n");
 
-  const clustersContext = activeClusters.length === 0 ? "No active clusters." : activeClusters
-    .map(
-      (c) => `
+  const clustersContext =
+    activeClusters.length === 0
+      ? "No active clusters."
+      : activeClusters
+          .map(
+            (c) => `
 [CLUSTER]
 - ID: ${c.id}
 - Title: ${c.title}
 - Summary: ${c.summary}
 `,
-    )
-    .join("\n");
+          )
+          .join("\n");
 
-  return `You are a geopolitical news analyst organizing articles into evolving story clusters.
+  return `You are a geopolitical news analyst organizing articles into evolving story clusters. You are building an intelligence dossier.
 
 ACTIVE CLUSTERS:
 ${clustersContext}
@@ -181,6 +184,13 @@ TASK:
 For each article, decide if it belongs to an EXISTING cluster or if it represents a major NEW developing story.
 - If it matches an active cluster, assign its ID.
 - If it's a completely new, major geopolitical event, propose a new cluster. (Do not create new clusters for minor, isolated events; those can be assigned to null/unclustered).
+
+For NEW clusters, you MUST generate the following intelligence metadata:
+- impact: One of "CRITICAL", "HIGH", "MEDIUM", "LOW"
+- status: One of "ESCALATING", "DEVELOPING", "STABLE", "RESOLVING"
+- whyItMatters: A sharp, 1-line analysis of the geopolitical or economic implications of this story.
+- regions: Array of affected regions/countries (e.g. ["Middle East", "USA"])
+- themes: Array of topics (e.g. ["Trade War", "Elections"])
 
 OUTPUT FORMAT (strict JSON, no markdown):
 {
@@ -196,8 +206,13 @@ OUTPUT FORMAT (strict JSON, no markdown):
       "title": "Short, punchy title for new story",
       "summary": "1-2 sentence summary of this new evolving narrative",
       "timeWindow": "Just Started",
+      "impact": "HIGH",
+      "status": "DEVELOPING",
+      "whyItMatters": "This shift could disrupt global semiconductor supply chains.",
+      "regions": ["China", "USA"],
+      "themes": ["Technology", "Sanctions"],
       "keyDevelopments": [
-        { "title": "First major event of this story", "date": "Month Day" }
+        { "title": "First major event of this story", "date": "Month Day", "description": "Optional 1-sentence detail" }
       ],
       "articleIds": ["article-id-that-started-this"]
     }
@@ -205,10 +220,14 @@ OUTPUT FORMAT (strict JSON, no markdown):
 }`;
 }
 
-export async function processClusteringBatchWithAI(batch, activeClusters, estimatedTokens = 0) {
+export async function processClusteringBatchWithAI(
+  batch,
+  activeClusters,
+  estimatedTokens = 0,
+) {
   const prompt = buildClusteringPrompt(batch, activeClusters);
-  
+
   await waitForCapacity(estimatedTokens);
-  
+
   return requestAI(primaryConfig, prompt);
 }

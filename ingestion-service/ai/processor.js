@@ -1,7 +1,7 @@
-import { processBatchWithAI, processClusteringBatchWithAI } from "./client.js";
-import { createNextBatch } from "./tokenBatcher.js";
 import { prisma } from "../db/client.js";
 import { ALLOWED_CATEGORIES } from "./categories.js";
+import { processBatchWithAI, processClusteringBatchWithAI } from "./client.js";
+import { createNextBatch } from "./tokenBatcher.js";
 
 export function createArticleProcessor(
   batchSize = parseInt(process.env.AI_BATCH_SIZE) || 5,
@@ -165,7 +165,7 @@ export function createArticleProcessor(
         if (successfullyProcessedArticles.length > 0) {
           try {
             console.log(`🤖 Running clustering pass for ${successfullyProcessedArticles.length} articles...`);
-            
+
             // Fetch active clusters to provide context to the AI
             const activeClusters = await prisma.storyCluster.findMany({
               where: { isActive: true },
@@ -195,12 +195,25 @@ export function createArticleProcessor(
                 const validArticleIds = Array.isArray(nc.articleIds) ? nc.articleIds.filter(id => id) : [];
                 const articlesToConnect = validArticleIds.map(id => ({ rawArticleId: id }));
 
+                // Generate a simple slug
+                const baseSlug = (nc.title || "story").toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+                const randomSuffix = Math.random().toString(36).substring(2, 7);
+                const slug = `${baseSlug}-${randomSuffix}`;
+
                 await prisma.storyCluster.create({
                   data: {
+                    slug: slug,
                     title: nc.title,
                     summary: nc.summary,
                     timeWindow: nc.timeWindow || "Just Started",
+                    impact: nc.impact || null,
+                    status: nc.status || null,
+                    whyItMatters: nc.whyItMatters || null,
+                    regions: nc.regions || [],
+                    themes: nc.themes || [],
                     keyDevelopments: nc.keyDevelopments || [],
+                    lastActivityAt: new Date(),
+                    articleCount: validArticleIds.length,
                     articles: {
                       connect: articlesToConnect
                     }
@@ -224,10 +237,14 @@ export function createArticleProcessor(
                      }
                    }
                  });
-                 // Touch the cluster's updatedAt
+                 // Touch the cluster's updatedAt and increment article count
                  await prisma.storyCluster.update({
                    where: { id: assignment.clusterId },
-                   data: { updatedAt: new Date() }
+                   data: {
+                     updatedAt: new Date(),
+                     lastActivityAt: new Date(),
+                     articleCount: { increment: 1 }
+                   }
                  });
                } catch (err) {
                  console.error(`⚠️ Failed to assign article ${assignment.articleId} to cluster ${assignment.clusterId}`, err.message);
