@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+@plugin "@tailwindcss/typography";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -497,5 +498,143 @@
     }
     html {
         @apply font-sans;
+    }
+}
+
+/* ─── Article extracted content styling ─────────────────────────────────── */
+.article-prose {
+    color: hsl(var(--foreground));
+    line-height: 1.75;
+    font-size: 1rem;
+
+    /* Paragraphs */
+    p {
+        margin-top: 0;
+        margin-bottom: 1.25em;
+    }
+
+    /* Headings */
+    h1, h2, h3, h4, h5, h6 {
+        font-weight: 700;
+        line-height: 1.3;
+        margin-top: 1.75em;
+        margin-bottom: 0.6em;
+        color: hsl(var(--foreground));
+    }
+    h1 { font-size: 1.75rem; }
+    h2 { font-size: 1.4rem; }
+    h3 { font-size: 1.2rem; }
+    h4, h5, h6 { font-size: 1rem; }
+
+    /* Links */
+    a {
+        color: hsl(var(--primary));
+        text-decoration: underline;
+        text-underline-offset: 3px;
+        font-weight: 500;
+        transition: opacity 0.15s;
+
+        &:hover {
+            opacity: 0.75;
+        }
+    }
+
+    /* Bold & Italic */
+    strong, b {
+        font-weight: 700;
+        color: hsl(var(--foreground));
+    }
+    em, i {
+        font-style: italic;
+    }
+
+    /* Lists */
+    ul, ol {
+        margin-top: 0.75em;
+        margin-bottom: 1.25em;
+        padding-left: 1.6em;
+    }
+    ul { list-style-type: disc; }
+    ol { list-style-type: decimal; }
+    li {
+        margin-bottom: 0.35em;
+    }
+    li > p {
+        margin-bottom: 0.35em;
+    }
+
+    /* Blockquote */
+    blockquote {
+        border-left: 3px solid hsl(var(--primary));
+        padding-left: 1rem;
+        margin: 1.5em 0;
+        color: hsl(var(--muted-foreground));
+        font-style: italic;
+    }
+
+    /* Inline code */
+    code {
+        background: hsl(var(--muted));
+        color: hsl(var(--foreground));
+        font-size: 0.875em;
+        padding: 0.15em 0.4em;
+        border-radius: 4px;
+        font-family: var(--font-mono, monospace);
+    }
+
+    /* Code blocks */
+    pre {
+        background: hsl(var(--muted));
+        padding: 1em 1.2em;
+        border-radius: 8px;
+        overflow-x: auto;
+        margin: 1.5em 0;
+
+        code {
+            background: transparent;
+            padding: 0;
+        }
+    }
+
+    /* Horizontal rule */
+    hr {
+        border: none;
+        border-top: 1px solid hsl(var(--border));
+        margin: 2em 0;
+    }
+
+    /* Images */
+    img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 8px;
+        margin: 1.5em 0;
+    }
+
+    /* Tables */
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 1.5em 0;
+        font-size: 0.9em;
+    }
+    th {
+        background: hsl(var(--muted));
+        font-weight: 600;
+        text-align: left;
+        padding: 0.6em 0.8em;
+        border: 1px solid hsl(var(--border));
+    }
+    td {
+        padding: 0.5em 0.8em;
+        border: 1px solid hsl(var(--border));
+    }
+    tr:nth-child(even) td {
+        background: hsl(var(--muted) / 0.4);
+    }
+
+    /* First child never needs top margin */
+    > *:first-child {
+        margin-top: 0 !important;
     }
 }

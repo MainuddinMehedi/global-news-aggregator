@@ -7,7 +7,6 @@ import Link from "next/link";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   ArrowLeft,
-  Calendar01Icon,
   Calendar03Icon,
   Globe,
   Sparkles,
@@ -81,6 +80,7 @@ export default async function ArticleDetailsPage({
               url: article.url,
               source: article.source,
               contentSnippet: article.contentSnippet,
+              extractedContent: article.extractedContent,
             }}
           />
         </div>

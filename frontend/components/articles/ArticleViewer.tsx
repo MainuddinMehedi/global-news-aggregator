@@ -10,6 +10,8 @@ interface ArticleViewerProps {
     url: string;
     source: string;
     contentSnippet: string;
+    // Pre-fetched content from DB (null if not yet extracted for this article)
+    extractedContent: string | null;
   };
 }
 
@@ -17,10 +19,17 @@ export default function ArticleViewer({ article }: ArticleViewerProps) {
   const [viewMode, setViewMode] = useState<
     "snippet" | "extracted" | "original"
   >("snippet");
-  const [extractedContent, setExtractedContent] = useState<string | null>(null);
+  // Seed state with DB content if available — no network call needed on first click
+  const [extractedContent, setExtractedContent] = useState<string | null>(
+    article.extractedContent,
+  );
   const [loading, setLoading] = useState(false);
+  const [extractSource, setExtractSource] = useState<string>(
+    article.extractedContent ? "database" : "",
+  );
 
   const handleExtract = async () => {
+    // Already have content in state (from DB or a previous fetch) — just switch view
     if (extractedContent) {
       setViewMode("extracted");
       return;
@@ -35,6 +44,7 @@ export default function ArticleViewer({ article }: ArticleViewerProps) {
       if (!res.ok) throw new Error("Failed to extract");
       const data = await res.json();
       setExtractedContent(data.content);
+      setExtractSource(data.source);
     } catch (err) {
       console.error(err);
       setExtractedContent(
@@ -44,6 +54,13 @@ export default function ArticleViewer({ article }: ArticleViewerProps) {
       setLoading(false);
     }
   };
+
+  const buttonLabel =
+    loading && viewMode === "extracted"
+      ? "Extracting..."
+      : extractedContent
+        ? "Full Article"
+        : "Read Extracted Article";
 
   return (
     <div className="space-y-6">
@@ -61,10 +78,16 @@ export default function ArticleViewer({ article }: ArticleViewerProps) {
           onClick={handleExtract}
           size="sm"
           disabled={loading && viewMode === "extracted"}
+          className="relative"
         >
-          {loading && viewMode === "extracted"
-            ? "Extracting..."
-            : "Read Extracted Article"}
+          {buttonLabel}
+          {/* Green dot indicator: content is already cached in DB */}
+          {article.extractedContent && (
+            <span
+              className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-green-500"
+              title="Cached — no network request needed"
+            />
+          )}
         </Button>
         <Button
           variant={viewMode === "original" ? "default" : "secondary"}
@@ -78,16 +101,16 @@ export default function ArticleViewer({ article }: ArticleViewerProps) {
       <div className="min-h-[200px]">
         {/* Summary */}
         {viewMode === "snippet" && (
-          <div className="prose prose-zinc dark:prose-invert max-w-none">
+          <div className="article-prose max-w-none">
             <p className="text-lg leading-relaxed text-muted-foreground">
               {article.contentSnippet}
             </p>
           </div>
         )}
 
-        {/* Extracted article using jina */}
+        {/* Extracted article */}
         {viewMode === "extracted" && (
-          <div className="prose prose-zinc dark:prose-invert max-w-none">
+          <div className="article-prose max-w-none">
             {loading ? (
               <div className="space-y-4 animate-pulse">
                 <div className="h-4 bg-muted rounded w-3/4"></div>
@@ -97,7 +120,15 @@ export default function ArticleViewer({ article }: ArticleViewerProps) {
                 <div className="h-4 bg-muted rounded w-2/3"></div>
               </div>
             ) : extractedContent ? (
-              <div dangerouslySetInnerHTML={{ __html: extractedContent }} />
+              <>
+                {extractSource && (
+                  <p className="text-xs text-muted-foreground mb-4 not-prose">
+                    Source:{" "}
+                    <span className="font-medium capitalize">{extractSource}</span>
+                  </p>
+                )}
+                <div dangerouslySetInnerHTML={{ __html: extractedContent }} />
+              </>
             ) : null}
           </div>
         )}
