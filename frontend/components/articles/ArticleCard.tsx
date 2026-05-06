@@ -20,7 +20,7 @@ export default function ArticleCard({ article }: { article: Article }) {
       <CardHeader className="">
         <div className="flex items-start justify-between gap-2">
           <Link
-            href={`/article/${article.id}`}
+            href={`/article/${article.slug || article.id}`}
             scroll={false}
             className="flex-1"
           >
@@ -59,7 +59,7 @@ export default function ArticleCard({ article }: { article: Article }) {
 
         {/* Snippet */}
         <Link
-          href={`/article/${article.id}`}
+          href={`/article/${article.slug || article.id}`}
           scroll={false}
           className="flex-1 block"
         >

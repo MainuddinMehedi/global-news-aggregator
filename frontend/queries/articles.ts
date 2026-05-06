@@ -108,6 +108,7 @@ export async function getArticles({
       categories: article.categories,
       entities: article.entities,
       sourceCountry: article.rawArticle.sourceCountry,
+      slug: article.rawArticle.slug,
     }));
 
     return { articles, nextCursor };
@@ -131,8 +132,13 @@ export async function getArticleById(id: string): Promise<Article | null> {
   cacheLife("days");
 
   try {
-    const raw = await prisma.processedArticle.findUnique({
-      where: { id },
+    const raw = await prisma.processedArticle.findFirst({
+      where: {
+        OR: [
+          { id: id },
+          { rawArticle: { slug: id } }
+        ]
+      },
       include: {
         rawArticle: true,
         categories: true,
@@ -155,6 +161,7 @@ export async function getArticleById(id: string): Promise<Article | null> {
       categories: raw.categories,
       entities: raw.entities,
       sourceCountry: raw.rawArticle.sourceCountry,
+      slug: raw.rawArticle.slug,
     };
   } catch (error) {
     console.log("getArticleById error: ", error);

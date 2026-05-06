@@ -12,4 +12,5 @@ export interface Article {
   categories: { id: string; name: string }[];
   entities: string[];
   sourceCountry: string | null;
+  slug: string | null;
 }

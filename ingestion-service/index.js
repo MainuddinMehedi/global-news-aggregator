@@ -6,6 +6,15 @@ import hashSnippet from "./utils/hashSnippet.js";
 import normalizeUrl from "./utils/normalizeUrl.js";
 import { createArticleProcessor } from "./ai/processor.js";
 
+function generateSlug(title) {
+  const base = title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)+/g, "");
+  const shortId = Math.random().toString(36).substring(2, 8);
+  return `${base.substring(0, 80)}-${shortId}`;
+}
+
 // ── CLI Flags ────────────────────────────────────────────────
 const args = process.argv.slice(2);
 const skipAI = args.includes("--skip-ai");
@@ -78,6 +87,7 @@ async function run() {
             sourceCountry: item.sourceCountry,
             publishedAt: item.publishedAt,
             contentHash: item.contentHash,
+            slug: generateSlug(item.title),
           },
         });
         totalInserted++;

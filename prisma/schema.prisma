@@ -38,6 +38,7 @@ model RawArticle {
   title          String
   contentSnippet String   @db.Text
   url            String   @unique
+  slug           String?  @unique
   source         String
   sourceCountry  String?
   publishedAt    DateTime
