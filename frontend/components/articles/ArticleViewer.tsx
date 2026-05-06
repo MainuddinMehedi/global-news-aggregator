@@ -124,7 +124,9 @@ export default function ArticleViewer({ article }: ArticleViewerProps) {
                 {extractSource && (
                   <p className="text-xs text-muted-foreground mb-4 not-prose">
                     Source:{" "}
-                    <span className="font-medium capitalize">{extractSource}</span>
+                    <span className="font-medium capitalize">
+                      {extractSource}
+                    </span>
                   </p>
                 )}
                 <div dangerouslySetInnerHTML={{ __html: extractedContent }} />
