@@ -6,8 +6,6 @@ import { DiversityInsightWidget } from "@/components/widgets/DiversityInsightWid
 import { EventClustersWidget } from "@/components/widgets/EventClustersWidget";
 import { PerspectiveWidget } from "@/components/widgets/PerspectiveWidget";
 import { getArticles, getArticleById } from "@/queries/articles";
-import { ArticleDetailsModal } from "@/components/articles/ArticleDetailsModal";
-import { Suspense } from "react";
 import { Article } from "@/types/article";
 
 export default async function Home({
@@ -79,13 +77,6 @@ export default async function Home({
           <DiversityInsightWidget />
         </aside>
       </div>
-
-      {/* Details Modal */}
-      {/* {articleId && (
-        <Suspense fallback={null}>
-          <ArticleDetailsModal article={selectedArticle} />
-        </Suspense>
-      )} */}
     </div>
   );
 }

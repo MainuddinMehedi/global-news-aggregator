@@ -48,7 +48,7 @@ export default function ArticleViewer({ article }: ArticleViewerProps) {
     } catch (err) {
       console.error(err);
       setExtractedContent(
-        "<p class='text-red-500'>Failed to extract article content. Please read the original article.</p>",
+        "<p class='text-destructive'>Failed to extract article content. Please read the original article.</p>",
       );
     } finally {
       setLoading(false);
