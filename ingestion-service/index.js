@@ -111,13 +111,57 @@ async function run() {
 
   const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
 
+  // --- REVALIDATION LOGIC ---
+  try {
+    const nextApiUrl =
+      process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api";
+    const revalidateSecret = process.env.REVALIDATE_SECRET || "";
+
+    console.log(`\n🔄 Revalidating cache...`);
+
+    const tagsToRevalidate = ["articles", "stories"];
+
+    // Find clusters updated during this run to revalidate their specific pages
+    const updatedClusters = await prisma.storyCluster.findMany({
+      where: {
+        updatedAt: {
+          gte: new Date(startTime),
+        },
+      },
+      select: { slug: true },
+    });
+
+    updatedClusters.forEach((cluster) => {
+      if (cluster.slug) {
+        tagsToRevalidate.push(`story-${cluster.slug}`);
+      }
+    });
+
+    for (const tag of tagsToRevalidate) {
+      const res = await fetch(
+        `${nextApiUrl}/revalidate?tag=${tag}&secret=${revalidateSecret}`,
+      );
+      if (!res.ok) {
+        console.warn(`⚠️ Failed to revalidate tag: ${tag} (${res.status})`);
+      } else {
+        console.log(`✓ Revalidated: ${tag}`);
+      }
+    }
+  } catch (err) {
+    console.error("⚠️ Cache revalidation failed:", err.message);
+  }
+
   console.log(`\n${"─".repeat(50)}`);
   console.log(`✅ Ingestion complete in ${elapsed}s`);
-  console.log(`   📥 Fetched: ${totalFetched} items from ${sources.length} sources`);
+  console.log(
+    `   📥 Fetched: ${totalFetched} items from ${sources.length} sources`,
+  );
   console.log(`   ➕ Inserted: ${totalInserted} new articles`);
   console.log(`   🔁 Duplicates skipped: ${totalDupes}`);
   if (!skipAI) {
-    console.log(`   🤖 AI queued: ${aiQueued}${aiLimit < Infinity ? ` (limit: ${aiLimit})` : ""}`);
+    console.log(
+      `   🤖 AI queued: ${aiQueued}${aiLimit < Infinity ? ` (limit: ${aiLimit})` : ""}`,
+    );
   }
   console.log(`${"─".repeat(50)}\n`);
 
@@ -125,4 +169,3 @@ async function run() {
 }
 
 run().catch((err) => console.error("Worker encountered an error:", err));
-
