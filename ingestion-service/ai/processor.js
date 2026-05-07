@@ -3,11 +3,330 @@ import { ALLOWED_CATEGORIES } from "./categories.js";
 import { processBatchWithAI, processClusteringBatchWithAI } from "./client.js";
 import { createNextBatch } from "./tokenBatcher.js";
 
+const ALLOWED_IMPACTS = new Set(["CRITICAL", "HIGH", "MEDIUM", "LOW"]);
+const ALLOWED_STATUSES = new Set([
+  "ESCALATING",
+  "DEVELOPING",
+  "STABLE",
+  "RESOLVING",
+]);
+const CLUSTER_ASSIGNMENT_MIN_CONFIDENCE = Number.parseFloat(
+  process.env.CLUSTER_ASSIGNMENT_MIN_CONFIDENCE || "0.55",
+);
+const DAY_MS = 24 * 60 * 60 * 1000;
+const CLUSTER_STABLE_INACTIVE_DAYS = Number.parseInt(
+  process.env.CLUSTER_STABLE_INACTIVE_DAYS || "7",
+  10,
+);
+const CLUSTER_LOW_IMPACT_INACTIVE_DAYS = Number.parseInt(
+  process.env.CLUSTER_LOW_IMPACT_INACTIVE_DAYS || "14",
+  10,
+);
+const CLUSTER_HIGH_IMPACT_INACTIVE_DAYS = Number.parseInt(
+  process.env.CLUSTER_HIGH_IMPACT_INACTIVE_DAYS || "30",
+  10,
+);
+const CATEGORY_ALIASES = {
+  agriculture: "economy",
+  conflict: "security",
+  crime: "security",
+  culture: "society",
+  disaster: "environment",
+  education: "society",
+  energy: "economy",
+  entertainment: "society",
+  "human rights": "society",
+  infrastructure: "economy",
+  justice: "security",
+  lifestyle: "society",
+  migration: "society",
+  religion: "society",
+  sports: "other",
+  transportation: "society",
+};
+
+function cleanString(value) {
+  return typeof value === "string" && value.trim() ? value.trim() : undefined;
+}
+
+function normalizeArticleCategory(category) {
+  const normalized = cleanString(category)?.toLowerCase();
+  if (!normalized) return null;
+
+  return CATEGORY_ALIASES[normalized] || normalized;
+}
+
+function cleanNumber(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : undefined;
+}
+
+function cleanStringArray(value, limit = 12) {
+  if (!Array.isArray(value)) return undefined;
+
+  const cleaned = [
+    ...new Set(
+      value
+        .filter((item) => typeof item === "string")
+        .map((item) => item.trim())
+        .filter(Boolean),
+    ),
+  ];
+
+  return cleaned.slice(0, limit);
+}
+
+function cleanKeyDevelopments(value, limit = 10) {
+  if (!Array.isArray(value)) return undefined;
+
+  const cleaned = value
+    .map((item) => {
+      if (!item || typeof item !== "object") return null;
+
+      const title = cleanString(item.title);
+      if (!title) return null;
+
+      const development = { title };
+      const date = cleanString(item.date);
+      const description = cleanString(item.description);
+
+      if (date) development.date = date;
+      if (description) development.description = description;
+
+      return development;
+    })
+    .filter(Boolean);
+
+  return cleaned.slice(0, limit);
+}
+
+function mergeStringArrays(existing, incoming, limit = 12) {
+  return [
+    ...new Set([...(existing || []), ...(incoming || [])].filter(Boolean)),
+  ].slice(0, limit);
+}
+
+function mergeKeyDevelopments(existing, incoming, limit = 10) {
+  const merged = [];
+  const seen = new Set();
+
+  for (const development of [
+    ...(cleanKeyDevelopments(existing, limit) || []),
+    ...(incoming || []),
+  ]) {
+    const key = `${development.title}|${development.date || ""}`.toLowerCase();
+    if (seen.has(key)) continue;
+
+    seen.add(key);
+    merged.push(development);
+  }
+
+  return merged.slice(-limit);
+}
+
+function buildClusterUpdateData(clusterUpdate, existingCluster) {
+  const data = {};
+
+  const title = cleanString(clusterUpdate.title);
+  const summary = cleanString(clusterUpdate.summary);
+  const timeWindow = cleanString(clusterUpdate.timeWindow);
+  const impact = cleanString(clusterUpdate.impact);
+  const status = cleanString(clusterUpdate.status);
+  const whyItMatters = cleanString(clusterUpdate.whyItMatters);
+  const regions = cleanStringArray(clusterUpdate.regions);
+  const themes = cleanStringArray(clusterUpdate.themes);
+  const keyDevelopments = cleanKeyDevelopments(clusterUpdate.keyDevelopments);
+
+  if (title) data.title = title;
+  if (summary) data.summary = summary;
+  if (timeWindow) data.timeWindow = timeWindow;
+  if (impact && ALLOWED_IMPACTS.has(impact)) data.impact = impact;
+  if (status && ALLOWED_STATUSES.has(status)) data.status = status;
+  if (whyItMatters) data.whyItMatters = whyItMatters;
+  if (regions) {
+    data.regions = mergeStringArrays(existingCluster?.regions, regions);
+  }
+  if (themes) {
+    data.themes = mergeStringArrays(existingCluster?.themes, themes);
+  }
+  if (keyDevelopments) {
+    data.keyDevelopments = mergeKeyDevelopments(
+      existingCluster?.keyDevelopments,
+      keyDevelopments,
+    );
+  }
+
+  return data;
+}
+
+function daysAgo(days) {
+  return new Date(Date.now() - days * DAY_MS);
+}
+
+function inactiveByActivityCutoff(cutoff) {
+  return {
+    OR: [
+      { lastActivityAt: { lt: cutoff } },
+      { lastActivityAt: null, updatedAt: { lt: cutoff } },
+    ],
+  };
+}
+
+async function applyClusterLifecycle() {
+  const stableCutoff = daysAgo(CLUSTER_STABLE_INACTIVE_DAYS);
+  const lowImpactCutoff = daysAgo(CLUSTER_LOW_IMPACT_INACTIVE_DAYS);
+  const highImpactCutoff = daysAgo(CLUSTER_HIGH_IMPACT_INACTIVE_DAYS);
+
+  const [stableResult, lowImpactResult, highImpactResult] = await Promise.all([
+    prisma.storyCluster.updateMany({
+      where: {
+        isActive: true,
+        status: { in: ["STABLE", "RESOLVING"] },
+        AND: [inactiveByActivityCutoff(stableCutoff)],
+      },
+      data: { isActive: false },
+    }),
+    prisma.storyCluster.updateMany({
+      where: {
+        isActive: true,
+        AND: [
+          { OR: [{ impact: null }, { impact: { notIn: ["CRITICAL", "HIGH"] } }] },
+          inactiveByActivityCutoff(lowImpactCutoff),
+        ],
+      },
+      data: { isActive: false },
+    }),
+    prisma.storyCluster.updateMany({
+      where: {
+        isActive: true,
+        impact: { in: ["CRITICAL", "HIGH"] },
+        AND: [inactiveByActivityCutoff(highImpactCutoff)],
+      },
+      data: { isActive: false },
+    }),
+  ]);
+
+  const deactivatedCount =
+    stableResult.count + lowImpactResult.count + highImpactResult.count;
+
+  if (deactivatedCount > 0) {
+    console.log(`🧹 Deactivated ${deactivatedCount} stale story clusters`);
+  }
+}
+
+function clusterRankScore(cluster) {
+  const impactScore =
+    cluster.impactScore ??
+    {
+      CRITICAL: 4,
+      HIGH: 3,
+      MEDIUM: 2,
+      LOW: 1,
+    }[cluster.impact] ??
+    0;
+  const activityAt = new Date(
+    cluster.lastActivityAt || cluster.updatedAt || cluster.createdAt,
+  ).getTime();
+  const ageHours = Math.max(0, (Date.now() - activityAt) / (60 * 60 * 1000));
+  const recencyScore = Math.max(0, 72 - ageHours) / 72;
+  const articleScore = Math.min(cluster.articleCount || 0, 20) / 20;
+  const sourceScore = Math.min(cluster.sourceCount || 0, 8) / 8;
+
+  return impactScore * 4 + recencyScore * 3 + articleScore + sourceScore;
+}
+
+function selectClusterCandidates(clusters, limit = 30) {
+  return [...clusters]
+    .sort((a, b) => clusterRankScore(b) - clusterRankScore(a))
+    .slice(0, limit);
+}
+
+async function getClusterSignals(clusterId) {
+  const cluster = await prisma.storyCluster.findUnique({
+    where: { id: clusterId },
+    select: {
+      articles: {
+        select: {
+          rawArticle: {
+            select: { source: true },
+          },
+        },
+      },
+    },
+  });
+
+  if (!cluster) {
+    return {
+      articleCount: 0,
+      sourceCount: 0,
+      topSources: [],
+    };
+  }
+
+  const sourceCounts = new Map();
+  for (const article of cluster.articles) {
+    const source = cleanString(article.rawArticle?.source);
+    if (!source) continue;
+
+    sourceCounts.set(source, (sourceCounts.get(source) || 0) + 1);
+  }
+
+  const topSources = [...sourceCounts.entries()]
+    .sort(([sourceA, countA], [sourceB, countB]) => {
+      if (countA !== countB) return countB - countA;
+      return sourceA.localeCompare(sourceB);
+    })
+    .slice(0, 5)
+    .map(([source]) => source);
+
+  return {
+    articleCount: cluster.articles.length,
+    sourceCount: sourceCounts.size,
+    topSources,
+  };
+}
+
+function getArticleSignals(articles) {
+  const sourceCounts = new Map();
+
+  for (const article of articles) {
+    const source = cleanString(article.source || article.rawArticle?.source);
+    if (!source) continue;
+
+    sourceCounts.set(source, (sourceCounts.get(source) || 0) + 1);
+  }
+
+  const topSources = [...sourceCounts.entries()]
+    .sort(([sourceA, countA], [sourceB, countB]) => {
+      if (countA !== countB) return countB - countA;
+      return sourceA.localeCompare(sourceB);
+    })
+    .slice(0, 5)
+    .map(([source]) => source);
+
+  return {
+    articleCount: articles.length,
+    sourceCount: sourceCounts.size,
+    topSources,
+  };
+}
+
 export function createArticleProcessor(
   batchSize = parseInt(process.env.AI_BATCH_SIZE) || 5,
 ) {
   const buffer = [];
   let currentBatchPromise = null;
+  let flushPromise = null;
+
+  function scheduleFlush() {
+    if (!flushPromise) {
+      flushPromise = _flush().finally(() => {
+        flushPromise = null;
+      });
+    }
+
+    return flushPromise;
+  }
 
   async function _flush() {
     if (buffer.length === 0) return;
@@ -44,9 +363,14 @@ export function createArticleProcessor(
 
     currentBatchPromise = (async () => {
       try {
+        const batchWithRefs = batch.map((article, index) => ({
+          ...article,
+          aiRef: `article_${index + 1}`,
+        }));
+
         let aiResponse;
         try {
-          aiResponse = await processBatchWithAI(batch, estimatedTokens);
+          aiResponse = await processBatchWithAI(batchWithRefs, estimatedTokens);
         } catch (err) {
           console.error(`⚠️ AI batch processing failed`, err.message);
           throw err;
@@ -66,17 +390,42 @@ export function createArticleProcessor(
         }
 
         const resultsMap = new Map();
-        parsed.results.forEach((res) => {
-          if (res && res.id) resultsMap.set(res.id, res);
+        const validBatchRefs = new Set(
+          batchWithRefs.map((article) => article.aiRef),
+        );
+        const batchRefsByArticleId = new Map(
+          batchWithRefs.map((article) => [article.id, article.aiRef]),
+        );
+        parsed.results.forEach((res, index) => {
+          if (!res) return;
+
+          const ref =
+            cleanString(res.ref) ||
+            cleanString(res.articleRef) ||
+            cleanString(res.id);
+          let mappedRef = batchRefsByArticleId.get(ref) || ref;
+
+          if (!validBatchRefs.has(mappedRef)) {
+            const fallbackRef = batchWithRefs[index]?.aiRef;
+
+            if (fallbackRef) {
+              console.warn(
+                `⚠️ Recovered AI article result with invalid ref "${ref}" using batch position ${index + 1}`,
+              );
+              mappedRef = fallbackRef;
+            }
+          }
+
+          if (validBatchRefs.has(mappedRef)) resultsMap.set(mappedRef, res);
         });
 
         let successCount = 0;
         const successfullyProcessedArticles = [];
 
         // Save to DB sequentially to prevent 'connectOrCreate' unique constraint race conditions
-        for (const article of batch) {
+        for (const article of batchWithRefs) {
           const rawArticle = article;
-          const articleParsed = resultsMap.get(rawArticle.id) || {
+          const articleParsed = resultsMap.get(rawArticle.aiRef) || {
             categories: ["other"],
             entities: [],
             sentimentScore: 0,
@@ -84,14 +433,19 @@ export function createArticleProcessor(
             perspectiveCountries: [],
           };
 
-          const rawCats = articleParsed.categories || [];
-          const validCats = rawCats.filter((c) =>
+          const rawCats = Array.isArray(articleParsed.categories)
+            ? articleParsed.categories
+            : [];
+          const normalizedCats = [
+            ...new Set(rawCats.map(normalizeArticleCategory).filter(Boolean)),
+          ];
+          const validCats = normalizedCats.filter((c) =>
             ALLOWED_CATEGORIES.includes(c),
           );
           const finalCats = validCats.length > 0 ? validCats : ["other"];
 
-          if (rawCats.length !== validCats.length) {
-            const dropped = rawCats.filter(
+          if (normalizedCats.length !== validCats.length) {
+            const dropped = normalizedCats.filter(
               (c) => !ALLOWED_CATEGORIES.includes(c),
             );
             console.warn(
@@ -128,7 +482,20 @@ export function createArticleProcessor(
             );
 
             successCount++;
-            successfullyProcessedArticles.push(rawArticle);
+            successfullyProcessedArticles.push({
+              ...rawArticle,
+              categories: finalCats,
+              entities: Array.isArray(articleParsed.entities)
+                ? articleParsed.entities
+                : [],
+              sentimentScore: articleParsed.sentimentScore ?? null,
+              biasCategory: articleParsed.biasCategory || null,
+              perspectiveCountries: Array.isArray(
+                articleParsed.perspectiveCountries,
+              )
+                ? articleParsed.perspectiveCountries
+                : [],
+            });
           } catch (err) {
             console.error(
               `⚠️ Failed to save processed article: ${rawArticle.title}`,
@@ -166,15 +533,45 @@ export function createArticleProcessor(
           try {
             console.log(`🤖 Running clustering pass for ${successfullyProcessedArticles.length} articles...`);
 
-            // Fetch active clusters to provide context to the AI
-            const activeClusters = await prisma.storyCluster.findMany({
+            const articleIdByRef = new Map(
+              successfullyProcessedArticles.map((article) => [
+                article.aiRef,
+                article.id,
+              ]),
+            );
+            const processedArticleIds = new Set(
+              successfullyProcessedArticles.map((article) => article.id),
+            );
+
+            await applyClusterLifecycle();
+
+            // Fetch and rank active clusters to provide focused context to the AI.
+            const activeClusterCandidates = await prisma.storyCluster.findMany({
               where: { isActive: true },
-              orderBy: { updatedAt: 'desc' },
-              take: 20
+              orderBy: [{ lastActivityAt: "desc" }, { updatedAt: "desc" }],
+              take: 60,
+              include: {
+                articles: {
+                  take: 3,
+                  orderBy: { processedAt: "desc" },
+                  include: {
+                    rawArticle: true,
+                    categories: true,
+                  },
+                },
+              },
             });
+            const activeClusters = selectClusterCandidates(
+              activeClusterCandidates,
+              30,
+            );
+            const activeClustersWithRefs = activeClusters.map((cluster, index) => ({
+              ...cluster,
+              aiRef: `cluster_${index + 1}`,
+            }));
 
             // Make the clustering AI request
-            const clusteringResponse = await processClusteringBatchWithAI(successfullyProcessedArticles, activeClusters, 500);
+            const clusteringResponse = await processClusteringBatchWithAI(successfullyProcessedArticles, activeClustersWithRefs, 500);
 
             let clusterData;
             try {
@@ -186,14 +583,95 @@ export function createArticleProcessor(
               clusterData = { assignments: [], newClusters: [] };
             }
 
-            const { assignments = [], newClusters = [] } = clusterData;
+            const assignments = Array.isArray(clusterData.assignments)
+              ? clusterData.assignments
+              : [];
+            const newClusters = Array.isArray(clusterData.newClusters)
+              ? clusterData.newClusters
+              : [];
+            const clusterUpdates = Array.isArray(clusterData.clusterUpdates)
+              ? clusterData.clusterUpdates
+              : [];
+
+            const activeClusterIds = new Set(activeClusters.map((c) => c.id));
+            const activeClustersById = new Map(
+              activeClusters.map((cluster) => [cluster.id, cluster]),
+            );
+            const clusterIdByRef = new Map(
+              activeClustersWithRefs.map((cluster) => [cluster.aiRef, cluster.id]),
+            );
+            const resolveArticleId = (refOrId) =>
+              articleIdByRef.get(refOrId) ||
+              (processedArticleIds.has(refOrId) ? refOrId : null);
+            const resolveClusterId = (refOrId) =>
+              clusterIdByRef.get(refOrId) ||
+              (activeClusterIds.has(refOrId) ? refOrId : null);
+            const clusterUpdatesById = new Map(
+              clusterUpdates
+                .filter(
+                  (update) => {
+                    const clusterId = resolveClusterId(
+                      cleanString(update?.clusterRef) ||
+                        cleanString(update?.clusterId),
+                    );
+
+                    return Boolean(clusterId);
+                  },
+                )
+                .map((update) => {
+                  const clusterId = resolveClusterId(
+                    cleanString(update.clusterRef) ||
+                      cleanString(update.clusterId),
+                  );
+
+                  return [
+                    clusterId,
+                    buildClusterUpdateData(
+                      update,
+                      activeClustersById.get(clusterId),
+                    ),
+                  ];
+                }),
+            );
 
             // Save new clusters
             for (const nc of newClusters) {
               try {
                 // Ensure articleIds is an array and filter out any invalid/null IDs
-                const validArticleIds = Array.isArray(nc.articleIds) ? nc.articleIds.filter(id => id) : [];
-                const articlesToConnect = validArticleIds.map(id => ({ rawArticleId: id }));
+                const rawArticleRefs = Array.isArray(nc.articleRefs)
+                  ? nc.articleRefs
+                  : Array.isArray(nc.articleIds)
+                    ? nc.articleIds
+                    : [];
+                const validArticleIds = rawArticleRefs
+                  .map((refOrId) => resolveArticleId(cleanString(refOrId)))
+                  .filter(Boolean);
+
+                const uniqueArticleIds = [...new Set(validArticleIds)];
+
+                const invalidArticleRefs = rawArticleRefs.filter(
+                  (refOrId) => !resolveArticleId(cleanString(refOrId)),
+                );
+
+                if (invalidArticleRefs.length > 0) {
+                  console.warn(
+                    `⚠️ Ignoring invalid article refs for new cluster "${nc.title}": [${invalidArticleRefs.join(", ")}]`,
+                  );
+                }
+
+                if (uniqueArticleIds.length === 0) {
+                  console.warn(
+                    `⚠️ Skipping new cluster "${nc.title}" because it has no valid processed articles`,
+                  );
+                  continue;
+                }
+
+                const clusterSignals = getArticleSignals(
+                  successfullyProcessedArticles.filter((article) =>
+                    uniqueArticleIds.includes(article.id),
+                  ),
+                );
+                const articlesToConnect = uniqueArticleIds.map(id => ({ rawArticleId: id }));
 
                 // Generate a simple slug
                 const baseSlug = (nc.title || "story").toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
@@ -213,7 +691,9 @@ export function createArticleProcessor(
                     themes: nc.themes || [],
                     keyDevelopments: nc.keyDevelopments || [],
                     lastActivityAt: new Date(),
-                    articleCount: validArticleIds.length,
+                    articleCount: clusterSignals.articleCount,
+                    sourceCount: clusterSignals.sourceCount,
+                    topSources: clusterSignals.topSources,
                     articles: {
                       connect: articlesToConnect
                     }
@@ -226,29 +706,79 @@ export function createArticleProcessor(
             }
 
             // Update existing cluster assignments
+            const assignedClusterIdsToRefresh = new Set();
+
             for (const assignment of assignments) {
-               if (!assignment.clusterId || !assignment.articleId) continue;
+               const articleRef =
+                 cleanString(assignment.articleRef) ||
+                 cleanString(assignment.articleId);
+               const clusterRef =
+                 cleanString(assignment.clusterRef) ||
+                 cleanString(assignment.clusterId);
+
+               if (!articleRef || !clusterRef) continue;
+
+               const articleId = resolveArticleId(articleRef);
+               const clusterId = resolveClusterId(clusterRef);
+               const confidence = cleanNumber(assignment.confidence);
+
+               if (!articleId) {
+                 console.warn(
+                   `⚠️ Ignoring assignment for unknown or unprocessed article ref ${articleRef}`,
+                 );
+                 continue;
+               }
+               if (!clusterId) {
+                 console.warn(
+                   `⚠️ Ignoring assignment to unknown cluster ref ${clusterRef}`,
+                 );
+                 continue;
+               }
+               if (
+                 confidence !== undefined &&
+                 confidence < CLUSTER_ASSIGNMENT_MIN_CONFIDENCE
+               ) {
+                 console.warn(
+                   `⚠️ Ignoring low-confidence assignment ${articleRef} -> ${clusterRef} (${confidence})`,
+                 );
+                 continue;
+               }
                try {
                  await prisma.processedArticle.update({
-                   where: { rawArticleId: assignment.articleId },
+                   where: { rawArticleId: articleId },
                    data: {
                      storyClusters: {
-                       connect: { id: assignment.clusterId }
+                       connect: { id: clusterId }
                      }
                    }
                  });
-                 // Touch the cluster's updatedAt and increment article count
-                 await prisma.storyCluster.update({
-                   where: { id: assignment.clusterId },
-                   data: {
-                     updatedAt: new Date(),
-                     lastActivityAt: new Date(),
-                     articleCount: { increment: 1 }
-                   }
-                 });
+                 assignedClusterIdsToRefresh.add(clusterId);
                } catch (err) {
-                 console.error(`⚠️ Failed to assign article ${assignment.articleId} to cluster ${assignment.clusterId}`, err.message);
+                 console.error(`⚠️ Failed to assign article ${articleRef} to cluster ${clusterRef}`, err.message);
                }
+            }
+
+            for (const clusterId of assignedClusterIdsToRefresh) {
+              try {
+                const clusterUpdate = clusterUpdatesById.get(clusterId) || {};
+                const clusterSignals = await getClusterSignals(clusterId);
+
+                // Evolve the cluster dossier while refreshing freshness counters.
+                await prisma.storyCluster.update({
+                  where: { id: clusterId },
+                  data: {
+                    ...clusterUpdate,
+                    ...clusterSignals,
+                    updatedAt: new Date(),
+                    lastActivityAt: new Date(),
+                  },
+                });
+              } catch (err) {
+                console.error(
+                  `⚠️ Failed to refresh cluster ${clusterId}`,
+                  err.message,
+                );
+              }
             }
 
             // Log AI Usage for clustering
@@ -303,12 +833,19 @@ export function createArticleProcessor(
 
       buffer.push(rawArticle);
       if (buffer.length >= batchSize && !currentBatchPromise) {
-        _flush();
+        scheduleFlush();
       }
     },
     async flush() {
-      if (currentBatchPromise) await currentBatchPromise;
-      if (buffer.length > 0) await _flush();
+      while (flushPromise || currentBatchPromise || buffer.length > 0) {
+        if (flushPromise) {
+          await flushPromise;
+        } else if (currentBatchPromise) {
+          await currentBatchPromise;
+        } else {
+          await scheduleFlush();
+        }
+      }
     },
   };
 }

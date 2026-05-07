@@ -24,15 +24,14 @@ export async function getStoryClusters() {
       title: cluster.title,
       summary: cluster.summary,
       timeWindow: cluster.timeWindow || "Recent",
-      articleCount:
-        cluster.articleCount > 0
-          ? cluster.articleCount
-          : cluster._count.articles,
+      articleCount: cluster._count.articles,
       // Intelligence fields
       impact: cluster.impact,
       status: cluster.status,
       regions: cluster.regions || [],
       themes: cluster.themes || [],
+      sourceCount: cluster.sourceCount || 0,
+      topSources: cluster.topSources || [],
       whyItMatters: cluster.whyItMatters,
       keyDevelopments: (cluster.keyDevelopments || []) as unknown as Array<{
         title: string;
@@ -67,10 +66,7 @@ export async function getStoryDetail(slug: string) {
 
     return {
       ...cluster,
-      articleCount:
-        cluster.articleCount > 0
-          ? cluster.articleCount
-          : cluster.articles.length,
+      articleCount: cluster.articles.length,
       keyDevelopments: (cluster.keyDevelopments || []) as unknown as Array<{
         title: string;
         date: string;

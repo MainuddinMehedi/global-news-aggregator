@@ -3,6 +3,7 @@ import { getStoryDetail } from "@/queries/stories";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import ArticleCard from "@/components/articles/ArticleCard";
+import { Article } from "@/types/article";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   Alert01Icon,
@@ -38,6 +39,33 @@ export default async function StoryDetailsPage({
         return "bg-primary/10 text-primary border-primary/20";
     }
   };
+
+  type StoryArticle = (typeof story.articles)[number];
+  type KeyDevelopment = {
+    title: string;
+    date: string;
+    description?: string;
+  };
+
+  const mapStoryArticleToArticle = (
+    processedArticle: StoryArticle,
+  ): Article => ({
+    id: processedArticle.id,
+    title: processedArticle.rawArticle.title,
+    source: processedArticle.rawArticle.source,
+    publishedAt: processedArticle.rawArticle.publishedAt.toISOString(),
+    contentSnippet: processedArticle.rawArticle.contentSnippet,
+    extractedContent: processedArticle.rawArticle.extractedContent,
+    biasNote: processedArticle.biasNote,
+    biasCategory: processedArticle.biasCategory,
+    sentimentScore: processedArticle.sentimentScore,
+    perspectiveCountries: processedArticle.perspectiveCountries,
+    url: processedArticle.rawArticle.url,
+    categories: processedArticle.categories,
+    entities: processedArticle.entities,
+    sourceCountry: processedArticle.rawArticle.sourceCountry,
+    slug: processedArticle.rawArticle.slug,
+  });
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-8">
@@ -134,7 +162,7 @@ export default async function StoryDetailsPage({
                 ))
               ) : (
                 <span className="text-sm text-muted-foreground">
-                  Multi-Source
+                  Sources pending
                 </span>
               )}
             </div>
@@ -179,24 +207,13 @@ export default async function StoryDetailsPage({
               <Badge variant="outline">{story.articles.length} Reports</Badge>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {story.articles.map((processedArticle: any) => {
-                // Map the combined DB object to the Article shape expected by ArticleCard
-                const mappedArticle = {
-                  id: processedArticle.id,
-                  title: processedArticle.rawArticle.title,
-                  source: processedArticle.rawArticle.source,
-                  publishedAt: processedArticle.rawArticle.publishedAt,
-                  contentSnippet: processedArticle.rawArticle.contentSnippet,
-                  slug: processedArticle.rawArticle.slug,
-                  sentimentScore: processedArticle.sentimentScore,
-                  biasCategory: processedArticle.biasCategory,
-                  categories: processedArticle.categories,
-                  perspectiveCountries: processedArticle.perspectiveCountries,
-                };
+              {story.articles.map((processedArticle) => {
+                const mappedArticle = mapStoryArticleToArticle(processedArticle);
+
                 return (
                   <ArticleCard
                     key={processedArticle.id}
-                    article={mappedArticle as any}
+                    article={mappedArticle}
                   />
                 );
               })}
@@ -214,7 +231,7 @@ export default async function StoryDetailsPage({
 
             <div className="relative ml-2 space-y-6 border-l-2 border-border/60 pl-6">
               {story.keyDevelopments && story.keyDevelopments.length > 0 ? (
-                story.keyDevelopments.map((dev: any, index: number) => (
+                story.keyDevelopments.map((dev: KeyDevelopment, index) => (
                   <div key={index} className="relative group/timeline">
                     {/* Timeline Dot */}
                     <div className="absolute -left-[31px] top-1.5 h-3.5 w-3.5 rounded-full border-2 border-muted bg-background ring-4 ring-card transition-colors duration-300 group-hover/timeline:border-primary group-hover/timeline:bg-primary/20" />
