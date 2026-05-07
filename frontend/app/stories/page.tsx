@@ -30,7 +30,8 @@ export default async function Page() {
       </div>
 
       {stories.length > 0 ? (
-        <div className="grid gap-6 xl:grid-cols-2">
+        <div className="columns-1 sm:columns-2 gap-6 space-y-6">
+          {/*<div className="grid gap-6 xl:grid-cols-2 items-start">*/}
           {stories.map((story) => (
             <StoryCard key={story.id} story={story} />
           ))}

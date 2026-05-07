@@ -103,11 +103,14 @@ export default async function StoryDetailsPage({
         </div>
 
         <div className="lg:col-span-4 space-y-8">
-          <div className="rounded-[2rem] border border-border bg-card/40 backdrop-blur-xl p-6 shadow-sm sticky top-24">
+          <div className="rounded-[2rem] border border-border bg-card/40 backdrop-blur-xl p-6 shadow-sm sticky top-6">
             <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-6">
               Timeline of Developments
             </h3>
-            <KeyDevelopmentsTimeline developments={story.keyDevelopments || []} showTitle={false} />
+            <KeyDevelopmentsTimeline
+              developments={story.keyDevelopments || []}
+              showTitle={false}
+            />
           </div>
         </div>
       </div>
