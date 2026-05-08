@@ -1,4 +1,3 @@
-import { Badge } from "@/components/ui/badge";
 import { ImpactBadge } from "./ImpactBadge";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Clock01Icon, Earth, TradeUpIcon } from "@hugeicons/core-free-icons";
@@ -98,7 +97,7 @@ export default function StoryCard({ story }: StoryCardProps) {
             <div className="h-px flex-1 bg-border/50"></div>
           </div>
           <div className="relative ml-2 space-y-6 border-l-2 border-border/60 pl-6">
-            {story.keyDevelopments.map((dev, index) => (
+            {story.keyDevelopments.slice(0, 6).map((dev, index) => (
               <div key={index} className="relative group/timeline">
                 <div className="absolute -left-[31px] top-1.5 h-3.5 w-3.5 rounded-full border-2 border-muted bg-background ring-4 ring-card transition-colors duration-300 group-hover/timeline:border-primary group-hover/timeline:bg-primary/20" />
 
@@ -112,6 +111,14 @@ export default function StoryCard({ story }: StoryCardProps) {
                 </div>
               </div>
             ))}
+            {story.keyDevelopments.length > 6 && (
+              <div className="relative group/timeline">
+                <div className="absolute -left-[31px] top-1.5 h-3.5 w-3.5 rounded-full border-2 border-muted bg-muted/30" />
+                <div className="text-xs font-semibold text-muted-foreground italic">
+                  + {story.keyDevelopments.length - 6} more developments
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </article>
