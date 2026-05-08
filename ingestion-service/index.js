@@ -107,6 +107,7 @@ async function run() {
   if (aiProcessor) {
     console.log("\n🤖 Flushing remaining AI tasks...");
     await aiProcessor.flush();
+    await aiProcessor.runClustering();
   }
 
   const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);

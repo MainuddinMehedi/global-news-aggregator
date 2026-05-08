@@ -195,15 +195,6 @@ export function buildClusteringPrompt(
 - Regions: ${(c.regions || []).join(", ") || "Unknown"}
 - Themes: ${(c.themes || []).join(", ") || "Unknown"}
 - Key Developments: ${JSON.stringify(c.keyDevelopments || [])}
-- Recent Articles:
-${
-  (c.articles || [])
-    .map(
-      (article, index) =>
-        `  ${index + 1}. ${article.rawArticle?.title || "Untitled"} | ${article.rawArticle?.source || "Unknown"} | ${article.rawArticle?.publishedAt ? new Date(article.rawArticle.publishedAt).toISOString() : "Unknown"} | ${(article.categories || []).map((cat) => cat.name).join(", ") || "uncategorized"}`,
-    )
-    .join("\n") || "  None"
-}
 `,
           )
           .join("\n");
