@@ -19,11 +19,19 @@ const CLUSTER_STABLE_INACTIVE_DAYS = Number.parseInt(
   10,
 );
 const CLUSTER_LOW_IMPACT_INACTIVE_DAYS = Number.parseInt(
-  process.env.CLUSTER_LOW_IMPACT_INACTIVE_DAYS || "14",
+  process.env.CLUSTER_LOW_IMPACT_INACTIVE_DAYS || "10",
+  10,
+);
+const CLUSTER_MEDIUM_IMPACT_INACTIVE_DAYS = Number.parseInt(
+  process.env.CLUSTER_MEDIUM_IMPACT_INACTIVE_DAYS || "21",
   10,
 );
 const CLUSTER_HIGH_IMPACT_INACTIVE_DAYS = Number.parseInt(
-  process.env.CLUSTER_HIGH_IMPACT_INACTIVE_DAYS || "30",
+  process.env.CLUSTER_HIGH_IMPACT_INACTIVE_DAYS || "35",
+  10,
+);
+const CLUSTER_CRITICAL_IMPACT_INACTIVE_DAYS = Number.parseInt(
+  process.env.CLUSTER_CRITICAL_IMPACT_INACTIVE_DAYS || "60",
   10,
 );
 const CATEGORY_ALIASES = {
@@ -175,41 +183,69 @@ function inactiveByActivityCutoff(cutoff) {
 async function applyClusterLifecycle() {
   const stableCutoff = daysAgo(CLUSTER_STABLE_INACTIVE_DAYS);
   const lowImpactCutoff = daysAgo(CLUSTER_LOW_IMPACT_INACTIVE_DAYS);
+  const mediumImpactCutoff = daysAgo(CLUSTER_MEDIUM_IMPACT_INACTIVE_DAYS);
   const highImpactCutoff = daysAgo(CLUSTER_HIGH_IMPACT_INACTIVE_DAYS);
+  const criticalImpactCutoff = daysAgo(CLUSTER_CRITICAL_IMPACT_INACTIVE_DAYS);
 
-  const [stableResult, lowImpactResult, highImpactResult] = await Promise.all([
-    prisma.storyCluster.updateMany({
-      where: {
-        isActive: true,
-        status: { in: ["STABLE", "RESOLVING"] },
-        AND: [inactiveByActivityCutoff(stableCutoff)],
-      },
-      data: { isActive: false },
-    }),
-    prisma.storyCluster.updateMany({
-      where: {
-        isActive: true,
-        AND: [
-          {
-            OR: [{ impact: null }, { impact: { notIn: ["CRITICAL", "HIGH"] } }],
-          },
-          inactiveByActivityCutoff(lowImpactCutoff),
-        ],
-      },
-      data: { isActive: false },
-    }),
-    prisma.storyCluster.updateMany({
-      where: {
-        isActive: true,
-        impact: { in: ["CRITICAL", "HIGH"] },
-        AND: [inactiveByActivityCutoff(highImpactCutoff)],
-      },
-      data: { isActive: false },
-    }),
-  ]);
+  const [stableResult, lowResult, mediumResult, highResult, criticalResult] =
+    await Promise.all([
+      // STABLE or RESOLVING — deactivate after 7 days regardless of impact
+      prisma.storyCluster.updateMany({
+        where: {
+          isActive: true,
+          status: { in: ["STABLE", "RESOLVING"] },
+          AND: [inactiveByActivityCutoff(stableCutoff)],
+        },
+        data: { isActive: false },
+      }),
+      // LOW impact
+      prisma.storyCluster.updateMany({
+        where: {
+          isActive: true,
+          impact: "LOW",
+          status: { notIn: ["STABLE", "RESOLVING"] },
+          AND: [inactiveByActivityCutoff(lowImpactCutoff)],
+        },
+        data: { isActive: false },
+      }),
+      // MEDIUM impact
+      prisma.storyCluster.updateMany({
+        where: {
+          isActive: true,
+          impact: "MEDIUM",
+          status: { notIn: ["STABLE", "RESOLVING"] },
+          AND: [inactiveByActivityCutoff(mediumImpactCutoff)],
+        },
+        data: { isActive: false },
+      }),
+      // HIGH impact
+      prisma.storyCluster.updateMany({
+        where: {
+          isActive: true,
+          impact: "HIGH",
+          status: { notIn: ["STABLE", "RESOLVING"] },
+          AND: [inactiveByActivityCutoff(highImpactCutoff)],
+        },
+        data: { isActive: false },
+      }),
+      // CRITICAL impact
+      prisma.storyCluster.updateMany({
+        where: {
+          isActive: true,
+          impact: "CRITICAL",
+          status: { notIn: ["STABLE", "RESOLVING"] },
+          AND: [inactiveByActivityCutoff(criticalImpactCutoff)],
+        },
+        data: { isActive: false },
+      }),
+    ]);
 
   const deactivatedCount =
-    stableResult.count + lowImpactResult.count + highImpactResult.count;
+    stableResult.count +
+    lowResult.count +
+    mediumResult.count +
+    highResult.count +
+    criticalResult.count;
 
   if (deactivatedCount > 0) {
     console.log(`🧹 Deactivated ${deactivatedCount} stale story clusters`);
@@ -576,11 +612,19 @@ export function createArticleProcessor(
               }),
             );
 
+            const lifecycleConfig = {
+              low: CLUSTER_LOW_IMPACT_INACTIVE_DAYS,
+              medium: CLUSTER_MEDIUM_IMPACT_INACTIVE_DAYS,
+              high: CLUSTER_HIGH_IMPACT_INACTIVE_DAYS,
+              critical: CLUSTER_CRITICAL_IMPACT_INACTIVE_DAYS,
+            };
+
             // Make the clustering AI request
             const clusteringResponse = await processClusteringBatchWithAI(
               successfullyProcessedArticles,
               activeClustersWithRefs,
               500,
+              lifecycleConfig,
             );
 
             let clusterData;

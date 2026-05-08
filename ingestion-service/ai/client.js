@@ -151,7 +151,13 @@ export async function processBatchWithAI(batch, estimatedTokens = 0) {
   return requestAI(primaryConfig, prompt);
 }
 
-export function buildClusteringPrompt(articles, activeClusters) {
+export function buildClusteringPrompt(
+  articles,
+  activeClusters,
+  lifecycleConfig = {},
+) {
+  const { low = 10, medium = 21, high = 35, critical = 60 } = lifecycleConfig;
+
   const articlesContext = articles
     .map(
       (a, i) => `
@@ -221,11 +227,11 @@ For each article, decide if it belongs to an EXISTING cluster or if it represent
 STORY VS TOPIC RUBRIC:
 - A story cluster is a specific evolving event, policy move, crisis, negotiation, legal case, military operation, election episode, market shock, or named investigation.
 - Do NOT cluster articles together just because they share a broad topic, country, person, sector, or long-running background issue.
-- Same country + same theme is not enough. There must be a concrete shared development, causal chain, or named continuing event.
+- Same country + same theme is not enough on its own. However, if the article is clearly covering the same named event, policy, crisis, or operation from a different regional or cultural perspective, assign it to the existing cluster — multi-perspective coverage of the same development is the goal. A new cluster is only warranted when the article describes a genuinely separate event or a new distinct development.
 - Prefer null/unclustered for minor isolated articles or weak matches.
 - Create a new cluster when the article is a major development and no existing cluster has the same concrete storyline.
 - Reuse an older cluster only when the new article clearly continues that exact storyline; otherwise create a new cluster or leave it unclustered.
-- If a cluster has no activity for more than 14 days, require a very strong match to reuse it.
+- If a cluster has had no activity for more than ${critical} days (CRITICAL), ${high} days (HIGH), ${medium} days (MEDIUM), or ${low} days (LOW), require an exceptionally strong match — same named event, same actors, direct causal continuation — before assigning to it. When in doubt, leave unclustered or create a new cluster.
 - Avoid duplicate clusters. If a proposed new story is substantially the same as an active cluster, assign the article to that existing cluster instead.
 - For each assignment, include a confidence score from 0 to 1 and a short reason.
 
@@ -297,8 +303,9 @@ export async function processClusteringBatchWithAI(
   batch,
   activeClusters,
   estimatedTokens = 0,
+  lifecycleConfig = {},
 ) {
-  const prompt = buildClusteringPrompt(batch, activeClusters);
+  const prompt = buildClusteringPrompt(batch, activeClusters, lifecycleConfig);
 
   await waitForCapacity(estimatedTokens);
 
