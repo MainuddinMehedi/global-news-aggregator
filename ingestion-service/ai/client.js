@@ -190,12 +190,14 @@ export function buildClusteringPrompt(articles, activeClusters) {
 - Themes: ${(c.themes || []).join(", ") || "Unknown"}
 - Key Developments: ${JSON.stringify(c.keyDevelopments || [])}
 - Recent Articles:
-${(c.articles || [])
-  .map(
-    (article, index) =>
-      `  ${index + 1}. ${article.rawArticle?.title || "Untitled"} | ${article.rawArticle?.source || "Unknown"} | ${article.rawArticle?.publishedAt ? new Date(article.rawArticle.publishedAt).toISOString() : "Unknown"} | ${(article.categories || []).map((cat) => cat.name).join(", ") || "uncategorized"}`,
-  )
-  .join("\n") || "  None"}
+${
+  (c.articles || [])
+    .map(
+      (article, index) =>
+        `  ${index + 1}. ${article.rawArticle?.title || "Untitled"} | ${article.rawArticle?.source || "Unknown"} | ${article.rawArticle?.publishedAt ? new Date(article.rawArticle.publishedAt).toISOString() : "Unknown"} | ${(article.categories || []).map((cat) => cat.name).join(", ") || "uncategorized"}`,
+    )
+    .join("\n") || "  None"
+}
 `,
           )
           .join("\n");
@@ -239,7 +241,7 @@ For EXISTING cluster updates:
 - Rewrite summary to include the newest meaningful development.
 - Update impact/status only when the new reporting changes the severity or trajectory.
 - Merge regions and themes; keep them concise.
-- Append only genuinely new key developments. Do not duplicate existing developments.
+- keyDevelopments: Return ONLY developments from the NEW ARTICLES in this batch that are not already captured in the cluster's existing keyDevelopments above. If nothing is genuinely new, return an empty array []. Do NOT rewrite, rephrase, or repeat existing developments.
 
 OUTPUT FORMAT (strict JSON, no markdown):
 {
@@ -268,9 +270,7 @@ OUTPUT FORMAT (strict JSON, no markdown):
       "whyItMatters": "Updated 1-line geopolitical or economic implication.",
       "regions": ["China", "USA"],
       "themes": ["Technology", "Sanctions"],
-      "keyDevelopments": [
-        { "title": "Existing or new development", "date": "Month Day", "description": "Optional 1-sentence detail" }
-      ]
+      "keyDevelopments": [] // NEW ones only — empty if nothing new
     }
   ],
   "newClusters": [

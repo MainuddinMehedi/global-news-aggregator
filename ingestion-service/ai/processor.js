@@ -190,7 +190,9 @@ async function applyClusterLifecycle() {
       where: {
         isActive: true,
         AND: [
-          { OR: [{ impact: null }, { impact: { notIn: ["CRITICAL", "HIGH"] } }] },
+          {
+            OR: [{ impact: null }, { impact: { notIn: ["CRITICAL", "HIGH"] } }],
+          },
           inactiveByActivityCutoff(lowImpactCutoff),
         ],
       },
@@ -531,7 +533,9 @@ export function createArticleProcessor(
         // ==========================================
         if (successfullyProcessedArticles.length > 0) {
           try {
-            console.log(`🤖 Running clustering pass for ${successfullyProcessedArticles.length} articles...`);
+            console.log(
+              `🤖 Running clustering pass for ${successfullyProcessedArticles.length} articles...`,
+            );
 
             const articleIdByRef = new Map(
               successfullyProcessedArticles.map((article) => [
@@ -565,18 +569,24 @@ export function createArticleProcessor(
               activeClusterCandidates,
               30,
             );
-            const activeClustersWithRefs = activeClusters.map((cluster, index) => ({
-              ...cluster,
-              aiRef: `cluster_${index + 1}`,
-            }));
+            const activeClustersWithRefs = activeClusters.map(
+              (cluster, index) => ({
+                ...cluster,
+                aiRef: `cluster_${index + 1}`,
+              }),
+            );
 
             // Make the clustering AI request
-            const clusteringResponse = await processClusteringBatchWithAI(successfullyProcessedArticles, activeClustersWithRefs, 500);
+            const clusteringResponse = await processClusteringBatchWithAI(
+              successfullyProcessedArticles,
+              activeClustersWithRefs,
+              500,
+            );
 
             let clusterData;
             try {
               clusterData = JSON.parse(
-                clusteringResponse.content.replace(/```json|```/g, "").trim()
+                clusteringResponse.content.replace(/```json|```/g, "").trim(),
               );
             } catch (err) {
               console.warn(`⚠️ Invalid JSON from clustering AI`);
@@ -598,7 +608,10 @@ export function createArticleProcessor(
               activeClusters.map((cluster) => [cluster.id, cluster]),
             );
             const clusterIdByRef = new Map(
-              activeClustersWithRefs.map((cluster) => [cluster.aiRef, cluster.id]),
+              activeClustersWithRefs.map((cluster) => [
+                cluster.aiRef,
+                cluster.id,
+              ]),
             );
             const resolveArticleId = (refOrId) =>
               articleIdByRef.get(refOrId) ||
@@ -608,16 +621,14 @@ export function createArticleProcessor(
               (activeClusterIds.has(refOrId) ? refOrId : null);
             const clusterUpdatesById = new Map(
               clusterUpdates
-                .filter(
-                  (update) => {
-                    const clusterId = resolveClusterId(
-                      cleanString(update?.clusterRef) ||
-                        cleanString(update?.clusterId),
-                    );
+                .filter((update) => {
+                  const clusterId = resolveClusterId(
+                    cleanString(update?.clusterRef) ||
+                      cleanString(update?.clusterId),
+                  );
 
-                    return Boolean(clusterId);
-                  },
-                )
+                  return Boolean(clusterId);
+                })
                 .map((update) => {
                   const clusterId = resolveClusterId(
                     cleanString(update.clusterRef) ||
@@ -671,12 +682,25 @@ export function createArticleProcessor(
                     uniqueArticleIds.includes(article.id),
                   ),
                 );
-                const articlesToConnect = uniqueArticleIds.map(id => ({ rawArticleId: id }));
+                const articlesToConnect = uniqueArticleIds.map((id) => ({
+                  rawArticleId: id,
+                }));
 
                 // Generate a simple slug
-                const baseSlug = (nc.title || "story").toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+                const baseSlug = (nc.title || "story")
+                  .toLowerCase()
+                  .replace(/[^a-z0-9]+/g, "-")
+                  .replace(/(^-|-$)+/g, "");
                 const randomSuffix = Math.random().toString(36).substring(2, 7);
-                const slug = `${baseSlug}-${randomSuffix}`;
+                let slug = `${baseSlug}-${randomSuffix}`;
+
+                // Check slug exists, retry with new suffix if so
+                const existing = await prisma.storyCluster.findUnique({
+                  where: { slug },
+                });
+                if (existing) {
+                  slug = `${baseSlug}-${Math.random().toString(36).substring(2, 7)}`;
+                }
 
                 await prisma.storyCluster.create({
                   data: {
@@ -695,13 +719,16 @@ export function createArticleProcessor(
                     sourceCount: clusterSignals.sourceCount,
                     topSources: clusterSignals.topSources,
                     articles: {
-                      connect: articlesToConnect
-                    }
-                  }
+                      connect: articlesToConnect,
+                    },
+                  },
                 });
                 console.log(`+ Created new cluster: "${nc.title}"`);
               } catch (err) {
-                 console.error(`⚠️ Failed to create new cluster: ${nc.title}`, err.message);
+                console.error(
+                  `⚠️ Failed to create new cluster: ${nc.title}`,
+                  err.message,
+                );
               }
             }
 
@@ -709,53 +736,56 @@ export function createArticleProcessor(
             const assignedClusterIdsToRefresh = new Set();
 
             for (const assignment of assignments) {
-               const articleRef =
-                 cleanString(assignment.articleRef) ||
-                 cleanString(assignment.articleId);
-               const clusterRef =
-                 cleanString(assignment.clusterRef) ||
-                 cleanString(assignment.clusterId);
+              const articleRef =
+                cleanString(assignment.articleRef) ||
+                cleanString(assignment.articleId);
+              const clusterRef =
+                cleanString(assignment.clusterRef) ||
+                cleanString(assignment.clusterId);
 
-               if (!articleRef || !clusterRef) continue;
+              if (!articleRef || !clusterRef) continue;
 
-               const articleId = resolveArticleId(articleRef);
-               const clusterId = resolveClusterId(clusterRef);
-               const confidence = cleanNumber(assignment.confidence);
+              const articleId = resolveArticleId(articleRef);
+              const clusterId = resolveClusterId(clusterRef);
+              const confidence = cleanNumber(assignment.confidence);
 
-               if (!articleId) {
-                 console.warn(
-                   `⚠️ Ignoring assignment for unknown or unprocessed article ref ${articleRef}`,
-                 );
-                 continue;
-               }
-               if (!clusterId) {
-                 console.warn(
-                   `⚠️ Ignoring assignment to unknown cluster ref ${clusterRef}`,
-                 );
-                 continue;
-               }
-               if (
-                 confidence !== undefined &&
-                 confidence < CLUSTER_ASSIGNMENT_MIN_CONFIDENCE
-               ) {
-                 console.warn(
-                   `⚠️ Ignoring low-confidence assignment ${articleRef} -> ${clusterRef} (${confidence})`,
-                 );
-                 continue;
-               }
-               try {
-                 await prisma.processedArticle.update({
-                   where: { rawArticleId: articleId },
-                   data: {
-                     storyClusters: {
-                       connect: { id: clusterId }
-                     }
-                   }
-                 });
-                 assignedClusterIdsToRefresh.add(clusterId);
-               } catch (err) {
-                 console.error(`⚠️ Failed to assign article ${articleRef} to cluster ${clusterRef}`, err.message);
-               }
+              if (!articleId) {
+                console.warn(
+                  `⚠️ Ignoring assignment for unknown or unprocessed article ref ${articleRef}`,
+                );
+                continue;
+              }
+              if (!clusterId) {
+                console.warn(
+                  `⚠️ Ignoring assignment to unknown cluster ref ${clusterRef}`,
+                );
+                continue;
+              }
+              if (
+                confidence !== undefined &&
+                confidence < CLUSTER_ASSIGNMENT_MIN_CONFIDENCE
+              ) {
+                console.warn(
+                  `⚠️ Ignoring low-confidence assignment ${articleRef} -> ${clusterRef} (${confidence})`,
+                );
+                continue;
+              }
+              try {
+                await prisma.processedArticle.update({
+                  where: { rawArticleId: articleId },
+                  data: {
+                    storyClusters: {
+                      connect: { id: clusterId },
+                    },
+                  },
+                });
+                assignedClusterIdsToRefresh.add(clusterId);
+              } catch (err) {
+                console.error(
+                  `⚠️ Failed to assign article ${articleRef} to cluster ${clusterRef}`,
+                  err.message,
+                );
+              }
             }
 
             for (const clusterId of assignedClusterIdsToRefresh) {
@@ -785,7 +815,8 @@ export function createArticleProcessor(
             try {
               const today = new Date().toISOString().split("T")[0];
               const costPer1k = 0.0006;
-              const estimatedCost = (clusteringResponse.tokensUsed / 1000) * costPer1k;
+              const estimatedCost =
+                (clusteringResponse.tokensUsed / 1000) * costPer1k;
               await prisma.aiUsage.create({
                 data: {
                   date: today,
@@ -797,11 +828,13 @@ export function createArticleProcessor(
                 },
               });
             } catch (err) {
-              console.error(`⚠️ Failed to log AI usage for clustering batch`, err.message);
+              console.error(
+                `⚠️ Failed to log AI usage for clustering batch`,
+                err.message,
+              );
             }
-
           } catch (err) {
-             console.error(`❌ Clustering pass failed:`, err);
+            console.error(`❌ Clustering pass failed:`, err);
           }
         }
       } catch (err) {
