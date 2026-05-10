@@ -7,6 +7,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
+
     const topic = await prisma.lockedTopic.findUnique({
       where: { id },
       select: { lastScannedAt: true, matchCount: true },

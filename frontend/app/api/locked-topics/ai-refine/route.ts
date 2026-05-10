@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
+// This route is for refining the users topic and context for getting the users intent and better searchablity.
+// applied in the topic creation modal at step 3.
+
 const AI_CONFIG = {
   baseUrl: process.env.AI_PRIMARY_BASE_URL,
   apiKey: process.env.AI_PRIMARY_API_KEY,
