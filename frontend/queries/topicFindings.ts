@@ -4,8 +4,8 @@ import { TopicFinding, FindingSource } from "@/types/lockedTopic";
 
 interface getFindingsParams {
   topicId: string;
-  sourceType?: FindingSource | 'ALL';
-  sort?: 'newest' | 'oldest' | 'relevance';
+  sourceType?: FindingSource | "ALL";
+  sort?: "newest" | "oldest" | "relevance";
   cursor?: string;
   limit?: number;
 }
@@ -14,8 +14,8 @@ const DEFAULT_LIMIT = 20;
 
 export async function getFindings({
   topicId,
-  sourceType = 'ALL',
-  sort = 'newest',
+  sourceType = "ALL",
+  sort = "newest",
   cursor,
   limit = DEFAULT_LIMIT,
 }: getFindingsParams): Promise<{
@@ -27,18 +27,17 @@ export async function getFindings({
   cacheLife("minutes");
 
   const where: any = { topicId };
-  if (sourceType !== 'ALL') {
+
+  if (sourceType !== "ALL") {
     where.sourceType = sourceType;
   }
 
   let orderBy: any = { foundAt: "desc" };
-  if (sort === 'oldest') {
+
+  if (sort === "oldest") {
     orderBy = { foundAt: "asc" };
-  } else if (sort === 'relevance') {
-    orderBy = [
-      { relevanceScore: "desc" },
-      { foundAt: "desc" }
-    ];
+  } else if (sort === "relevance") {
+    orderBy = [{ relevanceScore: "desc" }, { foundAt: "desc" }];
   }
 
   try {
@@ -53,9 +52,9 @@ export async function getFindings({
     const findings = hasMore ? raw.slice(0, limit) : raw;
     const nextCursor = hasMore ? findings[findings.length - 1].id : null;
 
-    return { 
-      findings: findings as unknown as TopicFinding[], 
-      nextCursor 
+    return {
+      findings: findings as unknown as TopicFinding[],
+      nextCursor,
     };
   } catch (error) {
     console.error("getFindings error:", error);

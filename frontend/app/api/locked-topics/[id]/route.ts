@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { revalidateTag } from "next/cache";
 
+// This route is for the full CRUD operation on locked-topics.
+
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -71,6 +73,7 @@ export async function DELETE(
     const generateSummary = searchParams.get("generateSummary") === "true";
 
     if (generateSummary) {
+      // TODO: Implement the summary generation logic at deletion.
       // Summary generation logic would go here, for now just delete
     }
 

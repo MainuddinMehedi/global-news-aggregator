@@ -19,6 +19,7 @@ export default function Step4Confirm({ data, onPrev, onComplete }: any) {
 
   const handleActivate = async () => {
     setLoading(true);
+
     try {
       const res = await fetch("/api/locked-topics", {
         method: "POST",

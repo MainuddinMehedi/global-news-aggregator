@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
+// This route is for getting the available notification channels. To let the user choose whether they want ot use this channel or not.
+// TODO: in real version reads from process.env
+
 export async function GET(req: NextRequest) {
   try {
     // Stub implementation - in real version reads from process.env
