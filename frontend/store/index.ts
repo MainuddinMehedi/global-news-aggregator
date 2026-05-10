@@ -7,6 +7,12 @@ interface FeedSlice {
   setArticleCount: (count: number) => void;
 }
 
+// ─── Story slice ──────────────────────────────────────────────────────────────
+interface StorySlice {
+  storyCount: number;
+  setStoryCount: (count: number) => void;
+}
+
 // ─── Notification slice (stub — wire up when notifications are built) ─────────
 interface NotificationSlice {
   unreadCount: number;
@@ -17,6 +23,12 @@ interface NotificationSlice {
 interface UserSlice {
   user: null; // replace with a real User type when auth is implemented
   setUser: (user: null) => void;
+}
+
+// ─── Topic slice ──────────────────────────────────────────────────────────────
+interface TopicSlice {
+  totalMatchCount: number;
+  setTotalMatchCount: (count: number) => void;
 }
 
 // ─── Chat sidebar slice ──────────────────────────────────────────────────────
@@ -31,12 +43,16 @@ interface ChatSidebarSlice {
   clearChatContext: () => void;
 }
 
-type AppStore = FeedSlice & NotificationSlice & UserSlice & ChatSidebarSlice;
+type AppStore = FeedSlice & StorySlice & NotificationSlice & UserSlice & ChatSidebarSlice & TopicSlice;
 
 export const useAppStore = create<AppStore>()((set) => ({
   // ── Feed ──
   articleCount: 0,
   setArticleCount: (count) => set({ articleCount: count }),
+
+  // ── Stories ──
+  storyCount: 0,
+  setStoryCount: (count) => set({ storyCount: count }),
 
   // ── Notifications ──
   unreadCount: 0,
@@ -45,6 +61,10 @@ export const useAppStore = create<AppStore>()((set) => ({
   // ── User ──
   user: null,
   setUser: (user) => set({ user }),
+
+  // ── Topic ──
+  totalMatchCount: 0,
+  setTotalMatchCount: (count) => set({ totalMatchCount: count }),
 
   // ── Chat sidebar ──
   isChatOpen: false,
@@ -62,6 +82,8 @@ export const useAppStore = create<AppStore>()((set) => ({
 
 export const useArticleCount    = () => useAppStore((s) => s.articleCount);
 export const useSetArticleCount = () => useAppStore((s) => s.setArticleCount);
+export const useStoryCount      = () => useAppStore((s) => s.storyCount);
+export const useSetStoryCount   = () => useAppStore((s) => s.setStoryCount);
 export const useUnreadCount     = () => useAppStore((s) => s.unreadCount);
 export const useSetUnreadCount  = () => useAppStore((s) => s.setUnreadCount);
 
@@ -71,3 +93,6 @@ export const useCloseChat         = () => useAppStore((s) => s.closeChat);
 export const useOpenChatWithContext = () => useAppStore((s) => s.openChatWithContext);
 export const useClearChatContext   = () => useAppStore((s) => s.clearChatContext);
 export const useChatContextArticle = () => useAppStore((s) => s.contextArticle);
+
+export const useTotalMatchCount = () => useAppStore((s) => s.totalMatchCount);
+export const useSetTotalMatchCount = () => useAppStore((s) => s.setTotalMatchCount);

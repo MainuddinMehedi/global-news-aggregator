@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { prisma } from "./db/client.js";
+import { prisma } from "./db/prisma.js";
 import fetchRSSStream from "./sources/rss.js";
 import { getActiveFeeds } from "./sources/feeds.js";
 import hashSnippet from "./utils/hashSnippet.js";
@@ -120,7 +120,7 @@ async function run() {
 
     console.log(`\n🔄 Revalidating cache...`);
 
-    const tagsToRevalidate = ["articles", "stories"];
+    const tagsToRevalidate = ["articles", "stories", "locked-topics"];
 
     // Find clusters updated during this run to revalidate their specific pages
     const updatedClusters = await prisma.storyCluster.findMany({
@@ -136,6 +136,20 @@ async function run() {
       if (cluster.slug) {
         tagsToRevalidate.push(`story-${cluster.slug}`);
       }
+    });
+
+    // Find locked topics updated during this run
+    const updatedTopics = await prisma.lockedTopic.findMany({
+      where: {
+        updatedAt: {
+          gte: new Date(startTime),
+        },
+      },
+      select: { id: true },
+    });
+
+    updatedTopics.forEach((topic) => {
+      tagsToRevalidate.push(`locked-topic-${topic.id}`);
     });
 
     for (const tag of tagsToRevalidate) {

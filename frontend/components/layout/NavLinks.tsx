@@ -12,26 +12,23 @@ import {
 import { HugeiconsIcon } from "@hugeicons/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useArticleCount, useStoryCount, useTotalMatchCount } from "@/store";
 
 const navItems = [
-  { id: "/", label: "Feed", icon: Newspaper, badge: 5 },
-  { id: "/stories", label: "Stories", icon: GitMerge, badge: 0 },
+  { id: "/", label: "Feed", icon: Newspaper },
+  { id: "/stories", label: "Stories", icon: GitMerge },
   {
     id: "/locked-topics",
     label: "Locked Topics",
-    // icon: AllBookmarkIcon,
-    // icon: EarthLockIcon,
     icon: RssLockedIcon,
-    badge: 0,
   },
-  { id: "/chat", label: "AI Chat", icon: MessageSquare, badge: 0 },
+  { id: "/chat", label: "AI Chat", icon: MessageSquare },
   {
     id: "/analytics",
     label: "Analytics",
     icon: PresentationBarChart02FreeIcons,
-    badge: 0,
   },
-  { id: "/settings", label: "Settings", icon: Settings, badge: 0 },
+  { id: "/settings", label: "Settings", icon: Settings },
 ];
 
 interface NavLinksProps {
@@ -50,12 +47,20 @@ export default function NavLinks({
   onNavigate,
 }: NavLinksProps) {
   const pathname = usePathname();
+  const articleCount = useArticleCount();
+  const storyCount = useStoryCount();
+  const topicMatchCount = useTotalMatchCount();
 
   return (
     <nav className="space-y-1">
       {navItems.map((item) => {
         const isActive =
           item.id === "/" ? pathname === "/" : pathname.startsWith(item.id);
+
+        let badge = 0;
+        if (item.id === "/") badge = articleCount;
+        if (item.id === "/stories") badge = storyCount;
+        if (item.id === "/locked-topics") badge = topicMatchCount;
 
         return (
           <Link
@@ -83,14 +88,14 @@ export default function NavLinks({
             </span>
 
             {/* Badge: always visible in drawer, responsive in sidebar */}
-            {item.badge > 0 && (
+            {badge > 0 && (
               <span
                 className={cn(
                   "ml-auto bg-primary text-primary-foreground py-0.5 px-2 rounded-full text-xs font-mono",
                   alwaysFull ? "flex" : "hidden lg:flex",
                 )}
               >
-                {item.badge}
+                {badge}
               </span>
             )}
           </Link>

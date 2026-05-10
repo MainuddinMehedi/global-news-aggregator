@@ -1,15 +1,47 @@
-import { TopicDetailsView } from "../../../components/locked-topics/TopicDetailsView";
+import { getLockedTopicById } from "@/queries/lockedTopics";
+import { getFindings } from "@/queries/topicFindings";
+import { notFound } from "next/navigation";
+import TopicHeader from "@/components/locked-topics/TopicHeader";
+import FindingsFilter from "@/components/locked-topics/FindingsFilter";
+import FindingsList from "@/components/locked-topics/FindingsList";
+import { FindingSource } from "@/types/lockedTopic";
 
-export default async function TopicDetailsPage({
-  params,
-}: {
+interface TopicDetailPageProps {
   params: Promise<{ id: string }>;
-}) {
+  searchParams: Promise<{
+    source?: string;
+    sort?: string;
+  }>;
+}
+
+export default async function TopicDetailPage({ params, searchParams }: TopicDetailPageProps) {
   const { id } = await params;
+  const { source = 'ALL', sort = 'newest' } = await searchParams;
+
+  const topic = await getLockedTopicById(id);
+  if (!topic) notFound();
+
+  const { findings, nextCursor } = await getFindings({
+    topicId: id,
+    sourceType: source as FindingSource | 'ALL',
+    sort: sort as any,
+    limit: 20,
+  });
+
   return (
-    <div className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
-      <div className="overflow-hidden rounded-3xl border border-border/50 bg-card/50 shadow-2xl backdrop-blur-xl">
-        <TopicDetailsView topicId={id} />
+    <div className="max-w-6xl mx-auto px-4 py-12 space-y-12">
+      <TopicHeader topic={topic} />
+      
+      <div className="space-y-8">
+        <FindingsFilter currentSource={source} currentSort={sort} />
+        
+        <FindingsList 
+          initialFindings={findings} 
+          initialNextCursor={nextCursor}
+          topicId={id}
+          sourceType={source as FindingSource | 'ALL'}
+          sort={sort as any}
+        />
       </div>
     </div>
   );

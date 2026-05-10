@@ -1,0 +1,59 @@
+import { cacheLife, cacheTag } from "next/cache";
+import prisma from "@/lib/prisma";
+import { LockedTopic } from "@/types/lockedTopic";
+
+export async function getLockedTopics(): Promise<LockedTopic[]> {
+  "use cache";
+  cacheTag("locked-topics");
+  cacheLife("minutes");
+
+  try {
+    const topics = await prisma.lockedTopic.findMany({
+      orderBy: { createdAt: "desc" },
+    });
+
+    return topics as unknown as LockedTopic[];
+  } catch (error) {
+    console.error("getLockedTopics error:", error);
+    throw new Error("Failed to fetch locked topics from the database");
+  }
+}
+
+export async function getLockedTopicById(id: string): Promise<LockedTopic | null> {
+  "use cache";
+  cacheTag(`locked-topic-${id}`);
+  cacheTag("locked-topics");
+  cacheLife("minutes");
+
+  try {
+    const topic = await prisma.lockedTopic.findUnique({
+      where: { id },
+    });
+
+    if (!topic) return null;
+
+    return topic as unknown as LockedTopic;
+  } catch (error) {
+    console.error("getLockedTopicById error:", error);
+    throw new Error("Failed to fetch locked topic from the database");
+  }
+}
+
+export async function getTotalMatchCount(): Promise<number> {
+  "use cache";
+  cacheTag("locked-topics");
+  cacheLife("minutes");
+
+  try {
+    const result = await prisma.lockedTopic.aggregate({
+      _sum: {
+        matchCount: true,
+      },
+    });
+
+    return result._sum.matchCount || 0;
+  } catch (error) {
+    console.error("getTotalMatchCount error:", error);
+    return 0;
+  }
+}
