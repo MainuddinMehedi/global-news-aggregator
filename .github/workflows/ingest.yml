@@ -47,6 +47,7 @@ jobs:
           REVALIDATE_SECRET: "${{ secrets.REVALIDATE_SECRET }}"
 
           # ⚙️ VARIABLES (Config)
+          NEXT_PUBLIC_API_URL: "${{ vars.NEXT_PUBLIC_API_URL }}"
           AI_PRIMARY_PROVIDER: "${{ vars.AI_PRIMARY_PROVIDER }}"
           AI_PRIMARY_MODEL: "${{ vars.AI_PRIMARY_MODEL }}"
           AI_PRIMARY_BASE_URL: "${{ vars.AI_PRIMARY_BASE_URL }}"
