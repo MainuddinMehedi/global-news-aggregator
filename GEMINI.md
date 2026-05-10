@@ -16,7 +16,7 @@ The project is a two-service monorepo:
 
 - **Database**: PostgreSQL (Supabase) + Prisma ORM
 - **Backend**: Node.js (ESM), `rss-parser`, `tiktoken`, `p-limit`
-- **AI**: Groq (Primary: Llama 4 Scout), OpenRouter (Fallback/Frontend)
+- **AI**: Multi-provider strategy (Groq + Google AI Studio). See [AI Model Strategy Guide](docs/AI_MODELS.md) for assignments.
 - **Frontend**: Next.js 16, TailwindCSS 4, shadcn/ui, HugeIcons, Zustand
 
 ## 📁 Project Structure
@@ -74,7 +74,7 @@ frontend/
     article.ts        ← Article interface
 
 prisma/               ← Shared database schema
-docs/                 ← Phase documentation and architecture notes
+docs/                 ← Phase documentation and architecture notes (see docs/AI_MODELS.md)
 ```
 
 ## 🚀 Key Commands
@@ -92,7 +92,7 @@ docs/                 ← Phase documentation and architecture notes
 
 - **Streaming-First**: Favor async generators and micro-batching. Avoid loading large datasets into memory.
 - **Deduplication**: Multi-layer dedup using URL normalization and content hashing (`title + snippet`).
-- **AI Pacing**: Use the custom sliding-window rate limiter in `ingestion-service/ai/rateLimiter.js`. Do not parallelize AI batches (keep concurrency = 1).
+- **AI Pacing**: Use the custom sliding-window rate limiter in `ingestion-service/ai/rateLimiter.js`. Do not parallelize AI batches (keep concurrency = 1). Adhere to model assignments in `docs/AI_MODELS.md`.
 - **Type Safety**: Maintain synchronization between the root Prisma schema and both service clients.
 - **Perspective Transparency**: Bias detection is for informational transparency (Perspective Badges), not automated "correction".
 - **URL-Driven Filters**: Category, sort, and search are all stored as URL query params. This enables server-side rendering, shareable URLs, and browser back/forward navigation.
