@@ -1,13 +1,32 @@
 import { cacheLife, cacheTag } from "next/cache";
 import prisma from "@/lib/prisma";
 
+const CANONICAL_CATEGORIES = [
+  "geopolitics",
+  "economy",
+  "business",
+  "technology",
+  "environment",
+  "health",
+  "security",
+  "politics",
+  "society",
+  "bangladesh",
+  "other",
+];
+
 export async function getCategories() {
   "use cache";
   cacheTag("categories");
   cacheLife("days");
 
   const categories = await prisma.category.findMany({
-    orderBy: { name: "asc" },
+    where: { name: { in: CANONICAL_CATEGORIES } },
   });
-  return categories.map((c) => c.name);
+
+  const availableCategories = new Set(categories.map((c) => c.name));
+
+  return CANONICAL_CATEGORIES.filter((category) =>
+    availableCategories.has(category),
+  );
 }

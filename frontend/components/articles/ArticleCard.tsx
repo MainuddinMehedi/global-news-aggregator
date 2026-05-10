@@ -1,11 +1,12 @@
-import { Sparkles } from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
 import { SentimentBadge } from "./SentimentBadge";
 import { Article } from "@/types/article";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { formatRelativeTime, getBiasBadgeVariant } from "@/lib/utils";
+import AiButton from "./AiButton";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Globe } from "@hugeicons/core-free-icons";
 
 export default function ArticleCard({ article }: { article: Article }) {
   return (
@@ -13,11 +14,11 @@ export default function ArticleCard({ article }: { article: Article }) {
       <CardHeader className="">
         <div className="flex items-start justify-between gap-2">
           <Link
-            href={`/?article=${article.id}`}
+            href={`/article/${article.slug || article.id}`}
             scroll={false}
             className="flex-1"
           >
-            <CardTitle className="text-lg font-semibold leading-snug group-hover:text-emerald-700 dark:group-hover:text-emerald-500 transition-colors line-clamp-2">
+            <CardTitle className="text-lg font-bold leading-snug group-hover:text-primary dark:group-hover:text-primary transition-colors line-clamp-2">
               {article.title}
             </CardTitle>
           </Link>
@@ -28,14 +29,7 @@ export default function ArticleCard({ article }: { article: Article }) {
               </Badge>
             )}
 
-            <Link
-              href={`/?chat=${article.id}`}
-              scroll={false}
-              className="shrink-0 p-1.5 rounded-md text-muted-foreground hover:text-emerald-500 hover:bg-accent transition-all opacity-80 group-hover:opacity-100"
-              title="Ask AI about this article"
-            >
-              <HugeiconsIcon icon={Sparkles} className="w-4 h-4" />
-            </Link>
+            <AiButton article={article} />
           </div>
         </div>
       </CardHeader>
@@ -59,39 +53,31 @@ export default function ArticleCard({ article }: { article: Article }) {
 
         {/* Snippet */}
         <Link
-          href={`/?article=${article.id}`}
+          href={`/article/${article.slug || article.id}`}
           scroll={false}
           className="flex-1 block"
         >
-          <p className="text-sm text-muted-foreground line-clamp-3">
+          <p className="text-sm leading-relaxed text-muted-foreground line-clamp-3">
             {article.contentSnippet}
           </p>
         </Link>
 
         {/* Category tags */}
-        {article.categories && article.categories.length > 0 && (
-          <div className="flex flex-wrap gap-1 mt-auto">
-            {article.categories.slice(0, 3).map((cat) => (
-              <Badge
-                key={cat.id}
-                variant="outline"
-                className="capitalize text-muted-foreground"
-              >
-                {cat.name}
-              </Badge>
-            ))}
-          </div>
-        )}
-      </CardContent>
-
-      {/* Footer: Bias + Perspective */}
-      {/*<CardFooter className="border-t flex items-center justify-between mt-auto">
-        <div className="flex items-center space-x-2 w-full justify-between">
-          {article.biasCategory && (
-            <span className="text-[10px] font-medium text-muted-foreground bg-secondary/50 px-2 py-0.5 rounded">
-              {article.biasCategory}
-            </span>
+        <div className="flex justify-between items-center">
+          {article.categories && article.categories.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-auto">
+              {article.categories.slice(0, 3).map((cat) => (
+                <Badge
+                  key={cat.id}
+                  variant="outline"
+                  className="capitalize text-muted-foreground"
+                >
+                  {cat.name}
+                </Badge>
+              ))}
+            </div>
           )}
+
           {article.perspectiveCountries &&
             article.perspectiveCountries.length > 0 && (
               <div className="flex items-center space-x-1 ml-auto">
@@ -105,7 +91,7 @@ export default function ArticleCard({ article }: { article: Article }) {
               </div>
             )}
         </div>
-      </CardFooter>*/}
+      </CardContent>
     </Card>
   );
 }

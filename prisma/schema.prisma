@@ -3,14 +3,12 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider = "postgresql"
 }
 
 model Category {
-  id       String    @id @default(uuid())
-  name     String    @unique
+  id       String             @id @default(uuid())
+  name     String             @unique
   articles ProcessedArticle[] @relation("ProcessedArticleCategories")
 }
 
@@ -22,28 +20,30 @@ model User {
 }
 
 model UserTopic {
-  id             String    @id @default(uuid())
+  id             String            @id @default(uuid())
   userId         String
-  user           User      @relation(fields: [userId], references: [id])
+  user           User              @relation(fields: [userId], references: [id])
   topicName      String
   lastNotifiedAt DateTime?
-  article        ProcessedArticle?  @relation(fields: [articleId], references: [id])
+  article        ProcessedArticle? @relation(fields: [articleId], references: [id])
   articleId      String?
 
   @@unique([userId, topicName])
 }
 
 model RawArticle {
-  id             String   @id @default(uuid())
-  title          String
-  contentSnippet String   @db.Text
-  url            String   @unique
-  source         String
-  sourceCountry  String?
-  publishedAt    DateTime
-  fetchedAt      DateTime @default(now())
-  contentHash    String?  @unique
-  rawMetadata    Json?
+  id               String   @id @default(uuid())
+  title            String
+  contentSnippet   String   @db.Text
+  extractedContent String?  @db.Text
+  url              String   @unique
+  slug             String?  @unique
+  source           String
+  sourceCountry    String?
+  publishedAt      DateTime
+  fetchedAt        DateTime @default(now())
+  contentHash      String?  @unique
+  rawMetadata      Json?
 
   processedArticle ProcessedArticle?
 
@@ -52,24 +52,25 @@ model RawArticle {
 }
 
 model ProcessedArticle {
-  id                   String   @id @default(uuid())
-  rawArticleId         String   @unique
+  id                   String     @id @default(uuid())
+  rawArticleId         String     @unique
   rawArticle           RawArticle @relation(fields: [rawArticleId], references: [id], onDelete: Cascade)
   categories           Category[] @relation("ProcessedArticleCategories")
   entities             String[]
   sentimentScore       Float?
   biasNote             String?
-  biasCategory         String?   // "Western", "Eastern", "Non-Western", "Neutral"
+  biasCategory         String? // "Western", "Eastern", "Non-Western", "Neutral"
   perspectiveCountries String[]
   model                String?
-  processedAt          DateTime @default(now())
+  processedAt          DateTime   @default(now())
 
   matchedTopics UserTopic[]
+  storyClusters StoryCluster[] @relation("ArticleStoryClusters")
 }
 
 model AiUsage {
   id            String   @id @default(uuid())
-  date          String   // Format: YYYY-MM-DD for easy querying
+  date          String // Format: YYYY-MM-DD for easy querying
   provider      String
   model         String
   tokensUsed    Int
@@ -78,4 +79,97 @@ model AiUsage {
   createdAt     DateTime @default(now())
 
   @@index([date])
+}
+
+model StoryCluster {
+  id              String  @id @default(uuid())
+  slug            String  @unique
+  title           String
+  summary         String  @db.Text
+  timeWindow      String?
+  keyDevelopments Json?
+  isActive        Boolean @default(true)
+
+  // Intelligence
+  impact       String?
+  impactScore  Float?
+  status       String?
+  whyItMatters String? @db.Text
+
+  regions String[]
+  themes  String[]
+
+  // Signals
+  articleCount Int      @default(0)
+  sourceCount  Int?
+  topSources   String[]
+
+  lastActivityAt DateTime?
+  activityScore  Float?
+
+  trendData Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  articles ProcessedArticle[] @relation("ArticleStoryClusters")
+}
+
+model LockedTopic {
+  id                  String     @id @default(uuid())
+  userId              String? // nullable — single user for now, ready for multi-user
+  displayName         String
+  userContext         String     @db.Text
+  aiRefinedQuery      String     @db.Text
+  aiQuerySummary      String     @db.Text
+  sources             Json // SourceConfig[]
+  searchBeyondSources Boolean    @default(true)
+  isActive            Boolean    @default(true)
+  notifyEnabled       Boolean    @default(false)
+  notifyMode          NotifyMode @default(DIGEST)
+  notifyThreshold     Float      @default(0.8)
+  notifyChannels      Json // { discord: bool, telegram: bool }
+  matchCount          Int        @default(0)
+  lastMatchedAt       DateTime?
+  lastViewedAt        DateTime?
+  lastScannedAt       DateTime? // null = initial scan not yet run (scanning state)
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
+
+  findings TopicFinding[]
+}
+
+model TopicFinding {
+  id             String        @id @default(uuid())
+  topicId        String
+  topic          LockedTopic   @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  title          String
+  summary        String?
+  sourceType     FindingSource
+  sourceUrl      String
+  sourceName     String
+  rawArticleId   String? // nullable — links to ProcessedArticle if internal
+  relevanceScore Float?
+  isRead         Boolean       @default(false)
+  foundAt        DateTime      @default(now())
+  metadata       Json? // { location, salary, company, etc. }
+
+  @@unique([topicId, sourceUrl]) // deduplication constraint
+  @@index([topicId, foundAt])
+  @@index([topicId, relevanceScore])
+}
+
+enum NotifyMode {
+  DIGEST
+  ALERT
+}
+
+enum FindingSource {
+  ARTICLE // from internal ProcessedArticle DB
+  GOOGLE // Google News RSS
+  BRAVE // Brave Search API
+  REDDIT // Reddit search
+  RSS // user-added RSS feed
+  SCRAPE // pre-built Tier 2 scraper
+  WEBPAGE // user-added webpage diff
 }

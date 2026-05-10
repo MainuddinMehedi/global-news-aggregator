@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { updateTag } from "next/cache";
+import { revalidateTag } from "next/cache";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;
@@ -14,6 +14,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Missing tag" }, { status: 400 });
   }
 
-  updateTag(tag);
+  revalidateTag(tag, "max");
   return NextResponse.json({ revalidated: true, tag });
 }

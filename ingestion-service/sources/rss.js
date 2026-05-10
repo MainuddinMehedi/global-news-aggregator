@@ -49,8 +49,7 @@ export default async function* fetchRSSStream(
       yield {
         title: extractText(item.title),
         url: item.link,
-        contentSnippet:
-          item.contentSnippet || item.content?.slice(0, 500) || "",
+        contentSnippet: item.contentSnippet || item.content || "",
         source: sourceName,
         sourceCountry: sourceCountry,
         category: item.categories ? item.categories.join(", ") : "",

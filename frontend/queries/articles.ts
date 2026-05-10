@@ -100,6 +100,7 @@ export async function getArticles({
       source: article.rawArticle.source,
       publishedAt: article.rawArticle.publishedAt.toISOString(),
       contentSnippet: article.rawArticle.contentSnippet,
+      extractedContent: article.rawArticle.extractedContent,
       biasNote: article.biasNote,
       biasCategory: article.biasCategory,
       sentimentScore: article.sentimentScore,
@@ -108,6 +109,7 @@ export async function getArticles({
       categories: article.categories,
       entities: article.entities,
       sourceCountry: article.rawArticle.sourceCountry,
+      slug: article.rawArticle.slug,
     }));
 
     return { articles, nextCursor };
@@ -131,8 +133,13 @@ export async function getArticleById(id: string): Promise<Article | null> {
   cacheLife("days");
 
   try {
-    const raw = await prisma.processedArticle.findUnique({
-      where: { id },
+    const raw = await prisma.processedArticle.findFirst({
+      where: {
+        OR: [
+          { id: id },
+          { rawArticle: { slug: id } }
+        ]
+      },
       include: {
         rawArticle: true,
         categories: true,
@@ -147,6 +154,7 @@ export async function getArticleById(id: string): Promise<Article | null> {
       source: raw.rawArticle.source,
       publishedAt: raw.rawArticle.publishedAt.toISOString(),
       contentSnippet: raw.rawArticle.contentSnippet,
+      extractedContent: raw.rawArticle.extractedContent,
       biasNote: raw.biasNote,
       biasCategory: raw.biasCategory,
       sentimentScore: raw.sentimentScore,
@@ -155,6 +163,7 @@ export async function getArticleById(id: string): Promise<Article | null> {
       categories: raw.categories,
       entities: raw.entities,
       sourceCountry: raw.rawArticle.sourceCountry,
+      slug: raw.rawArticle.slug,
     };
   } catch (error) {
     console.log("getArticleById error: ", error);

@@ -4,6 +4,7 @@ export interface Article {
   source: string;
   publishedAt: string;
   contentSnippet: string;
+  extractedContent: string | null;
   biasNote: string | null;
   biasCategory: string | null;
   sentimentScore: number | null;
@@ -12,4 +13,5 @@ export interface Article {
   categories: { id: string; name: string }[];
   entities: string[];
   sourceCountry: string | null;
+  slug: string | null;
 }

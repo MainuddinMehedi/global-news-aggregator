@@ -173,9 +173,11 @@ The `<Suspense>` boundary in `layout.tsx` is what makes this work. The shell ren
 
 `GET /api/revalidate?tag=articles&secret=REVALIDATE_SECRET`
 
-Protected by the `REVALIDATE_SECRET` environment variable. Call this from the ingestion service after each successful batch to immediately purge stale article results. Uses `updateTag` (immediate expiry, not stale-while-revalidate).
+Protected by the `REVALIDATE_SECRET` environment variable. Call this from the ingestion service after each successful batch to immediately purge stale article results. Uses `revalidateTag(tag, "max")` for background revalidation (stale-while-revalidate).
 
-**Required env var**: add `REVALIDATE_SECRET` to `.env.local` and production environment.
+**updateTag vs revalidateTag**: 
+- Use `updateTag(tag)` in **Server Actions** for immediate "read-your-own-writes" consistency. It forces an immediate cache expiry.
+- Use `revalidateTag(tag, "max")` in **Route Handlers** and background tasks for performance-optimized background revalidation (SWR).
 
 ### Suspense and Runtime APIs
 
