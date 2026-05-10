@@ -1,7 +1,13 @@
-'use client';
+"use client";
 
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Add01Icon } from "@hugeicons/core-free-icons";
@@ -11,7 +17,11 @@ import Step3AIReview from "./Step3AIReview";
 import Step4Confirm from "./Step4Confirm";
 import { SourceConfig } from "@/types/lockedTopic";
 
-export default function CreateTopicModal({ trigger }: { trigger?: React.ReactNode }) {
+export default function CreateTopicModal({
+  trigger,
+}: {
+  trigger?: React.ReactNode;
+}) {
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(1);
   const [data, setData] = useState({
@@ -46,12 +56,16 @@ export default function CreateTopicModal({ trigger }: { trigger?: React.ReactNod
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         {trigger || (
-          <Button size="lg" className="gap-2 rounded-xl px-6 shadow-xl shadow-primary/20 hover:scale-105 transition-all">
+          <Button
+            size="lg"
+            className="gap-2 rounded-xl px-6 shadow-xl shadow-primary/20 hover:scale-105 transition-all"
+          >
             <HugeiconsIcon icon={Add01Icon} size={20} />
             Lock New Topic
           </Button>
         )}
       </DialogTrigger>
+
       <DialogContent className="sm:max-w-[550px] p-0 overflow-hidden gap-0 border border-secondary shadow-2xl bg-background/95 backdrop-blur-xl">
         <DialogHeader className="p-8 pb-0">
           <div className="flex items-center justify-between">
@@ -65,7 +79,7 @@ export default function CreateTopicModal({ trigger }: { trigger?: React.ReactNod
             </div>
           </div>
           <div className="w-full bg-secondary h-1.5 mt-8 rounded-full overflow-hidden">
-            <div 
+            <div
               className="bg-primary h-full transition-all duration-700 ease-in-out shadow-[0_0_8px_rgba(var(--primary),0.5)]"
               style={{ width: `${(step / 4) * 100}%` }}
             />
@@ -73,10 +87,28 @@ export default function CreateTopicModal({ trigger }: { trigger?: React.ReactNod
         </DialogHeader>
 
         <div className="p-8">
-          {step === 1 && <Step1Intent data={data} setData={setData} onNext={nextStep} />}
-          {step === 2 && <Step2Sources data={data} setData={setData} onNext={nextStep} onPrev={prevStep} />}
-          {step === 3 && <Step3AIReview data={data} setData={setData} onNext={nextStep} onPrev={prevStep} />}
-          {step === 4 && <Step4Confirm data={data} onPrev={prevStep} onComplete={reset} />}
+          {step === 1 && (
+            <Step1Intent data={data} setData={setData} onNext={nextStep} />
+          )}
+          {step === 2 && (
+            <Step2Sources
+              data={data}
+              setData={setData}
+              onNext={nextStep}
+              onPrev={prevStep}
+            />
+          )}
+          {step === 3 && (
+            <Step3AIReview
+              data={data}
+              setData={setData}
+              onNext={nextStep}
+              onPrev={prevStep}
+            />
+          )}
+          {step === 4 && (
+            <Step4Confirm data={data} onPrev={prevStep} onComplete={reset} />
+          )}
         </div>
       </DialogContent>
     </Dialog>
@@ -85,10 +117,15 @@ export default function CreateTopicModal({ trigger }: { trigger?: React.ReactNod
 
 function getStepTitle(step: number) {
   switch (step) {
-    case 1: return "Define Intent";
-    case 2: return "Select Sources";
-    case 3: return "AI Review";
-    case 4: return "Surveillance Ready";
-    default: return "";
+    case 1:
+      return "Define Intent";
+    case 2:
+      return "Select Sources";
+    case 3:
+      return "AI Review";
+    case 4:
+      return "Surveillance Ready";
+    default:
+      return "";
   }
 }

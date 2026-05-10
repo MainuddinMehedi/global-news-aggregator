@@ -14,16 +14,19 @@ interface TopicDetailPageProps {
   }>;
 }
 
-export default async function TopicDetailPage({ params, searchParams }: TopicDetailPageProps) {
+export default async function TopicDetailPage({
+  params,
+  searchParams,
+}: TopicDetailPageProps) {
   const { id } = await params;
-  const { source = 'ALL', sort = 'newest' } = await searchParams;
+  const { source = "ALL", sort = "newest" } = await searchParams;
 
   const topic = await getLockedTopicById(id);
   if (!topic) notFound();
 
   const { findings, nextCursor } = await getFindings({
     topicId: id,
-    sourceType: source as FindingSource | 'ALL',
+    sourceType: source as FindingSource | "ALL",
     sort: sort as any,
     limit: 20,
   });
@@ -31,15 +34,15 @@ export default async function TopicDetailPage({ params, searchParams }: TopicDet
   return (
     <div className="max-w-6xl mx-auto px-4 py-12 space-y-12">
       <TopicHeader topic={topic} />
-      
+
       <div className="space-y-8">
         <FindingsFilter currentSource={source} currentSort={sort} />
-        
-        <FindingsList 
-          initialFindings={findings} 
+
+        <FindingsList
+          initialFindings={findings}
           initialNextCursor={nextCursor}
           topicId={id}
-          sourceType={source as FindingSource | 'ALL'}
+          sourceType={source as FindingSource | "ALL"}
           sort={sort as any}
         />
       </div>

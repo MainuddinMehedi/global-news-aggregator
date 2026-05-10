@@ -1,7 +1,11 @@
-'use client';
+"use client";
 
 import { useEffect } from "react";
-import { useSetArticleCount, useSetStoryCount, useSetTotalMatchCount } from "@/store";
+import {
+  useSetArticleCount,
+  useSetStoryCount,
+  useSetTotalMatchCount,
+} from "@/store";
 
 interface GlobalStatsFetcherProps {
   articleCount: number;
@@ -9,10 +13,10 @@ interface GlobalStatsFetcherProps {
   topicMatchCount: number;
 }
 
-export default function GlobalStatsFetcher({ 
-  articleCount, 
-  storyCount, 
-  topicMatchCount 
+export default function GlobalStatsFetcher({
+  articleCount,
+  storyCount,
+  topicMatchCount,
 }: GlobalStatsFetcherProps) {
   const setArticleCount = useSetArticleCount();
   const setStoryCount = useSetStoryCount();
@@ -22,7 +26,14 @@ export default function GlobalStatsFetcher({
     setArticleCount(articleCount);
     setStoryCount(storyCount);
     setTotalMatchCount(topicMatchCount);
-  }, [articleCount, storyCount, topicMatchCount, setArticleCount, setStoryCount, setTotalMatchCount]);
+  }, [
+    articleCount,
+    storyCount,
+    topicMatchCount,
+    setArticleCount,
+    setStoryCount,
+    setTotalMatchCount,
+  ]);
 
   return null;
 }

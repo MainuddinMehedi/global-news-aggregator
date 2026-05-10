@@ -21,7 +21,7 @@ export async function getStoryCount() {
 
   try {
     return await prisma.storyCluster.count({
-      where: { isActive: true }
+      where: { isActive: true },
     });
   } catch (error) {
     console.error("getStoryCount error:", error);

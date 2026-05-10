@@ -1,9 +1,13 @@
-'use client';
+"use client";
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Tick01Icon, Notification03Icon, Mail01Icon } from "@hugeicons/core-free-icons";
+import {
+  Tick01Icon,
+  Notification03Icon,
+  Mail01Icon,
+} from "@hugeicons/core-free-icons";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -16,9 +20,9 @@ export default function Step4Confirm({ data, onPrev, onComplete }: any) {
   const handleActivate = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/locked-topics', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/api/locked-topics", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...data,
           notifyEnabled: notify,
@@ -26,12 +30,12 @@ export default function Step4Confirm({ data, onPrev, onComplete }: any) {
       });
 
       if (!res.ok) throw new Error("Activation failed");
-      
+
       const { id } = await res.json();
-      
+
       // Trigger initial scan (fire and forget)
-      fetch(`/api/locked-topics/${id}/scan`, { method: 'POST' });
-      
+      fetch(`/api/locked-topics/${id}/scan`, { method: "POST" });
+
       toast.success("Tracker activated and scanning initiated!");
       onComplete();
       router.refresh();
@@ -48,9 +52,16 @@ export default function Step4Confirm({ data, onPrev, onComplete }: any) {
           <HugeiconsIcon icon={Tick01Icon} size={40} />
         </div>
         <div className="space-y-2">
-          <h3 className="text-3xl font-black tracking-tight">Ready for Launch</h3>
+          <h3 className="text-3xl font-black tracking-tight">
+            Ready for Launch
+          </h3>
           <p className="text-sm text-muted-foreground leading-relaxed max-w-sm mx-auto">
-            Your surveillance for <span className="text-foreground font-bold">"{data.displayName}"</span> is configured. We'll start monitoring all selected sources immediately.
+            Your surveillance for{" "}
+            <span className="text-foreground font-bold">
+              "{data.displayName}"
+            </span>{" "}
+            is configured. We'll start monitoring all selected sources
+            immediately.
           </p>
         </div>
       </div>
@@ -63,10 +74,16 @@ export default function Step4Confirm({ data, onPrev, onComplete }: any) {
             </div>
             <div>
               <p className="text-sm font-bold">Intelligent Notifications</p>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Digest Mode (2h interval)</p>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">
+                Digest Mode (2h interval)
+              </p>
             </div>
           </div>
-          <Switch checked={notify} onCheckedChange={setNotify} className="data-[state=checked]:bg-primary" />
+          <Switch
+            checked={notify}
+            onCheckedChange={setNotify}
+            className="data-[state=checked]:bg-primary"
+          />
         </div>
 
         <div className="flex items-center justify-between p-5 rounded-2xl border border-secondary bg-secondary/10 opacity-40 grayscale cursor-not-allowed">
@@ -76,7 +93,9 @@ export default function Step4Confirm({ data, onPrev, onComplete }: any) {
             </div>
             <div>
               <p className="text-sm font-bold">External Webhooks</p>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Discord / Telegram Hook</p>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">
+                Discord / Telegram Hook
+              </p>
             </div>
           </div>
           <Switch checked={false} disabled />
@@ -84,16 +103,27 @@ export default function Step4Confirm({ data, onPrev, onComplete }: any) {
       </div>
 
       <div className="flex gap-4 pt-2">
-        <Button variant="outline" onClick={onPrev} className="flex-1 rounded-xl py-7 border-secondary hover:bg-secondary/20" disabled={loading}>
+        <Button
+          variant="outline"
+          onClick={onPrev}
+          className="flex-1 rounded-xl py-7 border-secondary hover:bg-secondary/20"
+          disabled={loading}
+        >
           Back
         </Button>
-        <Button onClick={handleActivate} className="flex-[2] rounded-xl py-7 font-bold text-lg shadow-2xl shadow-primary/30 hover:scale-[1.02] active:scale-95 transition-all bg-primary hover:bg-primary/90" disabled={loading}>
+        <Button
+          onClick={handleActivate}
+          className="flex-2 rounded-xl py-7 font-bold text-lg shadow-2xl shadow-primary/30 hover:scale-[1.02] active:scale-95 transition-all bg-primary hover:bg-primary/90"
+          disabled={loading}
+        >
           {loading ? (
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
               <span>Activating...</span>
             </div>
-          ) : "Launch Tracker"}
+          ) : (
+            "Launch Tracker"
+          )}
         </Button>
       </div>
     </div>

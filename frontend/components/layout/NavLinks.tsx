@@ -7,7 +7,7 @@ import {
   Newspaper,
   PresentationBarChart02FreeIcons,
   RssLockedIcon,
-  Settings
+  Settings,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import Link from "next/link";

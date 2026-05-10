@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { updateTag } from "next/cache";
+import { revalidateTag } from "next/cache";
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
@@ -22,18 +22,21 @@ export async function GET(
       data: { lastViewedAt: new Date() },
     });
 
-    updateTag("locked-topics");
-    updateTag(`locked-topic-${id}`);
+    revalidateTag("locked-topics", "max");
+    revalidateTag(`locked-topic-${id}`, "max");
 
     return NextResponse.json(topic);
   } catch (error) {
-    return NextResponse.json({ error: "Failed to fetch topic" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to fetch topic" },
+      { status: 500 },
+    );
   }
 }
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
@@ -44,22 +47,25 @@ export async function PATCH(
       data: body,
     });
 
-    updateTag("locked-topics");
-    updateTag(`locked-topic-${id}`);
+    revalidateTag("locked-topics", "max");
+    revalidateTag(`locked-topic-${id}`, "max");
 
     return NextResponse.json(updated);
   } catch (error) {
-    return NextResponse.json({ error: "Failed to update topic" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to update topic" },
+      { status: 500 },
+    );
   }
 }
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
-    
+
     // Check if we should generate a summary first
     const { searchParams } = new URL(req.url);
     const generateSummary = searchParams.get("generateSummary") === "true";
@@ -72,10 +78,13 @@ export async function DELETE(
       where: { id },
     });
 
-    updateTag("locked-topics");
+    revalidateTag("locked-topics", "max");
 
     return NextResponse.json({ ok: true });
   } catch (error) {
-    return NextResponse.json({ error: "Failed to delete topic" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to delete topic" },
+      { status: 500 },
+    );
   }
 }

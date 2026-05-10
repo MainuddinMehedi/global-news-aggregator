@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
+  provider = "postgresql"
 }
 
 model Category {
@@ -116,45 +116,45 @@ model StoryCluster {
 }
 
 model LockedTopic {
-  id                  String         @id @default(uuid())
-  userId              String?        // nullable — single user for now, ready for multi-user
+  id                  String     @id @default(uuid())
+  userId              String? // nullable — single user for now, ready for multi-user
   displayName         String
-  userContext         String         @db.Text
-  aiRefinedQuery      String         @db.Text
-  aiQuerySummary      String         @db.Text
-  sources             Json           // SourceConfig[]
-  searchBeyondSources Boolean        @default(true)
-  isActive            Boolean        @default(true)
-  notifyEnabled       Boolean        @default(false)
-  notifyMode          NotifyMode     @default(DIGEST)
-  notifyThreshold     Float          @default(0.8)
-  notifyChannels      Json           // { discord: bool, telegram: bool }
-  matchCount          Int            @default(0)
+  userContext         String     @db.Text
+  aiRefinedQuery      String     @db.Text
+  aiQuerySummary      String     @db.Text
+  sources             Json // SourceConfig[]
+  searchBeyondSources Boolean    @default(true)
+  isActive            Boolean    @default(true)
+  notifyEnabled       Boolean    @default(false)
+  notifyMode          NotifyMode @default(DIGEST)
+  notifyThreshold     Float      @default(0.8)
+  notifyChannels      Json // { discord: bool, telegram: bool }
+  matchCount          Int        @default(0)
   lastMatchedAt       DateTime?
   lastViewedAt        DateTime?
-  lastScannedAt       DateTime?      // null = initial scan not yet run (scanning state)
-  createdAt           DateTime       @default(now())
-  updatedAt           DateTime       @updatedAt
+  lastScannedAt       DateTime? // null = initial scan not yet run (scanning state)
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
 
-  findings            TopicFinding[]
+  findings TopicFinding[]
 }
 
 model TopicFinding {
-  id              String        @id @default(uuid())
-  topicId         String
-  topic           LockedTopic   @relation(fields: [topicId], references: [id], onDelete: Cascade)
-  title           String
-  summary         String?
-  sourceType      FindingSource
-  sourceUrl       String
-  sourceName      String
-  rawArticleId    String?       // nullable — links to ProcessedArticle if internal
-  relevanceScore  Float?
-  isRead          Boolean       @default(false)
-  foundAt         DateTime      @default(now())
-  metadata        Json?         // { location, salary, company, etc. }
+  id             String        @id @default(uuid())
+  topicId        String
+  topic          LockedTopic   @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  title          String
+  summary        String?
+  sourceType     FindingSource
+  sourceUrl      String
+  sourceName     String
+  rawArticleId   String? // nullable — links to ProcessedArticle if internal
+  relevanceScore Float?
+  isRead         Boolean       @default(false)
+  foundAt        DateTime      @default(now())
+  metadata       Json? // { location, salary, company, etc. }
 
-  @@unique([topicId, sourceUrl])  // deduplication constraint
+  @@unique([topicId, sourceUrl]) // deduplication constraint
   @@index([topicId, foundAt])
   @@index([topicId, relevanceScore])
 }
@@ -165,11 +165,11 @@ enum NotifyMode {
 }
 
 enum FindingSource {
-  ARTICLE   // from internal ProcessedArticle DB
-  GOOGLE    // Google News RSS
-  BRAVE     // Brave Search API
-  REDDIT    // Reddit search
-  RSS       // user-added RSS feed
-  SCRAPE    // pre-built Tier 2 scraper
-  WEBPAGE   // user-added webpage diff
+  ARTICLE // from internal ProcessedArticle DB
+  GOOGLE // Google News RSS
+  BRAVE // Brave Search API
+  REDDIT // Reddit search
+  RSS // user-added RSS feed
+  SCRAPE // pre-built Tier 2 scraper
+  WEBPAGE // user-added webpage diff
 }

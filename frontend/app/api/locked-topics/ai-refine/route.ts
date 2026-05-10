@@ -52,6 +52,9 @@ Ensure suggestedSources have valid public URLs if possible (e.g. subreddits shou
     return NextResponse.json(content);
   } catch (error) {
     console.error("AI Refine Error:", error);
-    return NextResponse.json({ error: "Failed to refine topic" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to refine topic" },
+      { status: 500 },
+    );
   }
 }

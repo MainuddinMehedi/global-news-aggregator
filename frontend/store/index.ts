@@ -43,7 +43,12 @@ interface ChatSidebarSlice {
   clearChatContext: () => void;
 }
 
-type AppStore = FeedSlice & StorySlice & NotificationSlice & UserSlice & ChatSidebarSlice & TopicSlice;
+type AppStore = FeedSlice &
+  StorySlice &
+  NotificationSlice &
+  UserSlice &
+  ChatSidebarSlice &
+  TopicSlice;
 
 export const useAppStore = create<AppStore>()((set) => ({
   // ── Feed ──
@@ -71,7 +76,8 @@ export const useAppStore = create<AppStore>()((set) => ({
   contextArticle: null,
   openChat: () => set({ isChatOpen: true }),
   closeChat: () => set({ isChatOpen: false, contextArticle: null }),
-  openChatWithContext: (article) => set({ isChatOpen: true, contextArticle: article }),
+  openChatWithContext: (article) =>
+    set({ isChatOpen: true, contextArticle: article }),
   clearChatContext: () => set({ contextArticle: null }),
 }));
 
@@ -80,19 +86,21 @@ export const useAppStore = create<AppStore>()((set) => ({
 // the specific value it needs, so a component won't re-render when unrelated
 // parts of the store change.
 
-export const useArticleCount    = () => useAppStore((s) => s.articleCount);
+export const useArticleCount = () => useAppStore((s) => s.articleCount);
 export const useSetArticleCount = () => useAppStore((s) => s.setArticleCount);
-export const useStoryCount      = () => useAppStore((s) => s.storyCount);
-export const useSetStoryCount   = () => useAppStore((s) => s.setStoryCount);
-export const useUnreadCount     = () => useAppStore((s) => s.unreadCount);
-export const useSetUnreadCount  = () => useAppStore((s) => s.setUnreadCount);
+export const useStoryCount = () => useAppStore((s) => s.storyCount);
+export const useSetStoryCount = () => useAppStore((s) => s.setStoryCount);
+export const useUnreadCount = () => useAppStore((s) => s.unreadCount);
+export const useSetUnreadCount = () => useAppStore((s) => s.setUnreadCount);
 
-export const useIsChatOpen        = () => useAppStore((s) => s.isChatOpen);
-export const useOpenChat          = () => useAppStore((s) => s.openChat);
-export const useCloseChat         = () => useAppStore((s) => s.closeChat);
-export const useOpenChatWithContext = () => useAppStore((s) => s.openChatWithContext);
-export const useClearChatContext   = () => useAppStore((s) => s.clearChatContext);
+export const useIsChatOpen = () => useAppStore((s) => s.isChatOpen);
+export const useOpenChat = () => useAppStore((s) => s.openChat);
+export const useCloseChat = () => useAppStore((s) => s.closeChat);
+export const useOpenChatWithContext = () =>
+  useAppStore((s) => s.openChatWithContext);
+export const useClearChatContext = () => useAppStore((s) => s.clearChatContext);
 export const useChatContextArticle = () => useAppStore((s) => s.contextArticle);
 
 export const useTotalMatchCount = () => useAppStore((s) => s.totalMatchCount);
-export const useSetTotalMatchCount = () => useAppStore((s) => s.setTotalMatchCount);
+export const useSetTotalMatchCount = () =>
+  useAppStore((s) => s.setTotalMatchCount);

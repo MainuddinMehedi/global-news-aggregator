@@ -4,12 +4,12 @@ import { FindingSource } from "@/types/lockedTopic";
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
     const { searchParams } = new URL(req.url);
-    
+
     const source = searchParams.get("source") || "ALL";
     const sort = searchParams.get("sort") || "newest";
     const cursor = searchParams.get("cursor") || undefined;
@@ -17,7 +17,7 @@ export async function GET(
 
     const result = await getFindings({
       topicId: id,
-      sourceType: source as FindingSource | 'ALL',
+      sourceType: source as FindingSource | "ALL",
       sort: sort as any,
       cursor,
       limit,
@@ -26,6 +26,9 @@ export async function GET(
     return NextResponse.json(result);
   } catch (error) {
     console.error("Fetch Findings Error:", error);
-    return NextResponse.json({ error: "Failed to fetch findings" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to fetch findings" },
+      { status: 500 },
+    );
   }
 }

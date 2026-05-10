@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { updateTag } from "next/cache";
+import { revalidateTag } from "next/cache";
 
 export async function POST(req: NextRequest) {
   try {
@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
       aiRefinedQuery,
       aiQuerySummary,
       sources,
-      notifyEnabled
+      notifyEnabled,
     } = body;
 
     const topic = await prisma.lockedTopic.create({
@@ -22,17 +22,20 @@ export async function POST(req: NextRequest) {
         aiQuerySummary,
         sources: sources || [],
         notifyEnabled: notifyEnabled ?? false,
-        notifyMode: 'DIGEST',
+        notifyMode: "DIGEST",
         notifyChannels: { discord: false, telegram: false },
         isActive: true,
       },
     });
 
-    updateTag("locked-topics");
+    revalidateTag("locked-topics", "max");
 
     return NextResponse.json(topic);
   } catch (error) {
     console.error("Create Topic Error:", error);
-    return NextResponse.json({ error: "Failed to create topic" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to create topic" },
+      { status: 500 },
+    );
   }
 }

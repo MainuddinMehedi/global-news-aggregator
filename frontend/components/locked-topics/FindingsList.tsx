@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { TopicFinding, FindingSource } from "@/types/lockedTopic";
@@ -11,8 +11,8 @@ interface FindingsListProps {
   initialFindings: TopicFinding[];
   initialNextCursor: string | null;
   topicId: string;
-  sourceType: FindingSource | 'ALL';
-  sort: 'newest' | 'oldest' | 'relevance';
+  sourceType: FindingSource | "ALL";
+  sort: "newest" | "oldest" | "relevance";
 }
 
 export default function FindingsList({
@@ -40,12 +40,14 @@ export default function FindingsList({
     setLoading(true);
 
     try {
-      const params = new URLSearchParams({ 
-        source: sourceType, 
-        sort, 
-        cursor 
+      const params = new URLSearchParams({
+        source: sourceType,
+        sort,
+        cursor,
       });
-      const res = await fetch(`/api/locked-topics/${topicId}/findings?${params}`);
+      const res = await fetch(
+        `/api/locked-topics/${topicId}/findings?${params}`,
+      );
 
       if (!res.ok) throw new Error("Failed to fetch");
 
@@ -119,8 +121,13 @@ export default function FindingsList({
 
       {error && (
         <div className="flex flex-col items-center justify-center py-12 px-6 text-center bg-destructive/5 rounded-3xl border border-destructive/10">
-          <p className="text-sm font-bold text-destructive mb-6 leading-relaxed">{error}</p>
-          <Button onClick={handleRetry} className="rounded-xl h-12 px-8 font-bold shadow-lg shadow-primary/10">
+          <p className="text-sm font-bold text-destructive mb-6 leading-relaxed">
+            {error}
+          </p>
+          <Button
+            onClick={handleRetry}
+            className="rounded-xl h-12 px-8 font-bold shadow-lg shadow-primary/10"
+          >
             <HugeiconsIcon icon={RefreshIcon} size={18} className="mr-2" />
             Retry Fetch
           </Button>
@@ -136,12 +143,20 @@ function FindingCard({ finding }: { finding: TopicFinding }) {
       <div className="flex flex-col md:flex-row items-start justify-between gap-6">
         <div className="space-y-3 flex-1">
           <div className="flex items-center gap-2">
-            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-primary bg-primary/10 px-2.5 py-1 rounded-full">{finding.sourceType}</span>
+            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-primary bg-primary/10 px-2.5 py-1 rounded-full">
+              {finding.sourceType}
+            </span>
             <span className="text-muted-foreground/20 text-xs">•</span>
-            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">{finding.sourceName}</span>
+            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">
+              {finding.sourceName}
+            </span>
           </div>
           <h3 className="text-2xl font-bold group-hover:text-primary transition-colors leading-[1.2] tracking-tight">
-            <a href={finding.sourceUrl} target="_blank" className="hover:underline decoration-primary/30 underline-offset-4 decoration-2">
+            <a
+              href={finding.sourceUrl}
+              target="_blank"
+              className="hover:underline decoration-primary/30 underline-offset-4 decoration-2"
+            >
               {finding.title}
             </a>
           </h3>
@@ -153,9 +168,12 @@ function FindingCard({ finding }: { finding: TopicFinding }) {
         </div>
         {finding.relevanceScore && (
           <div className="flex flex-col items-start md:items-end shrink-0 p-4 rounded-2xl bg-secondary/10 border border-secondary/20 md:min-w-[100px]">
-            <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/40 mb-1">Signal</span>
+            <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/40 mb-1">
+              Signal
+            </span>
             <div className="text-3xl font-black text-primary font-mono leading-none tracking-tighter">
-              {(finding.relevanceScore * 100).toFixed(0)}<span className="text-[10px] ml-0.5 opacity-50">%</span>
+              {(finding.relevanceScore * 100).toFixed(0)}
+              <span className="text-[10px] ml-0.5 opacity-50">%</span>
             </div>
           </div>
         )}
