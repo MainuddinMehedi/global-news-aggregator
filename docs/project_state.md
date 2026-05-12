@@ -43,7 +43,17 @@ graph LR
 - **Resilience**: primary/fallback AI provider switching, rate-limit handling with `retry-after`, configurable timeouts and retry attempts
 - **Latest run**: 10 articles fetched, 10/10 inserted, 10/10 AI-processed in 13.8s
 
-### Database Schema (5 models, migrated)
+### Locked Topics Surveillance (fully functional)
+
+- **Multi-Tier Acquisition**: Includes API scanners (Internal DB, RSS, Reddit, Brave, GitHub, YouTube) and HTML scrapers (Webpage Diffs, BD Gov Jobs, Company Careers/ATS).
+- **AI Refinement**: Uses Gemini to convert user intent into optimized query strings and suggested sources.
+- **Relevance Scoring**: Findings are batched and scored (0.0 to 1.0) by Groq before saving, logging tokens to `AiUsage`.
+- **Live Intelligence Synthesis**: Integrates Brave's native AI search summaries for real-time situational reporting on the topic dashboard.
+- **Notifications**: Discord and Telegram alerts dispatched based on relevance thresholds (DIGEST or ALERT modes).
+- **Lifecycle & Archival**: Topics can be archived, deleting heavy finding records while preserving a Gemini-generated historical summary in the database.
+- **Automated Scheduling**: Independent GitHub Actions workflow (`locked-topics.yml`) running at `:15` past the hour to prevent ingestion overlap.
+
+### Database Schema (7 models, migrated)
 
 | Model                | Purpose                                                                      |
 | -------------------- | ---------------------------------------------------------------------------- |
@@ -52,11 +62,13 @@ graph LR
 | `Category`           | Many-to-many with ProcessedArticle                                           |
 | `User` / `UserTopic` | User alert subscriptions (schema only, not wired)                            |
 | `AiUsage`            | Per-batch AI cost/token tracking                                             |
+| `LockedTopic`        | Configuration and metadata for persistent tracking                           |
+| `TopicFinding`       | Individual matches from across all scanners and scrapers                     |
 
-### Frontend (basic, functional)
+### Frontend (functional)
 
-- **API route** `/api/articles` — queries `ProcessedArticle` joined with `RawArticle` and `Category`, supports `?category=` and `?country=` filters
-- **Client page** — card grid showing title, source, date, snippet, sentiment badge, bias note
+- **API routes** — heavily cached Server Components with on-demand invalidation via `/api/revalidate`.
+- **Client pages** — article card grid, topic grids, dynamic modals for creation/deletion/editing.
 - **Category filter dropdown** (hardcoded: all / geopolitics / bangladesh / technology)
 - Dev server running on `localhost:3000`
 
@@ -71,23 +83,20 @@ graph LR
 | **Category filter**         | Hardcoded options in the dropdown; not dynamically fetched from DB                                                                                                                                                                                                                                                      |
 | **Frontend design**         | Functional but basic — TailwindCSS card grid, no dark mode, no animations, "Testing ingestion workflow output" subtitle                                                                                                                                                                                                 |
 | **RSS sources**             | Only 1 of 7+ sources enabled — the rest are commented out                                                                                                                                                                                                                                                               |
-| **Ingestion scheduling**    | Manual `node ingestion-service/index.js` — no cron, no n8n workflow, no scheduler                                                                                                                                                                                                                                       |
 | **`n8n-workflows/`**        | Directory exists but is empty                                                                                                                                                                                                                                                                                           |
 | **`infra/`**                | Directory exists but is empty                                                                                                                                                                                                                                                                                           |
-| **`docs/`**                 | Only `phase-0.md` written; no Phase 1+ documentation                                                                                                                                                                                                                                                                    |
 
 ---
 
 ## What's Not Built Yet 🚧
 
 - **User system** — `User` and `UserTopic` models exist in schema but nothing reads/writes them
-- **Notifications** — no Discord/email alerts wired up (`.env.example` has `DISCORD_WEBHOOK_URL` placeholder)
 - **Full-text search** — no search functionality on the frontend
 - **Country/region filtering UI** — API supports `?country=` but no UI for it
 - **Article detail view** — cards link directly to external source URLs
-- **Automated scheduling** — no cron job, n8n workflow, or background scheduler
-- **Deployment / CI/CD** — no Dockerfile, no GitHub Actions, no deployment config
+- **Deployment / CI/CD** — no Dockerfile, no GitHub Actions (except for cron), no deployment config
 - **Testing** — no tests (`"test": "echo \"Error: no test specified\""`)
+
 
 ---
 

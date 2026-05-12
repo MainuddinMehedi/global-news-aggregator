@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { SparklesIcon } from "@hugeicons/core-free-icons";
 import { Input } from "@/components/ui/input";
+import { detectSourceType } from "@/lib/sourceDetection";
+import { toast } from "sonner";
 
 export default function Step3AIReview({ data, setData, onNext, onPrev }: any) {
   const [loading, setLoading] = useState(true);
@@ -12,6 +14,11 @@ export default function Step3AIReview({ data, setData, onNext, onPrev }: any) {
 
   useEffect(() => {
     const refine = async () => {
+      if (data.aiRefinedQuery || data.aiQuerySummary) {
+        setLoading(false);
+        return;
+      }
+
       try {
         const res = await fetch("/api/locked-topics/ai-refine", {
           method: "POST",
@@ -131,6 +138,34 @@ export default function Step3AIReview({ data, setData, onNext, onPrev }: any) {
                   <Button
                     size="sm"
                     variant="ghost"
+                    onClick={() => {
+                      const type = source.type || detectSourceType(source.url);
+                      const exists = data.sources.find(
+                        (s: any) => s.url === source.url,
+                      );
+
+                      if (!exists) {
+                        setData({
+                          ...data,
+                          sources: [
+                            ...data.sources,
+                            {
+                              id: source.url,
+                              type,
+                              label: source.label,
+                              url: source.url,
+                              enabled: true,
+                            },
+                          ],
+                          suggestedSources: data.suggestedSources.filter(
+                            (s: any) => s.url !== source.url,
+                          ),
+                        });
+                        toast.success(`Added ${source.label} to sources.`);
+                      } else {
+                        toast.info("Source already added.");
+                      }
+                    }}
                     className="h-8 px-4 text-[10px] font-black uppercase tracking-widest text-primary hover:bg-primary/10"
                   >
                     Add
@@ -154,7 +189,7 @@ export default function Step3AIReview({ data, setData, onNext, onPrev }: any) {
           onClick={onNext}
           className="flex-2 rounded-xl py-7 font-bold text-lg shadow-xl shadow-primary/20 hover:scale-[1.02] transition-transform"
         >
-          Activate Tracker
+          Review & Confirm
         </Button>
       </div>
     </div>

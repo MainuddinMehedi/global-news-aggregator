@@ -4,6 +4,8 @@
  * Used by the scanner orchestrator for Locked Topics.
  */
 
+import { prisma } from "../../db/prisma.js";
+
 const MAX_RESULTS = 20;
 
 /**
@@ -33,6 +35,62 @@ export async function scanBrave(topic, sourceConfig, options = {}) {
 
   const findings = [];
 
+  // 1. Fetch AI Summary
+  let liveWebSummary = null;
+  try {
+    const webResponse = await fetch(
+      `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(query)}&summary=1`,
+      {
+        headers: { Accept: "application/json", "X-Subscription-Token": apiKey },
+        signal: AbortSignal.timeout(10000),
+      },
+    );
+    if (webResponse.ok) {
+      const webData = await webResponse.json();
+      if (webData.summarizer && webData.summarizer.key) {
+        const sumResponse = await fetch(
+          `https://api.search.brave.com/res/v1/summarizer/search?key=${webData.summarizer.key}&entity_info=0`,
+          {
+            headers: {
+              Accept: "application/json",
+              "X-Subscription-Token": apiKey,
+            },
+            signal: AbortSignal.timeout(15000),
+          },
+        );
+        if (sumResponse.ok) {
+          const sumData = await sumResponse.json();
+          if (
+            sumData.summary &&
+            sumData.summary.length > 0 &&
+            sumData.summary[0].text
+          ) {
+            // Sometimes it returns an array of summary objects, we can join them or just take the first.
+            liveWebSummary = sumData.summary.map((s) => s.text).join(" ");
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.error("⚠️ [braveScanner] Failed to fetch AI summary:", err.message);
+  }
+
+  if (liveWebSummary) {
+    console.log(`   ✨ [braveScanner] Successfully retrieved AI summary.`);
+    try {
+      await prisma.lockedTopic.update({
+        where: { id: topic.id },
+        data: { liveWebSummary },
+      });
+    } catch (err) {
+      console.error(
+        "⚠️ [braveScanner] Failed to update topic with AI summary:",
+        err.message,
+      );
+    }
+  }
+
+  // 2. Fetch News Findings
   try {
     const response = await fetch(
       `https://api.search.brave.com/res/v1/news/search?q=${encodeURIComponent(query)}&count=${limit}`,

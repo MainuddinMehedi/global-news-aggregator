@@ -7,7 +7,9 @@ export type FindingSource =
   | "REDDIT"
   | "RSS"
   | "SCRAPE"
-  | "WEBPAGE";
+  | "WEBPAGE"
+  | "GITHUB"
+  | "COMPANY_CAREERS";
 
 export interface SourceConfig {
   id: string;
@@ -18,13 +20,18 @@ export interface SourceConfig {
     | "reddit"
     | "rss"
     | "scrape"
-    | "webpage";
+    | "webpage"
+    | "github"
+    | "youtube"
+    | "bd_gov_jobs"
+    | "company_careers";
   label: string; // "BD PSC", "Google Careers RSS"
   enabled: boolean;
   url?: string; // for rss, scrape, webpage types
+  company_name?: string; // for company_careers
   scraperKey?: string; // for scrape type: key into pre-built scraper registry
   subConfig?: Record<string, string>; // e.g. { channelId: "UCxxx" } for YouTube
-  lastFetchedContent?: string; // for webpage diff: last known content hash
+  lastSeenHash?: string; // for webpage diff: last known content hash
   lastFetchedAt?: string; // ISO timestamp
 }
 
@@ -35,6 +42,7 @@ export interface LockedTopic {
   userContext: string;
   aiRefinedQuery: string;
   aiQuerySummary: string;
+  liveWebSummary: string | null;
   sources: SourceConfig[];
   searchBeyondSources: boolean;
   isActive: boolean;

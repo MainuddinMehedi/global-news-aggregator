@@ -7,7 +7,7 @@
 
 > **Multi-perspective news intelligence, synthesized by AI — your personal investigative researcher for global events.**
 
-**Version**: 1.5 | **Status**: 🚧 Phase 2/3 (Surveillance & Investigation Complete)
+**Version**: 1.6 | **Status**: 🚧 Phase 3/3 (Locked Topics Surveillance Complete)
 
 ---
 
@@ -44,10 +44,12 @@ flowchart TD
 - Two-layer deduplication: normalized URL + SHA-256 content hash fallback.
 - Sliding-window rate limiter tailored for strict TPM/RPM AI budgets.
 
-### 🧠 AI-Powered Surveillance
+### 🧠 AI-Powered Surveillance (Locked Topics)
 - **Locked Topics**: Define an investigative interest and let AI refine the query for precision.
 - **Automated Scanning**: New articles are automatically matched against your "locked" interests during ingestion.
-- **Findings Dashboard**: Centralized view of all investigative matches with source-specific filtering.
+- **Multi-Tier Scanners & Scrapers**: API-based scanners (GitHub, YouTube, Brave) and HTML scrapers (Webpage Diffs, BD Gov Jobs, Company Careers) work together for high coverage.
+- **Live Intelligence Summary**: Brave's native AI search synthesis provides live situational awareness on every topic dashboard.
+- **Historical Archival**: Topics can be archived with a final, Gemini-generated historical summary to save space while keeping intelligence records.
 
 ### 🛡️ Story Dossiers
 - Evolving clusters that automatically merge timelines, update impact scores, and track active lifecycles.
@@ -65,7 +67,7 @@ global-news-aggregator/
 │   │   └── stories/              # Story cluster timelines
 │   ├── components/
 │   │   ├── Feed/                 # Core article stream
-│   │   └── locked-topics/        # 4-Step Creation Wizard & Grid
+│   │   └── locked-topics/        # 4-Step Creation Wizard, Grid & Detail Views
 │   ├── store/                    # Zustand (Articles, Stories, Topics)
 │   └── queries/                  # Cached Server Actions (Next.js 16)
 ├── ingestion-service/            # Node.js streaming pipeline
@@ -73,6 +75,12 @@ global-news-aggregator/
 │   ├── ai/
 │   │   ├── processor.js          # Ingestion + Surveillance logic
 │   │   └── client.js             # AI Prompting & Refinement
+│   ├── topics/
+│   │   ├── sources/              # Individual Scanners (API) & Scrapers (HTML)
+│   │   ├── scanner.js            # Master orchestrator for topics
+│   │   ├── scorer.js             # AI relevance scoring module
+│   │   └── notifier.js           # Discord & Telegram alerts
+│   ├── processTopics.js          # Scheduled background scanner
 │   └── index.js                  # Main orchestrator
 └── prisma/
     └── schema.prisma             # Unified Data Model
@@ -110,3 +118,4 @@ cd frontend && npm run dev
 - **Perspective Transparency**: Bias detection is for the user to interpret, not for the system to hide.
 - **Investigation First**: The system acts as a persistent researcher, not just a passive reader.
 - **Performance**: High-concurrency server-side caching with explicit revalidation.
+

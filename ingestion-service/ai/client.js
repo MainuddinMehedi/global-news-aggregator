@@ -4,9 +4,10 @@ import { countTokens, TOKEN_MULTIPLIER } from "./tokenBatcher.js";
 
 // Clustering responses are larger (assignments + cluster updates + new clusters)
 // vs enrichment (categories + entities + sentiment per article).
-const RESERVED_CLUSTERING_OUTPUT_TOKENS = parseInt(process.env.AI_RESERVED_CLUSTERING_OUTPUT_TOKENS) || 1500;
+const RESERVED_CLUSTERING_OUTPUT_TOKENS =
+  parseInt(process.env.AI_RESERVED_CLUSTERING_OUTPUT_TOKENS) || 1500;
 
-const primaryConfig = {
+export const primaryConfig = {
   baseUrl: process.env.GROQ_BASE_URL,
   apiKey: process.env.GROQ_API_KEY,
   model: process.env.AI_INGESTION_MODEL,
@@ -72,7 +73,7 @@ Use only article refs listed above. Do not invent refs.
 }`;
 }
 
-async function requestAI(config, prompt, retries = 0) {
+export async function requestAI(config, prompt, retries = 0) {
   try {
     const controller = new AbortController();
     const timeout = setTimeout(
@@ -153,9 +154,10 @@ export async function processBatchWithAI(batch, estimatedTokens = 0) {
   const prompt = buildBatchPrompt(batch);
 
   // Use the external estimate if available, otherwise self-calculate from the prompt
-  const tokensForCapacity = estimatedTokens > 0
-    ? estimatedTokens
-    : Math.ceil(countTokens(prompt) * TOKEN_MULTIPLIER);
+  const tokensForCapacity =
+    estimatedTokens > 0
+      ? estimatedTokens
+      : Math.ceil(countTokens(prompt) * TOKEN_MULTIPLIER);
 
   await waitForCapacity(tokensForCapacity);
 
@@ -312,7 +314,9 @@ export async function processClusteringBatchWithAI(
   // Clustering prompts are large and variable (depends on number of active clusters),
   // so we always count the real prompt rather than relying on external estimates.
   const rawInputTokens = countTokens(prompt);
-  const estimatedTokens = Math.ceil((rawInputTokens + RESERVED_CLUSTERING_OUTPUT_TOKENS) * TOKEN_MULTIPLIER);
+  const estimatedTokens = Math.ceil(
+    (rawInputTokens + RESERVED_CLUSTERING_OUTPUT_TOKENS) * TOKEN_MULTIPLIER,
+  );
 
   await waitForCapacity(estimatedTokens);
 

@@ -1,3 +1,5 @@
+"use client";
+
 import { LockedTopic } from "@/types/lockedTopic";
 import { Badge } from "@/components/ui/badge";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -10,8 +12,30 @@ import {
 import { formatRelativeTime } from "@/lib/utils";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { TopicActions } from "./TopicActions";
+import { DeleteTopicModal } from "./DeleteTopicModal";
+import { toast } from "sonner";
+import { useState } from "react";
 
 export default function TopicHeader({ topic }: { topic: LockedTopic }) {
+  const [isScanning, setIsScanning] = useState(false);
+
+  const handleScanNow = async () => {
+    setIsScanning(true);
+    toast.info("Scan initiated. This may take a few moments...");
+    try {
+      const res = await fetch(`/api/locked-topics/${topic.id}/scan`, {
+        method: "POST",
+      });
+      if (!res.ok) throw new Error("Scan failed to start");
+      toast.success("Scan completed in the background.");
+    } catch (err) {
+      toast.error("Failed to initiate scan.");
+    } finally {
+      setIsScanning(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
@@ -51,7 +75,14 @@ export default function TopicHeader({ topic }: { topic: LockedTopic }) {
           </h1>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-4">
+          <TopicActions
+            id={topic.id}
+            initialActive={topic.isActive}
+            unread={0}
+          />
+          <div className="h-6 w-px bg-border hidden md:block" />
+          <DeleteTopicModal topicId={topic.id} topicName={topic.displayName} />
           <Button
             variant="outline"
             size="sm"
@@ -63,9 +94,11 @@ export default function TopicHeader({ topic }: { topic: LockedTopic }) {
           <Button
             size="sm"
             className="gap-2 rounded-xl shadow-lg shadow-primary/20 h-10 px-5 font-bold"
+            onClick={handleScanNow}
+            disabled={isScanning}
           >
             <HugeiconsIcon icon={RssLockedIcon} size={16} />
-            Scan Now
+            {isScanning ? "Scanning..." : "Scan Now"}
           </Button>
         </div>
       </div>

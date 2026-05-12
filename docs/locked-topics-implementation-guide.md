@@ -1,6 +1,13 @@
 # Locked Topics — Full Feature List & Implementation Guide
 
-> **Purpose of this document:** Complete specification for implementing the Locked Topics feature in the Global News Aggregator. Written for use with an AI coding agent (Gemini CLI, Anthropic CLI, etc.). Every decision has been finalized. No ambiguity left intentionally.
+> **STATUS: FULLY IMPLEMENTED (May 2026)**
+> All phases outlined in this document have been completed. 
+> 
+> **Notable Architectural Shifts During Implementation:**
+> 1. **Scanners vs Scrapers:** Renamed to strictly distinguish API/RSS-based tools (`scanners`) from HTML-parsing tools (`scrapers`).
+> 2. **Company Careers (Tier 2):** Adopted a brute-force ATS approach checking Greenhouse and Lever APIs based on company names to avoid fragile auto-discovery.
+> 3. **Intelligence Summary:** Integrated Brave Search's native AI summaries to provide live situational intelligence directly on the topic dashboard.
+> 4. **Archival Flow:** Changed the deletion flow. Summarizing an archived topic using `gemma-4-31b` via Google AI Studio now saves the summary as a permanent historical record while purging the heavy finding records from the database.
 
 ---
 
