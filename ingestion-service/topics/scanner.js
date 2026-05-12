@@ -3,6 +3,7 @@ import { scanInternalDb } from "./sources/internalDb.js";
 import { scanRss } from "./sources/rssScanner.js";
 import { scanBrave } from "./sources/braveScanner.js";
 import { scanReddit } from "./sources/redditScanner.js";
+import { scanWebpage } from "./sources/webpageScanner.js";
 
 /**
  * Master orchestrator for Locked Topic scanning.
@@ -62,9 +63,12 @@ export async function runScannersForTopic(topic, options = {}) {
           break;
         case "scrape":
         case "webpage":
-          console.log(
-            `⚠️ [orchestrator] Scanner for type '${sourceConfig.type}' not yet implemented.`,
+          const webpageFindings = await scanWebpage(
+            topic,
+            sourceConfig,
+            options,
           );
+          allFindings.push(...webpageFindings);
           break;
         default:
           console.warn(
