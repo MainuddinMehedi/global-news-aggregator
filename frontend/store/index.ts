@@ -28,7 +28,9 @@ interface UserSlice {
 // ─── Topic slice ──────────────────────────────────────────────────────────────
 interface TopicSlice {
   totalMatchCount: number;
+  lockedTopicCount: number;
   setTotalMatchCount: (count: number) => void;
+  setLockedTopicCount: (count: number) => void;
 }
 
 // ─── Chat sidebar slice ──────────────────────────────────────────────────────
@@ -69,7 +71,9 @@ export const useAppStore = create<AppStore>()((set) => ({
 
   // ── Topic ──
   totalMatchCount: 0,
+  lockedTopicCount: 0,
   setTotalMatchCount: (count) => set({ totalMatchCount: count }),
+  setLockedTopicCount: (count) => set({ lockedTopicCount: count }),
 
   // ── Chat sidebar ──
   isChatOpen: false,
@@ -104,3 +108,6 @@ export const useChatContextArticle = () => useAppStore((s) => s.contextArticle);
 export const useTotalMatchCount = () => useAppStore((s) => s.totalMatchCount);
 export const useSetTotalMatchCount = () =>
   useAppStore((s) => s.setTotalMatchCount);
+export const useLockedTopicCount = () => useAppStore((s) => s.lockedTopicCount);
+export const useSetLockedTopicCount = () =>
+  useAppStore((s) => s.setLockedTopicCount);

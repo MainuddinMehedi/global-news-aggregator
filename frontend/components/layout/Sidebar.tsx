@@ -1,12 +1,16 @@
 import NavLinks from "./NavLinks";
 import { Suspense } from "react";
-import { getTotalMatchCount } from "@/queries/lockedTopics";
+import {
+  getLockedTopicCount,
+  getTotalMatchCount,
+} from "@/queries/lockedTopics";
 import { getArticleCount, getStoryCount } from "@/queries/counts";
 import GlobalStatsFetcher from "./GlobalStatsFetcher";
 
 export default async function Sidebar() {
-  const [matchCount, articleCount, storyCount] = await Promise.all([
+  const [matchCount, topicCount, articleCount, storyCount] = await Promise.all([
     getTotalMatchCount(),
+    getLockedTopicCount(),
     getArticleCount(),
     getStoryCount(),
   ]);
@@ -18,6 +22,7 @@ export default async function Sidebar() {
           articleCount={articleCount}
           storyCount={storyCount}
           topicMatchCount={matchCount}
+          lockedTopicCount={topicCount}
         />
         <Suspense
           fallback={

@@ -19,7 +19,9 @@ export async function getLockedTopics(): Promise<LockedTopic[]> {
   }
 }
 
-export async function getLockedTopicById(id: string): Promise<LockedTopic | null> {
+export async function getLockedTopicById(
+  id: string,
+): Promise<LockedTopic | null> {
   "use cache";
   cacheTag(`locked-topic-${id}`);
   cacheTag("locked-topics");
@@ -54,6 +56,20 @@ export async function getTotalMatchCount(): Promise<number> {
     return result._sum.matchCount || 0;
   } catch (error) {
     console.error("getTotalMatchCount error:", error);
+    return 0;
+  }
+}
+
+export async function getLockedTopicCount(): Promise<number> {
+  "use cache";
+  cacheTag("locked-topics");
+  cacheLife("minutes");
+
+  try {
+    const count = await prisma.lockedTopic.count();
+    return count;
+  } catch (error) {
+    console.error("getLockedTopicCount error:", error);
     return 0;
   }
 }

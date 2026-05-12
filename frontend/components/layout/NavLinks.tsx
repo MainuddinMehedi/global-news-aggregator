@@ -12,7 +12,7 @@ import {
 import { HugeiconsIcon } from "@hugeicons/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useArticleCount, useStoryCount, useTotalMatchCount } from "@/store";
+import { useArticleCount, useLockedTopicCount, useStoryCount } from "@/store";
 
 const navItems = [
   { id: "/", label: "Feed", icon: Newspaper },
@@ -49,7 +49,7 @@ export default function NavLinks({
   const pathname = usePathname();
   const articleCount = useArticleCount();
   const storyCount = useStoryCount();
-  const topicMatchCount = useTotalMatchCount();
+  const lockedTopicCount = useLockedTopicCount();
 
   return (
     <nav className="space-y-1">
@@ -60,7 +60,7 @@ export default function NavLinks({
         let badge = 0;
         if (item.id === "/") badge = articleCount;
         if (item.id === "/stories") badge = storyCount;
-        if (item.id === "/locked-topics") badge = topicMatchCount;
+        if (item.id === "/locked-topics") badge = lockedTopicCount;
 
         return (
           <Link
