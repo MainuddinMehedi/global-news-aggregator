@@ -172,4 +172,5 @@ enum FindingSource {
   RSS // user-added RSS feed
   SCRAPE // pre-built Tier 2 scraper
   WEBPAGE // user-added webpage diff
+  GITHUB // GitHub releases/tags
 }

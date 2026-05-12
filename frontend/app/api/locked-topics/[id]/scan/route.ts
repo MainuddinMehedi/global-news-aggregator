@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
-import { revalidateTag } from "next/cache";
+import { spawn } from "child_process";
+import path from "path";
 
 export async function POST(
   req: NextRequest,
@@ -9,28 +9,30 @@ export async function POST(
   try {
     const { id } = await params;
 
-    // Simulate scanning delay in background
-    // In production, this would trigger a GitHub Action
-    (async () => {
-      await new Promise((resolve) => setTimeout(resolve, 10000));
+    // Spawn the background worker (processTopics.js) detached from this request
+    const workerPath = path.join(
+      process.cwd(),
+      "..",
+      "ingestion-service",
+      "processTopics.js",
+    );
 
-      try {
-        await prisma.lockedTopic.update({
-          where: { id },
-          data: { lastScannedAt: new Date() },
-        });
+    console.log(`[Scan Route] Spawning background worker for topic ${id}...`);
+    console.log(`[Scan Route] Worker Path: ${workerPath}`);
 
-        revalidateTag(`locked-topic-${id}`, "max");
-        revalidateTag("locked-topics", "max");
-      } catch (err) {
-        console.error("Delayed scan update failed:", err);
-      }
-    })();
+    const child = spawn("node", [workerPath, `--topic-id=${id}`], {
+      detached: true,
+      stdio: "ignore",
+    });
+
+    // Unref allows the parent (Next.js server) to exit independently of the child
+    child.unref();
 
     return NextResponse.json({ id, status: "initiated" });
   } catch (error) {
+    console.error("Scan trigger failed:", error);
     return NextResponse.json(
-      { error: "Failed to initiate scan" },
+      { error: "Failed to trigger scan" },
       { status: 500 },
     );
   }
