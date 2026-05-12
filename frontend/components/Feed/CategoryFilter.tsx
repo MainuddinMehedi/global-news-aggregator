@@ -12,7 +12,7 @@ export default function CategoryFilter({
   const activeCategory = searchParams.get("category") ?? "all";
 
   return (
-    <div className="flex items-center space-x-2 overflow-x-auto pb-2 scrollbar-hide">
+    <div className="flex items-center space-x-2 overflow-x-auto scrollbar-hide rounded">
       {["all", ...categories].map((cat) => (
         <Link
           key={cat}

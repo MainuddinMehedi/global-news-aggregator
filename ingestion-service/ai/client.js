@@ -2,17 +2,17 @@ import { waitForCapacity, recordUsage, logHeaders } from "./rateLimiter.js";
 import { ALLOWED_CATEGORIES } from "./categories.js";
 
 const primaryConfig = {
-  baseUrl: process.env.AI_PRIMARY_BASE_URL,
-  apiKey: process.env.AI_PRIMARY_API_KEY,
-  model: process.env.AI_PRIMARY_MODEL,
-  provider: process.env.AI_PRIMARY_PROVIDER,
+  baseUrl: process.env.GROQ_BASE_URL,
+  apiKey: process.env.GROQ_API_KEY,
+  model: process.env.AI_INGESTION_MODEL,
+  provider: "groq",
 };
 
 const fallbackConfig = {
-  baseUrl: process.env.AI_FALLBACK_BASE_URL,
-  apiKey: process.env.AI_FALLBACK_API_KEY,
-  model: process.env.AI_FALLBACK_MODEL,
-  provider: process.env.AI_FALLBACK_PROVIDER,
+  baseUrl: process.env.GROQ_BASE_URL,
+  apiKey: process.env.GROQ_API_KEY,
+  model: process.env.AI_INGESTION_FALLBACK_MODEL,
+  provider: "groq",
 };
 
 export function buildBatchPrompt(articles) {
@@ -80,7 +80,7 @@ async function requestAI(config, prompt, retries = 0) {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${config.apiKey}`,
-        "HTTP-Referer": "http://localhost:3000",
+        "HTTP-Referer": process.env.APP_URL || "http://localhost:3000",
         "X-Title": "Global News Aggregator",
       },
       body: JSON.stringify({
