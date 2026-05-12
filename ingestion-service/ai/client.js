@@ -1,5 +1,10 @@
 import { waitForCapacity, recordUsage, logHeaders } from "./rateLimiter.js";
 import { ALLOWED_CATEGORIES } from "./categories.js";
+import { countTokens, TOKEN_MULTIPLIER } from "./tokenBatcher.js";
+
+// Clustering responses are larger (assignments + cluster updates + new clusters)
+// vs enrichment (categories + entities + sentiment per article).
+const RESERVED_CLUSTERING_OUTPUT_TOKENS = parseInt(process.env.AI_RESERVED_CLUSTERING_OUTPUT_TOKENS) || 1500;
 
 const primaryConfig = {
   baseUrl: process.env.GROQ_BASE_URL,
@@ -140,13 +145,19 @@ async function requestAI(config, prompt, retries = 0) {
  * Process a batch of articles with AI.
  * Waits for rate limiter capacity before sending the request.
  * @param {Array} batch - Articles to process
- * @param {number} estimatedTokens - Estimated total tokens (from tokenBatcher, with multiplier)
+ * @param {number} estimatedTokens - Estimated total tokens (from tokenBatcher, with multiplier).
+ *   If provided (> 0), this external estimate is used. Otherwise, falls back to
+ *   counting the prompt tokens directly (slower but always accurate).
  */
 export async function processBatchWithAI(batch, estimatedTokens = 0) {
   const prompt = buildBatchPrompt(batch);
 
-  // Wait for rate limiter capacity before sending
-  await waitForCapacity(estimatedTokens);
+  // Use the external estimate if available, otherwise self-calculate from the prompt
+  const tokensForCapacity = estimatedTokens > 0
+    ? estimatedTokens
+    : Math.ceil(countTokens(prompt) * TOKEN_MULTIPLIER);
+
+  await waitForCapacity(tokensForCapacity);
 
   return requestAI(primaryConfig, prompt);
 }
@@ -293,10 +304,15 @@ OUTPUT FORMAT (strict JSON, no markdown):
 export async function processClusteringBatchWithAI(
   batch,
   activeClusters,
-  estimatedTokens = 0,
   lifecycleConfig = {},
 ) {
   const prompt = buildClusteringPrompt(batch, activeClusters, lifecycleConfig);
+
+  // Self-calculate: count actual prompt tokens + output reserve, apply multiplier.
+  // Clustering prompts are large and variable (depends on number of active clusters),
+  // so we always count the real prompt rather than relying on external estimates.
+  const rawInputTokens = countTokens(prompt);
+  const estimatedTokens = Math.ceil((rawInputTokens + RESERVED_CLUSTERING_OUTPUT_TOKENS) * TOKEN_MULTIPLIER);
 
   await waitForCapacity(estimatedTokens);
 

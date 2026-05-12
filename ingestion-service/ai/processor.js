@@ -709,7 +709,6 @@ export function createArticleProcessor(
           const clusteringResponse = await processClusteringBatchWithAI(
             batchWithRefs,
             activeClustersWithRefs,
-            500,
             lifecycleConfig,
           );
 
