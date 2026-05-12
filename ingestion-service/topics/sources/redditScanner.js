@@ -27,9 +27,13 @@ export async function scanReddit(topic, sourceConfig, options = {}) {
     const subreddit = sourceConfig.url.split("/r/")[1].split("/")[0];
     sourceName = `r/${subreddit}`;
     queryUrl = `https://www.reddit.com/r/${subreddit}/search.json?q=${encodeURIComponent(topic.aiRefinedQuery || topic.displayName)}&restrict_sr=on&sort=new&limit=${limit}`;
-  } else if (sourceConfig.url?.includes("/u/") || sourceConfig.url?.includes("/user/")) {
+  } else if (
+    sourceConfig.url?.includes("/u/") ||
+    sourceConfig.url?.includes("/user/")
+  ) {
     const user = sourceConfig.url.split(/\/(?:u|user)\//)[1].split("/")[0];
     sourceName = `u/${user}`;
+
     // User search is trickier, so we just get their new posts and filter locally
     queryUrl = `https://www.reddit.com/user/${user}/submitted.json?sort=new&limit=${limit}`;
   } else {
@@ -37,7 +41,9 @@ export async function scanReddit(topic, sourceConfig, options = {}) {
     queryUrl = `https://www.reddit.com/search.json?q=${encodeURIComponent(topic.aiRefinedQuery || topic.displayName)}&sort=new&limit=${limit}`;
   }
 
-  console.log(`🔍 [redditScanner] Scanning ${sourceName} for "${topic.displayName}"...`);
+  console.log(
+    `🔍 [redditScanner] Scanning ${sourceName} for "${topic.displayName}"...`,
+  );
 
   const findings = [];
 
@@ -62,6 +68,7 @@ export async function scanReddit(topic, sourceConfig, options = {}) {
       if (topic.lastScannedAt && item.created_utc) {
         const pubDate = new Date(item.created_utc * 1000);
         const lastScan = new Date(topic.lastScannedAt);
+
         if (pubDate <= lastScan) {
           continue;
         }
@@ -69,11 +76,19 @@ export async function scanReddit(topic, sourceConfig, options = {}) {
 
       // If we did a user submissions fetch, we need to manually filter by topic query
       if (sourceName.startsWith("u/")) {
-         const content = (item.title + " " + (item.selftext || "")).toLowerCase();
-         const terms = (topic.aiRefinedQuery || topic.displayName).toLowerCase().split(" ").filter(t => t.length > 2);
-         if (!terms.some(term => content.includes(term))) {
-             continue; // Skip if no terms match
-         }
+        const content = (
+          item.title +
+          " " +
+          (item.selftext || "")
+        ).toLowerCase();
+        const terms = (topic.aiRefinedQuery || topic.displayName)
+          .toLowerCase()
+          .split(" ")
+          .filter((t) => t.length > 2);
+
+        if (!terms.some((term) => content.includes(term))) {
+          continue; // Skip if no terms match
+        }
       }
 
       findings.push({
@@ -86,9 +101,14 @@ export async function scanReddit(topic, sourceConfig, options = {}) {
       });
     }
 
-    console.log(`   📊 [redditScanner] Found ${findings.length} matches from ${sourceName}`);
+    console.log(
+      `   📊 [redditScanner] Found ${findings.length} matches from ${sourceName}`,
+    );
   } catch (err) {
-    console.error(`❌ [redditScanner] Failed to fetch from ${sourceName}:`, err.message);
+    console.error(
+      `❌ [redditScanner] Failed to fetch from ${sourceName}:`,
+      err.message,
+    );
   }
 
   return findings;

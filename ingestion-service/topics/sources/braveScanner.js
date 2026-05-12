@@ -20,12 +20,16 @@ export async function scanBrave(topic, sourceConfig, options = {}) {
   const apiKey = process.env.BRAVE_API_KEY;
 
   if (!apiKey) {
-    console.warn("⚠️ [braveScanner] BRAVE_API_KEY is not set. Skipping Brave search.");
+    console.warn(
+      "⚠️ [braveScanner] BRAVE_API_KEY is not set. Skipping Brave search.",
+    );
     return [];
   }
 
   const query = topic.aiRefinedQuery || topic.displayName;
-  console.log(`🔍 [braveScanner] Scanning Brave News for "${topic.displayName}"...`);
+  console.log(
+    `🔍 [braveScanner] Scanning Brave News for "${topic.displayName}"...`,
+  );
 
   const findings = [];
 
@@ -37,7 +41,7 @@ export async function scanBrave(topic, sourceConfig, options = {}) {
           Accept: "application/json",
           "X-Subscription-Token": apiKey,
         },
-      }
+      },
     );
 
     if (!response.ok) {
@@ -48,14 +52,14 @@ export async function scanBrave(topic, sourceConfig, options = {}) {
     const results = data.results || [];
 
     for (const item of results) {
-       // Filter by sinceDate if this is an incremental scan
-       if (topic.lastScannedAt && item.age) {
-           const pubDate = new Date(item.age);
-           const lastScan = new Date(topic.lastScannedAt);
-           if (pubDate <= lastScan) {
-              continue;
-           }
-       }
+      // Filter by sinceDate if this is an incremental scan
+      if (topic.lastScannedAt && item.age) {
+        const pubDate = new Date(item.age);
+        const lastScan = new Date(topic.lastScannedAt);
+        if (pubDate <= lastScan) {
+          continue;
+        }
+      }
 
       findings.push({
         title: item.title,
@@ -67,9 +71,14 @@ export async function scanBrave(topic, sourceConfig, options = {}) {
       });
     }
 
-    console.log(`   📊 [braveScanner] Found ${findings.length} matches from Brave Search`);
+    console.log(
+      `   📊 [braveScanner] Found ${findings.length} matches from Brave Search`,
+    );
   } catch (err) {
-    console.error("❌ [braveScanner] Failed to fetch from Brave Search:", err.message);
+    console.error(
+      "❌ [braveScanner] Failed to fetch from Brave Search:",
+      err.message,
+    );
   }
 
   return findings;

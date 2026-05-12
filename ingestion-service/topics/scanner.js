@@ -17,17 +17,25 @@ import { scanReddit } from "./sources/redditScanner.js";
  * @returns {number} The number of new findings inserted
  */
 export async function runScannersForTopic(topic, options = {}) {
-  console.log(`\n🚀 [orchestrator] Starting scan for topic: "${topic.displayName}"`);
+  console.log(
+    `\n🚀 [orchestrator] Starting scan for topic: "${topic.displayName}"`,
+  );
 
   let allFindings = [];
 
-  const sources = Array.isArray(topic.sources) ? topic.sources : (topic.sources ? JSON.parse(topic.sources) : []);
-  
+  const sources = Array.isArray(topic.sources)
+    ? topic.sources
+    : topic.sources
+      ? JSON.parse(topic.sources)
+      : [];
+
   // 1. Internal DB Scan (Always run if searchBeyondSources is true or internal_db is in sources)
-  const hasInternalDbConfig = sources.some(s => s.type === "internal_db" && s.enabled);
+  const hasInternalDbConfig = sources.some(
+    (s) => s.type === "internal_db" && s.enabled,
+  );
   if (topic.searchBeyondSources || hasInternalDbConfig) {
-      const internalFindings = await scanInternalDb(topic, options);
-      allFindings.push(...internalFindings);
+    const internalFindings = await scanInternalDb(topic, options);
+    allFindings.push(...internalFindings);
   }
 
   // 2. Iterate through configured external sources
@@ -54,32 +62,39 @@ export async function runScannersForTopic(topic, options = {}) {
           break;
         case "scrape":
         case "webpage":
-          console.log(`⚠️ [orchestrator] Scanner for type '${sourceConfig.type}' not yet implemented.`);
+          console.log(
+            `⚠️ [orchestrator] Scanner for type '${sourceConfig.type}' not yet implemented.`,
+          );
           break;
         default:
-          console.warn(`⚠️ [orchestrator] Unknown source type: ${sourceConfig.type}`);
+          console.warn(
+            `⚠️ [orchestrator] Unknown source type: ${sourceConfig.type}`,
+          );
       }
     } catch (err) {
-      console.error(`❌ [orchestrator] Scanner ${sourceConfig.type} failed:`, err.message);
+      console.error(
+        `❌ [orchestrator] Scanner ${sourceConfig.type} failed:`,
+        err.message,
+      );
     }
   }
 
   if (allFindings.length === 0) {
-      console.log(`   ⚪ [orchestrator] No new findings across all scanners.`);
-      await prisma.lockedTopic.update({
-          where: { id: topic.id },
-          data: { lastScannedAt: new Date() }
-      });
-      return 0;
+    console.log(`   ⚪ [orchestrator] No new findings across all scanners.`);
+    await prisma.lockedTopic.update({
+      where: { id: topic.id },
+      data: { lastScannedAt: new Date() },
+    });
+    return 0;
   }
 
   // 3. Deduplication (URL-based within this run and against DB)
   // Dedupe within current findings array
   const uniqueFindingsMap = new Map();
   for (const finding of allFindings) {
-      if (finding.sourceUrl && !uniqueFindingsMap.has(finding.sourceUrl)) {
-          uniqueFindingsMap.set(finding.sourceUrl, finding);
-      }
+    if (finding.sourceUrl && !uniqueFindingsMap.has(finding.sourceUrl)) {
+      uniqueFindingsMap.set(finding.sourceUrl, finding);
+    }
   }
   const uniqueFindings = Array.from(uniqueFindingsMap.values());
 
@@ -93,51 +108,57 @@ export async function runScannersForTopic(topic, options = {}) {
     ).map((f) => f.sourceUrl),
   );
 
-  const newFindings = uniqueFindings.filter((f) => !existingUrls.has(f.sourceUrl));
+  const newFindings = uniqueFindings.filter(
+    (f) => !existingUrls.has(f.sourceUrl),
+  );
 
   if (newFindings.length === 0) {
-      console.log(`   ⚪ [orchestrator] All findings were duplicates. Nothing new.`);
-      await prisma.lockedTopic.update({
-          where: { id: topic.id },
-          data: { lastScannedAt: new Date() }
-      });
-      return 0;
+    console.log(
+      `   ⚪ [orchestrator] All findings were duplicates. Nothing new.`,
+    );
+    await prisma.lockedTopic.update({
+      where: { id: topic.id },
+      data: { lastScannedAt: new Date() },
+    });
+    return 0;
   }
 
   // 4. Bulk Insert
   let insertedCount = 0;
   for (const finding of newFindings) {
-      try {
-        await prisma.topicFinding.create({
-          data: {
-            topicId: topic.id,
-            sourceType: finding.sourceType,
-            sourceName: finding.sourceName,
-            sourceUrl: finding.sourceUrl,
-            title: finding.title,
-            summary: finding.summary,
-            rawArticleId: finding.rawArticleId,
-            relevanceScore: null, // To be scored
-          },
-        });
-        insertedCount++;
-      } catch (err) {
-          // Ignore unique constraint race conditions
-      }
+    try {
+      await prisma.topicFinding.create({
+        data: {
+          topicId: topic.id,
+          sourceType: finding.sourceType,
+          sourceName: finding.sourceName,
+          sourceUrl: finding.sourceUrl,
+          title: finding.title,
+          summary: finding.summary,
+          rawArticleId: finding.rawArticleId,
+          relevanceScore: null, // To be scored
+        },
+      });
+      insertedCount++;
+    } catch (err) {
+      // Ignore unique constraint race conditions
+    }
   }
 
   // 5. Update Topic Metadata
   const updateData = { lastScannedAt: new Date() };
   if (insertedCount > 0) {
-      updateData.matchCount = { increment: insertedCount };
-      updateData.lastMatchedAt = new Date();
+    updateData.matchCount = { increment: insertedCount };
+    updateData.lastMatchedAt = new Date();
   }
 
   await prisma.lockedTopic.update({
-      where: { id: topic.id },
-      data: updateData
+    where: { id: topic.id },
+    data: updateData,
   });
 
-  console.log(`✅ [orchestrator] Inserted ${insertedCount} new findings out of ${allFindings.length} total raw matches.`);
+  console.log(
+    `✅ [orchestrator] Inserted ${insertedCount} new findings out of ${allFindings.length} total raw matches.`,
+  );
   return insertedCount;
 }

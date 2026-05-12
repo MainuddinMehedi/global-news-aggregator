@@ -18,7 +18,9 @@ const MAX_RESULTS = 100;
 function buildFeedUrl(topic, sourceConfig) {
   if (sourceConfig.type === "google_news") {
     // Google News RSS search query
-    const encodedQuery = encodeURIComponent(topic.aiRefinedQuery || topic.displayName);
+    const encodedQuery = encodeURIComponent(
+      topic.aiRefinedQuery || topic.displayName,
+    );
     return `https://news.google.com/rss/search?q=${encodedQuery}&hl=en-US&gl=US&ceid=US:en`;
   }
 
@@ -44,12 +46,19 @@ export async function scanRss(topic, sourceConfig, options = {}) {
   const feedUrl = buildFeedUrl(topic, sourceConfig);
 
   if (!feedUrl) {
-    console.warn(`⚠️ [rssScanner] Invalid source type for RSS scanner: ${sourceConfig.type}`);
+    console.warn(
+      `⚠️ [rssScanner] Invalid source type for RSS scanner: ${sourceConfig.type}`,
+    );
     return [];
   }
 
-  const sourceName = sourceConfig.type === "google_news" ? "Google News" : (sourceConfig.name || "Custom RSS");
-  console.log(`🔍 [rssScanner] Scanning ${sourceName} for "${topic.displayName}"...`);
+  const sourceName =
+    sourceConfig.type === "google_news"
+      ? "Google News"
+      : sourceConfig.name || "Custom RSS";
+  console.log(
+    `🔍 [rssScanner] Scanning ${sourceName} for "${topic.displayName}"...`,
+  );
 
   const findings = [];
   let count = 0;
@@ -63,9 +72,9 @@ export async function scanRss(topic, sourceConfig, options = {}) {
         const pubDate = new Date(item.publishedAt);
         const lastScan = new Date(topic.lastScannedAt);
         if (pubDate <= lastScan) {
-           // Skip older articles. Since feeds are chronological, we could potentially break early here,
-           // but keeping it simple and continuing allows for out-of-order items.
-           continue;
+          // Skip older articles. Since feeds are chronological, we could potentially break early here,
+          // but keeping it simple and continuing allows for out-of-order items.
+          continue;
         }
       }
 
@@ -81,9 +90,14 @@ export async function scanRss(topic, sourceConfig, options = {}) {
       count++;
     }
 
-    console.log(`   📊 [rssScanner] Found ${findings.length} matches from ${sourceName}`);
+    console.log(
+      `   📊 [rssScanner] Found ${findings.length} matches from ${sourceName}`,
+    );
   } catch (err) {
-    console.error(`❌ [rssScanner] Failed to fetch feed for ${sourceName}:`, err.message);
+    console.error(
+      `❌ [rssScanner] Failed to fetch feed for ${sourceName}:`,
+      err.message,
+    );
   }
 
   return findings;

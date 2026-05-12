@@ -31,31 +31,38 @@ async function run() {
     // If scanning a specific topic, treat it as a full scan (skip date filtering)
     // Otherwise, it's the scheduled incremental scan.
     const isFullScan = !!specificTopicId;
-    const insertedCount = await runScannersForTopic(topic, { fullScan: isFullScan });
+    const insertedCount = await runScannersForTopic(topic, {
+      fullScan: isFullScan,
+    });
     totalNewFindings += insertedCount;
   }
 
-  console.log(`\n✅ Finished scanning ${topics.length} topics. Found ${totalNewFindings} new findings total.`);
+  console.log(
+    `\n✅ Finished scanning ${topics.length} topics. Found ${totalNewFindings} new findings total.`,
+  );
 
   // --- REVALIDATION LOGIC ---
   if (totalNewFindings > 0 || specificTopicId) {
     try {
-      const nextApiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api";
+      const nextApiUrl =
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api";
       const revalidateSecret = process.env.REVALIDATE_SECRET || "";
 
       console.log(`\n🔄 Revalidating cache...`);
-      
+
       const tags = ["locked-topics"];
       for (const topic of topics) {
         tags.push(`locked-topic-${topic.id}`);
       }
 
       for (const tag of tags) {
-        const res = await fetch(`${nextApiUrl}/revalidate?tag=${tag}&secret=${revalidateSecret}`);
+        const res = await fetch(
+          `${nextApiUrl}/revalidate?tag=${tag}&secret=${revalidateSecret}`,
+        );
         if (!res.ok) {
-           console.warn(`⚠️ Failed to revalidate tag: ${tag} (${res.status})`);
+          console.warn(`⚠️ Failed to revalidate tag: ${tag} (${res.status})`);
         } else {
-           console.log(`✓ Revalidated: ${tag}`);
+          console.log(`✓ Revalidated: ${tag}`);
         }
       }
     } catch (err) {

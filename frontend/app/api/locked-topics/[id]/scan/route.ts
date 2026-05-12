@@ -10,8 +10,13 @@ export async function POST(
     const { id } = await params;
 
     // Spawn the background worker (processTopics.js) detached from this request
-    const workerPath = path.join(process.cwd(), "..", "ingestion-service", "processTopics.js");
-    
+    const workerPath = path.join(
+      process.cwd(),
+      "..",
+      "ingestion-service",
+      "processTopics.js",
+    );
+
     console.log(`[Scan Route] Spawning background worker for topic ${id}...`);
     console.log(`[Scan Route] Worker Path: ${workerPath}`);
 
@@ -26,7 +31,9 @@ export async function POST(
     return NextResponse.json({ id, status: "initiated" });
   } catch (error) {
     console.error("Scan trigger failed:", error);
-    return NextResponse.json({ error: "Failed to trigger scan" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to trigger scan" },
+      { status: 500 },
+    );
   }
 }
-
