@@ -57,14 +57,17 @@ export async function POST(
     }
 
     const groups = parseQuery(topic.aiRefinedQuery);
+
     if (groups.length === 0) {
       // No valid search terms — mark as scanned with 0 results
       await prisma.lockedTopic.update({
         where: { id },
         data: { lastScannedAt: new Date() },
       });
+
       revalidateTag(`locked-topic-${id}`, "max");
       revalidateTag("locked-topics", "max");
+
       return NextResponse.json({ newFindings: 0 });
     }
 
@@ -137,6 +140,7 @@ export async function POST(
             relevanceScore: null, // Will be scored by scorer.js later
           },
         });
+
         insertedCount++;
       } catch (err) {
         // Unique constraint violation — skip silently (race condition safety)
