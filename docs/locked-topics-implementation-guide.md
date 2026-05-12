@@ -30,6 +30,7 @@ Topics stay alive until you explicitly turn them off (archived) or delete them. 
 A 4-step modal flow triggered by the "Lock New Topic" button on the `/locked-topics` page.
 
 **Step 1 — Intent**
+
 - Input: Display name (short label, e.g. "iran-israel", "google-jobs")
 - Input: Context block — a free-text area where the user writes the full intention. Example: "I want to track whether Google is posting any new AI or ML engineering roles, specifically in their DeepMind or Search divisions."
 - Validation: Both fields required before proceeding.
@@ -39,18 +40,21 @@ A 4-step modal flow triggered by the "Lock New Topic" button on the `/locked-top
 Three tiers of sources, all optional except Internal DB which is always on.
 
 Tier 1 — System-native (pre-configured, guaranteed to work):
+
 - Internal Article DB — always enabled, no toggle. Scans existing ProcessedArticles.
 - Google News RSS — toggle. Uses `news.google.com/rss/search?q={refinedQuery}`. No API key needed.
 - Brave Search API — toggle. Requires `BRAVE_API_KEY` in env. General web results.
 - Reddit — toggle. Uses official Reddit JSON API (`reddit.com/search.json?q={query}`). No key needed for read-only.
 
 Tier 2 — Pre-built scrapers (system has configured selectors for these):
+
 - Bangladesh Government Jobs — scrapes bpsc.gov.bd, ppsc.gov.bd, and a configurable list of ministry job pages.
 - GitHub — tracks releases and repo activity via GitHub REST API (`/repos/{owner}/{repo}/releases`). Sub-config: user enters `owner/repo`.
 - YouTube Channel — tracks new videos via YouTube's public RSS feed (`youtube.com/feeds/videos.xml?channel_id={id}`). Sub-config: user enters channel URL or ID.
 - Company Career Pages — pre-built scrapers for major companies (Google, Meta, etc.). Expandable list.
 
 Tier 3 — User-defined (freeform, best-effort):
+
 - Add any RSS feed URL — system validates it's a real RSS/Atom feed before saving.
 - Add any webpage URL — system fetches the page on each scan, diffs the text content against the previous fetch, treats meaningful changes as new findings.
 - Custom search query override — user writes a raw search string that replaces the AI-generated query when hitting Google News and Brave.
@@ -60,16 +64,19 @@ Tier 3 — User-defined (freeform, best-effort):
 System calls Gemini Flash (via frontend API route — key never exposed to client) with the display name and context block.
 
 AI returns:
+
 - `aiRefinedQuery` — an optimized search string the scanner will actually use.
 - `aiQuerySummary` — a plain English paragraph of what the AI understood. Example: "Tracking new engineering job postings from Google's AI divisions, specifically DeepMind and Search. Monitoring for ML, AI, and research roles posted to Google's careers site and indexed by major search engines."
 - `suggestedSources` — a JSON array of source suggestions based on context. Example: for a BD government jobs topic, AI suggests specific ministry URLs. These appear as checkboxes the user can accept or reject.
 
 Displayed in Step 3:
+
 - "Here's what I understood:" → full aiQuerySummary
 - "I'll be searching for:" → aiRefinedQuery (editable text field — user can tweak before activating)
 - "Suggested additional sources:" → list of AI suggestions with accept/reject per item
 
 **Step 4 — Activation**
+
 - "Activate Topic" button calls `POST /api/locked-topics` — creates the LockedTopic record in DB.
 - Modal closes. Card appears immediately on the list page with an "Initial scan running..." state.
 - Client immediately calls `POST /api/locked-topics/[id]/scan` — triggers internal DB scan synchronously.
@@ -84,6 +91,7 @@ The main page, already wired in `NavLinks.tsx`. Currently a stub. Replace with f
 **This is a React Server Component.** Data is fetched directly via `getLockedTopics()` — no client-side fetch on page load.
 
 **Page header:**
+
 - Title: "Locked Topics"
 - Subtitle: "Pin specific themes to ensure they are persistently tracked."
 - "Lock New Topic" button (primary, top right) — opens the multi-step modal.
@@ -91,6 +99,7 @@ The main page, already wired in `NavLinks.tsx`. Currently a stub. Replace with f
 **Topic cards grid (2 columns on desktop, 1 on mobile):**
 
 Each card shows:
+
 - Lock icon (styled, consistent with your existing HugeIcons usage)
 - Display name (bold)
 - Match count + last matched timestamp ("45 Matches · Last: 2h ago")
@@ -101,12 +110,14 @@ Each card shows:
 - "LATEST FINDINGS" section — shows the 3 most recent `TopicFinding` titles as bullet points. If no findings yet: "No findings yet." If initial scan still running: skeleton lines (managed by a small Client Component that polls `GET /api/locked-topics/[id]/status` until `lastScannedAt` is set).
 
 **Card states:**
+
 - Normal (has findings)
 - Empty (topic active, no findings yet)
 - Scanning (just created, `lastScannedAt` is null — client polls status endpoint every 3 seconds until set)
 - Archived (isActive = false) — card visually muted, toggle is grey, no new findings badge
 
 **Empty page state:**
+
 - Shown when user has no topics at all.
 - Centered illustration + "No locked topics yet" + "Lock New Topic" button.
 
@@ -119,6 +130,7 @@ A dedicated page (not a modal, not a slide-over). All secondary interactions on 
 **This is a hybrid Server + Client page.** The server component fetches topic metadata and the first 20 findings directly from Prisma (reading filters from `searchParams`). The `FindingsList` component is a Client leaf that handles infinite scroll pagination via API route, and updates the URL to trigger filter changes.
 
 **Header section (Server):**
+
 - Display name (large heading)
 - Match count + last scanned timestamp
 - Active toggle (client action — calls PATCH)
@@ -126,22 +138,26 @@ A dedicated page (not a modal, not a slide-over). All secondary interactions on 
 - Delete button → opens Delete confirmation modal
 
 **AI Understanding section (Server):**
+
 - Label: "What the system is tracking"
 - Full `aiQuerySummary` text (not truncated)
 - Current `aiRefinedQuery` shown as a code-like block (monospace, subtle border)
 
 **Context section (Server + Client toggle):**
+
 - Label: "Your context"
 - The original `userContext` text
 - Truncated to 3 lines with a "Show more" / "Show less" client toggle
 - Edit button — inline, opens Edit Topic modal focused on the context field
 
 **Sources section (Server):**
+
 - List of all active sources for this topic
 - Each source shows: type badge (RSS / SCRAPE / GOOGLE / BRAVE / REDDIT / INTERNAL), source name/URL, status (active/error)
 - "Add source" button → inline form to add Tier 3 source
 
 **Findings section (Hybrid):**
+
 - Server fetches initial 20 findings (respecting URL `searchParams`) and passes as props to `FindingsList`
 - `FindingsList` is a Client Component that:
   - Renders the initial findings immediately (no flicker, no spinner on first paint)
@@ -158,6 +174,7 @@ A dedicated page (not a modal, not a slide-over). All secondary interactions on 
   - If `rawArticleId` not null: "Internal article" badge — clicking opens the existing ArticleDetailsModal
 
 **Generate Summary button (Client):**
+
 - User presses it → calls `POST /api/locked-topics/[id]/summary`
 - API calls Groq with all current findings → returns 2-3 paragraph summary
 - Displayed in a modal with a copy button
@@ -170,6 +187,7 @@ A dedicated page (not a modal, not a slide-over). All secondary interactions on 
 Opened by clicking the bell icon on any topic card or from the detail page. Client Component modal.
 
 **Content:**
+
 - Topic name as modal title
 - "Last notified: [timestamp or Never]"
 - Mode selector (two options, radio-style):
@@ -189,6 +207,7 @@ Opened by clicking the bell icon on any topic card or from the detail page. Clie
 Opened from the detail page Edit button. Client Component modal.
 
 **Editable fields:**
+
 - Display name
 - Context block (full text area)
 - "Re-run AI analysis" button — calls `POST /api/locked-topics/ai-refine` with updated context, returns new aiRefinedQuery and aiQuerySummary. User reviews before saving.
@@ -197,6 +216,7 @@ Opened from the detail page Edit button. Client Component modal.
 **On save:** calls `PATCH /api/locked-topics/[id]`, then server-side `updateTag` clears cache.
 
 **What is NOT editable here:**
+
 - Sources (managed separately in the Sources section of the detail page)
 - Historical findings (immutable)
 
@@ -207,6 +227,7 @@ Opened from the detail page Edit button. Client Component modal.
 Opened from the detail page Delete button. Client Component modal.
 
 **Two options presented:**
+
 1. "Archive summary first, then delete" — calls `POST /api/locked-topics/[id]/summary` to generate final summary, shows it in modal with copy button, then calls `DELETE /api/locked-topics/[id]` (cascade deletes all findings via Prisma relation).
 2. "Delete everything" — calls `DELETE /api/locked-topics/[id]` immediately. Requires typing the topic display name to confirm.
 
@@ -219,6 +240,7 @@ A new GitHub Actions workflow that runs every 2 hours, independent of the existi
 **Trigger:** Schedule (`0 */2 * * *`) for scanning, (`0 8 * * *`) for DIGEST notifications. Plus manual `workflow_dispatch`.
 
 **For each active LockedTopic (isActive = true):**
+
 1. Load topic with its sources config.
 2. Run Internal DB scan — query `ProcessedArticle` WHERE title or contentSnippet matches key terms from `aiRefinedQuery`. Use `mode: insensitive`. Link matches via `rawArticleId`.
 3. Run Google News RSS — fetch `https://news.google.com/rss/search?q={encodeURIComponent(aiRefinedQuery)}&hl=en`. Parse RSS. Extract title + link.
@@ -235,10 +257,12 @@ A new GitHub Actions workflow that runs every 2 hours, independent of the existi
 14. Call revalidation endpoint for each scanned topic to clear Next.js cache.
 
 **Notification logic:**
+
 - DIGEST mode: mark findings as pending. Daily digest job (8am UTC schedule) collects all pending findings per topic and sends one message per topic.
 - ALERT mode: for each new finding where relevance score ≥ `notifyThreshold`: send notification immediately.
 
 **Notification format (Discord — ALERT):**
+
 ```
 🔒 **[Topic Display Name]** — New Finding
 📌 [Finding Title]
@@ -248,6 +272,7 @@ A new GitHub Actions workflow that runs every 2 hours, independent of the existi
 ```
 
 **Notification format (Discord — DIGEST):**
+
 ```
 🔒 **[Topic Display Name]** — Daily Digest
 3 new findings today:
@@ -261,15 +286,17 @@ Total matches: 48
 
 ### Feature 8: AI Integration Points
 
-**Point 1 — Topic creation / edit AI refinement (Gemini Flash, once per topic)**
+**Point 1 — Topic creation / edit AI refinement (gpt oss 20b or Gemini 3.1 Flash, once per topic)**
+
 - Trigger: Step 3 of creation modal, or "Re-run AI analysis" in Edit modal
 - Called from: `POST /api/locked-topics/ai-refine` (server-side — API key never exposed to client)
-- Provider: Google Gemini Flash (`gemini-2.0-flash` via Google AI Studio free tier)
+- Provider: groq(`gpt oss 20b`) or fallback to Google Gemini Flash (`gemini-3.1-flash` via Google AI Studio free tier)
 - Input: displayName + userContext
 - Output: aiRefinedQuery, aiQuerySummary, suggestedSources[]
 - AiUsage logging: NOT required (one-time call, negligible cost)
 
 **Point 2 — Relevance scoring (Groq, batched per workflow run)**
+
 - Trigger: After deduplication in the scanning workflow, before saving each batch of new findings
 - Called from: `ingestion-service/topics/scorer.js`
 - Provider: Groq (`AI_PRIMARY_MODEL` — Llama 4 Scout), using existing `rateLimiter.js`
@@ -279,6 +306,7 @@ Total matches: 48
 - AiUsage logging: **REQUIRED** — runs on schedule, compounds over time
 
 **Point 3 — On-demand summary (Groq, user-triggered)**
+
 - Trigger: User clicks "Generate Summary" on detail page
 - Called from: `POST /api/locked-topics/[id]/summary`
 - Provider: Groq (`AI_PRIMARY_MODEL`)
@@ -361,16 +389,22 @@ Stored in `LockedTopic.sources` as a JSON array. TypeScript type for reference:
 
 ```typescript
 interface SourceConfig {
-  id: string
-  type: 'internal_db' | 'google_news' | 'brave' | 'reddit'
-      | 'rss' | 'scrape' | 'webpage'
-  label: string            // "BD PSC", "Google Careers RSS"
-  enabled: boolean
-  url?: string             // for rss, scrape, webpage types
-  scraperKey?: string      // for scrape type: key into pre-built scraper registry
-  subConfig?: Record<string, string>  // e.g. { channelId: "UCxxx" } for YouTube
-  lastFetchedContent?: string  // for webpage diff: last known content hash
-  lastFetchedAt?: string   // ISO timestamp
+  id: string;
+  type:
+    | "internal_db"
+    | "google_news"
+    | "brave"
+    | "reddit"
+    | "rss"
+    | "scrape"
+    | "webpage";
+  label: string; // "BD PSC", "Google Careers RSS"
+  enabled: boolean;
+  url?: string; // for rss, scrape, webpage types
+  scraperKey?: string; // for scrape type: key into pre-built scraper registry
+  subConfig?: Record<string, string>; // e.g. { channelId: "UCxxx" } for YouTube
+  lastFetchedContent?: string; // for webpage diff: last known content hash
+  lastFetchedAt?: string; // ISO timestamp
 }
 ```
 
@@ -386,23 +420,23 @@ npx prisma migrate dev --name add_locked_topics
 
 This is the most critical section for the coding agent. Follow this table exactly.
 
-| Feature | How Data Is Fetched | Why |
-|---|---|---|
-| Topic list page | **Direct Prisma in Server Component** (`getLockedTopics()`) | SSR, no flicker, no waterfall |
-| Topic detail metadata | **Direct Prisma in Server Component** (`getLockedTopicById()`) | Critical for initial render |
-| Findings (initial 20) | **Direct Prisma in Server Component**, passed as props to FindingsList | No loading spinner on first paint |
-| Findings (pagination) | **API route** `GET /api/locked-topics/[id]/findings?cursor=id` from Client Component | Dynamic interaction, cursor-based infinite scroll |
-| Findings (filter change) | **URL Search Params** (`?sourceType=X`) | URL-driven, server re-renders initial findings |
-| Scanning status poll | **API route** `GET /api/locked-topics/[id]/status` from small Client Component | Only active when `lastScannedAt` is null |
-| Toggle isActive | **API route** `PATCH /api/locked-topics/[id]` from Client Component | Mutation |
-| Create topic | **API route** `POST /api/locked-topics` from modal Client Component | Mutation |
-| AI refinement | **API route** `POST /api/locked-topics/ai-refine` from modal Client Component | Calls Gemini server-side, key not exposed |
-| Trigger initial scan | **API route** `POST /api/locked-topics/[id]/scan` from modal Client Component | Mutation |
-| Edit topic | **API route** `PATCH /api/locked-topics/[id]` from modal Client Component | Mutation |
-| Delete topic | **API route** `DELETE /api/locked-topics/[id]` from modal Client Component | Mutation |
-| Generate summary | **API route** `POST /api/locked-topics/[id]/summary` from Client Component | Calls Groq server-side |
-| Notification settings | **API route** `PATCH /api/locked-topics/[id]` from modal Client Component | Mutation |
-| Channel availability | **API route** `GET /api/locked-topics/channels` from modal Client Component | Reads env vars server-side |
+| Feature                  | How Data Is Fetched                                                                  | Why                                               |
+| ------------------------ | ------------------------------------------------------------------------------------ | ------------------------------------------------- |
+| Topic list page          | **Direct Prisma in Server Component** (`getLockedTopics()`)                          | SSR, no flicker, no waterfall                     |
+| Topic detail metadata    | **Direct Prisma in Server Component** (`getLockedTopicById()`)                       | Critical for initial render                       |
+| Findings (initial 20)    | **Direct Prisma in Server Component**, passed as props to FindingsList               | No loading spinner on first paint                 |
+| Findings (pagination)    | **API route** `GET /api/locked-topics/[id]/findings?cursor=id` from Client Component | Dynamic interaction, cursor-based infinite scroll |
+| Findings (filter change) | **URL Search Params** (`?sourceType=X`)                                              | URL-driven, server re-renders initial findings    |
+| Scanning status poll     | **API route** `GET /api/locked-topics/[id]/status` from small Client Component       | Only active when `lastScannedAt` is null          |
+| Toggle isActive          | **API route** `PATCH /api/locked-topics/[id]` from Client Component                  | Mutation                                          |
+| Create topic             | **API route** `POST /api/locked-topics` from modal Client Component                  | Mutation                                          |
+| AI refinement            | **API route** `POST /api/locked-topics/ai-refine` from modal Client Component        | Calls Gemini server-side, key not exposed         |
+| Trigger initial scan     | **API route** `POST /api/locked-topics/[id]/scan` from modal Client Component        | Mutation                                          |
+| Edit topic               | **API route** `PATCH /api/locked-topics/[id]` from modal Client Component            | Mutation                                          |
+| Delete topic             | **API route** `DELETE /api/locked-topics/[id]` from modal Client Component           | Mutation                                          |
+| Generate summary         | **API route** `POST /api/locked-topics/[id]/summary` from Client Component           | Calls Groq server-side                            |
+| Notification settings    | **API route** `PATCH /api/locked-topics/[id]` from modal Client Component            | Mutation                                          |
+| Channel availability     | **API route** `GET /api/locked-topics/channels` from modal Client Component          | Reads env vars server-side                        |
 
 ---
 
@@ -504,17 +538,17 @@ Follow the exact same pattern as `getArticles()` and `getCategories()`. This pro
 // frontend/queries/lockedTopics.ts
 
 export async function getLockedTopics() {
-  'use cache'
-  cacheTag('locked-topics')
-  cacheLife('minutes')  // revalidates every 1 min, expires 1 hour
+  "use cache";
+  cacheTag("locked-topics");
+  cacheLife("minutes"); // revalidates every 1 min, expires 1 hour
   // direct Prisma query here
 }
 
 export async function getLockedTopicById(id: string) {
-  'use cache'
-  cacheTag(`locked-topic-${id}`)
-  cacheTag('locked-topics')  // also invalidated by global tag
-  cacheLife('minutes')
+  "use cache";
+  cacheTag(`locked-topic-${id}`);
+  cacheTag("locked-topics"); // also invalidated by global tag
+  cacheLife("minutes");
   // direct Prisma query here
 }
 ```
@@ -522,18 +556,24 @@ export async function getLockedTopicById(id: string) {
 **Cache invalidation — three triggers:**
 
 **1. After scanning workflow runs** — `processTopics.js` calls the existing revalidation endpoint after each topic is processed:
+
 ```javascript
 // After each topic is scanned and findings saved:
-await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/revalidate?tag=locked-topics&secret=${process.env.REVALIDATE_SECRET}`)
-await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/revalidate?tag=locked-topic-${topic.id}&secret=${process.env.REVALIDATE_SECRET}`)
+await fetch(
+  `${process.env.NEXT_PUBLIC_API_URL}/api/revalidate?tag=locked-topics&secret=${process.env.REVALIDATE_SECRET}`,
+);
+await fetch(
+  `${process.env.NEXT_PUBLIC_API_URL}/api/revalidate?tag=locked-topic-${topic.id}&secret=${process.env.REVALIDATE_SECRET}`,
+);
 ```
 
 **2. After any mutation API route** — inside each PATCH, DELETE, POST route handler after the DB write:
+
 ```typescript
-import { updateTag } from 'next/cache'
+import { updateTag } from "next/cache";
 // After write:
-updateTag('locked-topics')
-updateTag(`locked-topic-${id}`)
+updateTag("locked-topics");
+updateTag(`locked-topic-${id}`);
 ```
 
 **3. After initial scan completes** — `POST /api/locked-topics/[id]/scan` calls `updateTag` after findings are saved.
@@ -545,9 +585,11 @@ The `/api/revalidate` endpoint already exists in your project. Reuse it. Do not 
 ## Part 6 — API Routes Specification
 
 ### `POST /api/locked-topics`
+
 Creates a new LockedTopic. After creating: call `updateTag('locked-topics')`.
 
 Request body:
+
 ```typescript
 {
   displayName: string
@@ -564,37 +606,44 @@ Request body:
 ```
 
 ### `POST /api/locked-topics/ai-refine`
+
 Calls Gemini Flash server-side. `GEMINI_API_KEY` never exposed to client.
 
 Request body: `{ displayName: string, userContext: string }`
 
 Response:
+
 ```typescript
 {
-  aiRefinedQuery: string
-  aiQuerySummary: string
-  suggestedSources: Array<{ label: string, url: string, type: string }>
+  aiRefinedQuery: string;
+  aiQuerySummary: string;
+  suggestedSources: Array<{ label: string; url: string; type: string }>;
 }
 ```
 
 ### `GET /api/locked-topics/channels`
+
 Reads env vars server-side. Returns which notification channels are configured.
 Response: `{ discord: boolean, telegram: boolean }`
 
 ### `GET /api/locked-topics/[id]`
+
 Returns full topic detail. Also updates `lastViewedAt` to now (clears unread badge).
 Note: This GET exists for client-side use after mutations. The page itself fetches via `getLockedTopicById()` directly.
 
 ### `PATCH /api/locked-topics/[id]`
+
 Partial update. Accepts any subset of LockedTopic fields.
 After updating: call `updateTag('locked-topics')` and `updateTag('locked-topic-${id}')`.
 
 ### `DELETE /api/locked-topics/[id]`
+
 Deletes topic and all findings (Prisma cascade via the relation).
 Query param: `?generateSummary=true` — if present, generate and return summary text before deleting.
 After deleting: call `updateTag('locked-topics')`.
 
 ### `POST /api/locked-topics/[id]/scan`
+
 Triggers the internal DB scan synchronously. Called immediately after topic creation.
 Queries `ProcessedArticle` WHERE title or contentSnippet contains terms from `aiRefinedQuery`.
 Saves matching findings as `TopicFinding` rows with `sourceType: 'ARTICLE'`.
@@ -603,17 +652,20 @@ After completing: call `updateTag('locked-topics')` and `updateTag('locked-topic
 Returns: `{ newFindings: number }`
 
 ### `GET /api/locked-topics/[id]/findings`
+
 Cursor-paginated findings. Used by `FindingsList` Client Component only for infinite scroll "Load More".
 Query params: `?cursor=finding_id&sourceType=ALL&sort=newest`
 Uses Prisma `cursor: { id }` + `skip: 1` + "take + 1 trick".
 Response: `{ findings: TopicFinding[], nextCursor: string | null }`
 
 ### `GET /api/locked-topics/[id]/status`
+
 Lightweight polling endpoint. Only called when `lastScannedAt` is null.
 Response: `{ lastScannedAt: string | null, matchCount: number }`
 Client Component polls every 3 seconds until `lastScannedAt` is set, then stops polling.
 
 ### `POST /api/locked-topics/[id]/summary`
+
 Calls Groq with all findings for this topic.
 Logs token usage to `AiUsage` table.
 Response: `{ summary: string }` — not persisted to DB.
@@ -629,12 +681,12 @@ name: Locked Topics Scanner
 
 on:
   schedule:
-    - cron: '0 */2 * * *'   # every 2 hours — scan all active topics
-    - cron: '0 8 * * *'     # daily at 8am UTC — send DIGEST notifications
+    - cron: "0 */2 * * *" # every 2 hours — scan all active topics
+    - cron: "0 8 * * *" # daily at 8am UTC — send DIGEST notifications
   workflow_dispatch:
     inputs:
       topic_id:
-        description: 'Scan a specific topic ID only (optional)'
+        description: "Scan a specific topic ID only (optional)"
         required: false
 
 jobs:
@@ -647,8 +699,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: "20"
+          cache: "npm"
 
       - name: Install Dependencies
         run: npm install
@@ -683,6 +735,7 @@ jobs:
 ```
 
 **New GitHub secrets to add:**
+
 - `BRAVE_API_KEY`
 - `DISCORD_WEBHOOK_URL`
 - `TELEGRAM_BOT_TOKEN`
@@ -697,6 +750,7 @@ jobs:
 Build in this exact order. Each phase is independently testable before moving to the next.
 
 ### Phase 1 — Data Foundation
+
 1. Add new models to `prisma/schema.prisma`
 2. Run: `npx prisma migrate dev --name add_locked_topics`
 3. Create `frontend/types/lockedTopic.ts` — all interfaces
@@ -707,6 +761,7 @@ Build in this exact order. Each phase is independently testable before moving to
 **Test:** Run `npx prisma studio`. Confirm new tables exist. Hit `/api/locked-topics` stub — no errors.
 
 ### Phase 2 — List Page + Card UI
+
 1. Build `LockedTopicCard.tsx` (Server Component — static display data)
 2. Build `LockedTopicCardClient.tsx` (Client Component — toggle, bell, scanning poll)
 3. Build `LockedTopicGrid.tsx` — grid layout + empty state
@@ -717,6 +772,7 @@ Build in this exact order. Each phase is independently testable before moving to
 **Test:** Page renders with server-side data. Manually insert a row via Prisma Studio. Card appears on reload. Toggle updates DB.
 
 ### Phase 3 — Creation Modal
+
 1. Build modal shell + step router (`CreateTopicModal/index.tsx`)
 2. Build Step 1 — Intent form
 3. Build Step 2 — Sources selector (all three tiers)
@@ -729,6 +785,7 @@ Build in this exact order. Each phase is independently testable before moving to
 **Test:** Full creation flow end-to-end. Topic appears in list. Scanning state shows then resolves. Internal DB findings appear on card.
 
 ### Phase 4 — Detail Page
+
 1. Create `frontend/app/locked-topics/[id]/page.tsx` — Server Component
 2. Call `getLockedTopicById()` and `getInitialFindings()` directly — pass as props
 3. Wire `GET /api/locked-topics/[id]` to update `lastViewedAt` on page load (call from a useEffect in a Client Component wrapper on first mount)
@@ -741,6 +798,7 @@ Build in this exact order. Each phase is independently testable before moving to
 **Test:** Click a topic card → detail page renders immediately with content. Cursor pagination works. Filter changes update the URL and stream new data. Generate summary returns AI text in modal.
 
 ### Phase 5 — Edit + Delete + Notification Modals
+
 1. Build `EditTopicModal.tsx` — including re-run AI analysis flow
 2. Build `DeleteTopicModal.tsx` — both deletion paths (with summary / without)
 3. Build `NotificationModal.tsx` — mode selector, threshold slider, channel toggles
@@ -750,6 +808,7 @@ Build in this exact order. Each phase is independently testable before moving to
 **Test:** Edit a topic name. Re-run AI analysis — see updated summary. Save. Delete with summary generation. Configure ALERT mode with custom threshold.
 
 ### Phase 6 — Scanning Workflow
+
 1. Build `ingestion-service/topics/sources/internalDb.js`
 2. Build `ingestion-service/topics/sources/googleNews.js`
 3. Build `ingestion-service/topics/sources/brave.js`
@@ -767,6 +826,7 @@ Build in this exact order. Each phase is independently testable before moving to
 **Test:** Run `node ingestion-service/processTopics.js` locally with a test topic. Verify findings appear in DB. Check `AiUsage` table for relevance scoring log. Verify Discord webhook fires. Verify frontend updates after revalidation call.
 
 ### Phase 7 — Polish + Integration
+
 1. Make Locked Topics nav badge dynamic:
    - Create a new Zustand slice `TopicSlice` in `frontend/store/index.ts` with `unreadTopicsCount` state.
    - Create a `<TopicCountFetcher>` Client Component (wrapped in `<Suspense>`) in the `layout.tsx` static shell that fetches the sum of unread counts and updates the Zustand store.
@@ -794,42 +854,46 @@ Import `waitForCapacity` and `recordUsage` from `ingestion-service/ai/rateLimite
 
 **AiUsage logging:**
 The `AiUsage` model already exists in the schema. Log relevance scoring calls and on-demand summary calls. Do NOT log topic creation AI refinement calls (one-time, negligible). Use the same logging pattern as `processor.js`:
+
 ```javascript
 await prisma.aiUsage.create({
   data: {
-    date: new Date().toISOString().split('T')[0],
-    provider: 'groq',
+    date: new Date().toISOString().split("T")[0],
+    provider: "groq",
     model: process.env.AI_PRIMARY_MODEL,
     tokensUsed: actualTokens,
     estimatedCost: (actualTokens / 1000) * 0.0006,
     success: true,
-  }
-})
+  },
+});
 ```
 
 **Gemini Flash integration:**
 Google AI Studio provides an OpenAI-compatible endpoint. Use it in `POST /api/locked-topics/ai-refine`:
+
 ```javascript
 const res = await fetch(
-  'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
+  "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
   {
-    method: 'POST',
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${process.env.GEMINI_API_KEY}`,
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${process.env.GEMINI_API_KEY}`,
     },
     body: JSON.stringify({
-      model: 'gemini-2.0-flash',
-      messages: [{ role: 'user', content: prompt }],
-      response_format: { type: 'json_object' },
+      model: "gemini-2.0-flash",
+      messages: [{ role: "user", content: prompt }],
+      response_format: { type: "json_object" },
     }),
-  }
-)
+  },
+);
 ```
+
 Read `process.env.GEMINI_API_KEY` server-side only. Never reference it in any Client Component or expose it to the browser.
 
 **Source deduplication:**
 The `@@unique([topicId, sourceUrl])` constraint on `TopicFinding` is the DB-level safety net. In the scanner, always check existence before insert — do not rely solely on the constraint to catch duplicates:
+
 ```javascript
 const exists = await prisma.topicFinding.findUnique({
   where: { topicId_sourceUrl: { topicId, sourceUrl } }
@@ -870,12 +934,12 @@ NEXT_PUBLIC_API_URL=https://your-deployed-frontend-url.vercel.app
 
 **AI provider summary after this feature:**
 
-| Provider | Used For | Free Tier |
-|---|---|---|
-| Groq (Llama 4 Scout) | Ingestion pipeline + relevance scoring + on-demand summaries | 30K TPM, 1K RPD |
-| Gemini Flash | Topic creation AI refinement only (once per topic creation/edit) | 1,500 req/day, 1M tokens/day |
-| OpenRouter | Reserved — not used yet | 50 req/day |
+| Provider             | Used For                                                         | Free Tier                    |
+| -------------------- | ---------------------------------------------------------------- | ---------------------------- |
+| Groq (Llama 4 Scout) | Ingestion pipeline + relevance scoring + on-demand summaries     | 30K TPM, 1K RPD              |
+| Gemini Flash         | Topic creation AI refinement only (once per topic creation/edit) | 1,500 req/day, 1M tokens/day |
+| OpenRouter           | Reserved — not used yet                                          | 50 req/day                   |
 
 ---
 
-*End of document. Every decision is final as discussed. Build Phase 1 through 7 in order. Do not skip phases.*
+_End of document. Every decision is final as discussed. Build Phase 1 through 7 in order. Do not skip phases._

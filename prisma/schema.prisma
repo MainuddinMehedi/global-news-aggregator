@@ -173,4 +173,5 @@ enum FindingSource {
   SCRAPE // pre-built Tier 2 scraper
   WEBPAGE // user-added webpage diff
   GITHUB // GitHub releases/tags
+  BD_GOV_JOBS // Bangladesh Government Job Circulars
 }
