@@ -10,7 +10,7 @@ const DEFAULT_CONFIG = {
 // and Llama's native tokenizer (used by Groq). Llama's tokenizer is less efficient,
 // producing ~30-50% more tokens for the same text. This multiplier inflates estimates
 // so the rate limiter can pace API calls accurately.
-const TOKEN_MULTIPLIER = parseFloat(process.env.AI_TOKEN_MULTIPLIER) || 1.4;
+export const TOKEN_MULTIPLIER = parseFloat(process.env.AI_TOKEN_MULTIPLIER) || 1.4;
 
 // cl100k_base is an OpenAI tokenizer — it does NOT match Llama's tokenizer exactly,
 // but it's close enough for batch composition. The TOKEN_MULTIPLIER above compensates
