@@ -7,6 +7,7 @@ import { scanWebpage } from "./sources/webpageScraper.js";
 import { scanGithub } from "./sources/githubScanner.js";
 import { scanYoutube } from "./sources/youtubeScanner.js";
 import { scanBdGovJobs } from "./sources/bdGovJobsScraper.js";
+import { scanCompanyCareers } from "./sources/companyCareersScraper.js";
 
 /**
  * Master orchestrator for Locked Topic scanning.
@@ -80,6 +81,14 @@ export async function runScannersForTopic(topic, options = {}) {
             options,
           );
           allFindings.push(...bdGovJobsFindings);
+          break;
+        case "company_careers":
+          const companyCareersFindings = await scanCompanyCareers(
+            topic,
+            sourceConfig,
+            options,
+          );
+          allFindings.push(...companyCareersFindings);
           break;
         case "internal_db":
           // Handled above to ensure it runs even if only searchBeyondSources is enabled

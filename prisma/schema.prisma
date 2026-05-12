@@ -174,4 +174,5 @@ enum FindingSource {
   WEBPAGE // user-added webpage diff
   GITHUB // GitHub releases/tags
   BD_GOV_JOBS // Bangladesh Government Job Circulars
+  COMPANY_CAREERS // Brute-force ATS checks (Greenhouse, Lever)
 }
