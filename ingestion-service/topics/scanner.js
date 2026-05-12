@@ -3,7 +3,9 @@ import { scanInternalDb } from "./sources/internalDb.js";
 import { scanRss } from "./sources/rssScanner.js";
 import { scanBrave } from "./sources/braveScanner.js";
 import { scanReddit } from "./sources/redditScanner.js";
-import { scanWebpage } from "./sources/webpageScanner.js";
+import { scanWebpage } from "./sources/webpageScraper.js";
+import { scanGithub } from "./sources/githubScanner.js";
+import { scanYoutube } from "./sources/youtubeScanner.js";
 
 /**
  * Master orchestrator for Locked Topic scanning.
@@ -57,6 +59,18 @@ export async function runScannersForTopic(topic, options = {}) {
         case "reddit":
           const redditFindings = await scanReddit(topic, sourceConfig, options);
           allFindings.push(...redditFindings);
+          break;
+        case "github":
+          const githubFindings = await scanGithub(topic, sourceConfig, options);
+          allFindings.push(...githubFindings);
+          break;
+        case "youtube":
+          const youtubeFindings = await scanYoutube(
+            topic,
+            sourceConfig,
+            options,
+          );
+          allFindings.push(...youtubeFindings);
           break;
         case "internal_db":
           // Handled above to ensure it runs even if only searchBeyondSources is enabled
