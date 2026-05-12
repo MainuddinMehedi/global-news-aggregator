@@ -10,7 +10,7 @@ To maintain a high-performance, cost-effective (free tier), and resilient system
 - **Google AI Studio**: Used for large-context tasks (Summarization) and specialized features (Voice, Grounding) where high Token-Per-Minute (TPM) or specific capabilities are needed.
 - **GitHub Models**: Used exclusively for the **AI Chat Interface** to provide access to high-reasoning models (Grok, DeepSeek, GPT-4o) that are not available on other free tiers.
 
-*Note: **OpenRouter** is currently deprioritized. While present in env vars, its 50 req/day limit offers minimal value compared to Groq/Google/GitHub and is reserved only as a theoretical last-resort fallback.*
+_Note: **OpenRouter** is currently deprioritized. While present in env vars, its 50 req/day limit offers minimal value compared to Groq/Google/GitHub and is reserved only as a theoretical last-resort fallback._
 
 ---
 
@@ -23,7 +23,7 @@ To maintain a high-performance, cost-effective (free tier), and resilient system
 | **Story Clustering**    | `llama-4-scout-17b`        | Groq     | Shared pipeline with enrichment; handles context well. |
 | **Topic Refinement**    | `openai/gpt-oss-20b`       | Groq     | Extremely fast (~1K t/s) for interactive UI modals.    |
 | **Relevance Scoring**   | `llama-4-scout-17b`        | Groq     | Shared quota with ingestion; tiny prompts.             |
-| **On-Demand Summary**   | `gemma-4-26b`              | Google   | Unlimited TPM; fits hundreds of findings in context.   |
+| **On-Demand Summary**   | `gemma-4-31b`              | Google   | Unlimited TPM; fits hundreds of findings in context.   |
 | **Summary Fallback**    | `gemini-3.1-flash-lite`    | Google   | 500 RPD backup with high context window.               |
 | **AI Chat Interface**   | `groq/compound-mini`       | Groq     | Built-in web search and tool use capability.           |
 | **Chat Guard**          | `llama-prompt-guard-2-86m` | Groq     | Specialized low-latency safety model.                  |
@@ -53,12 +53,12 @@ To maintain a high-performance, cost-effective (free tier), and resilient system
 
 ### GitHub Models
 
-| Tier      | RPM | RPD | Token Limit (Input) |
-| :-------- | :-- | :-- | :------------------ |
-| **Low**   | 15  | 150 | 8K tokens / req     |
-| **High**  | 10  | 50  | 8K tokens / req     |
+| Tier     | RPM | RPD | Token Limit (Input) |
+| :------- | :-- | :-- | :------------------ |
+| **Low**  | 15  | 150 | 8K tokens / req     |
+| **High** | 10  | 50  | 8K tokens / req     |
 
-*Critical Constraint: The **8K input token cap** and low RPD make GitHub Models unsuitable for background ingestion or clustering. Use only for interactive chat.*
+_Critical Constraint: The **8K input token cap** and low RPD make GitHub Models unsuitable for background ingestion or clustering. Use only for interactive chat._
 
 ---
 
@@ -80,7 +80,7 @@ To maintain a high-performance, cost-effective (free tier), and resilient system
 
 ### 3. User-Facing Summaries - during topic deletion
 
-- **Model**: `gemma-4-26b`
+- **Model**: `gemma-4-31b`
 - **Context**: Often involves 50-200 article snippets (~20K - 40K tokens).
 - **Rationale**: Google's "Unlimited TPM" on Gemma 4 is essential here. Groq would rate-limit a single large summary request immediately.
 
@@ -90,18 +90,18 @@ To maintain a high-performance, cost-effective (free tier), and resilient system
 
 The frontend chat interface should offer the following options to users:
 
-| Provider | Display Name              | Model ID                                    | Tag          | Use Case                       |
-| :------- | :------------------------ | :------------------------------------------ | :----------- | :----------------------------- |
-| **Groq** | **Compound (Web Search)** | `groq/compound`                             | 🔍 Search    | Current events, fact-checking. |
-| **Groq** | **Compound Mini**         | `groq/compound-mini`                        | ⚡ Fast      | Default, quick questions.      |
-| **Groq** | **GPT OSS 20B**           | `openai/gpt-oss-20b`                        | ⚡ Fast      | Rapid factual Q&A.             |
-| **Groq** | **Llama 3.3 70B**         | `llama-3.3-70b-versatile`                   | ⚖️ Balanced  | Standard high-quality chat.    |
-| **Google**| **Gemini 3.1 Flash Lite** | `gemini-3.1-flash-lite`                     | 📄 Context   | Summarizing long pasted text.  |
-| **GitHub**| **DeepSeek R1**           | `deepseek/DeepSeek-R1`                      | 🧠 Reasoning | Deep logical analysis.         |
-| **GitHub**| **Grok 3**                | `xai/grok-3`                                | 🧠 Deep      | High-quality general reasoning.|
-| **GitHub**| **Grok 3 Mini**           | `xai/grok-3-mini`                           | ⚡ Fast      | Fast reasoning, xAI quality.   |
-| **GitHub**| **Llama 405B**            | `meta-llama/Meta-Llama-3.1-405B-Instruct`   | 🧠 Deep      | Massive scale reasoning.       |
-| **GitHub**| **GPT-4o**                | `openai/gpt-4o`                             | ⚖️ Balanced  | Industry standard all-rounder. |
+| Provider   | Display Name              | Model ID                                  | Tag          | Use Case                        |
+| :--------- | :------------------------ | :---------------------------------------- | :----------- | :------------------------------ |
+| **Groq**   | **Compound (Web Search)** | `groq/compound`                           | 🔍 Search    | Current events, fact-checking.  |
+| **Groq**   | **Compound Mini**         | `groq/compound-mini`                      | ⚡ Fast      | Default, quick questions.       |
+| **Groq**   | **GPT OSS 20B**           | `openai/gpt-oss-20b`                      | ⚡ Fast      | Rapid factual Q&A.              |
+| **Groq**   | **Llama 3.3 70B**         | `llama-3.3-70b-versatile`                 | ⚖️ Balanced  | Standard high-quality chat.     |
+| **Google** | **Gemini 3.1 Flash Lite** | `gemini-3.1-flash-lite`                   | 📄 Context   | Summarizing long pasted text.   |
+| **GitHub** | **DeepSeek R1**           | `deepseek/DeepSeek-R1`                    | 🧠 Reasoning | Deep logical analysis.          |
+| **GitHub** | **Grok 3**                | `xai/grok-3`                              | 🧠 Deep      | High-quality general reasoning. |
+| **GitHub** | **Grok 3 Mini**           | `xai/grok-3-mini`                         | ⚡ Fast      | Fast reasoning, xAI quality.    |
+| **GitHub** | **Llama 405B**            | `meta-llama/Meta-Llama-3.1-405B-Instruct` | 🧠 Deep      | Massive scale reasoning.        |
+| **GitHub** | **GPT-4o**                | `openai/gpt-4o`                           | ⚖️ Balanced  | Industry standard all-rounder.  |
 
 ---
 
