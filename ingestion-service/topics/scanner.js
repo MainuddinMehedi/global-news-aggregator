@@ -218,7 +218,7 @@ export async function runScannersForTopic(topic, options = {}) {
   // 7. Trigger Revalidation
   if (insertedCount > 0) {
     try {
-      const revalidateUrl = `${process.env.FRONTEND_URL}/api/revalidate?tag=topic-findings-${topic.id}&secret=${process.env.REVALIDATE_SECRET}`;
+      const revalidateUrl = `${process.env.NEXT_PUBLIC_API_URL}/revalidate?tag=topic-findings-${topic.id}&secret=${process.env.REVALIDATE_SECRET}`;
       await fetch(revalidateUrl);
       console.log(
         `🔄 [orchestrator] Triggered revalidation for topic: ${topic.id}`,
