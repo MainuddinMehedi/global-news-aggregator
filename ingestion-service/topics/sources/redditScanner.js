@@ -41,16 +41,38 @@ export async function scanReddit(topic, sourceConfig, options = {}) {
     queryUrl = `https://www.reddit.com/search.json?q=${encodeURIComponent(topic.aiRefinedQuery || topic.displayName)}&sort=new&limit=${limit}`;
   }
 
+  const sinceDate = topic.lastScannedAt;
+  let sinceStr = "";
+  if (sinceDate) {
+    const months = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ];
+    sinceStr = `, since ${sinceDate.getDate()} ${months[sinceDate.getMonth()]}, ${sinceDate.getFullYear()}`;
+  }
+
   console.log(
-    `🔍 [redditScanner] Scanning ${sourceName} for "${topic.displayName}"...`,
+    `🔍 [redditScanner] Scanning ${sourceName} for "${topic.displayName}"${sinceStr}...`,
   );
 
   const findings = [];
+  let skipped = 0;
 
   try {
     const response = await fetch(queryUrl, {
       headers: {
-        "User-Agent": "global-news-aggregator/1.0 (LockedTopics Scanner)",
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
       },
     });
 
@@ -65,11 +87,12 @@ export async function scanReddit(topic, sourceConfig, options = {}) {
       const item = post.data;
 
       // Filter by sinceDate if this is an incremental scan
-      if (topic.lastScannedAt && item.created_utc) {
+      if (sinceDate && item.created_utc) {
         const pubDate = new Date(item.created_utc * 1000);
-        const lastScan = new Date(topic.lastScannedAt);
+        const lastScan = new Date(sinceDate);
 
         if (pubDate <= lastScan) {
+          skipped++;
           continue;
         }
       }
@@ -87,6 +110,7 @@ export async function scanReddit(topic, sourceConfig, options = {}) {
           .filter((t) => t.length > 2);
 
         if (!terms.some((term) => content.includes(term))) {
+          skipped++;
           continue; // Skip if no terms match
         }
       }
@@ -102,7 +126,7 @@ export async function scanReddit(topic, sourceConfig, options = {}) {
     }
 
     console.log(
-      `   📊 [redditScanner] Found ${findings.length} matches from ${sourceName}`,
+      `   📊 [redditScanner] Found ${findings.length} new matches from ${sourceName} (${skipped} skipped as old/irrelevant)`,
     );
   } catch (err) {
     console.error(

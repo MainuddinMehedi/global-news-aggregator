@@ -17,11 +17,11 @@ const MAX_RESULTS = 100;
  */
 function buildFeedUrl(topic, sourceConfig) {
   if (sourceConfig.type === "google_news") {
-    // Google News RSS search query
+    // Google News RSS search query without specific country restrictions
     const encodedQuery = encodeURIComponent(
       topic.aiRefinedQuery || topic.displayName,
     );
-    return `https://news.google.com/rss/search?q=${encodedQuery}&hl=en-US&gl=US&ceid=US:en`;
+    return `https://news.google.com/rss/search?q=${encodedQuery}&hl=en`;
   }
 
   if (sourceConfig.type === "rss") {
@@ -56,15 +56,37 @@ export async function scanRss(topic, sourceConfig, options = {}) {
     sourceConfig.type === "google_news"
       ? "Google News"
       : sourceConfig.name || "Custom RSS";
+
+  const sinceDate = topic.lastScannedAt;
+  let sinceStr = "";
+  if (sinceDate) {
+    const months = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ];
+    sinceStr = `, since ${sinceDate.getDate()} ${months[sinceDate.getMonth()]}, ${sinceDate.getFullYear()}`;
+  }
+
   console.log(
-    `🔍 [rssScanner] Scanning ${sourceName} for "${topic.displayName}"...`,
+    `🔍 [rssScanner] Scanning ${sourceName} for "${topic.displayName}"${sinceStr}...`,
   );
 
   const findings = [];
   let count = 0;
+  let skipped = 0;
 
   try {
-    for await (const item of fetchRSSStream(sourceName, "US", feedUrl)) {
+    for await (const item of fetchRSSStream(sourceName, null, feedUrl)) {
       if (count >= limit) break;
 
       // Filter by sinceDate if this is an incremental scan
@@ -72,8 +94,8 @@ export async function scanRss(topic, sourceConfig, options = {}) {
         const pubDate = new Date(item.publishedAt);
         const lastScan = new Date(topic.lastScannedAt);
         if (pubDate <= lastScan) {
-          // Skip older articles. Since feeds are chronological, we could potentially break early here,
-          // but keeping it simple and continuing allows for out-of-order items.
+          // Skip older articles
+          skipped++;
           continue;
         }
       }
@@ -91,7 +113,7 @@ export async function scanRss(topic, sourceConfig, options = {}) {
     }
 
     console.log(
-      `   📊 [rssScanner] Found ${findings.length} matches from ${sourceName}`,
+      `   📊 [rssScanner] Found ${findings.length} new matches from ${sourceName} (${skipped} skipped as old/duplicate)`,
     );
   } catch (err) {
     console.error(

@@ -129,9 +129,14 @@ export async function runScannersForTopic(topic, options = {}) {
   // 3. Deduplication (URL-based within this run and against DB)
   // Dedupe within current findings array
   const uniqueFindingsMap = new Map();
+  let duplicatesInRun = 0;
   for (const finding of allFindings) {
-    if (finding.sourceUrl && !uniqueFindingsMap.has(finding.sourceUrl)) {
-      uniqueFindingsMap.set(finding.sourceUrl, finding);
+    if (finding.sourceUrl) {
+      if (uniqueFindingsMap.has(finding.sourceUrl)) {
+        duplicatesInRun++;
+      } else {
+        uniqueFindingsMap.set(finding.sourceUrl, finding);
+      }
     }
   }
   const uniqueFindings = Array.from(uniqueFindingsMap.values());
@@ -146,19 +151,30 @@ export async function runScannersForTopic(topic, options = {}) {
     ).map((f) => f.sourceUrl),
   );
 
-  const newFindings = uniqueFindings.filter(
-    (f) => !existingUrls.has(f.sourceUrl),
-  );
+  const newFindings = uniqueFindings.filter((f) => {
+    if (existingUrls.has(f.sourceUrl)) {
+      return false;
+    }
+    return true;
+  });
+
+  const duplicatesInDb = uniqueFindings.length - newFindings.length;
 
   if (newFindings.length === 0) {
     console.log(
-      `   ⚪ [orchestrator] All findings were duplicates. Nothing new.`,
+      `   ⚪ [orchestrator] All ${allFindings.length} findings were duplicates (${duplicatesInRun} in run, ${duplicatesInDb} in DB).`,
     );
     await prisma.lockedTopic.update({
       where: { id: topic.id },
       data: { lastScannedAt: new Date() },
     });
     return 0;
+  }
+
+  if (duplicatesInRun > 0 || duplicatesInDb > 0) {
+    console.log(
+      `   📊 [orchestrator] Deduped: ${duplicatesInRun} from current run, ${duplicatesInDb} already in database.`,
+    );
   }
 
   // 4. Relevance Scoring

@@ -2,8 +2,6 @@
  * Notifier — Sends alerts for high-relevance findings to Discord/Telegram.
  */
 
-import fetch from 'node-fetch';
-
 const DISCORD_WEBHOOK_URL = process.env.DISCORD_WEBHOOK_URL;
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
@@ -20,7 +18,7 @@ async function sendDiscord(topic, finding) {
     await fetch(DISCORD_WEBHOOK_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ content })
+      body: JSON.stringify({ content }),
     });
   } catch (err) {
     console.error("⚠️ [notifier] Discord delivery failed:", err.message);
@@ -36,15 +34,18 @@ async function sendTelegram(topic, finding) {
   const text = `🚨 *New Finding for Topic: ${topic.displayName}* 🚨\n\n*Title:* ${finding.title}\n*Source:* ${finding.sourceName}\n*Relevance:* ${finding.relevanceScore}\n[Read More](${finding.sourceUrl})`;
 
   try {
-    await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        chat_id: TELEGRAM_CHAT_ID,
-        text: text,
-        parse_mode: "Markdown"
-      })
-    });
+    await fetch(
+      `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: TELEGRAM_CHAT_ID,
+          text: text,
+          parse_mode: "Markdown",
+        }),
+      },
+    );
   } catch (err) {
     console.error("⚠️ [notifier] Telegram delivery failed:", err.message);
   }
@@ -62,18 +63,22 @@ export async function processNotifications(topic, findings) {
 
   // Filter for high relevance findings based on topic's threshold
   const threshold = topic.notifyThreshold || 0.8;
-  const highRelevanceFindings = findings.filter(f => f.relevanceScore >= threshold);
+  const highRelevanceFindings = findings.filter(
+    (f) => f.relevanceScore >= threshold,
+  );
 
   if (highRelevanceFindings.length === 0) return;
 
-  console.log(`🔔 [notifier] Sending ${highRelevanceFindings.length} notifications for topic: "${topic.displayName}"...`);
+  console.log(
+    `🔔 [notifier] Sending ${highRelevanceFindings.length} notifications for topic: "${topic.displayName}"...`,
+  );
 
   // Extract notifyChannels configuration
   let channels = { discord: false, telegram: false };
   try {
-    if (typeof topic.notifyChannels === 'string') {
+    if (typeof topic.notifyChannels === "string") {
       channels = JSON.parse(topic.notifyChannels);
-    } else if (typeof topic.notifyChannels === 'object') {
+    } else if (typeof topic.notifyChannels === "object") {
       channels = topic.notifyChannels;
     }
   } catch (e) {

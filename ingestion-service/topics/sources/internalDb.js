@@ -134,8 +134,27 @@ export async function scanInternalDb(topic, options = {}) {
   const where = buildWhereClause(groups, sinceDate);
   if (!where) return [];
 
+  let sinceStr = " (full scan)";
+  if (sinceDate) {
+    const months = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ];
+    sinceStr = `, since ${sinceDate.getDate()} ${months[sinceDate.getMonth()]}, ${sinceDate.getFullYear()}`;
+  }
+
   console.log(
-    `🔍 [internalDb] Scanning for "${topic.displayName}" — ${groups.length} term group(s)${sinceDate ? `, since ${sinceDate.toISOString()}` : " (full scan)"}`,
+    `🔍 [internalDb] Scanning for "${topic.displayName}" — ${groups.length} term group(s)${sinceStr}`,
   );
 
   const matches = await prisma.processedArticle.findMany({
