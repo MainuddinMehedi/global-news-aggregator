@@ -44,6 +44,13 @@ export async function PATCH(
     const { id } = await params;
     const body = await req.json();
 
+    // If archiving and saving a final summary, delete all findings to save space
+    if (body.isActive === false && body.aiQuerySummary) {
+      await prisma.topicFinding.deleteMany({
+        where: { topicId: id },
+      });
+    }
+
     const updated = await prisma.lockedTopic.update({
       where: { id },
       data: body,
@@ -67,15 +74,6 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-
-    // Check if we should generate a summary first
-    const { searchParams } = new URL(req.url);
-    const generateSummary = searchParams.get("generateSummary") === "true";
-
-    if (generateSummary) {
-      // TODO: Implement the summary generation logic at deletion.
-      // Summary generation logic would go here, for now just delete
-    }
 
     await prisma.lockedTopic.delete({
       where: { id },

@@ -1,3 +1,4 @@
+import { LockedTopic } from "@/types/lockedTopic";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   Brain01Icon,
@@ -6,9 +7,8 @@ import {
   Chart01Icon,
 } from "@hugeicons/core-free-icons";
 
-export function TopicDetailsView({ topicId }: { topicId: string }) {
-  // In a real app, fetch data based on topicId
-  const decodedTopic = decodeURIComponent(topicId).replace(/-/g, " ");
+export function TopicDetailsView({ topic }: { topic: LockedTopic }) {
+  const decodedTopic = topic.displayName;
 
   return (
     <div className="flex h-full w-full flex-col overflow-y-auto overflow-x-hidden text-foreground no-scrollbar">
@@ -24,11 +24,8 @@ export function TopicDetailsView({ topicId }: { topicId: string }) {
             {decodedTopic}
           </h2>
           <p className="max-w-3xl leading-relaxed text-muted-foreground">
-            This topic has seen a 45% increase in mentions over the last 24
-            hours. The primary discourse centers around diplomatic negotiations
-            and economic sanctions. Sentiments are heavily polarized, with
-            significant media coverage originating from Western and Middle Eastern
-            outlets.
+            {topic.liveWebSummary ||
+              "Live intelligence gathering in progress. A synthesis of the current situational reality will appear here shortly after the next scan."}
           </p>
         </div>
       </div>

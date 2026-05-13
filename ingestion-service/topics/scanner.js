@@ -6,6 +6,10 @@ import { scanReddit } from "./sources/redditScanner.js";
 import { scanWebpage } from "./sources/webpageScraper.js";
 import { scanGithub } from "./sources/githubScanner.js";
 import { scanYoutube } from "./sources/youtubeScanner.js";
+import { scanBdGovJobs } from "./sources/bdGovJobsScraper.js";
+import { scanCompanyCareers } from "./sources/companyCareersScraper.js";
+import { scoreFindings } from "./scorer.js";
+import { processNotifications } from "./notifier.js";
 
 /**
  * Master orchestrator for Locked Topic scanning.
@@ -71,6 +75,22 @@ export async function runScannersForTopic(topic, options = {}) {
             options,
           );
           allFindings.push(...youtubeFindings);
+          break;
+        case "bd_gov_jobs":
+          const bdGovJobsFindings = await scanBdGovJobs(
+            topic,
+            sourceConfig,
+            options,
+          );
+          allFindings.push(...bdGovJobsFindings);
+          break;
+        case "company_careers":
+          const companyCareersFindings = await scanCompanyCareers(
+            topic,
+            sourceConfig,
+            options,
+          );
+          allFindings.push(...companyCareersFindings);
           break;
         case "internal_db":
           // Handled above to ensure it runs even if only searchBeyondSources is enabled
@@ -141,9 +161,12 @@ export async function runScannersForTopic(topic, options = {}) {
     return 0;
   }
 
-  // 4. Bulk Insert
+  // 4. Relevance Scoring
+  const scoredFindings = await scoreFindings(topic, newFindings);
+
+  // 5. Bulk Insert
   let insertedCount = 0;
-  for (const finding of newFindings) {
+  for (const finding of scoredFindings) {
     try {
       await prisma.topicFinding.create({
         data: {
@@ -154,7 +177,8 @@ export async function runScannersForTopic(topic, options = {}) {
           title: finding.title,
           summary: finding.summary,
           rawArticleId: finding.rawArticleId,
-          relevanceScore: null, // To be scored
+          relevanceScore: finding.relevanceScore,
+          metadata: finding.metadata || null,
         },
       });
       insertedCount++;
@@ -163,7 +187,7 @@ export async function runScannersForTopic(topic, options = {}) {
     }
   }
 
-  // 5. Update Topic Metadata
+  // 6. Update Topic Metadata
   const updateData = { lastScannedAt: new Date() };
   if (insertedCount > 0) {
     updateData.matchCount = { increment: insertedCount };
@@ -174,6 +198,11 @@ export async function runScannersForTopic(topic, options = {}) {
     where: { id: topic.id },
     data: updateData,
   });
+
+  // 7. Send Notifications
+  if (insertedCount > 0) {
+    await processNotifications(topic, scoredFindings);
+  }
 
   console.log(
     `✅ [orchestrator] Inserted ${insertedCount} new findings out of ${allFindings.length} total raw matches.`,

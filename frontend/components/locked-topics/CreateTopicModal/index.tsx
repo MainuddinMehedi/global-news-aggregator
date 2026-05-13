@@ -66,8 +66,8 @@ export default function CreateTopicModal({
         )}
       </DialogTrigger>
 
-      <DialogContent className="sm:max-w-[550px] p-0 overflow-hidden gap-0 border border-secondary shadow-2xl bg-background/95 backdrop-blur-xl">
-        <DialogHeader className="p-8 pb-0">
+      <DialogContent className="sm:max-w-[550px] p-0 overflow-hidden gap-0 border border-secondary shadow-2xl bg-background/95 backdrop-blur-xl flex flex-col max-h-[85vh]">
+        <DialogHeader className="p-8 pb-0 shrink-0">
           <div className="flex items-center justify-between">
             <div>
               <DialogTitle className="text-3xl font-black tracking-tight">
@@ -86,7 +86,7 @@ export default function CreateTopicModal({
           </div>
         </DialogHeader>
 
-        <div className="p-8">
+        <div className="p-8 overflow-y-auto flex-1 no-scrollbar">
           {step === 1 && (
             <Step1Intent data={data} setData={setData} onNext={nextStep} />
           )}
