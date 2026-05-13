@@ -13,6 +13,7 @@ import {
 } from "@hugeicons/core-free-icons";
 import AiButton from "@/components/articles/AiButton";
 import ArticleViewer from "@/components/articles/ArticleViewer";
+import { RelativeTime } from "@/components/ui/RelativeTime";
 
 export default async function ArticleDetailsPage({
   params,
@@ -70,7 +71,7 @@ export default async function ArticleDetailsPage({
               </div>
               <div className="flex items-center gap-1.5">
                 <HugeiconsIcon icon={Calendar03Icon} className="w-4 h-4" />
-                {formatRelativeTime(article.publishedAt)}
+                <RelativeTime date={article.publishedAt} />
               </div>
             </div>
           </div>

@@ -1,10 +1,10 @@
 import { LockedTopic, TopicFinding } from "@/types/lockedTopic";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
-import { formatRelativeTime } from "@/lib/utils";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { RssLockedIcon } from "@hugeicons/core-free-icons";
 import LockedTopicCardClient from "./LockedTopicCardClient";
+import { RelativeTime } from "@/components/ui/RelativeTime";
 
 interface LockedTopicCardProps {
   topic: LockedTopic;
@@ -38,9 +38,11 @@ export default function LockedTopicCard({
               </Link>
               <p className="text-[10px] text-muted-foreground font-mono mt-0.5 uppercase tracking-tight">
                 {topic.matchCount} Matches · Last:{" "}
-                {topic.lastMatchedAt
-                  ? formatRelativeTime(topic.lastMatchedAt)
-                  : "Never"}
+                {topic.lastMatchedAt ? (
+                  <RelativeTime date={topic.lastMatchedAt} />
+                ) : (
+                  "Never"
+                )}
               </p>
             </div>
           </div>

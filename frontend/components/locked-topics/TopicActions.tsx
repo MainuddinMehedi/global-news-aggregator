@@ -17,6 +17,7 @@ interface TopicActionsProps {
 export function TopicActions({ id, initialActive, unread }: TopicActionsProps) {
   const [active, setActive] = useState(initialActive);
   const [isLoading, setIsLoading] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(unread);
   const router = useRouter();
 
   const handleToggle = async (checked: boolean) => {
@@ -44,26 +45,52 @@ export function TopicActions({ id, initialActive, unread }: TopicActionsProps) {
     }
   };
 
+  const handleMarkAsRead = async () => {
+    if (unreadCount === 0) return;
+
+    const previousCount = unreadCount;
+    setUnreadCount(0); // Optimistic UI
+
+    try {
+      const res = await fetch(`/api/locked-topics/${id}/read`, {
+        method: "POST",
+      });
+
+      if (!res.ok) throw new Error("Failed to mark as read");
+
+      toast.success("Findings marked as read");
+      router.refresh();
+    } catch (err) {
+      console.error(err);
+      setUnreadCount(previousCount);
+      toast.error("Failed to mark findings as read");
+    }
+  };
+
   return (
     <div className="flex items-center gap-4">
+      {/*Notification icon*/}
       <Button
-        variant={unread > 0 && active ? "secondary" : "ghost"}
+        variant={unreadCount > 0 && active ? "secondary" : "ghost"}
         size="icon"
         className={`relative h-9 w-9 rounded-xl transition-colors ${
-          unread > 0 && active
+          unreadCount > 0 && active
             ? "bg-primary/10 text-primary hover:bg-primary/20"
             : "text-muted-foreground hover:bg-muted hover:text-foreground"
         }`}
-        title="Notifications"
+        title="Mark all as read"
+        onClick={handleMarkAsRead}
+        disabled={unreadCount === 0}
       >
         <HugeiconsIcon icon={Notification01Icon} className="h-4 w-4" />
-        {unread > 0 && active && (
+        {unreadCount > 0 && active && (
           <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[9px] font-bold text-destructive-foreground ring-2 ring-background">
-            {unread}
+            {unreadCount}
           </span>
         )}
       </Button>
 
+      {/*On/Off switch*/}
       <Switch
         checked={active}
         onCheckedChange={handleToggle}

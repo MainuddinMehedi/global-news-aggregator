@@ -1,4 +1,7 @@
-import { getLockedTopicById } from "@/queries/lockedTopics";
+import {
+  getLockedTopicById,
+  getUnreadFindingCount,
+} from "@/queries/lockedTopics";
 import { getFindings } from "@/queries/topicFindings";
 import { notFound } from "next/navigation";
 import TopicHeader from "@/components/locked-topics/TopicHeader";
@@ -24,6 +27,8 @@ export default async function TopicDetailPage({
   const topic = await getLockedTopicById(id);
   if (!topic) notFound();
 
+  const unreadCount = await getUnreadFindingCount(id);
+
   const { findings, nextCursor } = await getFindings({
     topicId: id,
     sourceType: source as FindingSource | "ALL",
@@ -33,7 +38,7 @@ export default async function TopicDetailPage({
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-12 space-y-12">
-      <TopicHeader topic={topic} />
+      <TopicHeader topic={topic} unreadCount={unreadCount} />
 
       <div className="space-y-8">
         <FindingsFilter currentSource={source} currentSort={sort} />

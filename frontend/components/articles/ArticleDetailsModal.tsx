@@ -15,6 +15,7 @@ import { formatRelativeTime, getBiasBadgeVariant } from "@/lib/utils";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { LinkSquare02Icon, Sparkles } from "@hugeicons/core-free-icons";
 import Link from "next/link";
+import { RelativeTime } from "@/components/ui/RelativeTime";
 
 export function ArticleDetailsModal({ article }: { article: Article | null }) {
   const router = useRouter();
@@ -48,7 +49,7 @@ export function ArticleDetailsModal({ article }: { article: Article | null }) {
             {/*<Badge variant="neutral">{article.source}</Badge>*/}
 
             <span className="text-xs text-muted-foreground font-medium">
-              {formatRelativeTime(article.publishedAt)}
+              <RelativeTime date={article.publishedAt} />
             </span>
             <SentimentBadge score={article.sentimentScore || 0} />
           </div>
