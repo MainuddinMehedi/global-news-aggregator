@@ -37,19 +37,27 @@ export function NotificationsPopover({
     if (!isOpen) return;
 
     let isMounted = true;
-    const fetchUnread = async () => {
+    const fetchAndMarkRead = async () => {
       if (unreadCount === 0) return;
       setIsLoading(true);
 
       try {
+        // 1. Fetch unread findings
         const res = await fetch(
           `/api/locked-topics/${topicId}/findings?unreadOnly=true&limit=10`,
         );
         if (!res.ok) throw new Error("Failed to fetch unread findings");
-
         const data = await res.json();
-
         if (isMounted) setFindings(data.findings);
+
+        // 2. Mark them as read
+        const readRes = await fetch(`/api/locked-topics/${topicId}/read`, {
+          method: "POST",
+        });
+        if (!readRes.ok) throw new Error("Failed to mark as read");
+
+        // Refresh router to clear badges globally
+        router.refresh();
       } catch (error) {
         console.error(error);
       } finally {
@@ -57,11 +65,11 @@ export function NotificationsPopover({
       }
     };
 
-    fetchUnread();
+    fetchAndMarkRead();
     return () => {
       isMounted = false;
     };
-  }, [isOpen, topicId, unreadCount]);
+  }, [isOpen, topicId, unreadCount, router]);
 
   const handleMarkAllAsRead = async () => {
     try {

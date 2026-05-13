@@ -215,7 +215,23 @@ export async function runScannersForTopic(topic, options = {}) {
     data: updateData,
   });
 
-  // 7. Send Notifications
+  // 7. Trigger Revalidation
+  if (insertedCount > 0) {
+    try {
+      const revalidateUrl = `${process.env.FRONTEND_URL}/api/revalidate?tag=topic-findings-${topic.id}&secret=${process.env.REVALIDATE_SECRET}`;
+      await fetch(revalidateUrl);
+      console.log(
+        `🔄 [orchestrator] Triggered revalidation for topic: ${topic.id}`,
+      );
+    } catch (e) {
+      console.error(
+        `⚠️ [orchestrator] Failed to trigger revalidation:`,
+        e.message,
+      );
+    }
+  }
+
+  // 8. Send Notifications
   if (insertedCount > 0) {
     await processNotifications(topic, scoredFindings);
   }
