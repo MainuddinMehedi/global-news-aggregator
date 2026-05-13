@@ -23,7 +23,10 @@ import MessageList from "./MessageList";
 import ChatInput from "./ChatInput";
 import VoiceSession from "./VoiceSession";
 import ContextPanel, { ContextPills } from "./ContextPanel";
-import type { Message, ContextItem } from "./types";
+import type { Message as CustomMessage, ContextItem } from "./types";
+import { useChat } from "@ai-sdk/react";
+import { DefaultChatTransport, type UIMessage } from "ai";
+import { toast } from "sonner";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -33,20 +36,44 @@ function uid() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2);
 }
 
-const INITIAL_MESSAGES: Message[] = [
-  {
-    id: "init-1",
-    role: "assistant",
-    content:
-      "Hello! I am your AI geopolitical analyst. How can I help you today?",
-    createdAt: new Date().toISOString(),
-  },
+const MODELS = [
+  { id: "groq/compound", label: "Compound (Web Search)", icon: "🔍" },
+  { id: "groq/compound-mini", label: "Compound Mini", icon: "⚡" },
+  { id: "llama-3.3-70b-versatile", label: "Llama 3.3 70B", icon: "⚖️" },
+  { id: "gemini-3.1-flash-lite", label: "Gemini 3.1 Flash Lite", icon: "📄" },
+  { id: "gemini-2.5-flash", label: "Gemini 2.5 Flash", icon: "⚡" },
 ];
 
 export default function ChatInterface() {
-  const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
   const [contexts, setContexts] = useState<ContextItem[]>([]);
   const [isVoiceMode, setIsVoiceMode] = useState(false);
+  const [selectedModel, setSelectedModel] = useState(MODELS[0].id);
+
+  const {
+    messages,
+    sendMessage,
+    status,
+    error,
+    regenerate,
+  } = useChat({
+    transport: new DefaultChatTransport({
+      api: "/api/chat",
+      body: { contexts, model: selectedModel },
+    }),
+    messages: [
+      {
+        id: "init-1",
+        role: "assistant",
+        parts: [{ type: "text", text: "Hello! I am your AI geopolitical analyst. How can I help you today?" }],
+      } as UIMessage,
+    ],
+    onError: (err) => {
+      console.error("Chat error:", err);
+      toast.error(err.message || "Failed to get response. Please try again.");
+    },
+  });
+
+  const isLoading = status === "submitted" || status === "streaming";
 
   // Auto-scroll to the anchor element whenever messages change
   useEffect(() => {
@@ -59,33 +86,11 @@ export default function ChatInterface() {
   // Message handling
   // ---------------------------------------------------------------------------
 
-  const appendMessage = useCallback(
-    (msg: Omit<Message, "id" | "createdAt">) => {
-      setMessages((prev) => [
-        ...prev,
-        { ...msg, id: uid(), createdAt: new Date().toISOString() },
-      ]);
-    },
-    [],
-  );
-
   const handleSend = useCallback(
     (text: string) => {
-      appendMessage({ role: "user", content: text });
-
-      // TODO: Replace with real streaming API call.
-      // The signature to implement:
-      //   const stream = await fetchChatStream({ messages, contexts, text })
-      //   for await (const chunk of stream) appendMessage(...)
-      setTimeout(() => {
-        appendMessage({
-          role: "assistant",
-          content:
-            "The AI backend is not yet connected — replace this stub in ChatInterface.handleSend.",
-        });
-      }, 800);
+      sendMessage({ role: "user", parts: [{ type: "text", text }] });
     },
-    [appendMessage],
+    [sendMessage],
   );
 
   // ---------------------------------------------------------------------------
@@ -104,9 +109,9 @@ export default function ChatInterface() {
 
   const handleVoiceAIResponse = useCallback(
     (text: string) => {
-      appendMessage({ role: "assistant", content: text });
+      sendMessage({ role: "assistant", parts: [{ type: "text", text }] });
     },
-    [appendMessage],
+    [sendMessage],
   );
 
   const handleVoiceClose = useCallback(() => {
@@ -158,17 +163,30 @@ export default function ChatInterface() {
             </div>
           </div>
 
-          <button
-            aria-label="More options"
-            className="p-2 hover:bg-accent rounded-lg text-muted-foreground transition-colors"
-          >
-            <HugeiconsIcon icon={MoreVerticalIcon} className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            <select
+              value={selectedModel}
+              onChange={(e) => setSelectedModel(e.target.value)}
+              className="text-xs border border-border rounded-md px-2 py-1 bg-background"
+            >
+              {MODELS.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.icon} {m.label}
+                </option>
+              ))}
+            </select>
+            <button
+              aria-label="More options"
+              className="p-2 hover:bg-accent rounded-lg text-muted-foreground transition-colors"
+            >
+              <HugeiconsIcon icon={MoreVerticalIcon} className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Message list + voice overlay share the same flex-1 area */}
         <div className="flex-1 overflow-hidden relative">
-          <MessageList messages={messages} />
+          <MessageList messages={messages} isLoading={isLoading} />
 
           {/* Voice session overlays the message area */}
           <VoiceSession
