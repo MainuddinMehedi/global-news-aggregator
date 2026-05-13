@@ -14,6 +14,7 @@ export async function GET(
     const sort = searchParams.get("sort") || "newest";
     const cursor = searchParams.get("cursor") || undefined;
     const limit = parseInt(searchParams.get("limit") || "20");
+    const unreadOnly = searchParams.get("unreadOnly") === "true";
 
     const result = await getFindings({
       topicId: id,
@@ -21,6 +22,7 @@ export async function GET(
       sort: sort as any,
       cursor,
       limit,
+      unreadOnly,
     });
 
     return NextResponse.json(result);

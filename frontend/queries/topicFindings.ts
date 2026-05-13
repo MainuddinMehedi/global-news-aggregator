@@ -8,6 +8,7 @@ interface getFindingsParams {
   sort?: "newest" | "oldest" | "relevance";
   cursor?: string;
   limit?: number;
+  unreadOnly?: boolean;
 }
 
 const DEFAULT_LIMIT = 20;
@@ -18,18 +19,24 @@ export async function getFindings({
   sort = "newest",
   cursor,
   limit = DEFAULT_LIMIT,
+  unreadOnly = false,
 }: getFindingsParams): Promise<{
   findings: TopicFinding[];
   nextCursor: string | null;
 }> {
   "use cache";
   cacheTag(`topic-findings-${topicId}`);
+  if (unreadOnly) cacheTag(`topic-unread-findings-${topicId}`);
   cacheLife("minutes");
 
   const where: any = { topicId };
 
   if (sourceType !== "ALL") {
     where.sourceType = sourceType;
+  }
+
+  if (unreadOnly) {
+    where.isRead = false;
   }
 
   let orderBy: any = { foundAt: "desc" };

@@ -1,12 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { Notification01Icon } from "@hugeicons/core-free-icons";
 import { Switch } from "@/components/ui/switch";
-import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { NotificationsPopover } from "./NotificationsPopover";
 
 interface TopicActionsProps {
   id: string;
@@ -17,7 +15,6 @@ interface TopicActionsProps {
 export function TopicActions({ id, initialActive, unread }: TopicActionsProps) {
   const [active, setActive] = useState(initialActive);
   const [isLoading, setIsLoading] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(unread);
   const router = useRouter();
 
   const handleToggle = async (checked: boolean) => {
@@ -45,50 +42,14 @@ export function TopicActions({ id, initialActive, unread }: TopicActionsProps) {
     }
   };
 
-  const handleMarkAsRead = async () => {
-    if (unreadCount === 0) return;
-
-    const previousCount = unreadCount;
-    setUnreadCount(0); // Optimistic UI
-
-    try {
-      const res = await fetch(`/api/locked-topics/${id}/read`, {
-        method: "POST",
-      });
-
-      if (!res.ok) throw new Error("Failed to mark as read");
-
-      toast.success("Findings marked as read");
-      router.refresh();
-    } catch (err) {
-      console.error(err);
-      setUnreadCount(previousCount);
-      toast.error("Failed to mark findings as read");
-    }
-  };
-
   return (
     <div className="flex items-center gap-4">
-      {/*Notification icon*/}
-      <Button
-        variant={unreadCount > 0 && active ? "secondary" : "ghost"}
-        size="icon"
-        className={`relative h-9 w-9 rounded-xl transition-colors ${
-          unreadCount > 0 && active
-            ? "bg-primary/10 text-primary hover:bg-primary/20"
-            : "text-muted-foreground hover:bg-muted hover:text-foreground"
-        }`}
-        title="Mark all as read"
-        onClick={handleMarkAsRead}
-        disabled={unreadCount === 0}
-      >
-        <HugeiconsIcon icon={Notification01Icon} className="h-4 w-4" />
-        {unreadCount > 0 && active && (
-          <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[9px] font-bold text-destructive-foreground ring-2 ring-background">
-            {unreadCount}
-          </span>
-        )}
-      </Button>
+      {/*Notification icon & dropdown*/}
+      <NotificationsPopover
+        topicId={id}
+        unreadCount={unread}
+        isActive={active}
+      />
 
       {/*On/Off switch*/}
       <Switch
