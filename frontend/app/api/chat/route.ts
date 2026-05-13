@@ -44,13 +44,26 @@ export async function POST(req: Request) {
     } else {
       // Route everything else to Groq, stripping 'groq/' prefix if provided
       const actualModel = model.replace("groq/", "");
-      aiModel = groq(actualModel);
+      aiModel = groq.chat(actualModel);
     }
+
+    const coreMessages = messages.map((msg: any) => {
+      const content = msg.parts 
+        ? msg.parts.filter((p: any) => p.type === "text").map((p: any) => p.text).join("\n")
+        : msg.content || "";
+        
+      return {
+        role: msg.role,
+        content
+      };
+    });
+
+    console.log("DEBUG: Sending to streamText", { model, coreMessages });
 
     const result = streamText({
       model: aiModel,
       system: systemPrompt,
-      messages,
+      messages: coreMessages,
     });
 
     return result.toTextStreamResponse();
