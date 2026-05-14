@@ -117,43 +117,51 @@ interface ContextPanelProps {
   items: ContextItem[];
   onRemove: (id: string) => void;
   onAdd: () => void;
+  isOpen: boolean;
+  onToggle: () => void;
 }
 
-export default function ContextPanel({ items, onRemove, onAdd }: ContextPanelProps) {
+export default function ContextPanel({ items, onRemove, onAdd, isOpen, onToggle }: ContextPanelProps) {
   return (
-    <aside className="w-80 border-l border-border hidden lg:flex flex-col bg-muted/10 shrink-0">
-      {/* Header */}
-      <div className="h-14 border-b border-border flex items-center px-4 justify-between shrink-0">
-        <h2 className="font-semibold text-sm flex items-center gap-2">
-          <HugeiconsIcon icon={Attachment01Icon} className="w-4 h-4 text-primary" />
-          Active Context
-        </h2>
-        <span className="text-xs bg-muted px-2 py-0.5 rounded-full font-medium tabular-nums">
-          {items.length}
-        </span>
-      </div>
+    <aside
+      className={cn(
+        "border-l border-border hidden lg:flex flex-col bg-muted/10 shrink-0 transition-all duration-300 ease-in-out",
+        isOpen ? "w-80" : "w-0 overflow-hidden",
+      )}
+    >
+      {isOpen && (
+        <>
+          <div className="h-14 border-b border-border flex items-center px-4 justify-between shrink-0">
+            <h2 className="font-semibold text-sm flex items-center gap-2">
+              <HugeiconsIcon icon={Attachment01Icon} className="w-4 h-4 text-primary" />
+              Active Context
+            </h2>
+            <span className="text-xs bg-muted px-2 py-0.5 rounded-full font-medium tabular-nums">
+              {items.length}
+            </span>
+          </div>
 
-      {/* List */}
-      <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3">
-        {items.length === 0 ? (
-          <EmptyState />
-        ) : (
-          items.map((item) => (
-            <ContextCard key={item.id} item={item} onRemove={onRemove} />
-          ))
-        )}
-      </div>
+          <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3">
+            {items.length === 0 ? (
+              <EmptyState />
+            ) : (
+              items.map((item) => (
+                <ContextCard key={item.id} item={item} onRemove={onRemove} />
+              ))
+            )}
+          </div>
 
-      {/* Footer add button */}
-      <div className="p-4 border-t border-border shrink-0">
-        <button
-          onClick={onAdd}
-          className="w-full flex items-center justify-center gap-2 py-2.5 border border-dashed border-border rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:border-foreground/30 hover:bg-accent transition-all"
-        >
-          <HugeiconsIcon icon={PlusSignIcon} className="w-4 h-4" />
-          Add Context
-        </button>
-      </div>
+          <div className="p-4 border-t border-border shrink-0">
+            <button
+              onClick={onAdd}
+              className="w-full flex items-center justify-center gap-2 py-2.5 border border-dashed border-border rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:border-foreground/30 hover:bg-accent transition-all"
+            >
+              <HugeiconsIcon icon={PlusSignIcon} className="w-4 h-4" />
+              Add Context
+            </button>
+          </div>
+        </>
+      )}
     </aside>
   );
 }

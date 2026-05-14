@@ -17,8 +17,13 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Robot01Icon, MoreVerticalIcon } from "@hugeicons/core-free-icons";
+import {
+  Robot01Icon,
+  MoreVerticalIcon,
+  ArrowRight01Icon,
+} from "@hugeicons/core-free-icons";
 
+import { cn } from "@/lib/utils";
 import MessageList from "./MessageList";
 import ChatInput from "./ChatInput";
 import VoiceSession from "./VoiceSession";
@@ -48,23 +53,23 @@ export default function ChatInterface() {
   const [contexts, setContexts] = useState<ContextItem[]>([]);
   const [isVoiceMode, setIsVoiceMode] = useState(false);
   const [selectedModel, setSelectedModel] = useState(MODELS[0].id);
+  const [contextPanelOpen, setContextPanelOpen] = useState(true);
 
-  const {
-    messages,
-    sendMessage,
-    status,
-    error,
-    regenerate,
-  } = useChat({
+  const { messages, sendMessage, status, error, regenerate } = useChat({
     transport: new DefaultChatTransport({
       api: "/api/chat",
-      body: { contexts, model: selectedModel },
+      body: { contexts },
     }),
     messages: [
       {
         id: "init-1",
         role: "assistant",
-        parts: [{ type: "text", text: "Hello! I am your AI geopolitical analyst. How can I help you today?" }],
+        parts: [
+          {
+            type: "text",
+            text: "Hello! I am your AI geopolitical analyst. How can I help you today?",
+          },
+        ],
       } as UIMessage,
     ],
     onError: (err) => {
@@ -88,9 +93,12 @@ export default function ChatInterface() {
 
   const handleSend = useCallback(
     (text: string) => {
-      sendMessage({ role: "user", parts: [{ type: "text", text }] });
+      sendMessage(
+        { role: "user", parts: [{ type: "text", text }] },
+        { body: { model: selectedModel } },
+      );
     },
-    [sendMessage],
+    [sendMessage, selectedModel],
   );
 
   // ---------------------------------------------------------------------------
@@ -143,9 +151,9 @@ export default function ChatInterface() {
   }, []);
 
   return (
-    <div className="flex h-full w-full overflow-hidden">
+    <div className="flex h-full w-full overflow-hidden min-h-0">
       {/* ── Main chat column ────────────────────────────────────────────── */}
-      <div className="flex-1 flex flex-col relative h-full min-w-0">
+      <div className="flex-1 flex flex-col relative h-full min-w-0 min-h-0">
         {/* Header */}
         <div className="h-14 border-b border-border flex items-center px-4 justify-between shrink-0 bg-background/80 backdrop-blur-md z-10">
           <div className="flex items-center gap-2">
@@ -213,11 +221,30 @@ export default function ChatInterface() {
         />
       </div>
 
+      {/* ── Context panel toggle ────────────────────────────────────────── */}
+      <button
+        onClick={() => setContextPanelOpen((v) => !v)}
+        className="hidden lg:flex items-center justify-center w-5 h-10 my-auto shrink-0 z-10 rounded-l-md border border-border/60 bg-background hover:bg-accent transition-colors shadow-sm"
+        aria-label={
+          contextPanelOpen ? "Close context panel" : "Open context panel"
+        }
+      >
+        <HugeiconsIcon
+          icon={ArrowRight01Icon}
+          className={cn(
+            "w-4 h-4 text-muted-foreground transition-transform duration-300",
+            contextPanelOpen && "rotate-180",
+          )}
+        />
+      </button>
+
       {/* ── Context panel (desktop) ──────────────────────────────────────── */}
       <ContextPanel
         items={contexts}
         onRemove={removeContext}
         onAdd={addContext}
+        isOpen={contextPanelOpen}
+        onToggle={() => setContextPanelOpen((v) => !v)}
       />
     </div>
   );
