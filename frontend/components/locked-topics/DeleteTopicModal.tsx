@@ -100,6 +100,7 @@ export function DeleteTopicModal({
   const handleArchive = async () => {
     if (!summary) return;
     setIsProcessing(true);
+
     toast.loading("Archiving tracker and saving summary...", {
       id: "archive-toast",
     });
@@ -148,6 +149,7 @@ export function DeleteTopicModal({
           <HugeiconsIcon icon={Delete01Icon} size={18} />
         </Button>
       </DialogTrigger>
+
       <DialogContent>
         {summary ? (
           <>
@@ -159,9 +161,11 @@ export function DeleteTopicModal({
                 tracker.
               </DialogDescription>
             </DialogHeader>
+
             <div className="max-h-[400px] overflow-y-auto p-4 bg-muted/50 rounded-xl text-sm prose dark:prose-invert">
               <pre className="whitespace-pre-wrap font-sans">{summary}</pre>
             </div>
+
             <DialogFooter className="flex-col sm:flex-row gap-2">
               <Button
                 variant="outline"

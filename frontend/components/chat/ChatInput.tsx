@@ -57,8 +57,8 @@ export default function ChatInput({
   };
 
   return (
-    <div className="p-4 bg-background/80 backdrop-blur-md border-t border-border shrink-0 z-10">
-      <div className="max-w-4xl mx-auto flex flex-col gap-2">
+    <div className="px-4 shrink-0 z-10">
+      <div className="max-w-3xl mx-auto flex flex-col gap-2">
         {/* Mobile context pills slot */}
         {contextPillsSlot}
 
@@ -66,7 +66,7 @@ export default function ChatInput({
         <div
           className={cn(
             "flex items-end gap-2 bg-muted/30 border border-border rounded-2xl p-2 transition-all",
-            "focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/20"
+            "focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/20",
           )}
         >
           {/* Attachment / add context */}
@@ -103,7 +103,7 @@ export default function ChatInput({
                 "p-2.5 rounded-xl transition-colors shrink-0",
                 isVoiceMode
                   ? "bg-primary text-primary-foreground shadow-md"
-                  : "hover:bg-accent text-muted-foreground hover:text-foreground"
+                  : "hover:bg-accent text-muted-foreground hover:text-foreground",
               )}
             >
               <HugeiconsIcon icon={HeadphonesIcon} className="w-5 h-5" />

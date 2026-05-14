@@ -20,9 +20,12 @@ export async function POST(
     console.log(`[Scan Route] Spawning background worker for topic ${id}...`);
     console.log(`[Scan Route] Worker Path: ${workerPath}`);
 
-    const child = spawn("node", [workerPath, `--topic-id=${id}`], {
+    const repoRoot = path.join(process.cwd(), "..");
+
+    const child = spawn(process.execPath, [workerPath, `--topic-id=${id}`], {
       detached: true,
       stdio: "ignore",
+      cwd: repoRoot,
     });
 
     // Unref allows the parent (Next.js server) to exit independently of the child

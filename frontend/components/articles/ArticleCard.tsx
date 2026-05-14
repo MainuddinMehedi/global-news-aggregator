@@ -7,6 +7,7 @@ import { formatRelativeTime, getBiasBadgeVariant } from "@/lib/utils";
 import AiButton from "./AiButton";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Globe } from "@hugeicons/core-free-icons";
+import { RelativeTime } from "@/components/ui/RelativeTime";
 
 export default function ArticleCard({ article }: { article: Article }) {
   return (
@@ -45,7 +46,7 @@ export default function ArticleCard({ article }: { article: Article }) {
           </span>
           <span className="text-border">·</span>
           <span className="text-muted-foreground font-mono text-[10px]">
-            {formatRelativeTime(article.publishedAt)}
+            <RelativeTime date={article.publishedAt} />
           </span>
           <span className="text-border">·</span>
           <SentimentBadge score={article.sentimentScore || 0} />

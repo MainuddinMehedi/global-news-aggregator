@@ -1,41 +1,25 @@
-"use client";
-
 import { LockedTopic } from "@/types/lockedTopic";
 import { Badge } from "@/components/ui/badge";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
-  RssLockedIcon,
   Settings01Icon,
   Search01Icon,
   SparklesIcon,
 } from "@hugeicons/core-free-icons";
-import { formatRelativeTime } from "@/lib/utils";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { TopicActions } from "./TopicActions";
 import { DeleteTopicModal } from "./DeleteTopicModal";
-import { toast } from "sonner";
-import { useState } from "react";
+import { RelativeTime } from "@/components/ui/RelativeTime";
+import { ScanNowButton } from "./ScanNowButton";
 
-export default function TopicHeader({ topic }: { topic: LockedTopic }) {
-  const [isScanning, setIsScanning] = useState(false);
-
-  const handleScanNow = async () => {
-    setIsScanning(true);
-    toast.info("Scan initiated. This may take a few moments...");
-    try {
-      const res = await fetch(`/api/locked-topics/${topic.id}/scan`, {
-        method: "POST",
-      });
-      if (!res.ok) throw new Error("Scan failed to start");
-      toast.success("Scan completed in the background.");
-    } catch (err) {
-      toast.error("Failed to initiate scan.");
-    } finally {
-      setIsScanning(false);
-    }
-  };
-
+export default function TopicHeader({
+  topic,
+  unreadCount = 0,
+}: {
+  topic: LockedTopic;
+  unreadCount?: number;
+}) {
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
@@ -53,6 +37,7 @@ export default function TopicHeader({ topic }: { topic: LockedTopic }) {
                 {topic.displayName}
               </span>
             </div>
+
             {topic.isActive && (
               <div className="flex items-center gap-2">
                 <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse shadow-[0_0_8px_rgba(var(--primary),0.5)]" />
@@ -62,8 +47,10 @@ export default function TopicHeader({ topic }: { topic: LockedTopic }) {
               </div>
             )}
           </div>
+
           <h1 className="text-4xl md:text-5xl font-black tracking-tight flex items-center gap-3">
             {topic.displayName}
+
             {!topic.isActive && (
               <Badge
                 variant="secondary"
@@ -76,13 +63,17 @@ export default function TopicHeader({ topic }: { topic: LockedTopic }) {
         </div>
 
         <div className="flex items-center gap-4">
+          {/*notification icon and on/off switch*/}
           <TopicActions
             id={topic.id}
             initialActive={topic.isActive}
-            unread={0}
+            unread={unreadCount}
           />
+
           <div className="h-6 w-px bg-border hidden md:block" />
           <DeleteTopicModal topicId={topic.id} topicName={topic.displayName} />
+
+          {/*TODO: Implement edit tracker.*/}
           <Button
             variant="outline"
             size="sm"
@@ -91,18 +82,12 @@ export default function TopicHeader({ topic }: { topic: LockedTopic }) {
             <HugeiconsIcon icon={Settings01Icon} size={16} />
             <span className="hidden sm:inline">Edit Tracker</span>
           </Button>
-          <Button
-            size="sm"
-            className="gap-2 rounded-xl shadow-lg shadow-primary/20 h-10 px-5 font-bold"
-            onClick={handleScanNow}
-            disabled={isScanning}
-          >
-            <HugeiconsIcon icon={RssLockedIcon} size={16} />
-            {isScanning ? "Scanning..." : "Scan Now"}
-          </Button>
+
+          <ScanNowButton topicId={topic.id} />
         </div>
       </div>
 
+      {/*AI intelligence report*/}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="md:col-span-2 p-6 rounded-2xl bg-secondary/10 border border-secondary/50 space-y-4 backdrop-blur-sm">
           <div className="flex items-center gap-2 text-primary">
@@ -111,9 +96,11 @@ export default function TopicHeader({ topic }: { topic: LockedTopic }) {
               AI Intelligence Report
             </span>
           </div>
+
           <p className="text-lg leading-relaxed text-foreground/90 font-medium italic">
-            "{topic.aiQuerySummary}"
+            `&quot;`{topic.aiQuerySummary}`&quot;`
           </p>
+
           <div className="pt-2 flex flex-wrap gap-2">
             {topic.sources.map((s, idx) => (
               <Badge
@@ -127,6 +114,7 @@ export default function TopicHeader({ topic }: { topic: LockedTopic }) {
           </div>
         </div>
 
+        {/*Search strategy And Last scanned at, match count*/}
         <div className="p-6 rounded-2xl bg-primary/5 border border-primary/10 flex flex-col justify-between space-y-4">
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-muted-foreground">
@@ -135,17 +123,20 @@ export default function TopicHeader({ topic }: { topic: LockedTopic }) {
                 Search Strategy
               </span>
             </div>
-            <div className="font-mono text-[11px] bg-background/40 p-3 rounded-xl border border-primary/10 overflow-x-auto whitespace-nowrap leading-none">
+            <div className="font-mono text-[11px] bg-background/40 p-3 rounded-xl border border-primary/10 text-wrap">
               {topic.aiRefinedQuery}
             </div>
           </div>
+
           <div className="flex items-center justify-between text-[9px] font-black uppercase tracking-[0.15em] text-muted-foreground/60">
             <span>Matches: {topic.matchCount}</span>
             <span>
               Last Scan:{" "}
-              {topic.lastScannedAt
-                ? formatRelativeTime(topic.lastScannedAt.toString())
-                : "Never"}
+              {topic.lastScannedAt ? (
+                <RelativeTime date={topic.lastScannedAt.toString()} />
+              ) : (
+                "Never"
+              )}
             </span>
           </div>
         </div>

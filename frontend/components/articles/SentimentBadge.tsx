@@ -33,7 +33,7 @@ export function SentimentBadge({
         className={cn("w-1.5 h-1.5 rounded-full", {
           "bg-emerald-400": label === "Positive",
           "bg-rose-400": label === "Negative",
-          "bg-zinc-500": label === "Neutral" || label === "N/A",
+          "bg-zinc-500": label === "Neutral",
         })}
       />
       {showScore && score != null && <span>{score.toFixed(2)}</span>}

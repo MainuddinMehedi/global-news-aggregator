@@ -7,7 +7,7 @@ export const metadata = {
 
 export default function ChatPage() {
   return (
-    <div className="h-full flex flex-col bg-background/95">
+    <div className="h-full flex flex-col bg-background/95 overflow-hidden">
       <ChatInterface />
     </div>
   );

@@ -7,16 +7,19 @@ import CreateTopicModal from "@/components/locked-topics/CreateTopicModal";
 
 export default async function LockedTopicsPage() {
   const topics = await getLockedTopics();
-  
+
   // Fetch latest 3 findings for each topic to show on the card
   // This is efficient because getInitialFindings is cached
   const latestFindingsMap: Record<string, any[]> = {};
-  
+
   await Promise.all(
     topics.map(async (topic) => {
       const { findings } = await getInitialFindings(topic.id);
+      console.log(
+        `[LockedTopicsPage] Topic: ${topic.displayName}, Findings: ${findings.length}`,
+      );
       latestFindingsMap[topic.id] = findings.slice(0, 3);
-    })
+    }),
   );
 
   return (
@@ -32,7 +35,9 @@ export default async function LockedTopicsPage() {
               Locked <span className="text-primary">Topics</span>
             </h1>
             <p className="text-muted-foreground max-w-2xl text-lg leading-relaxed">
-              Pin specific themes to ensure they are persistently tracked. The system acts as your personal researcher, monitoring all sources every 2 hours.
+              Pin specific themes to ensure they are persistently tracked. The
+              system acts as your personal researcher, monitoring all sources
+              every 2 hours.
             </p>
           </div>
         </div>
@@ -40,10 +45,7 @@ export default async function LockedTopicsPage() {
         <CreateTopicModal />
       </div>
 
-      <LockedTopicGrid 
-        topics={topics} 
-        latestFindingsMap={latestFindingsMap} 
-      />
+      <LockedTopicGrid topics={topics} latestFindingsMap={latestFindingsMap} />
     </div>
   );
 }

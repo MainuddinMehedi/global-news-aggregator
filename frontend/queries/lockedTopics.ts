@@ -73,3 +73,22 @@ export async function getLockedTopicCount(): Promise<number> {
     return 0;
   }
 }
+
+export async function getUnreadFindingCount(topicId: string): Promise<number> {
+  "use cache";
+  cacheTag(`locked-topic-${topicId}-findings`);
+  cacheLife("minutes");
+
+  try {
+    const count = await prisma.topicFinding.count({
+      where: {
+        topicId,
+        isRead: false,
+      },
+    });
+    return count;
+  } catch (error) {
+    console.error("getUnreadFindingCount error:", error);
+    return 0;
+  }
+}

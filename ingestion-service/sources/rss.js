@@ -41,8 +41,9 @@ export default async function* fetchRSSStream(
     const xml = await response.text();
     const feed = await parser.parseString(xml);
 
+    const countryText = sourceCountry ? ` (${sourceCountry})` : "";
     console.log(
-      `Fetched ${feed.items.length} items from ${sourceName} (${sourceCountry})`,
+      `Fetched ${feed.items.length} items from ${sourceName}${countryText}`,
     );
 
     for (const item of feed.items) {
