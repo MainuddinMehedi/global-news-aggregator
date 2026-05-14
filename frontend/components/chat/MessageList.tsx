@@ -1,8 +1,10 @@
-// Server component — no state, no hooks.
-import { HugeiconsIcon } from "@hugeicons/react";
-import { Robot01Icon, UserIcon } from "@hugeicons/core-free-icons";
+"use client";
+
 import { cn } from "@/lib/utils";
+import { Robot01Icon, UserIcon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import type { UIMessage } from "ai";
+import { memo, useEffect, useRef } from "react";
 
 interface MessageListProps {
   messages: UIMessage[];
@@ -22,7 +24,18 @@ const MODEL_LABELS: Record<string, string> = {
   "gemini-2.5-flash": "Gemini 2.5 Flash",
 };
 
-function MessageBubble({ message }: { message: UIMessage }) {
+// Memoized markdown renderer to prevent re-parsing on every character
+const MemoizedMarkdown = memo(
+  ({ text }: { text: string }) => (
+    <div className="prose prose-sm dark:prose-invert max-w-none wrap-break-word">
+      <ReactMarkdown remarkPlugins={[remarkGfm]}>{text}</ReactMarkdown>
+    </div>
+  ),
+  (prevProps, nextProps) => prevProps.text === nextProps.text,
+);
+MemoizedMarkdown.displayName = "MemoizedMarkdown";
+
+function MessageBubble({ message, isLastAndLoading }: { message: UIMessage; isLastAndLoading?: boolean }) {
   const isUser = message.role === "user";
   const model = !isUser
     ? (message.metadata as { model?: string })?.model
@@ -66,38 +79,42 @@ function MessageBubble({ message }: { message: UIMessage }) {
               : "bg-muted/50 border border-border/50 text-foreground rounded-tl-sm w-full overflow-hidden",
           )}
         >
-          {message.parts?.map((part, index) => {
-            if (part.type === "text") {
-              return isUser ? (
-                <div key={index}>{part.text}</div>
-              ) : (
-                <div
-                  key={index}
-                  className="prose prose-sm dark:prose-invert max-w-none break-words"
-                >
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                    {part.text}
-                  </ReactMarkdown>
-                </div>
-              );
-            }
-            if (part.type === "reasoning") {
-              return (
-                <div
-                  key={index}
-                  className="italic text-muted-foreground mb-2 p-2 bg-muted/20 rounded-md border border-border/30"
-                >
-                  <span className="font-semibold text-xs uppercase mb-1 block">
-                    Reasoning
-                  </span>
-                  <div className="prose prose-sm dark:prose-invert max-w-none break-words whitespace-pre-wrap">
-                    {part.text}
-                  </div>
-                </div>
-              );
-            }
-            return null;
-          })}
+          {!isUser && isLastAndLoading && !message.parts?.some(p => p.type === "text" && p.text) ? (
+            // Show loading dots if streaming but no content yet
+            <div className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/60 animate-bounce" style={{ animationDelay: "0ms" }} />
+              <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/60 animate-bounce" style={{ animationDelay: "150ms" }} />
+              <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/60 animate-bounce" style={{ animationDelay: "300ms" }} />
+            </div>
+          ) : (
+            <>
+              {message.parts?.map((part, index) => {
+                if (part.type === "text") {
+                  return isUser ? (
+                    <div key={index}>{part.text}</div>
+                  ) : (
+                    <MemoizedMarkdown key={index} text={part.text} />
+                  );
+                }
+                if (part.type === "reasoning") {
+                  return (
+                    <div
+                      key={index}
+                      className="italic text-muted-foreground mb-2 p-2 bg-muted/20 rounded-md border border-border/30"
+                    >
+                      <span className="font-semibold text-xs uppercase mb-1 block">
+                        Reasoning
+                      </span>
+                      <div className="prose prose-sm dark:prose-invert max-w-none wrap-break-word whitespace-pre-wrap">
+                        {part.text}
+                      </div>
+                    </div>
+                  );
+                }
+                return null;
+              })}
+            </>
+          )}
         </div>
       </div>
 
@@ -110,50 +127,43 @@ function MessageBubble({ message }: { message: UIMessage }) {
   );
 }
 
-/**
- * Pure display list — renders messages.
- * The scroll anchor `div#chat-scroll-anchor` is rendered here so the parent
- * client component can call `document.getElementById("chat-scroll-anchor")
- * ?.scrollIntoView()` without needing a ref on this server component.
- */
+// Memoize MessageBubble to prevent re-renders when other messages change
+const MemoMessageBubble = memo(MessageBubble, (prevProps, nextProps) => {
+  // Only re-render if the message content or loading state actually changed
+  return (
+    prevProps.message.id === nextProps.message.id &&
+    prevProps.message.parts === nextProps.message.parts &&
+    prevProps.isLastAndLoading === nextProps.isLastAndLoading
+  );
+});
+
 export default function MessageList({ messages, isLoading }: MessageListProps) {
-  const showLoading =
-    isLoading && messages[messages.length - 1]?.role === "user";
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // Use requestAnimationFrame to batch scroll updates and prevent jank
+    const timer = requestAnimationFrame(() => {
+      if (scrollRef.current) {
+        const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
+        // Auto-scroll only if user is near the bottom (within 100px)
+        if (scrollTop + clientHeight >= scrollHeight - 100) {
+          scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+        }
+      }
+    });
+    return () => cancelAnimationFrame(timer);
+  }, [messages]);
 
   return (
-    <div className="h-full overflow-y-auto p-4 flex flex-col gap-5 scrollbar-sleek">
-      {messages.map((msg) => (
-        <MessageBubble key={msg.id} message={msg} />
-      ))}
+    <div ref={scrollRef} className="h-full overflow-y-auto p-4 flex flex-col gap-5 scrollbar-sleek">
+      {messages.map((msg, idx) => {
+        const isLastMessage = idx === messages.length - 1;
+        const isLastAndLoading = isLastMessage && isLoading && msg.role === "assistant";
+        return (
+          <MemoMessageBubble key={msg.id} message={msg} isLastAndLoading={isLastAndLoading} />
+        );
+      })}
 
-      {/* Loading Indicator */}
-      {showLoading && (
-        <div className="flex gap-3 max-w-[70%] self-start animate-in fade-in zoom-in duration-300">
-          <div className="w-8 h-8 rounded-full flex shrink-0 items-center justify-center mt-1 shadow-sm bg-primary/10 border border-primary/20">
-            <HugeiconsIcon
-              icon={Robot01Icon}
-              className="w-5 h-5 text-primary"
-            />
-          </div>
-          <div className="rounded-2xl px-4 py-3 shadow-sm text-sm bg-muted/50 border border-border/50 text-foreground rounded-tl-sm flex items-center gap-1.5 h-[44px]">
-            <span
-              className="w-1.5 h-1.5 rounded-full bg-muted-foreground/60 animate-bounce"
-              style={{ animationDelay: "0ms" }}
-            />
-            <span
-              className="w-1.5 h-1.5 rounded-full bg-muted-foreground/60 animate-bounce"
-              style={{ animationDelay: "150ms" }}
-            />
-            <span
-              className="w-1.5 h-1.5 rounded-full bg-muted-foreground/60 animate-bounce"
-              style={{ animationDelay: "300ms" }}
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Scroll anchor — targeted by the parent via getElementById */}
-      <div id="chat-scroll-anchor" aria-hidden="true" />
     </div>
   );
 }

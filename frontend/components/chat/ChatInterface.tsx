@@ -15,23 +15,23 @@
  *   - Contain any context UI (→ ContextPanel / ContextPills)
  */
 
-import { useState, useEffect, useCallback } from "react";
-import { HugeiconsIcon } from "@hugeicons/react";
 import {
-  Robot01Icon,
-  MoreVerticalIcon,
   ArrowRight01Icon,
+  MoreVerticalIcon,
+  Robot01Icon,
 } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { useCallback, useState } from "react";
 
 import { cn } from "@/lib/utils";
-import MessageList from "./MessageList";
-import ChatInput from "./ChatInput";
-import VoiceSession from "./VoiceSession";
-import ContextPanel, { ContextPills } from "./ContextPanel";
-import type { Message as CustomMessage, ContextItem } from "./types";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
 import { toast } from "sonner";
+import ChatInput from "./ChatInput";
+import ContextPanel, { ContextPills } from "./ContextPanel";
+import MessageList from "./MessageList";
+import type { ContextItem } from "./types";
+import VoiceSession from "./VoiceSession";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -80,12 +80,7 @@ export default function ChatInterface() {
 
   const isLoading = status === "submitted" || status === "streaming";
 
-  // Auto-scroll to the anchor element whenever messages change
-  useEffect(() => {
-    document
-      .getElementById("chat-scroll-anchor")
-      ?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  // Auto-scroll is now handled in MessageList
 
   // ---------------------------------------------------------------------------
   // Message handling
