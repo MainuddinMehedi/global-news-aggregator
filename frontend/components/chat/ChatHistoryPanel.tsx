@@ -84,17 +84,10 @@ export default function ChatHistoryPanel({
 
   return (
     <div className={cn("flex flex-col h-full bg-background", className)}>
-      {/* Header with New Chat */}
+      {/* Header */}
       <div className="p-4 border-b border-border space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">History</h2>
-          <button
-            onClick={onNewChat}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors"
-          >
-            <HugeiconsIcon icon={PlusSignIcon} className="h-3.5 w-3.5" />
-            New Chat
-          </button>
         </div>
 
         {/* Tabs */}

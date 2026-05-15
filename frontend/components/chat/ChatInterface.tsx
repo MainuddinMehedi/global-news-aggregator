@@ -20,6 +20,7 @@ import {
   Time02Icon,
   MoreVerticalIcon,
   Robot01Icon,
+  Edit02Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useCallback, useEffect, useState } from "react";
@@ -453,14 +454,23 @@ export default function ChatInterface() {
           </div>
 
           <div className="flex items-center gap-2">
+            {activeSessionId && (
+              <button
+                onClick={handleNewChat}
+                aria-label="New chat"
+                className="p-2 hover:bg-accent rounded-lg text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <HugeiconsIcon icon={Edit02Icon} className="w-5 h-5" />
+              </button>
+            )}
+
             <Sheet open={historyOpen} onOpenChange={setHistoryOpen}>
               <SheetTrigger asChild>
                 <button
                   aria-label="Chat history"
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground transition-colors text-sm font-medium"
+                  className="p-2 hover:bg-accent rounded-lg text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  <HugeiconsIcon icon={Time02Icon} className="w-4.5 h-4.5" />
-                  <span>History</span>
+                  <HugeiconsIcon icon={Time02Icon} className="w-5 h-5" />
                 </button>
               </SheetTrigger>
               <SheetContent
