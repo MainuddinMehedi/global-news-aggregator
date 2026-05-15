@@ -9,6 +9,15 @@ import {
 } from "@hugeicons/core-free-icons";
 import { cn } from "@/lib/utils";
 import { RelativeTime } from "@/components/ui/RelativeTime";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useState, useMemo } from "react";
 import { format, isToday, isYesterday, parseISO } from "date-fns";
 
@@ -45,6 +54,7 @@ export default function ChatHistoryPanel({
 }: ChatHistoryPanelProps) {
   const [activeTab, setActiveTab] = useState<Tab>("chats");
   const [searchQuery, setSearchQuery] = useState("");
+  const [sessionToDelete, setSessionToDelete] = useState<string | null>(null);
 
   const filteredSessions = useMemo(() => {
     return sessions.filter((s) =>
@@ -182,7 +192,7 @@ export default function ChatHistoryPanel({
                           />
                         </button>
                         <button
-                          onClick={() => onDeleteSession(session.id)}
+                          onClick={() => setSessionToDelete(session.id)}
                           aria-label={`Delete ${session.title}`}
                           className="p-1.5 rounded-md text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
                         >
@@ -200,6 +210,38 @@ export default function ChatHistoryPanel({
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={!!sessionToDelete}
+        onOpenChange={(open) => !open && setSessionToDelete(null)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Chat Session</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this chat? This action cannot be
+              undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setSessionToDelete(null)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (sessionToDelete) {
+                  onDeleteSession(sessionToDelete);
+                  setSessionToDelete(null);
+                }
+              }}
+            >
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
