@@ -117,13 +117,20 @@ function MessageBubble({
         <div
           className={cn(
             "w-8 h-8 rounded-full flex shrink-0 items-center justify-center mt-1",
-            isUser ? "bg-muted shadow-sm" : "hidden",
+            isUser
+              ? "bg-muted shadow-sm"
+              : "bg-primary/10 border border-primary/20",
           )}
         >
-          {isUser && (
+          {isUser ? (
             <HugeiconsIcon
               icon={UserIcon}
               className="w-5 h-5 text-muted-foreground"
+            />
+          ) : (
+            <HugeiconsIcon
+              icon={Robot01Icon}
+              className="w-5 h-5 text-primary"
             />
           )}
         </div>

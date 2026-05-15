@@ -432,79 +432,83 @@ export default function ChatInterface() {
       {/* ── Main chat column ────────────────────────────────────────────── */}
       <div className="flex-1 flex flex-col relative h-full min-w-0 min-h-0">
         {/* Header */}
-        <div className="h-14 border-b border-border flex items-center px-4 justify-between shrink-0 bg-background/80 backdrop-blur-md z-10">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
-              <HugeiconsIcon
-                icon={Robot01Icon}
-                className="w-5 h-5 text-primary"
-              />
+        <div className="h-14 border-b border-border flex items-center shrink-0 bg-background/80 backdrop-blur-md z-10">
+          <div className="w-full max-w-3xl mx-auto flex items-center justify-between px-4">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                <HugeiconsIcon
+                  icon={Robot01Icon}
+                  className="w-5 h-5 text-primary"
+                />
+              </div>
+              <div>
+                <h1 className="font-semibold text-sm leading-tight">
+                  AI Analyst
+                </h1>
+                <p className="text-xs text-muted-foreground">Always active</p>
+              </div>
             </div>
-            <div>
-              <h1 className="font-semibold text-sm leading-tight">
-                AI Analyst
-              </h1>
-              <p className="text-xs text-muted-foreground">Always active</p>
-            </div>
-          </div>
 
-          <div className="flex items-center gap-2">
-            {activeSessionId && (
+            <div className="flex items-center gap-2">
+              {activeSessionId && (
+                <button
+                  onClick={handleNewChat}
+                  aria-label="New chat"
+                  className="p-2 hover:bg-accent rounded-lg text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <HugeiconsIcon icon={PencilEdit02Icon} className="w-5 h-5" />
+                </button>
+              )}
+
+              <Sheet open={historyOpen} onOpenChange={setHistoryOpen}>
+                <SheetTrigger asChild>
+                  <button
+                    aria-label="Chat history"
+                    className={cn(
+                      "hover:bg-accent rounded-lg text-muted-foreground hover:text-foreground transition-colors",
+                      activeSessionId
+                        ? "p-2"
+                        : "flex items-center gap-2 px-3 py-1.5 text-sm font-medium",
+                    )}
+                  >
+                    <HugeiconsIcon
+                      icon={Time02Icon}
+                      className={cn(
+                        activeSessionId ? "w-5 h-5" : "w-4.5 h-4.5",
+                      )}
+                    />
+                    {!activeSessionId && <span>History</span>}
+                  </button>
+                </SheetTrigger>
+                <SheetContent
+                  side="right"
+                  className="p-0 w-full sm:max-w-md"
+                  showCloseButton={false}
+                >
+                  <div className="sr-only">
+                    <SheetTitle>Chat History</SheetTitle>
+                    <SheetDescription>
+                      Review your past AI chat sessions.
+                    </SheetDescription>
+                  </div>
+                  <ChatHistoryPanel
+                    sessions={sessions}
+                    activeSessionId={activeSessionId}
+                    loading={sessionsLoading}
+                    onNewChat={handleNewChat}
+                    onSelectSession={selectSession}
+                    onDeleteSession={handleDeleteSession}
+                  />
+                </SheetContent>
+              </Sheet>
+
               <button
-                onClick={handleNewChat}
-                aria-label="New chat"
+                aria-label="More options"
                 className="p-2 hover:bg-accent rounded-lg text-muted-foreground hover:text-foreground transition-colors"
               >
-                <HugeiconsIcon icon={PencilEdit02Icon} className="w-5 h-5" />
+                <HugeiconsIcon icon={MoreVerticalIcon} className="w-5 h-5" />
               </button>
-            )}
-
-            <Sheet open={historyOpen} onOpenChange={setHistoryOpen}>
-              <SheetTrigger asChild>
-                <button
-                  aria-label="Chat history"
-                  className={cn(
-                    "hover:bg-accent rounded-lg text-muted-foreground hover:text-foreground transition-colors",
-                    activeSessionId
-                      ? "p-2"
-                      : "flex items-center gap-2 px-3 py-1.5 text-sm font-medium",
-                  )}
-                >
-                  <HugeiconsIcon
-                    icon={Time02Icon}
-                    className={cn(activeSessionId ? "w-5 h-5" : "w-4.5 h-4.5")}
-                  />
-                  {!activeSessionId && <span>History</span>}
-                </button>
-              </SheetTrigger>
-              <SheetContent
-                side="right"
-                className="p-0 w-full sm:max-w-md"
-                showCloseButton={false}
-              >
-                <div className="sr-only">
-                  <SheetTitle>Chat History</SheetTitle>
-                  <SheetDescription>
-                    Review your past AI chat sessions.
-                  </SheetDescription>
-                </div>
-                <ChatHistoryPanel
-                  sessions={sessions}
-                  activeSessionId={activeSessionId}
-                  loading={sessionsLoading}
-                  onNewChat={handleNewChat}
-                  onSelectSession={selectSession}
-                  onDeleteSession={handleDeleteSession}
-                />
-              </SheetContent>
-            </Sheet>
-
-            <button
-              aria-label="More options"
-              className="p-2 hover:bg-accent rounded-lg text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <HugeiconsIcon icon={MoreVerticalIcon} className="w-5 h-5" />
-            </button>
+            </div>
           </div>
         </div>
 
