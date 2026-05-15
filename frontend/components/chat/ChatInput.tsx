@@ -8,6 +8,7 @@ import {
   CheckmarkCircle02Icon,
   Mic01Icon,
   SentIcon,
+  TextFontIcon,
 } from "@hugeicons/core-free-icons";
 import { cn } from "@/lib/utils";
 import {
@@ -30,6 +31,8 @@ interface ChatInputProps {
   models: ChatModelOption[];
   selectedModel: string;
   onModelChange: (model: string) => void;
+  responseMode: "concise" | "descriptive";
+  onResponseModeChange: (mode: "concise" | "descriptive") => void;
   adaptiveThinking: boolean;
   onAdaptiveThinkingChange: (enabled: boolean) => void;
   /** Render context pills above the input (passed as a slot) */
@@ -45,6 +48,8 @@ export default function ChatInput({
   models,
   selectedModel,
   onModelChange,
+  responseMode,
+  onResponseModeChange,
   adaptiveThinking,
   onAdaptiveThinkingChange,
   contextPillsSlot,
@@ -52,8 +57,10 @@ export default function ChatInput({
 }: ChatInputProps) {
   const [value, setValue] = useState("");
   const [modelPickerOpen, setModelPickerOpen] = useState(false);
+  const [modePickerOpen, setModePickerOpen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const activeModel = models.find((model) => model.id === selectedModel) ?? models[0];
+  const activeModel =
+    models.find((model) => model.id === selectedModel) ?? models[0];
   const hasText = value.trim().length > 0;
 
   // Auto-resize textarea as the user types
@@ -116,6 +123,87 @@ export default function ChatInput({
 
             {/* Actions */}
             <div className="flex items-center gap-1.5 shrink-0">
+              <Popover open={modePickerOpen} onOpenChange={setModePickerOpen}>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    aria-label="Choose response mode"
+                    className="h-9 max-w-[140px] inline-flex items-center gap-1.5 rounded-xl bg-background text-foreground px-3 text-xs font-medium hover:bg-accent transition-colors border border-border/70 capitalize"
+                  >
+                    <HugeiconsIcon
+                      icon={TextFontIcon}
+                      className="w-3.5 h-3.5 text-muted-foreground"
+                    />
+                    <span className="truncate">{responseMode}</span>
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent
+                  align="end"
+                  side="top"
+                  sideOffset={8}
+                  className="w-[200px] gap-0 rounded-xl border border-border/80 bg-popover p-1 shadow-2xl"
+                >
+                  <div className="flex flex-col gap-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onResponseModeChange("concise");
+                        setModePickerOpen(false);
+                      }}
+                      className={cn(
+                        "flex w-full items-start gap-3 rounded-lg px-3 py-2.5 text-left transition-colors",
+                        responseMode === "concise"
+                          ? "bg-accent/70 text-foreground"
+                          : "hover:bg-accent/60 text-muted-foreground hover:text-foreground",
+                      )}
+                    >
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-sm font-medium leading-5">
+                          Concise
+                        </span>
+                        <span className="block text-xs opacity-80 mt-0.5">
+                          Direct answers, short bullets.
+                        </span>
+                      </span>
+                      {responseMode === "concise" && (
+                        <HugeiconsIcon
+                          icon={CheckmarkCircle02Icon}
+                          className="mt-0.5 h-4 w-4 shrink-0 text-primary"
+                        />
+                      )}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onResponseModeChange("descriptive");
+                        setModePickerOpen(false);
+                      }}
+                      className={cn(
+                        "flex w-full items-start gap-3 rounded-lg px-3 py-2.5 text-left transition-colors",
+                        responseMode === "descriptive"
+                          ? "bg-accent/70 text-foreground"
+                          : "hover:bg-accent/60 text-muted-foreground hover:text-foreground",
+                      )}
+                    >
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-sm font-medium leading-5">
+                          Descriptive
+                        </span>
+                        <span className="block text-xs opacity-80 mt-0.5">
+                          Full analysis, timelines, implications.
+                        </span>
+                      </span>
+                      {responseMode === "descriptive" && (
+                        <HugeiconsIcon
+                          icon={CheckmarkCircle02Icon}
+                          className="mt-0.5 h-4 w-4 shrink-0 text-primary"
+                        />
+                      )}
+                    </button>
+                  </div>
+                </PopoverContent>
+              </Popover>
+
               <Popover open={modelPickerOpen} onOpenChange={setModelPickerOpen}>
                 <PopoverTrigger asChild>
                   <button
@@ -217,8 +305,8 @@ export default function ChatInput({
                   hasText
                     ? "bg-primary text-primary-foreground hover:bg-primary/90 shadow-md"
                     : isVoiceMode
-                    ? "bg-primary text-primary-foreground shadow-md"
-                    : "hover:bg-accent text-muted-foreground hover:text-foreground",
+                      ? "bg-primary text-primary-foreground shadow-md"
+                      : "hover:bg-accent text-muted-foreground hover:text-foreground",
                   disabled && "opacity-50 cursor-not-allowed",
                 )}
               >

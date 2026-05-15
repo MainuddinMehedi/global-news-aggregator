@@ -77,7 +77,9 @@ export default function ChatInterface() {
   const [isVoiceMode, setIsVoiceMode] = useState(false);
   const [selectedModel, setSelectedModel] = useState(CHAT_MODELS[0].id);
   const [adaptiveThinking, setAdaptiveThinking] = useState(false);
-  const [responseMode] = useState<"concise" | "descriptive">("descriptive");
+  const [responseMode, setResponseMode] = useState<"concise" | "descriptive">(
+    "descriptive",
+  );
   const [contextPanelOpen, setContextPanelOpen] = useState(true);
   const [sessions, setSessions] = useState<ChatSessionListItem[]>([]);
   const [sessionsLoading, setSessionsLoading] = useState(true);
@@ -534,6 +536,8 @@ export default function ChatInterface() {
           models={CHAT_MODELS}
           selectedModel={selectedModel}
           onModelChange={setSelectedModel}
+          responseMode={responseMode}
+          onResponseModeChange={setResponseMode}
           adaptiveThinking={adaptiveThinking}
           onAdaptiveThinkingChange={setAdaptiveThinking}
           contextPillsSlot={
