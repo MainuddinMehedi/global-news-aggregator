@@ -1,4 +1,5 @@
 import { createOpenAI } from "@ai-sdk/openai";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { streamText, type ModelMessage, type UIMessage } from "ai";
 import { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
@@ -12,21 +13,20 @@ import type { ContextItem } from "@/components/chat/types";
 
 const groq = createOpenAI({
   baseURL: process.env.GROQ_BASE_URL || "https://api.groq.com/openai/v1",
-  apiKey: process.env.GROQ_API_KEY,
+  apiKey: process.env.GROQ_API_KEY || "",
 });
 
-const google = createOpenAI({
-  baseURL:
-    process.env.GEMINI_BASE_URL ||
-    "https://generativelanguage.googleapis.com/v1beta/openai",
-  apiKey: process.env.GEMINI_API_KEY,
+const google = createGoogleGenerativeAI({
+  baseURL: process.env.GEMINI_BASE_URL
+    ? process.env.GEMINI_BASE_URL.replace(/\/openai$/, "")
+    : undefined,
+  apiKey: process.env.GEMINI_API_KEY || "",
 });
 
 const github = createOpenAI({
   baseURL:
-    process.env.GITHUB_MODELS_BASE_URL ||
-    "https://models.github.ai/inference",
-  apiKey: process.env.GITHUB_MODELS_API_KEY || process.env.GITHUB_TOKEN,
+    process.env.GITHUB_MODELS_BASE_URL || "https://models.github.ai/inference",
+  apiKey: process.env.GITHUB_MODELS_API_KEY || "",
 });
 
 const SYSTEM_PROMPT = `You are a senior geopolitical analyst AI embedded in a global news aggregator.
@@ -41,7 +41,10 @@ You have access to the user's context items (articles, topics) when provided.
 Ground your analysis in the provided context when available.
 If you don't have enough information, say so rather than speculating.`;
 
-function estimateRequestSize(systemPrompt: string, coreMessages: Array<{ role: string; content: unknown }>) {
+function estimateRequestSize(
+  systemPrompt: string,
+  coreMessages: Array<{ role: string; content: unknown }>,
+) {
   return Buffer.byteLength(
     JSON.stringify({
       system: systemPrompt,
@@ -151,9 +154,9 @@ export async function POST(req: Request) {
         where: { id: userMessageId },
         update: {
           text: latestUserText,
-          parts: toJsonInput(latestUserMessage.parts || [
-            { type: "text", text: latestUserText },
-          ]),
+          parts: toJsonInput(
+            latestUserMessage.parts || [{ type: "text", text: latestUserText }],
+          ),
           metadata: toJsonInput(latestUserMessage.metadata),
         },
         create: {
@@ -161,9 +164,9 @@ export async function POST(req: Request) {
           sessionId: activeSessionId,
           role: "user",
           text: latestUserText,
-          parts: toJsonInput(latestUserMessage.parts || [
-            { type: "text", text: latestUserText },
-          ]) as Prisma.InputJsonValue,
+          parts: toJsonInput(
+            latestUserMessage.parts || [{ type: "text", text: latestUserText }],
+          ) as Prisma.InputJsonValue,
           metadata: toJsonInput(latestUserMessage.metadata),
         },
       });
@@ -180,35 +183,34 @@ export async function POST(req: Request) {
 
     if (contexts?.length) {
       const contextBlock = contexts
-        .map(
-          (c) => {
-            const snapshot =
-              c.snapshot && typeof c.snapshot === "object"
-                ? c.snapshot as Record<string, unknown>
-                : null;
-            const snippet =
-              typeof snapshot?.contentSnippet === "string"
-                ? `\n  Snippet: ${snapshot.contentSnippet}`
-                : "";
-            const source =
-              typeof snapshot?.source === "string"
-                ? `\n  Source: ${snapshot.source}`
-                : "";
-            const publishedAt =
-              typeof snapshot?.publishedAt === "string"
-                ? `\n  Published: ${snapshot.publishedAt}`
-                : "";
+        .map((c) => {
+          const snapshot =
+            c.snapshot && typeof c.snapshot === "object"
+              ? (c.snapshot as Record<string, unknown>)
+              : null;
+          const snippet =
+            typeof snapshot?.contentSnippet === "string"
+              ? `\n  Snippet: ${snapshot.contentSnippet}`
+              : "";
+          const source =
+            typeof snapshot?.source === "string"
+              ? `\n  Source: ${snapshot.source}`
+              : "";
+          const publishedAt =
+            typeof snapshot?.publishedAt === "string"
+              ? `\n  Published: ${snapshot.publishedAt}`
+              : "";
 
-            return `- [${c.type}] "${c.title}"${c.url ? ` (${c.url})` : ""}${source}${publishedAt}${snippet}`;
-          },
-        )
+          return `- [${c.type}] "${c.title}"${c.url ? ` (${c.url})` : ""}${source}${publishedAt}${snippet}`;
+        })
         .join("\n");
       systemPrompt += `\n\nThe user has attached the following context items for this conversation:\n${contextBlock}\nUse these to ground your analysis.`;
     }
 
     let aiModel;
     const isGitHubModel = model.startsWith("github:");
-    const isGoogleModel = model.startsWith("gemini") || model.startsWith("gemma");
+    const isGoogleModel =
+      model.startsWith("gemini") || model.startsWith("gemma");
     const isGroqHostedModel = !isGoogleModel && !isGitHubModel;
 
     if (isGitHubModel) {
@@ -248,34 +250,44 @@ export async function POST(req: Request) {
         return true;
       })
       .map((msg) => {
-      const role =
-        msg.role === "user" || msg.role === "assistant" || msg.role === "system"
-          ? msg.role
-          : "user";
-      const content = msg.parts
-        ? msg.parts
-            .filter((p) => p.type === "text")
-            .map((p) => p.text || "")
-            .join("\n")
-        : msg.content || "";
+        const role =
+          msg.role === "user" ||
+          msg.role === "assistant" ||
+          msg.role === "system"
+            ? msg.role
+            : "user";
+        const content = msg.parts
+          ? msg.parts
+              .filter((p) => p.type === "text")
+              .map((p) => p.text || "")
+              .join("\n")
+          : msg.content || "";
 
-      return {
-        role,
-        content,
-      };
-    });
+        return {
+          role,
+          content,
+        };
+      });
 
-    const MAX_TOTAL_CHARS = isGitHubModel ? 12_000 : isGroqHostedModel ? 30_000 : 80_000;
+    const MAX_TOTAL_CHARS = isGitHubModel
+      ? 12_000
+      : isGroqHostedModel
+        ? 30_000
+        : 80_000;
     const MAX_TURNS = isGitHubModel ? 6 : isGroqHostedModel ? 8 : 16;
 
     while (coreMessages.length > MAX_TURNS) {
       coreMessages.splice(0, 2);
     }
 
-    let totalChars = systemPrompt.length + coreMessages.reduce((s, m) => s + m.content.length, 0);
+    let totalChars =
+      systemPrompt.length +
+      coreMessages.reduce((s, m) => s + m.content.length, 0);
     while (totalChars > MAX_TOTAL_CHARS && coreMessages.length > 4) {
       coreMessages.splice(0, 2);
-      totalChars = systemPrompt.length + coreMessages.reduce((s, m) => s + m.content.length, 0);
+      totalChars =
+        systemPrompt.length +
+        coreMessages.reduce((s, m) => s + m.content.length, 0);
     }
 
     const requestSize = estimateRequestSize(systemPrompt, coreMessages);
@@ -303,37 +315,52 @@ export async function POST(req: Request) {
       onFinish: async ({ responseMessage, isAborted }) => {
         if (isAborted || !activeSessionId) return;
 
-        const assistantText = getMessageText(responseMessage);
-        await prisma.chatMessage.upsert({
-          where: { id: responseMessage.id },
-          update: {
-            text: assistantText,
-            parts: toJsonInput(responseMessage.parts),
-            metadata: toJsonInput(responseMessage.metadata),
-          },
-          create: {
-            id: responseMessage.id,
-            sessionId: activeSessionId,
-            role: "assistant",
-            text: assistantText,
-            parts: toJsonInput(responseMessage.parts) as Prisma.InputJsonValue,
-            metadata: toJsonInput(responseMessage.metadata),
-          },
-        });
+        try {
+          const assistantText = getMessageText(responseMessage);
+          const responseId =
+            responseMessage.id || `msg-${Date.now().toString(36)}`;
+          const parts = responseMessage.parts || [
+            { type: "text", text: assistantText },
+          ];
 
-        await prisma.chatSession.update({
-          where: { id: activeSessionId },
-          data: {
-            model,
-            responseMode,
-            title: latestUserText ? createSessionTitle(latestUserText) : undefined,
-          },
-        });
+          await prisma.chatMessage.upsert({
+            where: { id: responseId },
+            update: {
+              text: assistantText,
+              parts: toJsonInput(parts),
+              metadata: toJsonInput(responseMessage.metadata),
+            },
+            create: {
+              id: responseId,
+              sessionId: activeSessionId,
+              role: "assistant",
+              text: assistantText,
+              parts: toJsonInput(parts) as Prisma.InputJsonValue,
+              metadata: toJsonInput(responseMessage.metadata),
+            },
+          });
+
+          await prisma.chatSession.update({
+            where: { id: activeSessionId },
+            data: {
+              model,
+              responseMode,
+              title: latestUserText
+                ? createSessionTitle(latestUserText)
+                : undefined,
+            },
+          });
+        } catch (err) {
+          console.error("Error in onFinish background task:", err);
+        }
       },
     });
   } catch (error: unknown) {
     console.error("Chat API Error:", error);
-    const errObj = error && typeof error === "object" ? (error as Record<string, unknown>) : {};
+    const errObj =
+      error && typeof error === "object"
+        ? (error as Record<string, unknown>)
+        : {};
     const message =
       typeof errObj.message === "string"
         ? errObj.message

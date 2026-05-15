@@ -19,13 +19,13 @@ export const CHAT_MODELS: ChatModelOption[] = [
     description: "Web search for current analysis",
   },
   {
-    id: "gemma-4-31b",
+    id: "gemma-4-31b-it",
     label: "Gemma 4 31B",
     provider: "google",
     description: "Large-context article analysis",
   },
   {
-    id: "gemma-4-26b",
+    id: "gemma-4-26b-a4b-it",
     label: "Gemma 4 26B",
     provider: "google",
     description: "Efficient large-context analysis",

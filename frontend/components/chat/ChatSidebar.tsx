@@ -28,7 +28,10 @@ import MessageList from "./MessageList";
 import { CHAT_MODELS } from "./models";
 import type { ContextItem } from "./types";
 import { contextFromArticle } from "@/lib/chat/contexts";
-import { INITIAL_ASSISTANT_MESSAGE, createSessionTitle } from "@/lib/chat/messages";
+import {
+  INITIAL_ASSISTANT_MESSAGE,
+  createSessionTitle,
+} from "@/lib/chat/messages";
 
 // ---------------------------------------------------------------------------
 // Context banner — shown when opened from an article card
@@ -189,7 +192,8 @@ export default function ChatSidebar() {
     async (text: string) => {
       try {
         const targetSessionId =
-          sessionId || (await createSession(createSessionTitle(text), contexts));
+          sessionId ||
+          (await createSession(createSessionTitle(text), contexts));
         sendMessage(
           { role: "user", parts: [{ type: "text", text }] },
           {
@@ -370,6 +374,8 @@ export default function ChatSidebar() {
             models={CHAT_MODELS}
             selectedModel={selectedModel}
             onModelChange={setSelectedModel}
+            responseMode="descriptive"
+            onResponseModeChange={() => {}}
             adaptiveThinking={adaptiveThinking}
             onAdaptiveThinkingChange={setAdaptiveThinking}
             disabled={isLoading}
