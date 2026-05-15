@@ -1,6 +1,6 @@
-import { streamText } from "ai";
-import { createOpenAI } from "@ai-sdk/openai";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
+import { createOpenAI } from "@ai-sdk/openai";
+import { streamText, type ModelMessage } from "ai";
 
 const groq = createOpenAI({
   baseURL: process.env.GROQ_BASE_URL || "https://api.groq.com/openai/v1",
@@ -26,12 +26,41 @@ You have access to the user's context items (articles, topics) when provided.
 Ground your analysis in the provided context when available.
 If you don't have enough information, say so rather than speculating.`;
 
+function estimateRequestSize(systemPrompt: string, coreMessages: Array<{ role: string; content: unknown }>) {
+  return Buffer.byteLength(
+    JSON.stringify({
+      system: systemPrompt,
+      messages: coreMessages.map((msg) => ({
+        role: msg.role,
+        content: String(msg.content),
+      })),
+    }),
+    "utf8",
+  );
+}
+
+type IncomingMessage = {
+  role: string;
+  parts?: Array<{ type: string; text?: string }>;
+  content?: string;
+};
+
+type IncomingContextItem = {
+  title: string;
+  type: string;
+  url?: string;
+};
+
 export async function POST(req: Request) {
   try {
-    const { messages, contexts, model = "groq/compound" } = await req.json();
+    const { messages, contexts, model = "groq/compound" } = (await req.json()) as {
+      messages: IncomingMessage[];
+      contexts?: IncomingContextItem[];
+      model?: string;
+    };
 
     let systemPrompt = SYSTEM_PROMPT;
-    if (contexts?.length > 0) {
+    if (contexts?.length) {
       const contextBlock = contexts
         .map(
           (c: { title: string; type: string; url?: string }) =>
@@ -50,8 +79,8 @@ export async function POST(req: Request) {
       aiModel = groq.chat(model);
     }
 
-    const hasImageParts = messages.some((msg: any) =>
-      msg.parts?.some((p: any) => p.type === "file"),
+    const hasImageParts = messages.some((msg) =>
+      msg.parts?.some((p) => p.type === "file"),
     );
     if (hasImageParts && !model.startsWith("gemini")) {
       return new Response(
@@ -66,28 +95,44 @@ export async function POST(req: Request) {
       );
     }
 
-    const coreMessages = messages.map((msg: any) => {
+    const coreMessages: ModelMessage[] = messages.map((msg) => {
+      const role =
+        msg.role === "user" || msg.role === "assistant" || msg.role === "system"
+          ? msg.role
+          : "user";
       const content = msg.parts
         ? msg.parts
-            .filter((p: any) => p.type === "text")
-            .map((p: any) => p.text)
+            .filter((p) => p.type === "text")
+            .map((p) => p.text || "")
             .join("\n")
         : msg.content || "";
 
       return {
-        role: msg.role,
+        role,
         content,
       };
     });
 
-    const MAX_TOTAL_CHARS = 80_000;
-    let totalChars = coreMessages.reduce((s: number, m: any) => s + m.content.length, 0);
-    while (totalChars > MAX_TOTAL_CHARS && coreMessages.length > 4) {
-      const removed = coreMessages.splice(0, 2);
-      totalChars -= removed.reduce((s: number, m: any) => s + m.content.length, 0);
+    const MAX_TOTAL_CHARS = model.startsWith("groq") ? 30_000 : 80_000;
+    const MAX_TURNS = model.startsWith("groq") ? 6 : 12;
+
+    while (coreMessages.length > MAX_TURNS) {
+      coreMessages.splice(0, 2);
     }
 
-    console.log("DEBUG: Sending to streamText", { model, msgCount: coreMessages.length, totalChars });
+    let totalChars = systemPrompt.length + coreMessages.reduce((s, m) => s + m.content.length, 0);
+    while (totalChars > MAX_TOTAL_CHARS && coreMessages.length > 4) {
+      coreMessages.splice(0, 2);
+      totalChars = systemPrompt.length + coreMessages.reduce((s, m) => s + m.content.length, 0);
+    }
+
+    const requestSize = estimateRequestSize(systemPrompt, coreMessages);
+    console.log("DEBUG: Sending to streamText", {
+      model,
+      msgCount: coreMessages.length,
+      totalChars,
+      requestSize,
+    });
 
     const result = streamText({
       model: aiModel,
@@ -98,11 +143,16 @@ export async function POST(req: Request) {
     return result.toUIMessageStreamResponse({
       messageMetadata: () => ({ model }),
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Chat API Error:", error);
+    const errObj = error && typeof error === "object" ? (error as Record<string, unknown>) : {};
+    const message =
+      typeof errObj.message === "string"
+        ? errObj.message
+        : "Failed to process chat request.";
     return new Response(
       JSON.stringify({
-        error: error.message || "Failed to process chat request.",
+        error: message,
       }),
       {
         status: 500,
