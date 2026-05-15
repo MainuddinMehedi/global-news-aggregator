@@ -21,6 +21,7 @@ import {
   MoreVerticalIcon,
   Robot01Icon,
   Edit02Icon,
+  PencilEdit02Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useCallback, useEffect, useState } from "react";
@@ -460,7 +461,7 @@ export default function ChatInterface() {
                 aria-label="New chat"
                 className="p-2 hover:bg-accent rounded-lg text-muted-foreground hover:text-foreground transition-colors"
               >
-                <HugeiconsIcon icon={Edit02Icon} className="w-5 h-5" />
+                <HugeiconsIcon icon={PencilEdit02Icon} className="w-5 h-5" />
               </button>
             )}
 
@@ -468,9 +469,18 @@ export default function ChatInterface() {
               <SheetTrigger asChild>
                 <button
                   aria-label="Chat history"
-                  className="p-2 hover:bg-accent rounded-lg text-muted-foreground hover:text-foreground transition-colors"
+                  className={cn(
+                    "hover:bg-accent rounded-lg text-muted-foreground hover:text-foreground transition-colors",
+                    activeSessionId
+                      ? "p-2"
+                      : "flex items-center gap-2 px-3 py-1.5 text-sm font-medium",
+                  )}
                 >
-                  <HugeiconsIcon icon={Time02Icon} className="w-5 h-5" />
+                  <HugeiconsIcon
+                    icon={Time02Icon}
+                    className={cn(activeSessionId ? "w-5 h-5" : "w-4.5 h-4.5")}
+                  />
+                  {!activeSessionId && <span>History</span>}
                 </button>
               </SheetTrigger>
               <SheetContent
@@ -497,7 +507,7 @@ export default function ChatInterface() {
 
             <button
               aria-label="More options"
-              className="p-2 hover:bg-accent rounded-lg text-muted-foreground transition-colors"
+              className="p-2 hover:bg-accent rounded-lg text-muted-foreground hover:text-foreground transition-colors"
             >
               <HugeiconsIcon icon={MoreVerticalIcon} className="w-5 h-5" />
             </button>
