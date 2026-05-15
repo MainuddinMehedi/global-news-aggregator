@@ -262,19 +262,13 @@ export default function ChatInterface() {
     [contexts, responseMode, selectedModel],
   );
 
-  const handleNewChat = useCallback(async () => {
-    try {
-      const id = await createSession();
-      setActiveSessionId(id);
-      setContexts([]);
-      setMessages([INITIAL_ASSISTANT_MESSAGE]);
-      router.replace(`/chat?session=${id}`, { scroll: false });
-      setHistoryOpen(false);
-    } catch (error) {
-      console.error(error);
-      toast.error("Failed to start a new chat");
-    }
-  }, [createSession, router, setMessages]);
+  const handleNewChat = useCallback(() => {
+    setActiveSessionId(undefined);
+    setContexts([]);
+    setMessages([INITIAL_ASSISTANT_MESSAGE]);
+    router.replace("/chat", { scroll: false });
+    setHistoryOpen(false);
+  }, [router, setMessages]);
 
   const handleDeleteSession = useCallback(
     async (id: string) => {
