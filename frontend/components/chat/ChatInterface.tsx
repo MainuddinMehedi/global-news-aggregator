@@ -201,7 +201,17 @@ export default function ChatInterface() {
     async (id: string, updateUrl = true) => {
       try {
         const res = await fetch(`/api/chat/sessions/${id}`);
-        if (!res.ok) throw new Error("Failed to load chat");
+        if (!res.ok) {
+          if (res.status === 404) {
+            toast.error("Chat not found. Starting a new chat.");
+            setActiveSessionId(undefined);
+            setContexts([]);
+            setMessages([INITIAL_ASSISTANT_MESSAGE]);
+            router.replace("/chat", { scroll: false });
+            return;
+          }
+          throw new Error("Failed to load chat");
+        }
         const data = await res.json();
         const session = data.session as ChatSessionPayload;
 
@@ -312,8 +322,17 @@ export default function ChatInterface() {
   useEffect(() => {
     const id = searchParams.get("session");
     if (id && id !== activeSessionId) {
+      // If we are currently deleting this session, the URL will update momentarily,
+      // but React might fire this effect first. Check if it exists in the active sessions list (if loaded).
+      // Or, if selectSession fails, it will now handle its own fallback.
       // eslint-disable-next-line react-hooks/set-state-in-effect
       selectSession(id, false);
+    } else if (!id && activeSessionId) {
+      // If the URL has no session, but we have an active session, it means we navigated away (e.g. deleted it).
+      // We should clear the active session state.
+      setActiveSessionId(undefined);
+      setContexts([]);
+      setMessages([INITIAL_ASSISTANT_MESSAGE]);
     }
   }, [activeSessionId, searchParams, selectSession]);
 

@@ -18,7 +18,9 @@ function toUiMessage(message: {
       message.role === "system"
         ? message.role
         : "assistant",
-    parts: Array.isArray(message.parts) ? (message.parts as UIMessage["parts"]) : [],
+    parts: Array.isArray(message.parts)
+      ? (message.parts as UIMessage["parts"])
+      : [],
     metadata: message.metadata ?? undefined,
   };
 }
@@ -94,10 +96,18 @@ export async function PATCH(
       updateData.isArchived = body.isArchived;
     }
 
-    const session = await prisma.chatSession.update({
-      where: { id },
-      data: updateData,
-    });
+    let session = await prisma.chatSession.findUnique({ where: { id } });
+
+    if (!session) {
+      return NextResponse.json({ error: "Session not found" }, { status: 404 });
+    }
+
+    if (Object.keys(updateData).length > 0) {
+      session = await prisma.chatSession.update({
+        where: { id },
+        data: updateData,
+      });
+    }
 
     if (Array.isArray(body.contexts) && body.contexts.length > 0) {
       await prisma.chatContext.createMany({
@@ -107,6 +117,14 @@ export async function PATCH(
         })),
         skipDuplicates: true,
       });
+
+      // Bump updatedAt to move the session to the top of the history list
+      if (Object.keys(updateData).length === 0) {
+        session = await prisma.chatSession.update({
+          where: { id },
+          data: { updatedAt: new Date() },
+        });
+      }
     }
 
     return NextResponse.json({
