@@ -81,6 +81,68 @@ model AiUsage {
   @@index([date])
 }
 
+model ChatSession {
+  id           String        @id @default(uuid())
+  userId       String?
+  title        String        @default("New Chat")
+  model        String        @default("groq/compound-mini")
+  responseMode String        @default("descriptive")
+  isArchived   Boolean       @default(false)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  messages ChatMessage[]
+  contexts ChatContext[]
+  toolRuns ChatToolRun[]
+
+  @@index([userId, updatedAt])
+  @@index([isArchived, updatedAt])
+}
+
+model ChatMessage {
+  id        String      @id @default(uuid())
+  sessionId String
+  session   ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  role      String
+  text      String      @db.Text
+  parts     Json
+  metadata  Json?
+  createdAt DateTime    @default(now())
+
+  @@index([sessionId, createdAt])
+}
+
+model ChatContext {
+  id         String      @id @default(uuid())
+  sessionId  String
+  session    ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sourceType String
+  sourceId   String?
+  title      String
+  url        String?
+  snapshot   Json?
+  createdAt  DateTime    @default(now())
+
+  @@unique([sessionId, sourceType, sourceId])
+  @@index([sessionId])
+}
+
+model ChatToolRun {
+  id         String       @id @default(uuid())
+  sessionId  String?
+  session    ChatSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  messageId  String?
+  toolName   String
+  input      Json?
+  output     Json?
+  status     String
+  durationMs Int?
+  createdAt  DateTime     @default(now())
+
+  @@index([sessionId, createdAt])
+  @@index([toolName, createdAt])
+}
+
 model StoryCluster {
   id              String  @id @default(uuid())
   slug            String  @unique

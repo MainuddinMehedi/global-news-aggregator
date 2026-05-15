@@ -1,17 +1,32 @@
-import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { createOpenAI } from "@ai-sdk/openai";
-import { streamText, type ModelMessage } from "ai";
+import { streamText, type ModelMessage, type UIMessage } from "ai";
+import { Prisma } from "@prisma/client";
+import prisma from "@/lib/prisma";
+import { normalizeContextForDb } from "@/lib/chat/contexts";
+import {
+  createSessionTitle,
+  getMessageText,
+  isInitialAssistantMessage,
+} from "@/lib/chat/messages";
+import type { ContextItem } from "@/components/chat/types";
 
 const groq = createOpenAI({
   baseURL: process.env.GROQ_BASE_URL || "https://api.groq.com/openai/v1",
   apiKey: process.env.GROQ_API_KEY,
 });
 
-const google = createGoogleGenerativeAI({
-  // baseURL:
-  //   process.env.GEMINI_BASE_URL ||
-  //   "https://generativelanguage.googleapis.com/v1beta",
+const google = createOpenAI({
+  baseURL:
+    process.env.GEMINI_BASE_URL ||
+    "https://generativelanguage.googleapis.com/v1beta/openai",
   apiKey: process.env.GEMINI_API_KEY,
+});
+
+const github = createOpenAI({
+  baseURL:
+    process.env.GITHUB_MODELS_BASE_URL ||
+    "https://models.github.ai/inference",
+  apiKey: process.env.GITHUB_MODELS_API_KEY || process.env.GITHUB_TOKEN,
 });
 
 const SYSTEM_PROMPT = `You are a senior geopolitical analyst AI embedded in a global news aggregator.
@@ -40,49 +55,175 @@ function estimateRequestSize(systemPrompt: string, coreMessages: Array<{ role: s
 }
 
 type IncomingMessage = {
+  id?: string;
   role: string;
   parts?: Array<{ type: string; text?: string }>;
   content?: string;
+  metadata?: unknown;
 };
 
 type IncomingContextItem = {
+  id?: string;
   title: string;
   type: string;
   url?: string;
+  sourceId?: string;
+  sourceType?: string;
+  snapshot?: unknown;
 };
+
+function toJsonInput(value: unknown) {
+  return value === undefined || value === null
+    ? undefined
+    : (value as Prisma.InputJsonValue);
+}
+
+function toContextInput(context: IncomingContextItem) {
+  return {
+    ...context,
+    id: context.id ?? context.sourceId ?? context.title,
+    type: context.type,
+  } as ContextItem;
+}
 
 export async function POST(req: Request) {
   try {
-    const { messages, contexts, model = "groq/compound" } = (await req.json()) as {
+    const {
+      messages,
+      contexts,
+      model = "groq/compound-mini",
+      adaptiveThinking = false,
+      sessionId,
+      responseMode = "descriptive",
+    } = (await req.json()) as {
       messages: IncomingMessage[];
       contexts?: IncomingContextItem[];
       model?: string;
+      adaptiveThinking?: boolean;
+      sessionId?: string;
+      responseMode?: "concise" | "descriptive";
     };
 
+    const latestUserMessage = [...messages]
+      .reverse()
+      .find((msg) => msg.role === "user");
+    const latestUserText = latestUserMessage
+      ? latestUserMessage.parts
+        ? latestUserMessage.parts
+            .filter((part) => part.type === "text")
+            .map((part) => part.text || "")
+            .join("\n")
+            .trim()
+        : latestUserMessage.content || ""
+      : "";
+
+    let activeSessionId = sessionId;
+    if (!activeSessionId) {
+      const session = await prisma.chatSession.create({
+        data: {
+          title: createSessionTitle(latestUserText),
+          model,
+          responseMode,
+        },
+      });
+      activeSessionId = session.id;
+    } else {
+      await prisma.chatSession.update({
+        where: { id: activeSessionId },
+        data: { model, responseMode },
+      });
+    }
+
+    if (contexts?.length) {
+      await prisma.chatContext.createMany({
+        data: contexts.map((context) => ({
+          sessionId: activeSessionId,
+          ...normalizeContextForDb(toContextInput(context)),
+        })),
+        skipDuplicates: true,
+      });
+    }
+
+    if (latestUserMessage && activeSessionId) {
+      const userMessageId =
+        latestUserMessage.id || `user-${Date.now().toString(36)}`;
+      await prisma.chatMessage.upsert({
+        where: { id: userMessageId },
+        update: {
+          text: latestUserText,
+          parts: toJsonInput(latestUserMessage.parts || [
+            { type: "text", text: latestUserText },
+          ]),
+          metadata: toJsonInput(latestUserMessage.metadata),
+        },
+        create: {
+          id: userMessageId,
+          sessionId: activeSessionId,
+          role: "user",
+          text: latestUserText,
+          parts: toJsonInput(latestUserMessage.parts || [
+            { type: "text", text: latestUserText },
+          ]) as Prisma.InputJsonValue,
+          metadata: toJsonInput(latestUserMessage.metadata),
+        },
+      });
+    }
+
     let systemPrompt = SYSTEM_PROMPT;
+    if (responseMode === "concise") {
+      systemPrompt +=
+        "\n\nResponse mode: concise. Answer directly in a short, high-signal way unless the user asks for depth.";
+    } else {
+      systemPrompt +=
+        "\n\nResponse mode: descriptive. Provide enough context, caveats, and geopolitical implications to be useful.";
+    }
+
     if (contexts?.length) {
       const contextBlock = contexts
         .map(
-          (c: { title: string; type: string; url?: string }) =>
-            `- [${c.type}] "${c.title}"${c.url ? ` (${c.url})` : ""}`,
+          (c) => {
+            const snapshot =
+              c.snapshot && typeof c.snapshot === "object"
+                ? c.snapshot as Record<string, unknown>
+                : null;
+            const snippet =
+              typeof snapshot?.contentSnippet === "string"
+                ? `\n  Snippet: ${snapshot.contentSnippet}`
+                : "";
+            const source =
+              typeof snapshot?.source === "string"
+                ? `\n  Source: ${snapshot.source}`
+                : "";
+            const publishedAt =
+              typeof snapshot?.publishedAt === "string"
+                ? `\n  Published: ${snapshot.publishedAt}`
+                : "";
+
+            return `- [${c.type}] "${c.title}"${c.url ? ` (${c.url})` : ""}${source}${publishedAt}${snippet}`;
+          },
         )
         .join("\n");
       systemPrompt += `\n\nThe user has attached the following context items for this conversation:\n${contextBlock}\nUse these to ground your analysis.`;
     }
 
     let aiModel;
-    if (model.startsWith("gemini")) {
-      aiModel = google(model);
+    const isGitHubModel = model.startsWith("github:");
+    const isGoogleModel = model.startsWith("gemini") || model.startsWith("gemma");
+    const isGroqHostedModel = !isGoogleModel && !isGitHubModel;
+
+    if (isGitHubModel) {
+      aiModel = github.chat(model.slice("github:".length));
+    } else if (isGoogleModel) {
+      aiModel = google.chat(model);
     } else {
-      // Route everything else to Groq, stripping 'groq/' prefix if provided
-      // const actualModel = model.replace("groq/", "");
+      // Route all non-Gemini chat models through Groq's OpenAI-compatible API.
       aiModel = groq.chat(model);
     }
 
     const hasImageParts = messages.some((msg) =>
       msg.parts?.some((p) => p.type === "file"),
     );
-    if (hasImageParts && !model.startsWith("gemini")) {
+    if (hasImageParts && !isGoogleModel) {
       return new Response(
         JSON.stringify({
           error:
@@ -95,7 +236,18 @@ export async function POST(req: Request) {
       );
     }
 
-    const coreMessages: ModelMessage[] = messages.map((msg) => {
+    const coreMessages: ModelMessage[] = messages
+      .filter((msg) => {
+        if (msg.id && msg.role === "assistant") {
+          return !isInitialAssistantMessage({
+            id: msg.id,
+            role: "assistant",
+            parts: msg.parts as UIMessage["parts"],
+          });
+        }
+        return true;
+      })
+      .map((msg) => {
       const role =
         msg.role === "user" || msg.role === "assistant" || msg.role === "system"
           ? msg.role
@@ -113,8 +265,8 @@ export async function POST(req: Request) {
       };
     });
 
-    const MAX_TOTAL_CHARS = model.startsWith("groq") ? 30_000 : 80_000;
-    const MAX_TURNS = model.startsWith("groq") ? 6 : 12;
+    const MAX_TOTAL_CHARS = isGitHubModel ? 12_000 : isGroqHostedModel ? 30_000 : 80_000;
+    const MAX_TURNS = isGitHubModel ? 6 : isGroqHostedModel ? 8 : 16;
 
     while (coreMessages.length > MAX_TURNS) {
       coreMessages.splice(0, 2);
@@ -132,16 +284,52 @@ export async function POST(req: Request) {
       msgCount: coreMessages.length,
       totalChars,
       requestSize,
+      adaptiveThinking,
     });
 
     const result = streamText({
       model: aiModel,
       system: systemPrompt,
       messages: coreMessages,
+      providerOptions:
+        adaptiveThinking && model.startsWith("openai/gpt-oss")
+          ? { openai: { reasoningEffort: "medium" } }
+          : undefined,
     });
 
     return result.toUIMessageStreamResponse({
-      messageMetadata: () => ({ model }),
+      originalMessages: messages as UIMessage[],
+      messageMetadata: () => ({ model, sessionId: activeSessionId }),
+      onFinish: async ({ responseMessage, isAborted }) => {
+        if (isAborted || !activeSessionId) return;
+
+        const assistantText = getMessageText(responseMessage);
+        await prisma.chatMessage.upsert({
+          where: { id: responseMessage.id },
+          update: {
+            text: assistantText,
+            parts: toJsonInput(responseMessage.parts),
+            metadata: toJsonInput(responseMessage.metadata),
+          },
+          create: {
+            id: responseMessage.id,
+            sessionId: activeSessionId,
+            role: "assistant",
+            text: assistantText,
+            parts: toJsonInput(responseMessage.parts) as Prisma.InputJsonValue,
+            metadata: toJsonInput(responseMessage.metadata),
+          },
+        });
+
+        await prisma.chatSession.update({
+          where: { id: activeSessionId },
+          data: {
+            model,
+            responseMode,
+            title: latestUserText ? createSessionTitle(latestUserText) : undefined,
+          },
+        });
+      },
     });
   } catch (error: unknown) {
     console.error("Chat API Error:", error);

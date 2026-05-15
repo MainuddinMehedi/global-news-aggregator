@@ -18,8 +18,12 @@ export interface ContextItem {
   id: string;
   title: string;
   type: ContextItemType;
+  sourceId?: string;
+  sourceType?: string;
   /** Optional URL for article/link context */
   url?: string;
+  /** Frozen source payload used to ground future chat turns */
+  snapshot?: unknown;
 }
 
 // ---------------------------------------------------------------------------

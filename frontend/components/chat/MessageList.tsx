@@ -5,6 +5,7 @@ import { Robot01Icon, UserIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import type { UIMessage } from "ai";
 import { memo, useEffect, useRef } from "react";
+import { MODEL_LABELS } from "./models";
 
 interface MessageListProps {
   messages: UIMessage[];
@@ -15,14 +16,6 @@ interface MessageListProps {
 
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-
-const MODEL_LABELS: Record<string, string> = {
-  "groq/compound": "Compound (Web Search)",
-  "groq/compound-mini": "Compound Mini",
-  "llama-3.3-70b-versatile": "Llama 3.3 70B",
-  "gemini-3.1-flash-lite": "Gemini 3.1 Flash Lite",
-  "gemini-2.5-flash": "Gemini 2.5 Flash",
-};
 
 // Memoized markdown renderer to prevent re-parsing on every character
 const MemoizedMarkdown = memo(

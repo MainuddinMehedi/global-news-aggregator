@@ -17,21 +17,36 @@
 
 import {
   ArrowRight01Icon,
+  Time02Icon,
   MoreVerticalIcon,
   Robot01Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { cn } from "@/lib/utils";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
+import ChatHistoryPanel, { type ChatSessionListItem } from "./ChatHistoryPanel";
 import ChatInput from "./ChatInput";
 import ContextPanel, { ContextPills } from "./ContextPanel";
 import MessageList from "./MessageList";
+import { CHAT_MODELS } from "./models";
 import type { ContextItem } from "./types";
 import VoiceSession from "./VoiceSession";
+import {
+  INITIAL_ASSISTANT_MESSAGE,
+  createSessionTitle,
+} from "@/lib/chat/messages";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -41,19 +56,31 @@ function uid() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2);
 }
 
-const MODELS = [
-  { id: "groq/compound", label: "Compound (Web Search)", icon: "🔍" },
-  { id: "groq/compound-mini", label: "Compound Mini", icon: "⚡" },
-  { id: "llama-3.3-70b-versatile", label: "Llama 3.3 70B", icon: "⚖️" },
-  { id: "gemini-3.1-flash-lite", label: "Gemini 3.1 Flash Lite", icon: "📄" },
-  { id: "gemini-2.5-flash", label: "Gemini 2.5 Flash", icon: "⚡" },
-];
+type ChatSessionPayload = {
+  id: string;
+  title: string;
+  model: string;
+  responseMode: "concise" | "descriptive";
+  createdAt: string;
+  updatedAt: string;
+  messageCount?: number;
+  messages?: UIMessage[];
+  contexts?: ContextItem[];
+};
 
 export default function ChatInterface() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [contexts, setContexts] = useState<ContextItem[]>([]);
   const [isVoiceMode, setIsVoiceMode] = useState(false);
-  const [selectedModel, setSelectedModel] = useState(MODELS[0].id);
+  const [selectedModel, setSelectedModel] = useState(CHAT_MODELS[0].id);
+  const [adaptiveThinking, setAdaptiveThinking] = useState(false);
+  const [responseMode] = useState<"concise" | "descriptive">("descriptive");
   const [contextPanelOpen, setContextPanelOpen] = useState(true);
+  const [sessions, setSessions] = useState<ChatSessionListItem[]>([]);
+  const [sessionsLoading, setSessionsLoading] = useState(true);
+  const [activeSessionId, setActiveSessionId] = useState<string | undefined>();
+  const [historyOpen, setHistoryOpen] = useState(false);
 
   const normalizeError = (err: unknown) => {
     if (typeof err === "string") {
@@ -80,8 +107,14 @@ export default function ChatInterface() {
         errorMessage = errObj.error;
       }
 
-      if (errObj.type === "invalid_request_error" || errObj.code === "request_too_large") {
-        if (errorMessage.includes("Request Entity Too Large") || errorMessage.includes("request_too_large")) {
+      if (
+        errObj.type === "invalid_request_error" ||
+        errObj.code === "request_too_large"
+      ) {
+        if (
+          errorMessage.includes("Request Entity Too Large") ||
+          errorMessage.includes("request_too_large")
+        ) {
           return "Request too large: The conversation context has grown too big. Try asking a shorter question or starting a new conversation.";
         }
         return `Request error: ${errorMessage}`;
@@ -94,20 +127,9 @@ export default function ChatInterface() {
   const { messages, sendMessage, status, setMessages } = useChat({
     transport: new DefaultChatTransport({
       api: "/api/chat",
-      body: { contexts },
+      body: { contexts, sessionId: activeSessionId, responseMode },
     }),
-    messages: [
-      {
-        id: "init-1",
-        role: "assistant",
-        parts: [
-          {
-            type: "text",
-            text: "Hello! I am your AI geopolitical analyst. How can I help you today?",
-          },
-        ],
-      } as UIMessage,
-    ],
+    messages: [INITIAL_ASSISTANT_MESSAGE],
     onError: (err) => {
       console.error("Chat error:", err);
       const errorMessage = normalizeError(err);
@@ -157,17 +179,177 @@ export default function ChatInterface() {
   // Auto-scroll is now handled in MessageList
 
   // ---------------------------------------------------------------------------
+  // Session handling
+  // ---------------------------------------------------------------------------
+
+  const loadSessions = useCallback(async () => {
+    setSessionsLoading(true);
+    try {
+      const res = await fetch("/api/chat/sessions");
+      if (!res.ok) throw new Error("Failed to load chat sessions");
+      const data = await res.json();
+      setSessions(data.sessions ?? []);
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to load chat history");
+    } finally {
+      setSessionsLoading(false);
+    }
+  }, []);
+
+  const selectSession = useCallback(
+    async (id: string, updateUrl = true) => {
+      try {
+        const res = await fetch(`/api/chat/sessions/${id}`);
+        if (!res.ok) throw new Error("Failed to load chat");
+        const data = await res.json();
+        const session = data.session as ChatSessionPayload;
+
+        setActiveSessionId(session.id);
+        setSelectedModel(session.model || CHAT_MODELS[0].id);
+        setContexts(session.contexts ?? []);
+        setMessages(
+          session.messages && session.messages.length > 0
+            ? session.messages
+            : [INITIAL_ASSISTANT_MESSAGE],
+        );
+
+        if (updateUrl) {
+          router.replace(`/chat?session=${session.id}`, { scroll: false });
+        }
+        setHistoryOpen(false);
+      } catch (error) {
+        console.error(error);
+        toast.error("Failed to open chat");
+      }
+    },
+    [router, setMessages],
+  );
+
+  const createSession = useCallback(
+    async (title = "New Chat", initialContexts = contexts) => {
+      const res = await fetch("/api/chat/sessions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title,
+          model: selectedModel,
+          responseMode,
+          contexts: initialContexts,
+        }),
+      });
+      if (!res.ok) throw new Error("Failed to create chat");
+      const data = await res.json();
+      const session = data.session as ChatSessionListItem;
+      setSessions((prev) => [
+        session,
+        ...prev.filter((s) => s.id !== session.id),
+      ]);
+      return session.id;
+    },
+    [contexts, responseMode, selectedModel],
+  );
+
+  const handleNewChat = useCallback(async () => {
+    try {
+      const id = await createSession();
+      setActiveSessionId(id);
+      setContexts([]);
+      setMessages([INITIAL_ASSISTANT_MESSAGE]);
+      router.replace(`/chat?session=${id}`, { scroll: false });
+      setHistoryOpen(false);
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to start a new chat");
+    }
+  }, [createSession, router, setMessages]);
+
+  const handleDeleteSession = useCallback(
+    async (id: string) => {
+      try {
+        const res = await fetch(`/api/chat/sessions/${id}`, {
+          method: "DELETE",
+        });
+        if (!res.ok) throw new Error("Failed to delete chat");
+        setSessions((prev) => prev.filter((session) => session.id !== id));
+        if (id === activeSessionId) {
+          setActiveSessionId(undefined);
+          setContexts([]);
+          setMessages([INITIAL_ASSISTANT_MESSAGE]);
+          router.replace("/chat", { scroll: false });
+        }
+      } catch (error) {
+        console.error(error);
+        toast.error("Failed to delete chat");
+      }
+    },
+    [activeSessionId, router, setMessages],
+  );
+
+  const ensureSession = useCallback(
+    async (firstMessage: string) => {
+      if (activeSessionId) return activeSessionId;
+
+      const title = createSessionTitle(firstMessage);
+      const id = await createSession(title);
+      setActiveSessionId(id);
+      router.replace(`/chat?session=${id}`, { scroll: false });
+      setSessions((prev) =>
+        prev.map((session) =>
+          session.id === id ? { ...session, title } : session,
+        ),
+      );
+      return id;
+    },
+    [activeSessionId, createSession, router],
+  );
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadSessions();
+  }, [loadSessions]);
+
+  useEffect(() => {
+    const id = searchParams.get("session");
+    if (id && id !== activeSessionId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      selectSession(id, false);
+    }
+  }, [activeSessionId, searchParams, selectSession]);
+
+  // ---------------------------------------------------------------------------
   // Message handling
   // ---------------------------------------------------------------------------
 
   const handleSend = useCallback(
-    (text: string) => {
-      sendMessage(
-        { role: "user", parts: [{ type: "text", text }] },
-        { body: { model: selectedModel } },
-      );
+    async (text: string) => {
+      try {
+        const targetSessionId = await ensureSession(text);
+        sendMessage(
+          { role: "user", parts: [{ type: "text", text }] },
+          {
+            body: {
+              model: selectedModel,
+              adaptiveThinking,
+              sessionId: targetSessionId,
+              responseMode,
+              contexts,
+            },
+          },
+        );
+      } catch (error) {
+        console.error(error);
+        toast.error("Failed to send message");
+      }
     },
-    [sendMessage, selectedModel],
+    [
+      adaptiveThinking,
+      contexts,
+      ensureSession,
+      responseMode,
+      selectedModel,
+      sendMessage,
+    ],
   );
 
   // ---------------------------------------------------------------------------
@@ -211,9 +393,20 @@ export default function ChatInterface() {
       };
       // Prevent duplicate title (demo guard)
       if (prev.some((c) => c.title === draft.title)) return prev;
-      return [...prev, draft];
+      const next = [...prev, draft];
+      if (activeSessionId) {
+        fetch(`/api/chat/sessions/${activeSessionId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ contexts: [draft] }),
+        }).catch((error) => {
+          console.error(error);
+          toast.error("Failed to save context");
+        });
+      }
+      return next;
     });
-  }, []);
+  }, [activeSessionId]);
 
   const removeContext = useCallback((id: string) => {
     setContexts((prev) => prev.filter((c) => c.id !== id));
@@ -241,17 +434,38 @@ export default function ChatInterface() {
           </div>
 
           <div className="flex items-center gap-2">
-            <select
-              value={selectedModel}
-              onChange={(e) => setSelectedModel(e.target.value)}
-              className="text-xs border border-border rounded-md px-2 py-1 bg-background"
-            >
-              {MODELS.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.icon} {m.label}
-                </option>
-              ))}
-            </select>
+            <Sheet open={historyOpen} onOpenChange={setHistoryOpen}>
+              <SheetTrigger asChild>
+                <button
+                  aria-label="Chat history"
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground transition-colors text-sm font-medium"
+                >
+                  <HugeiconsIcon icon={Time02Icon} className="w-4.5 h-4.5" />
+                  <span>History</span>
+                </button>
+              </SheetTrigger>
+              <SheetContent
+                side="right"
+                className="p-0 w-full sm:max-w-md"
+                showCloseButton={false}
+              >
+                <div className="sr-only">
+                  <SheetTitle>Chat History</SheetTitle>
+                  <SheetDescription>
+                    Review your past AI chat sessions.
+                  </SheetDescription>
+                </div>
+                <ChatHistoryPanel
+                  sessions={sessions}
+                  activeSessionId={activeSessionId}
+                  loading={sessionsLoading}
+                  onNewChat={handleNewChat}
+                  onSelectSession={selectSession}
+                  onDeleteSession={handleDeleteSession}
+                />
+              </SheetContent>
+            </Sheet>
+
             <button
               aria-label="More options"
               className="p-2 hover:bg-accent rounded-lg text-muted-foreground transition-colors"
@@ -280,6 +494,11 @@ export default function ChatInterface() {
           onVoiceToggle={() => setIsVoiceMode((v) => !v)}
           isVoiceMode={isVoiceMode}
           onAddContext={addContext}
+          models={CHAT_MODELS}
+          selectedModel={selectedModel}
+          onModelChange={setSelectedModel}
+          adaptiveThinking={adaptiveThinking}
+          onAdaptiveThinkingChange={setAdaptiveThinking}
           contextPillsSlot={
             <ContextPills
               items={contexts}
