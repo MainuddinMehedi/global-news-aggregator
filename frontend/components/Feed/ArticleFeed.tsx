@@ -88,9 +88,9 @@ export default function ArticleFeed({
   };
 
   return (
-    <div>
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
       {articles.length === 0 && !isLoading ? (
-        <p className="text-muted-foreground text-sm py-10 text-center">
+        <p className="col-span-full text-muted-foreground text-sm py-10 text-center">
           {search ? (
             <>
               No articles found for{" "}
@@ -104,15 +104,13 @@ export default function ArticleFeed({
         </p>
       ) : (
         articles.map((article) => (
-          <div key={article.id} className="mb-5">
-            <ArticleCard article={article} />
-          </div>
+          <ArticleCard key={article.id} article={article} />
         ))
       )}
 
       {/* Pagination error state */}
       {error && (
-        <div className="flex flex-col items-center justify-center py-6 px-4 text-center bg-destructive/5 rounded-xl border border-destructive/10 mb-5">
+        <div className="col-span-full flex flex-col items-center justify-center py-6 px-4 text-center bg-destructive/5 rounded-xl border border-destructive/10">
           <p className="text-sm font-medium text-destructive mb-3">
             Failed to load more articles. Please check your connection.
           </p>
@@ -129,9 +127,10 @@ export default function ArticleFeed({
 
       {/* Sentinel watched by IntersectionObserver */}
       {!error && (
-        <div ref={sentinelRef}>
+        <div ref={sentinelRef} className="col-span-full">
           {isLoading && (
-            <div className="space-y-5 pb-5">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 pb-5">
+              <ArticleCardSkeleton />
               <ArticleCardSkeleton />
               <ArticleCardSkeleton />
               <ArticleCardSkeleton />
