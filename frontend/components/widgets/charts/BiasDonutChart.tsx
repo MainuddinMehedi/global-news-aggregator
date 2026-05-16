@@ -79,7 +79,6 @@ const renderActiveShape = (props: any) => {
 };
 
 export function BiasDonutChart({ data }: BiasDonutChartProps) {
-  const [activeIndex, setActiveIndex] = useState(0);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -87,16 +86,12 @@ export function BiasDonutChart({ data }: BiasDonutChartProps) {
     setMounted(true);
   }, []);
 
-  const onPieEnter = (_: unknown, index: number) => {
-    setActiveIndex(index);
-  };
-
   if (!mounted) {
-    return <div className="h-[240px] w-full" />;
+    return <div className="h-60 w-full" />;
   }
 
   return (
-    <div className="h-[240px] w-full">
+    <div className="h-60 w-full">
       <ResponsiveContainer
         width="100%"
         height="100%"
@@ -105,7 +100,6 @@ export function BiasDonutChart({ data }: BiasDonutChartProps) {
       >
         <PieChart>
           <Pie
-            activeIndex={activeIndex}
             activeShape={renderActiveShape}
             data={data}
             cx="50%"
@@ -113,7 +107,6 @@ export function BiasDonutChart({ data }: BiasDonutChartProps) {
             innerRadius={65}
             outerRadius={85}
             dataKey="count"
-            onMouseEnter={onPieEnter}
             stroke="none"
           >
             {data.map((entry, index) => (
@@ -125,6 +118,7 @@ export function BiasDonutChart({ data }: BiasDonutChartProps) {
             ))}
           </Pie>
           <Tooltip
+            defaultIndex={0}
             content={({ active, payload }) => {
               if (active && payload && payload.length) {
                 return null; // Using activeShape instead
