@@ -1,6 +1,15 @@
 "use client";
 
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+import { useState, useEffect } from "react";
 
 interface AiUsageLineChartProps {
   data: {
@@ -11,9 +20,25 @@ interface AiUsageLineChartProps {
 }
 
 export function AiUsageLineChart({ data }: AiUsageLineChartProps) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return <div className="h-[200px] w-full" />;
+  }
+
   return (
     <div className="h-[200px] w-full">
-      <ResponsiveContainer width="100%" height="100%">
+      <ResponsiveContainer
+        width="100%"
+        height="100%"
+        minWidth={0}
+        minHeight={0}
+      >
         <AreaChart
           data={data}
           margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
@@ -24,12 +49,20 @@ export function AiUsageLineChart({ data }: AiUsageLineChartProps) {
               <stop offset="95%" stopColor="var(--primary)" stopOpacity={0} />
             </linearGradient>
           </defs>
-          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
+          <CartesianGrid
+            strokeDasharray="3 3"
+            vertical={false}
+            stroke="rgba(255,255,255,0.05)"
+          />
           <XAxis
             dataKey="date"
             axisLine={false}
             tickLine={false}
-            tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 9, fontWeight: 700 }}
+            tick={{
+              fill: "rgba(255,255,255,0.4)",
+              fontSize: 9,
+              fontWeight: 700,
+            }}
             tickFormatter={(val) => val.split("-").slice(1).join("/")}
           />
           <YAxis hide />

@@ -1,7 +1,14 @@
 "use client";
 
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Sector } from "recharts";
-import { useState } from "react";
+import {
+  PieChart,
+  Pie,
+  Cell,
+  ResponsiveContainer,
+  Tooltip,
+  Sector,
+} from "recharts";
+import { useState, useEffect } from "react";
 
 interface BiasDonutChartProps {
   data: {
@@ -12,15 +19,40 @@ interface BiasDonutChartProps {
   }[];
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const renderActiveShape = (props: any) => {
-  const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill, payload, percentage } = props;
+  const {
+    cx,
+    cy,
+    innerRadius,
+    outerRadius,
+    startAngle,
+    endAngle,
+    fill,
+    payload,
+    percentage,
+  } = props;
 
   return (
     <g>
-      <text x={cx} y={cy - 10} dy={8} textAnchor="middle" fill={fill} className="text-[10px] font-black uppercase tracking-widest">
+      <text
+        x={cx}
+        y={cy - 10}
+        dy={8}
+        textAnchor="middle"
+        fill={fill}
+        className="text-[10px] font-black uppercase tracking-widest"
+      >
         {payload.label}
       </text>
-      <text x={cx} y={cy + 15} dy={8} textAnchor="middle" fill="#fff" className="text-xl font-black font-mono tracking-tighter">
+      <text
+        x={cx}
+        y={cy + 15}
+        dy={8}
+        textAnchor="middle"
+        fill="#fff"
+        className="text-xl font-black font-mono tracking-tighter"
+      >
         {percentage}%
       </text>
       <Sector
@@ -48,14 +80,29 @@ const renderActiveShape = (props: any) => {
 
 export function BiasDonutChart({ data }: BiasDonutChartProps) {
   const [activeIndex, setActiveIndex] = useState(0);
+  const [mounted, setMounted] = useState(false);
 
-  const onPieEnter = (_: any, index: number) => {
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMounted(true);
+  }, []);
+
+  const onPieEnter = (_: unknown, index: number) => {
     setActiveIndex(index);
   };
 
+  if (!mounted) {
+    return <div className="h-[240px] w-full" />;
+  }
+
   return (
     <div className="h-[240px] w-full">
-      <ResponsiveContainer width="100%" height="100%">
+      <ResponsiveContainer
+        width="100%"
+        height="100%"
+        minWidth={0}
+        minHeight={0}
+      >
         <PieChart>
           <Pie
             activeIndex={activeIndex}

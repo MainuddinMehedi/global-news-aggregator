@@ -10,6 +10,7 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
+import { useState, useEffect } from "react";
 
 interface IngestionVolumeChartProps {
   data: {
@@ -20,9 +21,25 @@ interface IngestionVolumeChartProps {
 }
 
 export function IngestionVolumeChart({ data }: IngestionVolumeChartProps) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return <div className="h-full w-full" />;
+  }
+
   return (
     <div className="h-full w-full">
-      <ResponsiveContainer width="100%" height="100%">
+      <ResponsiveContainer
+        width="100%"
+        height="100%"
+        minWidth={0}
+        minHeight={0}
+      >
         <BarChart
           data={data}
           margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
