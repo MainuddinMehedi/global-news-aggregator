@@ -5,7 +5,7 @@ import { Robot01Icon, UserIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import type { UIMessage } from "ai";
 import { memo, useEffect, useRef } from "react";
-import { MODEL_LABELS } from "./models";
+import { MODEL_LABELS } from "@/lib/ai/modelRegistry";
 
 interface MessageListProps {
   messages: UIMessage[];

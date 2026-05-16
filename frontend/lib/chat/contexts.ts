@@ -1,4 +1,4 @@
-import type { ContextItem } from "@/components/chat/types";
+import type { ContextItem } from "@/types/chat";
 
 type IncomingContext = ContextItem & {
   sourceId?: string;

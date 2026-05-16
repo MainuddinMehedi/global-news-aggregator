@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type { UIMessage } from "ai";
 import prisma from "@/lib/prisma";
 import { normalizeContextForDb } from "@/lib/chat/contexts";
-import type { ContextItem } from "@/components/chat/types";
+import type { ContextItem } from "@/types/chat";
 
 function toUiMessage(message: {
   id: string;

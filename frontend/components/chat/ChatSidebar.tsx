@@ -25,8 +25,9 @@ import {
 } from "@/store";
 import ChatInput from "./ChatInput";
 import MessageList from "./MessageList";
-import { CHAT_MODELS } from "./models";
-import type { ContextItem } from "./types";
+import ContextPickerModal from "./ContextPickerModal";
+import { MODEL_REGISTRY, getActiveModels } from "@/lib/ai/modelRegistry";
+import type { ContextItem } from "@/types/chat";
 import { contextFromArticle } from "@/lib/chat/contexts";
 import {
   INITIAL_ASSISTANT_MESSAGE,
@@ -77,7 +78,13 @@ function ContextBanner({
 // Welcome screen — shown when no conversation is active
 // ---------------------------------------------------------------------------
 
-function WelcomeScreen({ onNewChat }: { onNewChat: () => void }) {
+function WelcomeScreen({
+  onNewChat,
+  onSend,
+}: {
+  onNewChat: () => void;
+  onSend: (text: string) => void;
+}) {
   return (
     <div className="flex-1 flex flex-col items-center justify-center px-6 text-center select-none">
       {/* Glowing orb illustration */}
@@ -102,7 +109,7 @@ function WelcomeScreen({ onNewChat }: { onNewChat: () => void }) {
       <div className="flex flex-col gap-1.5 mt-5 w-full max-w-[240px]">
         <button
           onClick={onNewChat}
-          className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-muted/30 border border-border/60 text-xs text-foreground hover:bg-muted/50 hover:border-primary/30 transition-all group"
+          className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-muted/30 border border-border/60 text-xs text-foreground hover:bg-muted/50 hover:border-primary/30 transition-all group text-left"
         >
           <HugeiconsIcon
             icon={PlusSignIcon}
@@ -111,12 +118,26 @@ function WelcomeScreen({ onNewChat }: { onNewChat: () => void }) {
           <span className="font-medium">Start new chat</span>
         </button>
 
-        <button className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-muted/30 border border-border/60 text-xs text-muted-foreground hover:bg-muted/50 hover:border-border hover:text-foreground transition-all group">
+        <button
+          onClick={() => onSend("Summarize today's news")}
+          className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-muted/30 border border-border/60 text-xs text-muted-foreground hover:bg-muted/50 hover:border-border hover:text-foreground transition-all group text-left"
+        >
           <HugeiconsIcon
             icon={Sparkles}
             className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary transition-colors"
           />
           <span>Summarize today&apos;s news</span>
+        </button>
+
+        <button
+          onClick={() => onSend("What are the latest geopolitical trends?")}
+          className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-muted/30 border border-border/60 text-xs text-muted-foreground hover:bg-muted/50 hover:border-border hover:text-foreground transition-all group text-left"
+        >
+          <HugeiconsIcon
+            icon={MessageSquare}
+            className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary transition-colors"
+          />
+          <span>Latest geopolitical trends</span>
         </button>
       </div>
     </div>
@@ -134,10 +155,13 @@ export default function ChatSidebar() {
   const clearContext = useClearChatContext();
   const [contexts, setContexts] = useState<ContextItem[]>([]);
   const [sessionId, setSessionId] = useState<string | undefined>();
-  const [selectedModel, setSelectedModel] = useState(CHAT_MODELS[0].id);
+  const [selectedModel, setSelectedModel] = useState(MODEL_REGISTRY[0].id);
   const [adaptiveThinking, setAdaptiveThinking] = useState(false);
+  const [responseMode, setResponseMode] = useState<"concise" | "descriptive">(
+    "concise",
+  );
+  const [contextPickerOpen, setContextPickerOpen] = useState(false);
   const preparedArticleIdRef = useRef<string | null>(null);
-  const responseMode = "concise";
 
   const { messages, sendMessage, status, setMessages } = useChat({
     transport: new DefaultChatTransport({
@@ -180,6 +204,7 @@ export default function ChatSidebar() {
   const handleNewChat = useCallback(() => {
     setSessionId(undefined);
     setMessages([INITIAL_ASSISTANT_MESSAGE]);
+    setSelectedModel(MODEL_REGISTRY[0].id);
     preparedArticleIdRef.current = null;
     if (contextArticle) {
       setContexts([contextFromArticle(contextArticle)]);
@@ -222,6 +247,16 @@ export default function ChatSidebar() {
     ],
   );
 
+  const handleAddContexts = useCallback((newItems: ContextItem[]) => {
+    setContexts((prev) => {
+      const filtered = newItems.filter(
+        (newItem) => !prev.some((existing) => existing.id === newItem.id),
+      );
+      if (filtered.length === 0) return prev;
+      return [...prev, ...filtered];
+    });
+  }, []);
+
   const handleClearContext = useCallback(() => {
     preparedArticleIdRef.current = null;
     setContexts([]);
@@ -247,6 +282,7 @@ export default function ChatSidebar() {
     setContexts([articleContext]);
     setMessages([INITIAL_ASSISTANT_MESSAGE]);
     setSessionId(undefined);
+    setSelectedModel(MODEL_REGISTRY[0].id);
 
     createSession(`Chat: ${contextArticle.title}`, [articleContext]).catch(
       (error) => {
@@ -354,34 +390,37 @@ export default function ChatSidebar() {
         {/* ── Body ────────────────────────────────────────────────────── */}
         <div className="flex flex-1 min-h-0 overflow-hidden">
           {visibleMessages.length === 0 ? (
-            <WelcomeScreen onNewChat={handleNewChat} />
+            <WelcomeScreen onNewChat={handleNewChat} onSend={handleSend} />
           ) : (
             <MessageList messages={visibleMessages} isLoading={isLoading} />
           )}
         </div>
 
         {/* ── Input ───────────────────────────────────────────────────── */}
-        <div className="border-t border-border pb-2">
+        <div className="pb-2">
           <ChatInput
             onSend={handleSend}
             onVoiceToggle={() => {}}
             isVoiceMode={false}
-            onAddContext={() => {
-              if (!contextArticle) {
-                toast.info("Context picker is coming next.");
-              }
-            }}
-            models={CHAT_MODELS}
+            onAddContext={() => setContextPickerOpen(true)}
+            models={getActiveModels()}
             selectedModel={selectedModel}
             onModelChange={setSelectedModel}
-            responseMode="descriptive"
-            onResponseModeChange={() => {}}
+            responseMode={responseMode}
+            onResponseModeChange={setResponseMode}
             adaptiveThinking={adaptiveThinking}
             onAdaptiveThinkingChange={setAdaptiveThinking}
             disabled={isLoading}
           />
         </div>
       </div>
+
+      <ContextPickerModal
+        isOpen={contextPickerOpen}
+        onClose={() => setContextPickerOpen(false)}
+        onAdd={handleAddContexts}
+        existingItems={contexts}
+      />
     </>
   );
 }

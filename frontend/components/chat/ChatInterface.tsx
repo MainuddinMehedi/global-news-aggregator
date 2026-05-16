@@ -22,6 +22,9 @@ import {
   Robot01Icon,
   Edit02Icon,
   PencilEdit02Icon,
+  PlusSignIcon,
+  Sparkles,
+  MessageSquare,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useCallback, useEffect, useState } from "react";
@@ -35,12 +38,14 @@ import ChatHistoryPanel, { type ChatSessionListItem } from "./ChatHistoryPanel";
 import ChatInput from "./ChatInput";
 import ContextPanel, { ContextPills } from "./ContextPanel";
 import MessageList from "./MessageList";
-import { CHAT_MODELS } from "./models";
-import type { ContextItem } from "./types";
+import { MODEL_REGISTRY, getActiveModels } from "@/lib/ai/modelRegistry";
+import type { ContextItem } from "@/types/chat";
 import VoiceSession from "./VoiceSession";
+import ContextPickerModal from "./ContextPickerModal";
 import {
   INITIAL_ASSISTANT_MESSAGE,
   createSessionTitle,
+  isInitialAssistantMessage,
 } from "@/lib/chat/messages";
 import {
   Sheet,
@@ -56,6 +61,98 @@ import {
 
 function uid() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2);
+}
+
+function WelcomeScreen({
+  onNewChat,
+  onSend,
+}: {
+  onNewChat: () => void;
+  onSend: (text: string) => void;
+}) {
+  return (
+    <div className="flex-1 flex flex-col items-center justify-center px-6 text-center select-none animate-in fade-in zoom-in-95 duration-500">
+      <div className="relative mb-8">
+        <div className="w-20 h-20 rounded-3xl bg-primary/10 flex items-center justify-center border border-primary/20 shadow-inner">
+          <HugeiconsIcon
+            icon={Robot01Icon}
+            className="w-10 h-10 text-primary"
+          />
+        </div>
+        <div className="absolute inset-0 -m-3 rounded-3xl bg-primary/5 animate-pulse" />
+      </div>
+
+      <h2 className="text-2xl font-bold text-foreground mb-2">AI Analyst</h2>
+      <p className="text-sm text-muted-foreground leading-relaxed max-w-md mb-10">
+        I analyze geopolitical events and trends using live multi-perspective
+        data. Start a new conversation or try a quick action below.
+      </p>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-xl">
+        <button
+          onClick={onNewChat}
+          className="flex items-center gap-3 p-4 rounded-2xl bg-card border border-border/60 hover:border-primary/40 hover:bg-muted/50 transition-all group text-left shadow-sm"
+        >
+          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+            <HugeiconsIcon
+              icon={PlusSignIcon}
+              className="w-5 h-5 text-primary group-hover:scale-110 transition-transform"
+            />
+          </div>
+          <div>
+            <div className="text-sm font-semibold text-foreground">
+              New Analysis
+            </div>
+            <div className="text-xs text-muted-foreground">
+              Start a fresh session
+            </div>
+          </div>
+        </button>
+
+        <button
+          onClick={() => onSend("Summarize today's most impactful news")}
+          className="flex items-center gap-3 p-4 rounded-2xl bg-card border border-border/60 hover:border-primary/40 hover:bg-muted/50 transition-all group text-left shadow-sm"
+        >
+          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+            <HugeiconsIcon
+              icon={Sparkles}
+              className="w-5 h-5 text-primary group-hover:scale-110 transition-transform"
+            />
+          </div>
+          <div>
+            <div className="text-sm font-semibold text-foreground">
+              Daily Briefing
+            </div>
+            <div className="text-xs text-muted-foreground">
+              Summarize today&apos;s news
+            </div>
+          </div>
+        </button>
+
+        <button
+          onClick={() =>
+            onSend("What are the latest developments in the Middle East?")
+          }
+          className="flex items-center gap-3 p-4 rounded-2xl bg-card border border-border/60 hover:border-primary/40 hover:bg-muted/50 transition-all group text-left shadow-sm sm:col-span-2"
+        >
+          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+            <HugeiconsIcon
+              icon={MessageSquare}
+              className="w-5 h-5 text-primary group-hover:scale-110 transition-transform"
+            />
+          </div>
+          <div>
+            <div className="text-sm font-semibold text-foreground">
+              Middle East Situation
+            </div>
+            <div className="text-xs text-muted-foreground">
+              Analyze the latest regional developments
+            </div>
+          </div>
+        </button>
+      </div>
+    </div>
+  );
 }
 
 type ChatSessionPayload = {
@@ -75,7 +172,7 @@ export default function ChatInterface() {
   const searchParams = useSearchParams();
   const [contexts, setContexts] = useState<ContextItem[]>([]);
   const [isVoiceMode, setIsVoiceMode] = useState(false);
-  const [selectedModel, setSelectedModel] = useState(CHAT_MODELS[0].id);
+  const [selectedModel, setSelectedModel] = useState(MODEL_REGISTRY[0].id);
   const [adaptiveThinking, setAdaptiveThinking] = useState(false);
   const [responseMode, setResponseMode] = useState<"concise" | "descriptive">(
     "descriptive",
@@ -85,6 +182,7 @@ export default function ChatInterface() {
   const [sessionsLoading, setSessionsLoading] = useState(true);
   const [activeSessionId, setActiveSessionId] = useState<string | undefined>();
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [contextPickerOpen, setContextPickerOpen] = useState(false);
 
   const normalizeError = (err: unknown) => {
     if (typeof err === "string") {
@@ -180,6 +278,10 @@ export default function ChatInterface() {
 
   const isLoading = status === "submitted" || status === "streaming";
 
+  const visibleMessages = messages.filter(
+    (msg) => !isInitialAssistantMessage(msg),
+  );
+
   // Auto-scroll is now handled in MessageList
 
   // ---------------------------------------------------------------------------
@@ -220,7 +322,7 @@ export default function ChatInterface() {
         const session = data.session as ChatSessionPayload;
 
         setActiveSessionId(session.id);
-        setSelectedModel(session.model || CHAT_MODELS[0].id);
+        setSelectedModel(session.model || MODEL_REGISTRY[0].id);
         setContexts(session.contexts ?? []);
         setMessages(
           session.messages && session.messages.length > 0
@@ -268,6 +370,7 @@ export default function ChatInterface() {
     setActiveSessionId(undefined);
     setContexts([]);
     setMessages([INITIAL_ASSISTANT_MESSAGE]);
+    setSelectedModel(MODEL_REGISTRY[0].id);
     router.replace("/chat", { scroll: false });
     setHistoryOpen(false);
   }, [router, setMessages]);
@@ -284,6 +387,7 @@ export default function ChatInterface() {
           setActiveSessionId(undefined);
           setContexts([]);
           setMessages([INITIAL_ASSISTANT_MESSAGE]);
+          setSelectedModel(MODEL_REGISTRY[0].id);
           router.replace("/chat", { scroll: false });
         }
       } catch (error) {
@@ -331,6 +435,7 @@ export default function ChatInterface() {
       setActiveSessionId(undefined);
       setContexts([]);
       setMessages([INITIAL_ASSISTANT_MESSAGE]);
+      setSelectedModel(MODEL_REGISTRY[0].id);
     }
   }, [activeSessionId, searchParams, selectSession]);
 
@@ -398,32 +503,35 @@ export default function ChatInterface() {
   // Context management
   // ---------------------------------------------------------------------------
 
-  // TODO-NOTE: Manage context through zustand as you need to have the context in floating chat and chat page both.
   const addContext = useCallback(() => {
-    // TODO: Open a real picker / search dialog.
-    // For now, add a placeholder so the panel is explorable.
-    setContexts((prev) => {
-      const draft: ContextItem = {
-        id: uid(),
-        title: "Global Supply Chain Disruptions 2026",
-        type: "article",
-      };
-      // Prevent duplicate title (demo guard)
-      if (prev.some((c) => c.title === draft.title)) return prev;
-      const next = [...prev, draft];
-      if (activeSessionId) {
-        fetch(`/api/chat/sessions/${activeSessionId}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ contexts: [draft] }),
-        }).catch((error) => {
-          console.error(error);
-          toast.error("Failed to save context");
-        });
-      }
-      return next;
-    });
-  }, [activeSessionId]);
+    setContextPickerOpen(true);
+  }, []);
+
+  const handleAddContexts = useCallback(
+    (newItems: ContextItem[]) => {
+      setContexts((prev) => {
+        const filtered = newItems.filter(
+          (newItem) => !prev.some((existing) => existing.id === newItem.id),
+        );
+        if (filtered.length === 0) return prev;
+
+        const next = [...prev, ...filtered];
+
+        if (activeSessionId) {
+          fetch(`/api/chat/sessions/${activeSessionId}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ contexts: next }),
+          }).catch((error) => {
+            console.error(error);
+            toast.error("Failed to save context");
+          });
+        }
+        return next;
+      });
+    },
+    [activeSessionId],
+  );
 
   const removeContext = useCallback((id: string) => {
     setContexts((prev) => prev.filter((c) => c.id !== id));
@@ -516,7 +624,11 @@ export default function ChatInterface() {
 
         {/* Message list + voice overlay share the same flex-1 area */}
         <div className="flex-1 overflow-hidden relative">
-          <MessageList messages={messages} isLoading={isLoading} />
+          {visibleMessages.length === 0 ? (
+            <WelcomeScreen onNewChat={handleNewChat} onSend={handleSend} />
+          ) : (
+            <MessageList messages={messages} isLoading={isLoading} />
+          )}
 
           {/* Voice session overlays the message area */}
           <VoiceSession
@@ -533,7 +645,7 @@ export default function ChatInterface() {
           onVoiceToggle={() => setIsVoiceMode((v) => !v)}
           isVoiceMode={isVoiceMode}
           onAddContext={addContext}
-          models={CHAT_MODELS}
+          models={getActiveModels()}
           selectedModel={selectedModel}
           onModelChange={setSelectedModel}
           responseMode={responseMode}
@@ -574,6 +686,13 @@ export default function ChatInterface() {
         onAdd={addContext}
         isOpen={contextPanelOpen}
         onToggle={() => setContextPanelOpen((v) => !v)}
+      />
+
+      <ContextPickerModal
+        isOpen={contextPickerOpen}
+        onClose={() => setContextPickerOpen(false)}
+        onAdd={handleAddContexts}
+        existingItems={contexts}
       />
     </div>
   );

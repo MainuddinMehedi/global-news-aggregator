@@ -17,7 +17,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
-import type { ChatModelOption } from "./models";
+import type { ModelMetadata } from "@/lib/ai/modelRegistry";
 
 interface ChatInputProps {
   /** Called with the trimmed message text when the user submits */
@@ -28,7 +28,7 @@ interface ChatInputProps {
   isVoiceMode: boolean;
   /** Called when the attachment / add-context button is pressed */
   onAddContext: () => void;
-  models: ChatModelOption[];
+  models: ModelMetadata[];
   selectedModel: string;
   onModelChange: (model: string) => void;
   responseMode: "concise" | "descriptive";

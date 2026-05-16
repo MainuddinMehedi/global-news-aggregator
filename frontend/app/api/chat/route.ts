@@ -1,5 +1,3 @@
-import { createOpenAI } from "@ai-sdk/openai";
-import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { streamText, type ModelMessage, type UIMessage } from "ai";
 import { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
@@ -9,25 +7,9 @@ import {
   getMessageText,
   isInitialAssistantMessage,
 } from "@/lib/chat/messages";
-import type { ContextItem } from "@/components/chat/types";
-
-const groq = createOpenAI({
-  baseURL: process.env.GROQ_BASE_URL || "https://api.groq.com/openai/v1",
-  apiKey: process.env.GROQ_API_KEY || "",
-});
-
-const google = createGoogleGenerativeAI({
-  baseURL: process.env.GEMINI_BASE_URL
-    ? process.env.GEMINI_BASE_URL.replace(/\/openai$/, "")
-    : undefined,
-  apiKey: process.env.GEMINI_API_KEY || "",
-});
-
-const github = createOpenAI({
-  baseURL:
-    process.env.GITHUB_MODELS_BASE_URL || "https://models.github.ai/inference",
-  apiKey: process.env.GITHUB_MODELS_API_KEY || "",
-});
+import type { ContextItem } from "@/types/chat";
+import { getModel } from "@/lib/ai/modelRegistry";
+import { createProviderClient } from "@/lib/ai/providers";
 
 const SYSTEM_PROMPT = `You are a senior geopolitical analyst AI embedded in a global news aggregator.
 Your role:
@@ -207,29 +189,26 @@ export async function POST(req: Request) {
       systemPrompt += `\n\nThe user has attached the following context items for this conversation:\n${contextBlock}\nUse these to ground your analysis.`;
     }
 
-    let aiModel;
-    const isGitHubModel = model.startsWith("github:");
-    const isGoogleModel =
-      model.startsWith("gemini") || model.startsWith("gemma");
-    const isGroqHostedModel = !isGoogleModel && !isGitHubModel;
-
-    if (isGitHubModel) {
-      aiModel = github.chat(model.slice("github:".length));
-    } else if (isGoogleModel) {
-      aiModel = google.chat(model);
-    } else {
-      // Route all non-Gemini chat models through Groq's OpenAI-compatible API.
-      aiModel = groq.chat(model);
+    const modelConfig = getModel(model);
+    if (!modelConfig) {
+      return new Response(
+        JSON.stringify({ error: `Model ${model} is not supported.` }),
+        { status: 400, headers: { "Content-Type": "application/json" } },
+      );
     }
+
+    const provider = createProviderClient(modelConfig.provider);
+    const aiModel = provider.chat(
+      modelConfig.provider === "github" ? model.slice("github:".length) : model,
+    );
 
     const hasImageParts = messages.some((msg) =>
       msg.parts?.some((p) => p.type === "file"),
     );
-    if (hasImageParts && !isGoogleModel) {
+    if (hasImageParts && !modelConfig.capabilities.supportsImages) {
       return new Response(
         JSON.stringify({
-          error:
-            "The selected model does not support image input. Please switch to a Gemini model or remove images.",
+          error: `The selected model ${modelConfig.label} does not support image input. Please switch to a supported model or remove images.`,
         }),
         {
           status: 400,
@@ -269,12 +248,8 @@ export async function POST(req: Request) {
         };
       });
 
-    const MAX_TOTAL_CHARS = isGitHubModel
-      ? 12_000
-      : isGroqHostedModel
-        ? 30_000
-        : 80_000;
-    const MAX_TURNS = isGitHubModel ? 6 : isGroqHostedModel ? 8 : 16;
+    const MAX_TOTAL_CHARS = Math.floor(modelConfig.contextWindow * 3.5);
+    const MAX_TURNS = modelConfig.contextWindow > 32000 ? 16 : 8;
 
     while (coreMessages.length > MAX_TURNS) {
       coreMessages.splice(0, 2);

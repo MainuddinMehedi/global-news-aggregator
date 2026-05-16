@@ -6,7 +6,7 @@ export const INITIAL_ASSISTANT_MESSAGE: UIMessage = {
   parts: [
     {
       type: "text",
-      text: "Hello! I am your AI geopolitical analyst. How can I help you today?",
+      text: "I am your AI geopolitical analyst. Grounded in live news and multi-perspective data, I can help you analyze global trends or specific events. How can I help you today?",
     },
   ],
 };
