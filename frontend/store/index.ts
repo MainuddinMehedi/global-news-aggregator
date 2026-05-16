@@ -48,10 +48,12 @@ interface ChatSidebarSlice {
 
 // ─── Settings slice (Persistent) ─────────────────────────────────────────────
 export type Theme = "light" | "dark" | "system";
+export type ColorTheme = "maia" | "mist" | "rose" | "slate" | "sand" | "lime";
 export type ResponseStyle = "concise" | "detailed";
 
 interface SettingsState {
   theme: Theme;
+  colorTheme: ColorTheme;
   isSidebarCollapsed: boolean;
   feedDefaultCategory: string;
   feedDefaultSort: string;
@@ -120,6 +122,7 @@ export const useAppStore = create<AppStore>()(
 
       // ── Settings (Persistent) ──
       theme: "system",
+      colorTheme: "maia",
       isSidebarCollapsed: false,
       feedDefaultCategory: "all",
       feedDefaultSort: "newest",
@@ -139,6 +142,7 @@ export const useAppStore = create<AppStore>()(
       // Only persist the settings and UI status
       partialize: (state) => ({
         theme: state.theme,
+        colorTheme: state.colorTheme,
         isSidebarCollapsed: state.isSidebarCollapsed,
         feedDefaultCategory: state.feedDefaultCategory,
         feedDefaultSort: state.feedDefaultSort,

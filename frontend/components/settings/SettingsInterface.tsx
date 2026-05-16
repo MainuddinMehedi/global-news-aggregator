@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSettings, type ResponseStyle } from "@/store";
+import { useSettings, type ResponseStyle, type ColorTheme } from "@/store";
 import { useTheme } from "next-themes";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -16,6 +16,17 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { CANONICAL_CATEGORIES } from "@/lib/constants";
+import { Check } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
+
+const COLOR_THEMES: { id: ColorTheme; label: string; swatch: string }[] = [
+  { id: "maia", label: "Maia", swatch: "bg-[oklch(0.508_0.118_165.612)]" },
+  { id: "mist", label: "Mist", swatch: "bg-[oklch(0.527_0.154_150.069)]" },
+  { id: "rose", label: "Rose", swatch: "bg-[oklch(0.508_0.118_165.612)]" },
+  { id: "slate", label: "Slate", swatch: "bg-[oklch(0.218_0.008_223.9)]" },
+  { id: "sand", label: "Sand", swatch: "bg-[oklch(0.508_0.118_165.612)]" },
+  { id: "lime", label: "Lime", swatch: "bg-[oklch(0.511_0.096_186.391)]" },
+];
 
 const SETTINGS_SECTIONS = [
   { id: "general", label: "General" },
@@ -28,6 +39,7 @@ export default function SettingsInterface() {
   const [mounted, setMounted] = useState(false);
   const { settings, setSetting } = useSettings();
   const { theme, setTheme } = useTheme();
+  const { colorTheme } = settings;
   const [activeSection, setActiveSection] = useState<string>("general");
 
   useEffect(() => {
@@ -132,6 +144,45 @@ export default function SettingsInterface() {
                     <SelectItem value="system">System</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+
+              <Separator />
+
+              <div className="space-y-3">
+                <div className="space-y-1">
+                  <Label>Color Theme</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Choose the accent color palette for the interface.
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-3">
+                  {COLOR_THEMES.map(({ id, label, swatch }) => (
+                    <button
+                      key={id}
+                      onClick={() => setSetting("colorTheme", id)}
+                      className="group flex flex-col items-center gap-1.5"
+                    >
+                      <div className={`relative w-10 h-10 rounded-full border-2 transition-all duration-200 hover:scale-110 ${
+                        colorTheme === id
+                          ? "border-foreground shadow-md"
+                          : "border-transparent hover:border-muted-foreground/30"
+                      }`}>
+                        <div className={`absolute inset-1 rounded-full ${swatch}`} />
+                        {colorTheme === id && (
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <HugeiconsIcon
+                              icon={Check}
+                              className="w-4 h-4 text-white drop-shadow"
+                            />
+                          </div>
+                        )}
+                      </div>
+                      <span className="text-xs text-muted-foreground group-hover:text-foreground transition-colors">
+                        {label}
+                      </span>
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <Separator />
