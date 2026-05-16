@@ -11,8 +11,15 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { CreateTopicData } from "@/types/lockedTopic";
 
-export default function Step4Confirm({ data, onPrev, onComplete }: any) {
+interface Step4Props {
+  data: CreateTopicData;
+  onPrev: () => void;
+  onComplete: () => void;
+}
+
+export default function Step4Confirm({ data, onPrev, onComplete }: Step4Props) {
   const [loading, setLoading] = useState(false);
   const [notify, setNotify] = useState(true);
   const router = useRouter();
@@ -59,9 +66,9 @@ export default function Step4Confirm({ data, onPrev, onComplete }: any) {
           <p className="text-sm text-muted-foreground leading-relaxed max-w-sm mx-auto">
             Your surveillance for{" "}
             <span className="text-foreground font-bold">
-              "{data.displayName}"
+              &quot;{data.displayName}&quot;
             </span>{" "}
-            is configured. We'll start monitoring all selected sources
+            is configured. We&apos;ll start monitoring all selected sources
             immediately.
           </p>
         </div>

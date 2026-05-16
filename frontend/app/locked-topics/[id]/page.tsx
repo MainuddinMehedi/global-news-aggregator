@@ -32,7 +32,7 @@ export default async function TopicDetailPage({
   const { findings, nextCursor } = await getFindings({
     topicId: id,
     sourceType: source as FindingSource | "ALL",
-    sort: sort as any,
+    sort: sort as "newest" | "oldest" | "relevance",
     limit: 20,
   });
 
@@ -48,7 +48,7 @@ export default async function TopicDetailPage({
           initialNextCursor={nextCursor}
           topicId={id}
           sourceType={source as FindingSource | "ALL"}
-          sort={sort as any}
+          sort={sort as "newest" | "oldest" | "relevance"}
         />
       </div>
     </div>

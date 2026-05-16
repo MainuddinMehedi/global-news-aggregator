@@ -113,6 +113,7 @@ export default function VoiceSession({
   // Reset state every time the overlay is opened.
   useEffect(() => {
     if (isOpen) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setStatus("idle");
       setTranscript(null);
       setAIText("");

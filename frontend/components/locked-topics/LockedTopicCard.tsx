@@ -52,7 +52,7 @@ export default function LockedTopicCard({
 
       <CardContent className="flex-1 flex flex-col gap-4 pt-0">
         <p className="text-sm text-muted-foreground line-clamp-2 italic leading-relaxed">
-          "{topic.aiQuerySummary}"
+          &quot;{topic.aiQuerySummary}&quot;
         </p>
 
         <div className="space-y-2 mt-auto">

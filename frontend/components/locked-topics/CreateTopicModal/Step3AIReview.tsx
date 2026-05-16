@@ -1,5 +1,6 @@
 "use client";
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -7,8 +8,21 @@ import { SparklesIcon } from "@hugeicons/core-free-icons";
 import { Input } from "@/components/ui/input";
 import { detectSourceType } from "@/lib/sourceDetection";
 import { toast } from "sonner";
+import { CreateTopicData } from "@/types/lockedTopic";
 
-export default function Step3AIReview({ data, setData, onNext, onPrev }: any) {
+interface Step3Props {
+  data: CreateTopicData;
+  setData: (data: CreateTopicData) => void;
+  onNext: () => void;
+  onPrev: () => void;
+}
+
+export default function Step3AIReview({
+  data,
+  setData,
+  onNext,
+  onPrev,
+}: Step3Props) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -96,7 +110,7 @@ export default function Step3AIReview({ data, setData, onNext, onPrev }: any) {
             </span>
           </div>
           <p className="text-sm leading-relaxed font-medium italic text-foreground/90">
-            "{data.aiQuerySummary}"
+            &quot;{data.aiQuerySummary}&quot;
           </p>
         </div>
 
@@ -122,56 +136,60 @@ export default function Step3AIReview({ data, setData, onNext, onPrev }: any) {
               High-Signal Recommendations
             </label>
             <div className="space-y-2">
-              {data.suggestedSources.map((source: any, idx: number) => (
-                <div
-                  key={idx}
-                  className="flex items-center justify-between p-4 rounded-xl border border-secondary bg-secondary/10 group hover:border-primary/30 transition-colors"
-                >
-                  <div className="flex flex-col gap-0.5">
-                    <span className="text-xs font-bold truncate max-w-[250px]">
-                      {source.label}
-                    </span>
-                    <span className="text-[10px] text-muted-foreground truncate max-w-[250px]">
-                      {source.url}
-                    </span>
-                  </div>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => {
-                      const type = source.type || detectSourceType(source.url);
-                      const exists = data.sources.find(
-                        (s: any) => s.url === source.url,
-                      );
-
-                      if (!exists) {
-                        setData({
-                          ...data,
-                          sources: [
-                            ...data.sources,
-                            {
-                              id: source.url,
-                              type,
-                              label: source.label,
-                              url: source.url,
-                              enabled: true,
-                            },
-                          ],
-                          suggestedSources: data.suggestedSources.filter(
-                            (s: any) => s.url !== source.url,
-                          ),
-                        });
-                        toast.success(`Added ${source.label} to sources.`);
-                      } else {
-                        toast.info("Source already added.");
-                      }
-                    }}
-                    className="h-8 px-4 text-[10px] font-black uppercase tracking-widest text-primary hover:bg-primary/10"
+              {(data.suggestedSources as any).map(
+                (source: any, idx: number) => (
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between p-4 rounded-xl border border-secondary bg-secondary/10 group hover:border-primary/30 transition-colors"
                   >
-                    Add
-                  </Button>
-                </div>
-              ))}
+                    <div className="flex flex-col gap-0.5">
+                      <span className="text-xs font-bold truncate max-w-[250px]">
+                        {source.label}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground truncate max-w-[250px]">
+                        {source.url}
+                      </span>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        const type =
+                          source.type || detectSourceType(source.url);
+                        const exists = data.sources.find(
+                          (s) => s.url === source.url,
+                        );
+
+                        if (!exists) {
+                          setData({
+                            ...data,
+                            sources: [
+                              ...data.sources,
+                              {
+                                id: source.url,
+                                type,
+                                label: source.label,
+                                url: source.url,
+                                enabled: true,
+                              },
+                            ],
+                            suggestedSources: (
+                              data.suggestedSources as any
+                            ).filter((s: any) => s.url !== source.url),
+                          });
+
+                          toast.success(`Added ${source.label} to sources.`);
+                        } else {
+                          toast.info("Source already added.");
+                        }
+                      }}
+                      className="h-8 px-4 text-[10px] font-black uppercase tracking-widest text-primary hover:bg-primary/10"
+                    >
+                      Add
+                    </Button>
+                  </div>
+                ),
+              )}
             </div>
           </div>
         )}

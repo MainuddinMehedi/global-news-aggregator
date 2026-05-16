@@ -31,11 +31,11 @@ export function CategoryBarChart({ data }: CategoryBarChartProps) {
   const chartData = data.slice(0, 8); // Top 8
 
   if (!mounted) {
-    return <div className="h-[300px] w-full" />;
+    return <div className="h-75 w-full" />;
   }
 
   return (
-    <div className="h-[300px] w-full">
+    <div className="h-75 w-full">
       <ResponsiveContainer
         width="100%"
         height="100%"

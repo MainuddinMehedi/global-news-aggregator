@@ -29,17 +29,26 @@ export async function getFindings({
   if (unreadOnly) cacheTag(`topic-unread-findings-${topicId}`);
   cacheLife("minutes");
 
-  const where: any = { topicId };
+  const where: {
+    topicId: string;
+    sourceType?: FindingSource;
+    isRead?: boolean;
+  } = { topicId };
 
   if (sourceType !== "ALL") {
-    where.sourceType = sourceType;
+    where.sourceType = sourceType as FindingSource;
   }
 
   if (unreadOnly) {
     where.isRead = false;
   }
 
-  let orderBy: any = { foundAt: "desc" };
+  let orderBy:
+    | { foundAt: "desc" | "asc" }
+    | Array<{ relevanceScore: "desc" | "asc" } | { foundAt: "desc" | "asc" }> =
+    {
+      foundAt: "desc",
+    };
 
   if (sort === "oldest") {
     orderBy = { foundAt: "asc" };

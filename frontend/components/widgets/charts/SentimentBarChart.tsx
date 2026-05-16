@@ -36,11 +36,11 @@ export function SentimentBarChart({ data }: SentimentBarChartProps) {
   }, []);
 
   if (!mounted) {
-    return <div className="h-[240px] w-full" />;
+    return <div className="h-60 w-full" />;
   }
 
   return (
-    <div className="h-[240px] w-full">
+    <div className="h-60 w-full">
       <ResponsiveContainer
         width="100%"
         height="100%"

@@ -28,11 +28,11 @@ export function AiUsageLineChart({ data }: AiUsageLineChartProps) {
   }, []);
 
   if (!mounted) {
-    return <div className="h-[200px] w-full" />;
+    return <div className="h-50 w-full" />;
   }
 
   return (
-    <div className="h-[200px] w-full">
+    <div className="h-50 w-full">
       <ResponsiveContainer
         width="100%"
         height="100%"

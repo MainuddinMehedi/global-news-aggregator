@@ -11,13 +11,18 @@ export const INITIAL_ASSISTANT_MESSAGE: UIMessage = {
   ],
 };
 
+/* eslint-disable-next-line @typescript-eslint/no-explicit-any */
 export function getMessageText(message: any): string {
   if (message.parts && Array.isArray(message.parts)) {
-    return message.parts
-      .filter((part: any) => part.type === "text")
-      .map((part: any) => part.text)
-      .join("\n")
-      .trim();
+    return (
+      message.parts
+        /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+        .filter((part: any) => part.type === "text")
+        /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+        .map((part: any) => (part.type === "text" ? part.text : ""))
+        .join("\n")
+        .trim()
+    );
   }
   if (typeof message.content === "string") {
     return message.content.trim();

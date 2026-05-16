@@ -15,7 +15,7 @@ import Step1Intent from "./Step1Intent";
 import Step2Sources from "./Step2Sources";
 import Step3AIReview from "./Step3AIReview";
 import Step4Confirm from "./Step4Confirm";
-import { SourceConfig } from "@/types/lockedTopic";
+import { SourceConfig, CreateTopicData } from "@/types/lockedTopic";
 
 export default function CreateTopicModal({
   trigger,
@@ -24,13 +24,13 @@ export default function CreateTopicModal({
 }) {
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(1);
-  const [data, setData] = useState({
+  const [data, setData] = useState<CreateTopicData>({
     displayName: "",
     userContext: "",
     sources: [] as SourceConfig[],
     aiRefinedQuery: "",
     aiQuerySummary: "",
-    suggestedSources: [] as any[],
+    suggestedSources: [] as unknown[],
   });
 
   const nextStep = () => setStep((s) => s + 1);
