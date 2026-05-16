@@ -19,7 +19,7 @@ export async function GET(
     const result = await getFindings({
       topicId: id,
       sourceType: source as FindingSource | "ALL",
-      sort: sort as any,
+      sort: sort as "newest" | "oldest" | "relevance",
       cursor,
       limit,
       unreadOnly,

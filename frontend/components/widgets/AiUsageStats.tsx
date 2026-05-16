@@ -38,7 +38,10 @@ export async function AiUsageStats() {
       </h3>
       <div className="grid grid-cols-3 gap-2 mb-6">
         {metrics.map((m) => (
-          <div key={m.label} className="bg-muted/30 p-3 rounded-xl border border-border/50">
+          <div
+            key={m.label}
+            className="bg-muted/30 p-3 rounded-xl border border-border/50"
+          >
             <p className="text-[10px] text-muted-foreground font-medium uppercase truncate">
               {m.label}
             </p>

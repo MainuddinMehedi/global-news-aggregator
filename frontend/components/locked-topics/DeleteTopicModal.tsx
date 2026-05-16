@@ -205,8 +205,8 @@ export function DeleteTopicModal({
             <div className="py-4">
               <p className="text-sm text-muted-foreground mb-4">
                 Before deleting, would you like the AI to generate a final
-                executive summary of everything it found during this tracker's
-                lifecycle?
+                executive summary of everything it found during this
+                tracker&apos;s lifecycle?
               </p>
             </div>
             <DialogFooter className="flex-col sm:flex-row gap-2">

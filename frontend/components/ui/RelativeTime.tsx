@@ -1,19 +1,21 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { formatRelativeTime } from '@/lib/utils';
+import { useState, useEffect } from "react";
+import { formatRelativeTime } from "@/lib/utils";
 
 interface RelativeTimeProps {
-  date: string | Date;
+  date: string | Date | null | undefined;
   className?: string;
 }
 
 export function RelativeTime({ date, className }: RelativeTimeProps) {
-  const [formatted, setFormatted] = useState<string>('');
+  const [formatted, setFormatted] = useState<string>("");
 
   useEffect(() => {
+    if (!date) return;
     // Formatting on mount to avoid hydration mismatch
-    const dateStr = typeof date === 'string' ? date : date.toISOString();
+    const dateStr = typeof date === "string" ? date : date.toISOString();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setFormatted(formatRelativeTime(dateStr));
 
     // Optional: Update every minute

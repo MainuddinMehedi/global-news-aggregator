@@ -1,6 +1,16 @@
 "use client";
 
-import { BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import {
+  BarChart,
+  Bar,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+import { useState, useEffect } from "react";
 
 interface CategoryBarChartProps {
   data: {
@@ -11,24 +21,48 @@ interface CategoryBarChartProps {
 }
 
 export function CategoryBarChart({ data }: CategoryBarChartProps) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMounted(true);
+  }, []);
+
   const chartData = data.slice(0, 8); // Top 8
 
+  if (!mounted) {
+    return <div className="h-75 w-full" />;
+  }
+
   return (
-    <div className="h-[300px] w-full">
-      <ResponsiveContainer width="100%" height="100%">
+    <div className="h-75 w-full">
+      <ResponsiveContainer
+        width="100%"
+        height="100%"
+        minWidth={0}
+        minHeight={0}
+      >
         <BarChart
           layout="vertical"
           data={chartData}
           margin={{ top: 10, right: 60, left: 0, bottom: 0 }}
         >
-          <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="rgba(255,255,255,0.05)" />
+          <CartesianGrid
+            strokeDasharray="3 3"
+            horizontal={false}
+            stroke="rgba(255,255,255,0.05)"
+          />
           <XAxis type="number" hide />
           <YAxis
             dataKey="name"
             type="category"
             axisLine={false}
             tickLine={false}
-            tick={{ fill: "rgba(255,255,255,0.6)", fontSize: 10, fontWeight: 700 }}
+            tick={{
+              fill: "rgba(255,255,255,0.6)",
+              fontSize: 10,
+              fontWeight: 700,
+            }}
             width={100}
           />
           <Tooltip
@@ -53,16 +87,12 @@ export function CategoryBarChart({ data }: CategoryBarChartProps) {
               return null;
             }}
           />
-          <Bar
-            dataKey="count"
-            radius={[0, 4, 4, 0]}
-            barSize={16}
-          >
+          <Bar dataKey="count" radius={[0, 4, 4, 0]} barSize={16}>
             {chartData.map((entry, index) => (
               <Cell
                 key={`cell-${index}`}
                 fill="var(--primary)"
-                fillOpacity={0.4 + (0.6 * (1 - index / chartData.length))}
+                fillOpacity={0.4 + 0.6 * (1 - index / chartData.length)}
               />
             ))}
           </Bar>

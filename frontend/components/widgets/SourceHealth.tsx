@@ -1,7 +1,6 @@
 import { getIngestionStats } from "@/queries/analytics";
 import { RelativeTime } from "@/components/ui/RelativeTime";
 import { SourceStatusIndicator } from "./SourceStatusIndicator";
-import { cn } from "@/lib/utils";
 
 export async function SourceHealth() {
   const stats = await getIngestionStats();
@@ -9,9 +8,11 @@ export async function SourceHealth() {
   if (!stats) return null;
 
   // Sort sources by last fetch (most recent first)
-  const sortedSources = [...stats.sources].sort(
-    (a, b) => new Date(b.lastFetch).getTime() - new Date(a.lastFetch).getTime(),
-  );
+  const sortedSources = [...stats.sources].sort((a, b) => {
+    const timeA = a.lastFetch ? new Date(a.lastFetch).getTime() : 0;
+    const timeB = b.lastFetch ? new Date(b.lastFetch).getTime() : 0;
+    return timeB - timeA;
+  });
 
   return (
     <div className="bg-card border border-border rounded-2xl p-4 shadow-sm h-full">

@@ -30,6 +30,7 @@ export default function FindingsList({
 
   // Reset list when filters change
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setFindings(initialFindings);
     setCursor(initialNextCursor);
     setError(null);

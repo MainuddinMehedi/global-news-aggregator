@@ -15,16 +15,29 @@ import {
 } from "@hugeicons/core-free-icons";
 import { detectSourceType } from "@/lib/sourceDetection";
 import { toast } from "sonner";
+import { CreateTopicData, SourceConfig } from "@/types/lockedTopic";
 
-export default function Step2Sources({ data, setData, onNext, onPrev }: any) {
+interface Step2Props {
+  data: CreateTopicData;
+  setData: (data: CreateTopicData) => void;
+  onNext: () => void;
+  onPrev: () => void;
+}
+
+export default function Step2Sources({
+  data,
+  setData,
+  onNext,
+  onPrev,
+}: Step2Props) {
   const [customUrl, setCustomUrl] = useState("");
 
-  const toggleSource = (type: string, label: string) => {
-    const exists = data.sources.find((s: any) => s.type === type && !s.url);
+  const toggleSource = (type: SourceConfig["type"], label: string) => {
+    const exists = data.sources.find((s) => s.type === type && !s.url);
     if (exists) {
       setData({
         ...data,
-        sources: data.sources.filter((s: any) => s.type !== type || s.url),
+        sources: data.sources.filter((s) => s.type !== type || s.url),
       });
     } else {
       setData({
@@ -37,7 +50,7 @@ export default function Step2Sources({ data, setData, onNext, onPrev }: any) {
   const removeCustomSource = (url: string) => {
     setData({
       ...data,
-      sources: data.sources.filter((s: any) => s.url !== url),
+      sources: data.sources.filter((s) => s.url !== url),
     });
   };
 
@@ -45,13 +58,13 @@ export default function Step2Sources({ data, setData, onNext, onPrev }: any) {
     if (!customUrl) return;
     try {
       new URL(customUrl); // Simple validation
-    } catch (_) {
+    } catch {
       toast.error("Please enter a valid URL (including https://)");
       return;
     }
 
     const type = detectSourceType(customUrl);
-    const exists = data.sources.find((s: any) => s.url === customUrl);
+    const exists = data.sources.find((s) => s.url === customUrl);
 
     if (!exists) {
       const label = new URL(customUrl).hostname.replace("www.", "");
@@ -69,10 +82,10 @@ export default function Step2Sources({ data, setData, onNext, onPrev }: any) {
     }
   };
 
-  const isSourceEnabled = (type: string) =>
-    data.sources.some((s: any) => s.type === type && !s.url);
+  const isSourceEnabled = (type: SourceConfig["type"]) =>
+    data.sources.some((s) => s.type === type && !s.url);
 
-  const customSources = data.sources.filter((s: any) => s.url);
+  const customSources = data.sources.filter((s) => s.url);
 
   return (
     <div className="space-y-8">
@@ -142,7 +155,7 @@ export default function Step2Sources({ data, setData, onNext, onPrev }: any) {
 
         {customSources.length > 0 && (
           <div className="space-y-2 mt-4">
-            {customSources.map((source: any) => (
+            {customSources.map((source) => (
               <div
                 key={source.url}
                 className="flex items-center justify-between p-3 rounded-xl border border-primary/20 bg-primary/5"
@@ -165,7 +178,7 @@ export default function Step2Sources({ data, setData, onNext, onPrev }: any) {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => removeCustomSource(source.url)}
+                  onClick={() => source.url && removeCustomSource(source.url)}
                   className="text-destructive hover:bg-destructive/10"
                 >
                   Remove
@@ -195,7 +208,15 @@ export default function Step2Sources({ data, setData, onNext, onPrev }: any) {
   );
 }
 
-function SourceToggle({ label, icon, enabled, onToggle }: any) {
+interface SourceToggleProps {
+  label: string;
+  /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+  icon: any;
+  enabled: boolean;
+  onToggle: () => void;
+}
+
+function SourceToggle({ label, icon, enabled, onToggle }: SourceToggleProps) {
   return (
     <div
       className={`flex items-center justify-between p-4 rounded-xl border transition-all duration-200 ${enabled ? "border-primary/30 bg-primary/5" : "border-secondary bg-transparent hover:border-secondary-foreground/20"}`}

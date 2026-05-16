@@ -25,6 +25,7 @@ import { cn } from "@/lib/utils";
 import type { ContextItem } from "@/types/chat";
 import { contextFromArticle } from "@/lib/chat/contexts";
 import type { Article } from "@/types/article";
+import type { Story } from "@/types/story";
 
 interface ContextPickerModalProps {
   isOpen: boolean;
@@ -44,7 +45,7 @@ export default function ContextPickerModal({
     "articles",
   );
   const [articles, setArticles] = useState<Article[]>([]);
-  const [stories, setStories] = useState<any[]>([]);
+  const [stories, setStories] = useState<Story[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedItems, setSelectedItems] = useState<ContextItem[]>([]);
 

@@ -4,8 +4,15 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { CreateTopicData } from "@/types/lockedTopic";
 
-export default function Step1Intent({ data, setData, onNext }: any) {
+interface Step1Props {
+  data: CreateTopicData;
+  setData: (data: CreateTopicData) => void;
+  onNext: () => void;
+}
+
+export default function Step1Intent({ data, setData, onNext }: Step1Props) {
   const isValid = data.displayName.trim() && data.userContext.trim();
 
   return (

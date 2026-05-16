@@ -58,6 +58,15 @@ export interface LockedTopic {
   updatedAt: string;
 }
 
+export interface CreateTopicData {
+  displayName: string;
+  userContext: string;
+  sources: SourceConfig[];
+  aiRefinedQuery: string;
+  aiQuerySummary: string;
+  suggestedSources: unknown[];
+}
+
 export interface TopicFinding {
   id: string;
   topicId: string;
@@ -70,5 +79,5 @@ export interface TopicFinding {
   relevanceScore: number | null;
   isRead: boolean;
   foundAt: string;
-  metadata: any | null;
+  metadata: Record<string, unknown> | null;
 }

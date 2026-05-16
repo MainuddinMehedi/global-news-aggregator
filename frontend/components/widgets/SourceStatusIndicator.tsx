@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 
 interface SourceStatusIndicatorProps {
-  lastFetch: string | Date;
+  lastFetch: string | Date | null;
   staleThresholdMs?: number;
 }
 
@@ -16,6 +16,10 @@ export function SourceStatusIndicator({
 
   useEffect(() => {
     const checkStale = () => {
+      if (!lastFetch) {
+        setIsStale(true);
+        return;
+      }
       const lastFetchTime = new Date(lastFetch).getTime();
       setIsStale(Date.now() - lastFetchTime > staleThresholdMs);
     };
@@ -30,7 +34,7 @@ export function SourceStatusIndicator({
     <div
       className={cn(
         "w-2 h-2 rounded-full flex-shrink-0 transition-colors duration-500",
-        isStale ? "bg-red-500 animate-pulse" : "bg-emerald-500"
+        isStale ? "bg-red-500 animate-pulse" : "bg-emerald-500",
       )}
     />
   );

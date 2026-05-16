@@ -4,13 +4,14 @@ import LockedTopicGrid from "@/components/locked-topics/LockedTopicGrid";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { RssLockedIcon } from "@hugeicons/core-free-icons";
 import CreateTopicModal from "@/components/locked-topics/CreateTopicModal";
+import { TopicFinding } from "@/types/lockedTopic";
 
 export default async function LockedTopicsPage() {
   const topics = await getLockedTopics();
 
   // Fetch latest 3 findings for each topic to show on the card
   // This is efficient because getInitialFindings is cached
-  const latestFindingsMap: Record<string, any[]> = {};
+  const latestFindingsMap: Record<string, TopicFinding[]> = {};
 
   await Promise.all(
     topics.map(async (topic) => {

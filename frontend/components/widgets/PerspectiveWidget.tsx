@@ -1,5 +1,4 @@
 import { getContentInsights } from "@/queries/analytics";
-import { cn } from "@/lib/utils";
 
 export async function PerspectiveWidget() {
   const insights = await getContentInsights();
