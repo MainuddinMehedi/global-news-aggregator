@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
 import type { Article } from "@/types/article";
 
 // ─── Feed slice ───────────────────────────────────────────────────────────────
@@ -13,13 +14,13 @@ interface StorySlice {
   setStoryCount: (count: number) => void;
 }
 
-// ─── Notification slice (stub — wire up when notifications are built) ─────────
+// ─── Notification slice ───────────────────────────────────────────────────────
 interface NotificationSlice {
   unreadCount: number;
   setUnreadCount: (count: number) => void;
 }
 
-// ─── User slice (stub — wire up when auth is built) ───────────────────────────
+// ─── User slice ───────────────────────────────────────────────────────────────
 interface UserSlice {
   user: null; // replace with a real User type when auth is implemented
   setUser: (user: null) => void;
@@ -45,11 +46,35 @@ interface ChatSidebarSlice {
   clearChatContext: () => void;
 }
 
-// ─── UI Status slice ────────────────────────────────────────────────────────
-interface UIStatusSlice {
+// ─── Settings slice (Persistent) ─────────────────────────────────────────────
+export type Theme = "light" | "dark" | "system";
+export type ResponseStyle = "concise" | "detailed";
+
+interface SettingsState {
+  theme: Theme;
   isSidebarCollapsed: boolean;
-  setSidebarCollapsed: (collapsed: boolean) => void;
+  feedDefaultCategory: string;
+  feedDefaultSort: string;
+  articlesPerPage: number;
+  compactMode: boolean;
+  showBiasBadges: boolean;
+  showSentiment: boolean;
+  defaultAiModel: string;
+  responseStyle: ResponseStyle;
+  favoriteCategories: string[];
+  hiddenCategories: string[];
 }
+
+interface SettingsActions {
+  setSetting: <K extends keyof SettingsState>(
+    key: K,
+    value: SettingsState[K],
+  ) => void;
+}
+
+type SettingsSlice = SettingsState & SettingsActions;
+
+// ─── Global App Store ────────────────────────────────────────────────────────
 
 type AppStore = FeedSlice &
   StorySlice &
@@ -57,49 +82,80 @@ type AppStore = FeedSlice &
   UserSlice &
   ChatSidebarSlice &
   TopicSlice &
-  UIStatusSlice;
+  SettingsSlice;
 
-export const useAppStore = create<AppStore>()((set) => ({
-  // ── UI Status ──
-  isSidebarCollapsed: false,
-  setSidebarCollapsed: (collapsed) => set({ isSidebarCollapsed: collapsed }),
+export const useAppStore = create<AppStore>()(
+  persist(
+    (set) => ({
+      // ── Feed (Volatile) ──
+      articleCount: 0,
+      setArticleCount: (count) => set({ articleCount: count }),
 
-  // ── Feed ──
-  articleCount: 0,
-  setArticleCount: (count) => set({ articleCount: count }),
+      // ── Stories (Volatile) ──
+      storyCount: 0,
+      setStoryCount: (count) => set({ storyCount: count }),
 
-  // ── Stories ──
-  storyCount: 0,
-  setStoryCount: (count) => set({ storyCount: count }),
+      // ── Notifications (Volatile) ──
+      unreadCount: 0,
+      setUnreadCount: (count) => set({ unreadCount: count }),
 
-  // ── Notifications ──
-  unreadCount: 0,
-  setUnreadCount: (count) => set({ unreadCount: count }),
+      // ── User (Volatile) ──
+      user: null,
+      setUser: (user) => set({ user }),
 
-  // ── User ──
-  user: null,
-  setUser: (user) => set({ user }),
+      // ── Topic (Volatile) ──
+      totalMatchCount: 0,
+      lockedTopicCount: 0,
+      setTotalMatchCount: (count) => set({ totalMatchCount: count }),
+      setLockedTopicCount: (count) => set({ lockedTopicCount: count }),
 
-  // ── Topic ──
-  totalMatchCount: 0,
-  lockedTopicCount: 0,
-  setTotalMatchCount: (count) => set({ totalMatchCount: count }),
-  setLockedTopicCount: (count) => set({ lockedTopicCount: count }),
+      // ── Chat sidebar (Volatile) ──
+      isChatOpen: false,
+      contextArticle: null,
+      openChat: () => set({ isChatOpen: true }),
+      closeChat: () => set({ isChatOpen: false, contextArticle: null }),
+      openChatWithContext: (article) =>
+        set({ isChatOpen: true, contextArticle: article }),
+      clearChatContext: () => set({ contextArticle: null }),
 
-  // ── Chat sidebar ──
-  isChatOpen: false,
-  contextArticle: null,
-  openChat: () => set({ isChatOpen: true }),
-  closeChat: () => set({ isChatOpen: false, contextArticle: null }),
-  openChatWithContext: (article) =>
-    set({ isChatOpen: true, contextArticle: article }),
-  clearChatContext: () => set({ contextArticle: null }),
-}));
+      // ── Settings (Persistent) ──
+      theme: "system",
+      isSidebarCollapsed: false,
+      feedDefaultCategory: "all",
+      feedDefaultSort: "newest",
+      articlesPerPage: 20,
+      compactMode: false,
+      showBiasBadges: true,
+      showSentiment: true,
+      defaultAiModel: "groq-llama-3",
+      responseStyle: "concise",
+      favoriteCategories: [],
+      hiddenCategories: [],
+      setSetting: (key, value) => set((state) => ({ ...state, [key]: value })),
+    }),
+    {
+      name: "global-news-aggregator-settings",
+      storage: createJSONStorage(() => localStorage),
+      // Only persist the settings and UI status
+      partialize: (state) => ({
+        theme: state.theme,
+        isSidebarCollapsed: state.isSidebarCollapsed,
+        feedDefaultCategory: state.feedDefaultCategory,
+        feedDefaultSort: state.feedDefaultSort,
+        articlesPerPage: state.articlesPerPage,
+        compactMode: state.compactMode,
+        showBiasBadges: state.showBiasBadges,
+        showSentiment: state.showSentiment,
+        defaultAiModel: state.defaultAiModel,
+        responseStyle: state.responseStyle,
+        favoriteCategories: state.favoriteCategories,
+        hiddenCategories: state.hiddenCategories,
+      }),
+    },
+  ),
+);
 
 // ─── Selector hooks ───────────────────────────────────────────────────────────
-// Always use these instead of useAppStore directly. Each selector returns only
-// the specific value it needs, so a component won't re-render when unrelated
-// parts of the store change.
 
 export const useArticleCount = () => useAppStore((s) => s.articleCount);
 export const useSetArticleCount = () => useAppStore((s) => s.setArticleCount);
@@ -123,7 +179,16 @@ export const useLockedTopicCount = () => useAppStore((s) => s.lockedTopicCount);
 export const useSetLockedTopicCount = () =>
   useAppStore((s) => s.setLockedTopicCount);
 
+// Settings selectors
+export const useSettings = () => {
+  const { setSetting, ...settings } = useAppStore();
+  return { settings, setSetting };
+};
+
+export const useTheme = () => useAppStore((s) => s.theme);
 export const useIsSidebarCollapsed = () =>
   useAppStore((s) => s.isSidebarCollapsed);
-export const useSetSidebarCollapsed = () =>
-  useAppStore((s) => s.setSidebarCollapsed);
+export const useSetSidebarCollapsed = () => {
+  const setSetting = useAppStore((s) => s.setSetting);
+  return (collapsed: boolean) => setSetting("isSidebarCollapsed", collapsed);
+};

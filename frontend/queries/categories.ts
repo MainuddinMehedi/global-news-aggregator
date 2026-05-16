@@ -1,19 +1,6 @@
 import { cacheLife, cacheTag } from "next/cache";
 import prisma from "@/lib/prisma";
-
-const CANONICAL_CATEGORIES = [
-  "geopolitics",
-  "economy",
-  "business",
-  "technology",
-  "environment",
-  "health",
-  "security",
-  "politics",
-  "society",
-  "bangladesh",
-  "other",
-];
+import { CANONICAL_CATEGORIES } from "@/lib/constants";
 
 export async function getCategories() {
   "use cache";
