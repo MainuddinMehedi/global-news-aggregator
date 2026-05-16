@@ -2,7 +2,7 @@
 // Shared types for the Chat feature
 // ---------------------------------------------------------------------------
 
-export type MessageRole = "user" | "assistant";
+export type MessageRole = "user" | "assistant" | "system";
 
 export interface Message {
   id: string;
@@ -12,14 +12,18 @@ export interface Message {
   createdAt?: string;
 }
 
-export type ContextItemType = "article" | "topic" | "link" | "file";
+export type ContextItemType = "article" | "story" | "topic" | "link" | "file";
 
 export interface ContextItem {
   id: string;
   title: string;
   type: ContextItemType;
+  sourceId?: string;
+  sourceType?: string;
   /** Optional URL for article/link context */
   url?: string;
+  /** Frozen source payload used to ground future chat turns */
+  snapshot?: unknown;
 }
 
 // ---------------------------------------------------------------------------

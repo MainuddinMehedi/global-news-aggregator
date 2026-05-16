@@ -10,7 +10,7 @@ import {
   File01Icon,
 } from "@hugeicons/core-free-icons";
 import { cn } from "@/lib/utils";
-import type { ContextItem } from "./types";
+import type { ContextItem } from "@/types/chat";
 
 // ---------------------------------------------------------------------------
 // Single context card
@@ -30,8 +30,12 @@ function ContextCard({
           <HugeiconsIcon icon={File01Icon} className="w-4 h-4 text-primary" />
         </div>
         <div className="flex-1 min-w-0 pr-6">
-          <p className="text-sm font-medium text-foreground truncate">{item.title}</p>
-          <p className="text-xs text-muted-foreground capitalize mt-0.5">{item.type}</p>
+          <p className="text-sm font-medium text-foreground truncate">
+            {item.title}
+          </p>
+          <p className="text-xs text-muted-foreground capitalize mt-0.5">
+            {item.type}
+          </p>
           {item.url && (
             <a
               href={item.url}
@@ -63,7 +67,10 @@ function EmptyState() {
   return (
     <div className="flex flex-col items-center justify-center h-full text-center opacity-50 px-4 select-none">
       <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-3">
-        <HugeiconsIcon icon={PlusSignIcon} className="w-6 h-6 text-muted-foreground" />
+        <HugeiconsIcon
+          icon={PlusSignIcon}
+          className="w-6 h-6 text-muted-foreground"
+        />
       </div>
       <p className="text-sm font-medium">No Context Added</p>
       <p className="text-xs mt-1 leading-relaxed">
@@ -88,14 +95,24 @@ export function ContextPills({
 }) {
   if (items.length === 0) return null;
   return (
-    <div className={cn("flex gap-2 overflow-x-auto pb-1 hide-scrollbar", className)}>
+    <div
+      className={cn(
+        "flex gap-2 overflow-x-auto pb-1 hide-scrollbar",
+        className,
+      )}
+    >
       {items.map((item) => (
         <div
           key={item.id}
           className="flex items-center gap-1.5 px-3 py-1.5 bg-accent rounded-full text-xs shrink-0 border border-border/50 shadow-sm"
         >
-          <HugeiconsIcon icon={File01Icon} className="w-3.5 h-3.5 text-primary" />
-          <span className="truncate max-w-[140px] font-medium">{item.title}</span>
+          <HugeiconsIcon
+            icon={File01Icon}
+            className="w-3.5 h-3.5 text-primary"
+          />
+          <span className="truncate max-w-[140px] font-medium">
+            {item.title}
+          </span>
           <button
             onClick={() => onRemove(item.id)}
             aria-label={`Remove ${item.title}`}
@@ -121,7 +138,13 @@ interface ContextPanelProps {
   onToggle: () => void;
 }
 
-export default function ContextPanel({ items, onRemove, onAdd, isOpen, onToggle }: ContextPanelProps) {
+export default function ContextPanel({
+  items,
+  onRemove,
+  onAdd,
+  isOpen,
+  onToggle,
+}: ContextPanelProps) {
   return (
     <aside
       className={cn(
@@ -133,7 +156,10 @@ export default function ContextPanel({ items, onRemove, onAdd, isOpen, onToggle 
         <>
           <div className="h-14 border-b border-border flex items-center px-4 justify-between shrink-0">
             <h2 className="font-semibold text-sm flex items-center gap-2">
-              <HugeiconsIcon icon={Attachment01Icon} className="w-4 h-4 text-primary" />
+              <HugeiconsIcon
+                icon={Attachment01Icon}
+                className="w-4 h-4 text-primary"
+              />
               Active Context
             </h2>
             <span className="text-xs bg-muted px-2 py-0.5 rounded-full font-medium tabular-nums">

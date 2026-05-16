@@ -8,6 +8,7 @@ import "./globals.css";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import Sidebar from "@/components/layout/Sidebar";
+import SidebarWrapper from "@/components/layout/SidebarWrapper";
 import FeedSkeleton from "@/components/Feed/FeedSkeleton";
 import ChatFAB from "@/components/chat/ChatFAB";
 import ChatSidebar from "@/components/chat/ChatSidebar";
@@ -55,10 +56,9 @@ export default function RootLayout({
               <Navbar />
 
               <main className="flex flex-1 overflow-hidden">
-                {/* Sidebar: icon-only at md (w-14), full labels at lg (w-56) */}
-                <div className="hidden md:flex md:w-14 lg:w-56 shrink-0 border-r border-border overflow-y-auto">
+                <SidebarWrapper>
                   <Sidebar />
-                </div>
+                </SidebarWrapper>
 
                 {/* Main Content Area */}
                 <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">

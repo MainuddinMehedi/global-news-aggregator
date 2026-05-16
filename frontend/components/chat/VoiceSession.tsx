@@ -8,7 +8,7 @@ import {
   StopCircleIcon,
 } from "@hugeicons/core-free-icons";
 import { cn } from "@/lib/utils";
-import type { VoiceStatus, VoiceSessionCallbacks } from "./types";
+import type { VoiceStatus, VoiceSessionCallbacks } from "@/types/chat";
 
 // ---------------------------------------------------------------------------
 // Waveform visualiser — pure CSS bars driven by a fake amplitude for now.
@@ -29,7 +29,7 @@ function WaveformBars({ active }: { active: boolean }) {
             "w-1 rounded-full transition-all duration-300",
             active
               ? "bg-primary animate-voice-bar"
-              : "bg-muted-foreground/30 h-1"
+              : "bg-muted-foreground/30 h-1",
           )}
           style={
             active
@@ -61,7 +61,7 @@ function TranscriptLine({ text, isFinal }: TranscriptLineProps) {
         "text-sm text-center max-w-sm transition-all duration-300",
         isFinal
           ? "text-foreground font-medium"
-          : "text-muted-foreground italic"
+          : "text-muted-foreground italic",
       )}
     >
       {text}
@@ -74,11 +74,11 @@ function TranscriptLine({ text, isFinal }: TranscriptLineProps) {
 // ---------------------------------------------------------------------------
 
 const STATUS_LABELS: Record<VoiceStatus, string> = {
-  idle:       "Press the mic to start talking",
+  idle: "Press the mic to start talking",
   connecting: "Connecting…",
-  listening:  "Listening…",
-  thinking:   "Thinking…",
-  speaking:   "AI is speaking",
+  listening: "Listening…",
+  thinking: "Thinking…",
+  speaking: "AI is speaking",
 };
 
 // ---------------------------------------------------------------------------
@@ -101,7 +101,10 @@ export default function VoiceSession({
   onError,
 }: VoiceSessionProps) {
   const [status, setStatus] = useState<VoiceStatus>("idle");
-  const [transcript, setTranscript] = useState<{ text: string; isFinal: boolean } | null>(null);
+  const [transcript, setTranscript] = useState<{
+    text: string;
+    isFinal: boolean;
+  } | null>(null);
   const [aiText, setAIText] = useState<string>("");
 
   // Ref to hold the media stream — will be used when real STT is wired.
@@ -167,7 +170,7 @@ export default function VoiceSession({
   if (!isOpen) return null;
 
   const isActive = status === "listening";
-  const isBusy   = status === "connecting" || status === "thinking";
+  const isBusy = status === "connecting" || status === "thinking";
   const isMicBtn = status === "idle" || status === "listening";
 
   return (
@@ -176,7 +179,7 @@ export default function VoiceSession({
         "absolute inset-0 z-30 flex flex-col items-center justify-between",
         "bg-background/96 backdrop-blur-md",
         // Animate in
-        "animate-in fade-in duration-200"
+        "animate-in fade-in duration-200",
       )}
       aria-modal="true"
       aria-label="Voice session"
@@ -201,7 +204,7 @@ export default function VoiceSession({
         <p
           className={cn(
             "text-xs font-semibold uppercase tracking-widest transition-colors duration-300",
-            isActive ? "text-primary" : "text-muted-foreground"
+            isActive ? "text-primary" : "text-muted-foreground",
           )}
         >
           {STATUS_LABELS[status]}
@@ -219,7 +222,10 @@ export default function VoiceSession({
               {aiText}
             </p>
           ) : transcript ? (
-            <TranscriptLine text={transcript.text} isFinal={transcript.isFinal} />
+            <TranscriptLine
+              text={transcript.text}
+              isFinal={transcript.isFinal}
+            />
           ) : null}
         </div>
       </div>
@@ -236,7 +242,7 @@ export default function VoiceSession({
             "transition-all duration-300 disabled:opacity-50",
             isActive
               ? "bg-destructive text-destructive-foreground shadow-lg shadow-destructive/40 scale-105"
-              : "bg-primary text-primary-foreground shadow-lg shadow-primary/30"
+              : "bg-primary text-primary-foreground shadow-lg shadow-primary/30",
           )}
         >
           {/* Pulse ring — only while listening */}

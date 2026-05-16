@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   Cancel01Icon,
-  ArrowRight01Icon,
   PlusSignIcon,
   MessageSquare,
   Robot01Icon,
@@ -15,12 +14,25 @@ import {
 } from "@hugeicons/core-free-icons";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
+import { useChat } from "@ai-sdk/react";
+import { DefaultChatTransport } from "ai";
+import { toast } from "sonner";
 import {
   useIsChatOpen,
   useCloseChat,
   useChatContextArticle,
   useClearChatContext,
 } from "@/store";
+import ChatInput from "./ChatInput";
+import MessageList from "./MessageList";
+import ContextPickerModal from "./ContextPickerModal";
+import { MODEL_REGISTRY, getActiveModels } from "@/lib/ai/modelRegistry";
+import type { ContextItem } from "@/types/chat";
+import { contextFromArticle } from "@/lib/chat/contexts";
+import {
+  INITIAL_ASSISTANT_MESSAGE,
+  createSessionTitle,
+} from "@/lib/chat/messages";
 
 // ---------------------------------------------------------------------------
 // Context banner — shown when opened from an article card
@@ -66,7 +78,13 @@ function ContextBanner({
 // Welcome screen — shown when no conversation is active
 // ---------------------------------------------------------------------------
 
-function WelcomeScreen() {
+function WelcomeScreen({
+  onNewChat,
+  onSend,
+}: {
+  onNewChat: () => void;
+  onSend: (text: string) => void;
+}) {
   return (
     <div className="flex-1 flex flex-col items-center justify-center px-6 text-center select-none">
       {/* Glowing orb illustration */}
@@ -89,7 +107,10 @@ function WelcomeScreen() {
 
       {/* Quick action chips */}
       <div className="flex flex-col gap-1.5 mt-5 w-full max-w-[240px]">
-        <button className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-muted/30 border border-border/60 text-xs text-foreground hover:bg-muted/50 hover:border-primary/30 transition-all group">
+        <button
+          onClick={onNewChat}
+          className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-muted/30 border border-border/60 text-xs text-foreground hover:bg-muted/50 hover:border-primary/30 transition-all group text-left"
+        >
           <HugeiconsIcon
             icon={PlusSignIcon}
             className="w-3.5 h-3.5 text-primary group-hover:scale-110 transition-transform"
@@ -97,43 +118,28 @@ function WelcomeScreen() {
           <span className="font-medium">Start new chat</span>
         </button>
 
-        <button className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-muted/30 border border-border/60 text-xs text-muted-foreground hover:bg-muted/50 hover:border-border hover:text-foreground transition-all group">
+        <button
+          onClick={() => onSend("Summarize today's news")}
+          className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-muted/30 border border-border/60 text-xs text-muted-foreground hover:bg-muted/50 hover:border-border hover:text-foreground transition-all group text-left"
+        >
           <HugeiconsIcon
             icon={Sparkles}
             className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary transition-colors"
           />
           <span>Summarize today&apos;s news</span>
         </button>
-      </div>
-    </div>
-  );
-}
 
-// ---------------------------------------------------------------------------
-// Stub chat input — visual only, no state logic
-// ---------------------------------------------------------------------------
-
-function StubChatInput() {
-  return (
-    <div className="p-3 border-t border-border shrink-0">
-      <div className="flex items-center gap-2 bg-muted/30 border border-border rounded-lg p-1.5">
-        <input
-          type="text"
-          placeholder="Ask about geopolitical events…"
-          // disabled
-          className="flex-1 bg-transparent text-xs placeholder:text-muted-foreground/60 outline-none py-1 px-2 disabled:cursor-default"
-        />
         <button
-          disabled
-          className="p-1.5 rounded-md bg-primary/20 text-primary/40 cursor-default"
-          aria-label="Send message"
+          onClick={() => onSend("What are the latest geopolitical trends?")}
+          className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-muted/30 border border-border/60 text-xs text-muted-foreground hover:bg-muted/50 hover:border-border hover:text-foreground transition-all group text-left"
         >
-          <HugeiconsIcon icon={ArrowRight01Icon} className="w-3.5 h-3.5" />
+          <HugeiconsIcon
+            icon={MessageSquare}
+            className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary transition-colors"
+          />
+          <span>Latest geopolitical trends</span>
         </button>
       </div>
-      <p className="text-center text-[9px] text-muted-foreground/50 mt-1 select-none">
-        AI can make mistakes. Verify important information.
-      </p>
     </div>
   );
 }
@@ -147,6 +153,115 @@ export default function ChatSidebar() {
   const closeChat = useCloseChat();
   const contextArticle = useChatContextArticle();
   const clearContext = useClearChatContext();
+  const [contexts, setContexts] = useState<ContextItem[]>([]);
+  const [sessionId, setSessionId] = useState<string | undefined>();
+  const [selectedModel, setSelectedModel] = useState(MODEL_REGISTRY[0].id);
+  const [adaptiveThinking, setAdaptiveThinking] = useState(false);
+  const [responseMode, setResponseMode] = useState<"concise" | "descriptive">(
+    "concise",
+  );
+  const [contextPickerOpen, setContextPickerOpen] = useState(false);
+  const preparedArticleIdRef = useRef<string | null>(null);
+
+  const { messages, sendMessage, status, setMessages } = useChat({
+    transport: new DefaultChatTransport({
+      api: "/api/chat",
+      body: { contexts, sessionId, responseMode },
+    }),
+    messages: [INITIAL_ASSISTANT_MESSAGE],
+    onError: (error) => {
+      console.error("Sidebar chat error:", error);
+      toast.error("Failed to get chat response");
+    },
+  });
+
+  const isLoading = status === "submitted" || status === "streaming";
+  const visibleMessages = messages.filter(
+    (message) => message.id !== INITIAL_ASSISTANT_MESSAGE.id,
+  );
+
+  const createSession = useCallback(
+    async (title: string, initialContexts: ContextItem[] = []) => {
+      const res = await fetch("/api/chat/sessions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title,
+          model: selectedModel,
+          responseMode,
+          contexts: initialContexts,
+        }),
+      });
+      if (!res.ok) throw new Error("Failed to create chat session");
+      const data = await res.json();
+      const id = data.session.id as string;
+      setSessionId(id);
+      return id;
+    },
+    [responseMode, selectedModel],
+  );
+
+  const handleNewChat = useCallback(() => {
+    setSessionId(undefined);
+    setMessages([INITIAL_ASSISTANT_MESSAGE]);
+    setSelectedModel(MODEL_REGISTRY[0].id);
+    preparedArticleIdRef.current = null;
+    if (contextArticle) {
+      setContexts([contextFromArticle(contextArticle)]);
+    } else {
+      setContexts([]);
+    }
+  }, [contextArticle, setMessages]);
+
+  const handleSend = useCallback(
+    async (text: string) => {
+      try {
+        const targetSessionId =
+          sessionId ||
+          (await createSession(createSessionTitle(text), contexts));
+        sendMessage(
+          { role: "user", parts: [{ type: "text", text }] },
+          {
+            body: {
+              model: selectedModel,
+              adaptiveThinking,
+              sessionId: targetSessionId,
+              responseMode,
+              contexts,
+            },
+          },
+        );
+      } catch (error) {
+        console.error(error);
+        toast.error("Failed to send message");
+      }
+    },
+    [
+      adaptiveThinking,
+      contexts,
+      createSession,
+      responseMode,
+      selectedModel,
+      sendMessage,
+      sessionId,
+    ],
+  );
+
+  const handleAddContexts = useCallback((newItems: ContextItem[]) => {
+    setContexts((prev) => {
+      const filtered = newItems.filter(
+        (newItem) => !prev.some((existing) => existing.id === newItem.id),
+      );
+      if (filtered.length === 0) return prev;
+      return [...prev, ...filtered];
+    });
+  }, []);
+
+  const handleClearContext = useCallback(() => {
+    preparedArticleIdRef.current = null;
+    setContexts([]);
+    clearContext();
+  }, [clearContext]);
 
   // Close on Escape key
   useEffect(() => {
@@ -157,6 +272,31 @@ export default function ChatSidebar() {
     document.addEventListener("keydown", handleKey);
     return () => document.removeEventListener("keydown", handleKey);
   }, [isOpen, closeChat]);
+
+  useEffect(() => {
+    if (!isOpen || !contextArticle) return;
+    if (preparedArticleIdRef.current === contextArticle.id) return;
+    preparedArticleIdRef.current = contextArticle.id;
+
+    const articleContext = contextFromArticle(contextArticle);
+    setContexts([articleContext]);
+    setMessages([INITIAL_ASSISTANT_MESSAGE]);
+    setSessionId(undefined);
+    setSelectedModel(MODEL_REGISTRY[0].id);
+
+    createSession(`Chat: ${contextArticle.title}`, [articleContext]).catch(
+      (error) => {
+        console.error(error);
+        toast.error("Failed to prepare article chat");
+      },
+    );
+  }, [contextArticle, createSession, isOpen, setMessages]);
+
+  useEffect(() => {
+    if (!contextArticle) {
+      preparedArticleIdRef.current = null;
+    }
+  }, [contextArticle]);
 
   return (
     <>
@@ -210,7 +350,7 @@ export default function ChatSidebar() {
           <div className="flex items-center gap-0.5">
             {/* Open full chat page */}
             <Link
-              href="/chat"
+              href={sessionId ? `/chat?session=${sessionId}` : "/chat"}
               onClick={closeChat}
               className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
               title="Open full chat"
@@ -243,16 +383,44 @@ export default function ChatSidebar() {
           <ContextBanner
             title={contextArticle.title}
             source={contextArticle.source}
-            onClear={clearContext}
+            onClear={handleClearContext}
           />
         )}
 
         {/* ── Body ────────────────────────────────────────────────────── */}
-        <WelcomeScreen />
+        <div className="flex flex-1 min-h-0 overflow-hidden">
+          {visibleMessages.length === 0 ? (
+            <WelcomeScreen onNewChat={handleNewChat} onSend={handleSend} />
+          ) : (
+            <MessageList messages={visibleMessages} isLoading={isLoading} />
+          )}
+        </div>
 
         {/* ── Input ───────────────────────────────────────────────────── */}
-        <StubChatInput />
+        <div className="pb-2">
+          <ChatInput
+            onSend={handleSend}
+            onVoiceToggle={() => {}}
+            isVoiceMode={false}
+            onAddContext={() => setContextPickerOpen(true)}
+            models={getActiveModels()}
+            selectedModel={selectedModel}
+            onModelChange={setSelectedModel}
+            responseMode={responseMode}
+            onResponseModeChange={setResponseMode}
+            adaptiveThinking={adaptiveThinking}
+            onAdaptiveThinkingChange={setAdaptiveThinking}
+            disabled={isLoading}
+          />
+        </div>
       </div>
+
+      <ContextPickerModal
+        isOpen={contextPickerOpen}
+        onClose={() => setContextPickerOpen(false)}
+        onAdd={handleAddContexts}
+        existingItems={contexts}
+      />
     </>
   );
 }

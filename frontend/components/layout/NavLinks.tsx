@@ -38,12 +38,17 @@ interface NavLinksProps {
    * md, full labels at lg+).
    */
   alwaysFull?: boolean;
+  /**
+   * When true (manual collapse), hide labels and badges regardless of viewport.
+   */
+  isManualCollapsed?: boolean;
   /** Called when any nav link is clicked — used by the mobile drawer to close itself. */
   onNavigate?: () => void;
 }
 
 export default function NavLinks({
   alwaysFull = false,
+  isManualCollapsed = false,
   onNavigate,
 }: NavLinksProps) {
   const pathname = usePathname();
@@ -69,10 +74,12 @@ export default function NavLinks({
             onClick={onNavigate}
             className={cn(
               "w-full flex items-center gap-3 py-2.5 rounded-lg text-sm transition-all duration-200",
-              // Responsive layout only when not forced full
+              // Responsive layout only when not forced full/collapsed
               alwaysFull
                 ? "justify-start px-3"
-                : "justify-center px-2 lg:justify-start lg:px-3",
+                : isManualCollapsed
+                  ? "justify-center px-2"
+                  : "justify-center px-2 lg:justify-start lg:px-3",
               // Default state
               "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
               // Active state
@@ -82,17 +89,23 @@ export default function NavLinks({
           >
             <HugeiconsIcon icon={item.icon} className="shrink-0 w-4.5 h-4.5" />
 
-            {/* Label: always visible in drawer, responsive in sidebar */}
-            <span className={alwaysFull ? "block" : "hidden lg:block"}>
+            {/* Label: always visible in drawer, responsive in sidebar, hidden if manually collapsed */}
+            <span
+              className={cn(
+                alwaysFull ? "block" : "hidden lg:block",
+                isManualCollapsed && "lg:hidden",
+              )}
+            >
               {item.label}
             </span>
 
-            {/* Badge: always visible in drawer, responsive in sidebar */}
+            {/* Badge: always visible in drawer, responsive in sidebar, hidden if manually collapsed */}
             {badge > 0 && (
               <span
                 className={cn(
                   "ml-auto bg-primary text-primary-foreground py-0.5 px-2 rounded-full text-xs font-mono",
                   alwaysFull ? "flex" : "hidden lg:flex",
+                  isManualCollapsed && "lg:hidden",
                 )}
               >
                 {badge}

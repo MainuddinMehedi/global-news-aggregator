@@ -45,14 +45,25 @@ interface ChatSidebarSlice {
   clearChatContext: () => void;
 }
 
+// ─── UI Status slice ────────────────────────────────────────────────────────
+interface UIStatusSlice {
+  isSidebarCollapsed: boolean;
+  setSidebarCollapsed: (collapsed: boolean) => void;
+}
+
 type AppStore = FeedSlice &
   StorySlice &
   NotificationSlice &
   UserSlice &
   ChatSidebarSlice &
-  TopicSlice;
+  TopicSlice &
+  UIStatusSlice;
 
 export const useAppStore = create<AppStore>()((set) => ({
+  // ── UI Status ──
+  isSidebarCollapsed: false,
+  setSidebarCollapsed: (collapsed) => set({ isSidebarCollapsed: collapsed }),
+
   // ── Feed ──
   articleCount: 0,
   setArticleCount: (count) => set({ articleCount: count }),
@@ -111,3 +122,8 @@ export const useSetTotalMatchCount = () =>
 export const useLockedTopicCount = () => useAppStore((s) => s.lockedTopicCount);
 export const useSetLockedTopicCount = () =>
   useAppStore((s) => s.setLockedTopicCount);
+
+export const useIsSidebarCollapsed = () =>
+  useAppStore((s) => s.isSidebarCollapsed);
+export const useSetSidebarCollapsed = () =>
+  useAppStore((s) => s.setSidebarCollapsed);
