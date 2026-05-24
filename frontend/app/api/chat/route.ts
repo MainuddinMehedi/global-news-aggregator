@@ -301,6 +301,8 @@ export async function POST(req: Request) {
       originalMessages: messages as UIMessage[],
       messageMetadata: () => ({ model, sessionId: activeSessionId }),
       sendSources: true,
+      sendStart: false,
+      sendFinish: false,
       onFinish: async ({ responseMessage, isAborted }) => {
         if (isAborted || !activeSessionId) return;
 

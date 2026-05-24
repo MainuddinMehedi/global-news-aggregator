@@ -29,9 +29,9 @@ export const MODEL_REGISTRY: ModelMetadata[] = [
     provider: "groq",
     description: "Fast everyday work with search-capable Groq routing",
     family: "Groq Compound",
-    tags: ["fast", "search", "tools"],
+    tags: ["fast", "search"],
     capabilities: {
-      supportsTools: true,
+      supportsTools: false,
       supportsImages: false,
       supportsReasoning: false,
       supportsStreaming: true,
@@ -47,9 +47,9 @@ export const MODEL_REGISTRY: ModelMetadata[] = [
     provider: "groq",
     description: "Web search for current analysis",
     family: "Groq Compound",
-    tags: ["search", "tools", "analysis"],
+    tags: ["search", "analysis"],
     capabilities: {
-      supportsTools: true,
+      supportsTools: false,
       supportsImages: false,
       supportsReasoning: false,
       supportsStreaming: true,
