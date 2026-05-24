@@ -1,6 +1,7 @@
 import { tool, zodSchema } from "ai";
 import { z } from "zod";
 import { webSearch as exaWebSearch } from "@exalabs/ai-sdk";
+import { extract } from "@extractus/article-extractor";
 
 const webSearchInputSchema = zodSchema(
   z.object({
@@ -146,6 +147,39 @@ async function tryEngines(
     `All search engines failed — ${errors.join("; ")}`,
   );
 }
+
+const fetchUrlInputSchema = zodSchema(
+  z.object({
+    url: z.string().url().describe("The URL to fetch and extract content from"),
+  }),
+);
+
+export const fetchUrlTool = tool({
+  description:
+    "Fetch and extract the main content (title, text, author, etc.) from a given URL. Use this when the user provides a link they want you to read or analyze.",
+  inputSchema: fetchUrlInputSchema,
+  execute: async ({ url }, { abortSignal }) => {
+    const article = await extract(url);
+
+    if (!article) {
+      return { error: "Could not extract content from the URL." };
+    }
+
+    return {
+      title: article.title || "",
+      description: article.description || "",
+      content: article.content
+        ? article.content.replace(/<[^>]*>/g, "").trim()
+        : "",
+      author: Array.isArray(article.author)
+        ? article.author.join(", ")
+        : article.author || "",
+      published: article.published || "",
+      source: article.source || url,
+      url: article.url || url,
+    };
+  },
+});
 
 export const webSearchTool = tool({
   description:

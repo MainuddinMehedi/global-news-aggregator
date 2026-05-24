@@ -16,7 +16,7 @@ import {
 import type { ContextItem } from "@/types/chat";
 import { getModel } from "@/lib/ai/modelRegistry";
 import { createProviderClient } from "@/lib/ai/providers";
-import { webSearchTool } from "@/lib/ai/tools";
+import { webSearchTool, fetchUrlTool } from "@/lib/ai/tools";
 
 const SYSTEM_PROMPT = `You are a senior geopolitical analyst AI embedded in a global news aggregator.
 Your role:
@@ -282,7 +282,7 @@ export async function POST(req: Request) {
     });
 
     const tools = modelConfig.capabilities.supportsTools
-      ? { web_search: webSearchTool }
+      ? { web_search: webSearchTool, fetch_url: fetchUrlTool }
       : undefined;
 
     const result = streamText({
