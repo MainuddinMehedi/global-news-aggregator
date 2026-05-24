@@ -3,7 +3,12 @@
 import { cn } from "@/lib/utils";
 import { Robot01Icon, UserIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { getToolName, isToolUIPart, type UIMessage } from "ai";
+import {
+  getToolName,
+  isReasoningUIPart,
+  isToolUIPart,
+  type UIMessage,
+} from "ai";
 import { memo, useEffect, useRef } from "react";
 import { MODEL_LABELS } from "@/lib/ai/modelRegistry";
 
@@ -100,6 +105,17 @@ function InlineLoadingDots() {
   );
 }
 
+function toolStatusLabel(toolName: string): string {
+  switch (toolName) {
+    case "fetch_url":
+      return "Fetching URL";
+    case "web_search":
+      return "Searching the web";
+    default:
+      return "Running tool";
+  }
+}
+
 function MessageBubble({
   message,
   isLastAndLoading,
@@ -136,17 +152,18 @@ function MessageBubble({
   const hasTextContent = message.parts?.some(
     (p) => p.type === "text" && p.text,
   );
-  const hasReasoning = message.parts?.some(
-    (p) => p.type === "reasoning" && p.text,
+  const hasActiveReasoning = message.parts?.some(
+    (p) => isReasoningUIPart(p) && p.state === "streaming",
   );
   const hasToolUI = message.parts?.some(isToolUIPart);
 
-  const showLoadingDots = isLastAndLoading && !hasTextContent && !hasReasoning && !hasToolUI;
+  const showLoadingDots =
+    isLastAndLoading && !hasTextContent && !hasActiveReasoning && !hasToolUI;
 
   return (
     <div
       className={cn(
-        "flex flex-col w-full animate-in fade-in duration-200",
+        "flex flex-col w-full",
         isUser ? "items-end" : "items-start",
       )}
     >
@@ -201,13 +218,14 @@ function MessageBubble({
                 return <MemoizedMarkdown key={index} text={part.text} />;
               }
 
-              if (part.type === "reasoning") {
+              if (isReasoningUIPart(part)) {
                 return (
                   <div
                     key={index}
                     className="italic text-muted-foreground/70 text-sm mb-2"
                   >
-                    {part.text || (isLastAndLoading ? "Thinking..." : "")}
+                    {part.text ||
+                      (part.state === "streaming" ? "Thinking..." : "")}
                   </div>
                 );
               }
@@ -232,18 +250,15 @@ function MessageBubble({
                       className="flex items-center gap-2 text-xs text-muted-foreground/60 mb-2"
                     >
                       <span className="w-2 h-2 rounded-full bg-muted-foreground/40 animate-pulse" />
-                      Searching the web
+                      {toolStatusLabel(toolName)}
                     </div>
                   );
                 }
 
                 if (isError) {
                   return (
-                    <div
-                      key={index}
-                      className="text-xs text-red-500 mb-2"
-                    >
-                      Search failed: {toolPart.errorText}
+                    <div key={index} className="text-xs text-red-500 mb-2">
+                      {toolStatusLabel(toolName)} failed: {toolPart.errorText}
                     </div>
                   );
                 }
@@ -266,9 +281,7 @@ function MessageBubble({
                       >
                         <div className="mb-2 font-semibold uppercase tracking-[0.16em] text-muted-foreground text-xs">
                           Web Search Results{" "}
-                          {output.engine
-                            ? `(via ${output.engine})`
-                            : ""}
+                          {output.engine ? `(via ${output.engine})` : ""}
                         </div>
                         <div className="grid gap-2">
                           {output.results.map((r, i) => (
