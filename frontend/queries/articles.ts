@@ -46,32 +46,31 @@ export async function getArticles({
           { id: "asc" as const },
         ];
 
+  const words = search.trim().split(/\s+/).filter(Boolean);
   const searchFilter =
-    search.trim() !== ""
-      ? [
-          {
-            OR: [
-              {
-                rawArticle: {
-                  title: { contains: search, mode: "insensitive" as const },
+    words.length > 0
+      ? words.map((word) => ({
+          OR: [
+            {
+              rawArticle: {
+                title: { contains: word, mode: "insensitive" as const },
+              },
+            },
+            {
+              rawArticle: {
+                contentSnippet: {
+                  contains: word,
+                  mode: "insensitive" as const,
                 },
               },
-              {
-                rawArticle: {
-                  contentSnippet: {
-                    contains: search,
-                    mode: "insensitive" as const,
-                  },
-                },
+            },
+            {
+              rawArticle: {
+                source: { contains: word, mode: "insensitive" as const },
               },
-              {
-                rawArticle: {
-                  source: { contains: search, mode: "insensitive" as const },
-                },
-              },
-            ],
-          },
-        ]
+            },
+          ],
+        }))
       : [];
 
   try {

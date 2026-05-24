@@ -58,10 +58,12 @@ export default function ChatInput({
   const [value, setValue] = useState("");
   const [modelPickerOpen, setModelPickerOpen] = useState(false);
   const [modePickerOpen, setModePickerOpen] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const activeModel =
     models.find((model) => model.id === selectedModel) ?? models[0];
   const hasText = value.trim().length > 0;
+  const isCompact = !isFocused && !hasText;
 
   // Auto-resize textarea as the user types
   useEffect(() => {
@@ -94,32 +96,59 @@ export default function ChatInput({
         {/* Input row */}
         <div
           className={cn(
-            "flex flex-col gap-1 bg-muted/30 border border-border rounded-2xl p-2 transition-all",
+            "flex bg-muted/30 border border-border rounded-2xl p-2 transition-all duration-200",
             "focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/20",
+            isCompact
+              ? "flex-row items-center gap-2"
+              : "flex-col gap-1",
           )}
         >
+          {/* Attachment before textarea in compact mode */}
+          {isCompact && (
+            <button
+              onClick={onAddContext}
+              title="Add context"
+              aria-label="Add context"
+              className="p-2 rounded-xl hover:bg-accent text-muted-foreground hover:text-primary transition-colors shrink-0"
+            >
+              <HugeiconsIcon icon={Attachment01Icon} className="w-5 h-5" />
+            </button>
+          )}
+
           {/* Text area */}
           <textarea
             ref={textareaRef}
             value={value}
             onChange={(e) => setValue(e.target.value)}
             onKeyDown={handleKeyDown}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
             disabled={disabled}
             placeholder="Ask about geopolitical events, trends, or analysis…"
             rows={1}
-            className="w-full min-h-[48px] max-h-32 bg-transparent resize-none outline-none px-2 py-3 text-sm placeholder:text-muted-foreground/70 disabled:opacity-50"
+            className={cn(
+              "w-full bg-transparent resize-none outline-none px-2 text-sm placeholder:text-muted-foreground/70 disabled:opacity-50 scrollbar-sleek",
+              isCompact
+                ? "h-9 py-1.5 flex-1"
+                : "min-h-[48px] max-h-32 py-3",
+            )}
           />
 
-          <div className="flex items-center justify-between gap-2">
-            {/* Attachment / add context */}
-            <button
-              onClick={onAddContext}
-              title="Add context"
-              aria-label="Add context"
-              className="p-2.5 rounded-xl hover:bg-accent text-muted-foreground hover:text-primary transition-colors shrink-0"
-            >
-              <HugeiconsIcon icon={Attachment01Icon} className="w-5 h-5" />
-            </button>
+          <div className={cn(
+            "flex items-center",
+            isCompact ? "gap-1 shrink-0" : "justify-between gap-2",
+          )}>
+            {/* Attachment in expanded mode (bottom row, left side) */}
+            {!isCompact && (
+              <button
+                onClick={onAddContext}
+                title="Add context"
+                aria-label="Add context"
+                className="p-2.5 rounded-xl hover:bg-accent text-muted-foreground hover:text-primary transition-colors shrink-0"
+              >
+                <HugeiconsIcon icon={Attachment01Icon} className="w-5 h-5" />
+              </button>
+            )}
 
             {/* Actions */}
             <div className="flex items-center gap-1.5 shrink-0">

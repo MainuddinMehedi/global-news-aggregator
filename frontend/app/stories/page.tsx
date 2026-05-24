@@ -1,8 +1,14 @@
 import { getStoryClusters } from "@/queries/stories";
 import { StoryCard } from "@/components/stories";
 
-export default async function Page() {
-  const stories = await getStoryClusters();
+export default async function Page({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  const params = await searchParams;
+  const search = typeof params.search === "string" ? params.search : "";
+  const stories = await getStoryClusters(search || undefined);
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">

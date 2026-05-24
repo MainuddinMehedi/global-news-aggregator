@@ -20,8 +20,6 @@ import {
   Time02Icon,
   MoreVerticalIcon,
   Robot01Icon,
-  Edit02Icon,
-  PencilEdit02Icon,
   PlusSignIcon,
   Sparkles,
   MessageSquare,
@@ -33,6 +31,7 @@ import { cn } from "@/lib/utils";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useSetSidebarCollapsed } from "@/store";
 import { toast } from "sonner";
 import ChatHistoryPanel, { type ChatSessionListItem } from "./ChatHistoryPanel";
 import ChatInput from "./ChatInput";
@@ -71,7 +70,7 @@ function WelcomeScreen({
   onSend: (text: string) => void;
 }) {
   return (
-    <div className="flex-1 flex flex-col items-center justify-center px-6 text-center select-none animate-in fade-in zoom-in-95 duration-500">
+    <div className="flex-1 flex flex-col items-center justify-center px-6 pt-4 text-center select-none animate-in fade-in zoom-in-95 duration-500">
       <div className="relative mb-8">
         <div className="w-20 h-20 rounded-3xl bg-primary/10 flex items-center justify-center border border-primary/20 shadow-inner">
           <HugeiconsIcon
@@ -416,6 +415,12 @@ export default function ChatInterface() {
     [activeSessionId, createSession, router],
   );
 
+  const setSidebarCollapsed = useSetSidebarCollapsed();
+
+  useEffect(() => {
+    setSidebarCollapsed(true);
+  }, [setSidebarCollapsed]);
+
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     loadSessions();
@@ -541,32 +546,30 @@ export default function ChatInterface() {
     <div className="flex h-full w-full overflow-hidden min-h-0">
       {/* ── Main chat column ────────────────────────────────────────────── */}
       <div className="flex-1 flex flex-col relative h-full min-w-0 min-h-0">
-        {/* Header */}
-        <div className="h-14 border-b border-border flex items-center shrink-0 bg-background/80 backdrop-blur-md z-10">
-          <div className="w-full max-w-3xl mx-auto flex items-center justify-between px-4">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+        {/* Floating pills — constrained to the same max-w-3xl as messages/input */}
+        <div className="absolute top-3 inset-x-0 z-20 flex justify-center pointer-events-none">
+          <div className="w-full max-w-3xl flex items-center justify-between px-4 pointer-events-auto">
+            <div className="inline-flex items-center gap-2 h-9 px-3 rounded-full bg-background/80 backdrop-blur-md border border-border shadow-sm">
+              <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center">
                 <HugeiconsIcon
                   icon={Robot01Icon}
-                  className="w-5 h-5 text-primary"
+                  className="w-3 h-3 text-primary"
                 />
               </div>
-              <div>
-                <h1 className="font-semibold text-sm leading-tight">
-                  AI Analyst
-                </h1>
-                <p className="text-xs text-muted-foreground">Always active</p>
-              </div>
+              <span className="text-sm font-semibold leading-none">
+                AI Analyst
+              </span>
+              <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="inline-flex items-center gap-0.5 h-9 px-1.5 rounded-full bg-background/80 backdrop-blur-md border border-border shadow-sm">
               {activeSessionId && (
                 <button
                   onClick={handleNewChat}
                   aria-label="New chat"
-                  className="p-2 hover:bg-accent rounded-lg text-muted-foreground hover:text-foreground transition-colors"
+                  className="p-1.5 hover:bg-accent rounded-full text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  <HugeiconsIcon icon={PencilEdit02Icon} className="w-5 h-5" />
+                  <HugeiconsIcon icon={PlusSignIcon} className="w-4 h-4" />
                 </button>
               )}
 
@@ -574,20 +577,9 @@ export default function ChatInterface() {
                 <SheetTrigger asChild>
                   <button
                     aria-label="Chat history"
-                    className={cn(
-                      "hover:bg-accent rounded-lg text-muted-foreground hover:text-foreground transition-colors",
-                      activeSessionId
-                        ? "p-2"
-                        : "flex items-center gap-2 px-3 py-1.5 text-sm font-medium",
-                    )}
+                    className="p-1.5 hover:bg-accent rounded-full text-muted-foreground hover:text-foreground transition-colors"
                   >
-                    <HugeiconsIcon
-                      icon={Time02Icon}
-                      className={cn(
-                        activeSessionId ? "w-5 h-5" : "w-4.5 h-4.5",
-                      )}
-                    />
-                    {!activeSessionId && <span>History</span>}
+                    <HugeiconsIcon icon={Time02Icon} className="w-4 h-4" />
                   </button>
                 </SheetTrigger>
                 <SheetContent
@@ -614,16 +606,16 @@ export default function ChatInterface() {
 
               <button
                 aria-label="More options"
-                className="p-2 hover:bg-accent rounded-lg text-muted-foreground hover:text-foreground transition-colors"
+                className="p-1.5 hover:bg-accent rounded-full text-muted-foreground hover:text-foreground transition-colors"
               >
-                <HugeiconsIcon icon={MoreVerticalIcon} className="w-5 h-5" />
+                <HugeiconsIcon icon={MoreVerticalIcon} className="w-4 h-4" />
               </button>
             </div>
           </div>
         </div>
 
         {/* Message list + voice overlay share the same flex-1 area */}
-        <div className="flex-1 overflow-hidden relative">
+        <div className="flex-1 overflow-hidden relative pt-14">
           {visibleMessages.length === 0 ? (
             <WelcomeScreen onNewChat={handleNewChat} onSend={handleSend} />
           ) : (
