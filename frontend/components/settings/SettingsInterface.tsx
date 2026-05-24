@@ -21,11 +21,10 @@ import { HugeiconsIcon } from "@hugeicons/react";
 
 const COLOR_THEMES: { id: ColorTheme; label: string; swatch: string }[] = [
   { id: "maia", label: "Maia", swatch: "bg-[oklch(0.508_0.118_165.612)]" },
-  { id: "mist", label: "Mist", swatch: "bg-[oklch(0.527_0.154_150.069)]" },
-  { id: "rose", label: "Rose", swatch: "bg-[oklch(0.508_0.118_165.612)]" },
+  { id: "ember", label: "Ember", swatch: "bg-[oklch(0.65_0.18_40)]" },
+  { id: "iris", label: "Iris", swatch: "bg-[oklch(0.55_0.22_290)]" },
+  { id: "pine", label: "Pine", swatch: "bg-[oklch(0.45_0.14_160)]" },
   { id: "slate", label: "Slate", swatch: "bg-[oklch(0.218_0.008_223.9)]" },
-  { id: "sand", label: "Sand", swatch: "bg-[oklch(0.508_0.118_165.612)]" },
-  { id: "lime", label: "Lime", swatch: "bg-[oklch(0.511_0.096_186.391)]" },
 ];
 
 const SETTINGS_SECTIONS = [

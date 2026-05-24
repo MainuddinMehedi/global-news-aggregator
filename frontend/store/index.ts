@@ -48,7 +48,7 @@ interface ChatSidebarSlice {
 
 // ─── Settings slice (Persistent) ─────────────────────────────────────────────
 export type Theme = "light" | "dark" | "system";
-export type ColorTheme = "maia" | "mist" | "rose" | "slate" | "sand" | "lime";
+export type ColorTheme = "maia" | "ember" | "iris" | "pine" | "slate";
 export type ResponseStyle = "concise" | "detailed";
 
 interface SettingsState {
