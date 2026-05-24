@@ -10,6 +10,7 @@ import {
 import type { ContextItem } from "@/types/chat";
 import { getModel } from "@/lib/ai/modelRegistry";
 import { createProviderClient } from "@/lib/ai/providers";
+import { webSearchTool } from "@/lib/ai/tools";
 
 const SYSTEM_PROMPT = `You are a senior geopolitical analyst AI embedded in a global news aggregator.
 Your role:
@@ -274,10 +275,15 @@ export async function POST(req: Request) {
       adaptiveThinking,
     });
 
+    const tools = modelConfig.capabilities.supportsTools
+      ? { web_search: webSearchTool }
+      : undefined;
+
     const result = streamText({
       model: aiModel,
       system: systemPrompt,
       messages: coreMessages,
+      tools,
       providerOptions:
         adaptiveThinking && model.startsWith("openai/gpt-oss")
           ? { openai: { reasoningEffort: "medium" } }
@@ -287,6 +293,7 @@ export async function POST(req: Request) {
     return result.toUIMessageStreamResponse({
       originalMessages: messages as UIMessage[],
       messageMetadata: () => ({ model, sessionId: activeSessionId }),
+      sendSources: true,
       onFinish: async ({ responseMessage, isAborted }) => {
         if (isAborted || !activeSessionId) return;
 

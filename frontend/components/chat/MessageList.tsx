@@ -3,7 +3,7 @@
 import { cn } from "@/lib/utils";
 import { Robot01Icon, UserIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import type { UIMessage } from "ai";
+import { getToolName, isToolUIPart, type UIMessage } from "ai";
 import { memo, useEffect, useRef } from "react";
 import { MODEL_LABELS } from "@/lib/ai/modelRegistry";
 
@@ -21,7 +21,14 @@ import remarkGfm from "remark-gfm";
 const MemoizedMarkdown = memo(
   ({ text }: { text: string }) => (
     <div className="prose dark:prose-invert max-w-none wrap-break-word">
-      <ReactMarkdown remarkPlugins={[remarkGfm]}>{text}</ReactMarkdown>
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        components={{
+          em: ({ children }) => <em className="text-sm">{children}</em>,
+        }}
+      >
+        {text}
+      </ReactMarkdown>
     </div>
   ),
   (prevProps, nextProps) => prevProps.text === nextProps.text,
@@ -191,6 +198,93 @@ function MessageBubble({
                     </div>
                   );
                 }
+                if (isToolUIPart(part)) {
+                  const toolName = getToolName(part);
+                  const toolPart = part as {
+                    state: string;
+                    output?: unknown;
+                    errorText?: string;
+                  };
+                  const isSearching =
+                    toolPart.state === "input-streaming" ||
+                    toolPart.state === "input-available";
+                  const isError = toolPart.state === "output-error";
+                  const isDone = toolPart.state === "output-available";
+
+                  if (isSearching) {
+                    return (
+                      <div
+                        key={index}
+                        className="flex items-center gap-2 text-xs text-muted-foreground/60 mb-2"
+                      >
+                        <span className="w-2 h-2 rounded-full bg-muted-foreground/40 animate-pulse" />
+                        Searching the web for{" "}
+                        <span className="italic font-medium">{toolName}</span>
+                      </div>
+                    );
+                  }
+
+                  if (isError) {
+                    return (
+                      <div
+                        key={index}
+                        className="text-xs text-red-500 mb-2"
+                      >
+                        Search failed: {toolPart.errorText}
+                      </div>
+                    );
+                  }
+
+                  if (isDone && toolPart.output) {
+                    const output = toolPart.output as {
+                      engine?: string;
+                      results?: Array<{
+                        title: string;
+                        url: string;
+                        snippet: string;
+                        source?: string;
+                      }>;
+                    };
+                    if (output.results?.length) {
+                      return (
+                        <div
+                          key={index}
+                          className="my-4 rounded-xl border border-border/70 bg-background/80 p-3 text-sm text-muted-foreground"
+                        >
+                          <div className="mb-2 font-semibold uppercase tracking-[0.16em] text-muted-foreground text-xs">
+                            Web Search Results{" "}
+                            {output.engine
+                              ? `(via ${output.engine})`
+                              : ""}
+                          </div>
+                          <div className="grid gap-2">
+                            {output.results.map((r, i) => (
+                              <div
+                                key={i}
+                                className="rounded-lg border border-border/50 bg-muted/70 p-2.5"
+                              >
+                                <div className="font-semibold text-xs mb-0.5">
+                                  {r.title}
+                                </div>
+                                <a
+                                  href={r.url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="text-blue-600 hover:underline text-[11px] break-all"
+                                >
+                                  {r.url}
+                                </a>
+                                <div className="text-[11px] text-muted-foreground mt-1 line-clamp-2">
+                                  {r.snippet}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    }
+                  }
+                }
                 return null;
               })}
             </>
@@ -262,14 +356,13 @@ function MessageBubble({
               )}
             </div>
           )}
+          {modelLabel && !isSystem && !isUser && (
+            <div className="text-[10px] text-muted-foreground/60 mt-2">
+              Generated by {modelLabel}
+            </div>
+          )}
         </div>
       </div>
-
-      {modelLabel && !isSystem && !isUser && (
-        <div className="text-xs text-muted-foreground/60 mt-1.5">
-          Generated by {modelLabel}
-        </div>
-      )}
       {isSystem && (
         <div className="text-xs text-red-600/60 mt-1.5">System Error</div>
       )}
