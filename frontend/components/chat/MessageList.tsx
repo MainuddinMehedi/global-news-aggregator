@@ -77,6 +77,44 @@ function formatResourcePart(part: UIMessage["parts"][number]) {
   };
 }
 
+function extractToolResources(parts: UIMessage["parts"]) {
+  const items: Array<{ label: string; value: string; type: string }> = [];
+  for (const part of parts) {
+    if (!isToolUIPart(part)) continue;
+    const tp = part as {
+      state: string;
+      output?: Record<string, unknown>;
+    };
+    if (tp.state !== "output-available" || !tp.output) continue;
+    const out = tp.output as {
+      url?: string;
+      title?: string;
+      results?: Array<{
+        url: string;
+        title?: string;
+        snippet?: string;
+      }>;
+    };
+    if (out.results) {
+      for (const r of out.results) {
+        items.push({
+          label: r.title || r.url,
+          value: r.url,
+          type: "source-url",
+        });
+      }
+    }
+    if (out.url && !items.some((i) => i.value === out.url)) {
+      items.push({
+        label: out.title || out.url,
+        value: out.url,
+        type: "source-url",
+      });
+    }
+  }
+  return items;
+}
+
 function StreamingText({ text }: { text: string }) {
   return (
     <div className="whitespace-pre-wrap wrap-break-word">
@@ -116,6 +154,137 @@ function toolStatusLabel(toolName: string): string {
   }
 }
 
+function FetchUrlResult({
+  output,
+}: {
+  output: { title?: string; url?: string; content?: string };
+}) {
+  if (!output.url) return null;
+  const preview =
+    output.content && output.content.length > 300
+      ? output.content.slice(0, 300) + "..."
+      : output.content;
+
+  return (
+    <div className="my-4 rounded-xl border border-border/70 bg-background/80 p-3 text-sm text-muted-foreground">
+      <div className="mb-2 font-semibold uppercase tracking-[0.16em] text-muted-foreground text-xs">
+        Fetched URL
+      </div>
+      <div className="rounded-lg border border-border/50 bg-muted/70 p-2.5">
+        {output.title && (
+          <div className="font-semibold text-xs mb-0.5">{output.title}</div>
+        )}
+        <a
+          href={output.url}
+          target="_blank"
+          rel="noreferrer"
+          className="text-blue-600 hover:underline text-[11px] break-all"
+        >
+          {output.url}
+        </a>
+        {preview && (
+          <div className="text-[11px] text-muted-foreground mt-1.5 line-clamp-3">
+            {preview}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function WebSearchResults({
+  output,
+}: {
+  output: {
+    engine?: string;
+    results?: Array<{
+      title: string;
+      url: string;
+      snippet: string;
+      source?: string;
+    }>;
+  };
+}) {
+  if (!output.results?.length) return null;
+  return (
+    <div className="my-4 rounded-xl border border-border/70 bg-background/80 p-3 text-sm text-muted-foreground">
+      <div className="mb-2 font-semibold uppercase tracking-[0.16em] text-muted-foreground text-xs">
+        Web Search Results{" "}
+        {output.engine ? `(via ${output.engine})` : ""}
+      </div>
+      <div className="grid gap-2">
+        {output.results.map((r, i) => (
+          <div
+            key={i}
+            className="rounded-lg border border-border/50 bg-muted/70 p-2.5"
+          >
+            <div className="font-semibold text-xs mb-0.5">{r.title}</div>
+            <a
+              href={r.url}
+              target="_blank"
+              rel="noreferrer"
+              className="text-blue-600 hover:underline text-[11px] break-all"
+            >
+              {r.url}
+            </a>
+            <div className="text-[11px] text-muted-foreground mt-1 line-clamp-2">
+              {r.snippet}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function SourceResource({
+  resource,
+}: {
+  resource: Record<string, unknown>;
+}) {
+  if ("type" in resource && resource.type === "source-url") {
+    return (
+      <div>
+        <div className="font-semibold text-xs">{String(resource.label)}</div>
+        <a
+          href={String(resource.value)}
+          target="_blank"
+          rel="noreferrer"
+          className="text-blue-600 hover:underline text-xs break-all"
+        >
+          {String(resource.value)}
+        </a>
+      </div>
+    );
+  }
+  if ("type" in resource && resource.type === "source-document") {
+    return (
+      <div>
+        <div className="font-semibold text-xs">{String(resource.label)}</div>
+        <div className="text-xs text-muted-foreground">
+          {String(resource.mediaType)}
+          {resource.value ? ` · ${String(resource.value)}` : ""}
+        </div>
+      </div>
+    );
+  }
+  if ("label" in resource && "value" in resource) {
+    return (
+      <div>
+        <div className="font-semibold text-xs">{String(resource.label)}</div>
+        <div className="text-xs text-muted-foreground break-all">
+          {String(resource.value)}
+        </div>
+      </div>
+    );
+  }
+  return (
+    <pre className="whitespace-pre-wrap wrap-break-word text-xs">
+      {JSON.stringify(resource, null, 2)}
+    </pre>
+  );
+}
+
 function MessageBubble({
   message,
   isLastAndLoading,
@@ -130,24 +299,6 @@ function MessageBubble({
   const model =
     !isUser && !isSystem ? (metadata as { model?: string })?.model : undefined;
   const modelLabel = model ? (MODEL_LABELS[model] ?? model) : undefined;
-  const metadataResources =
-    metadata?.resources ??
-    metadata?.sources ??
-    metadata?.executed_tools ??
-    metadata?.tools;
-  const partResources = (message.parts ?? [])
-    .filter(isSourceResourcePart)
-    .map(formatResourcePart);
-  const resources = Array.isArray(metadataResources)
-    ? [...metadataResources, ...partResources]
-    : metadataResources
-      ? [metadataResources, ...partResources]
-      : partResources;
-  const hasResources = Array.isArray(resources)
-    ? resources.length > 0
-    : typeof resources === "object" &&
-      resources !== null &&
-      Object.keys(resources).length > 0;
 
   const hasTextContent = message.parts?.some(
     (p) => p.type === "text" && p.text,
@@ -159,6 +310,13 @@ function MessageBubble({
 
   const showLoadingDots =
     isLastAndLoading && !hasTextContent && !hasActiveReasoning && !hasToolUI;
+
+  const partResources = (message.parts ?? [])
+    .filter(isSourceResourcePart)
+    .map(formatResourcePart);
+  const toolResources = extractToolResources(message.parts ?? []);
+  const allSources = [...partResources, ...toolResources];
+  const hasSources = allSources.length > 0;
 
   return (
     <div
@@ -219,13 +377,13 @@ function MessageBubble({
               }
 
               if (isReasoningUIPart(part)) {
+                if (!isLastAndLoading) return null;
                 return (
                   <div
                     key={index}
                     className="italic text-muted-foreground/70 text-sm mb-2"
                   >
-                    {part.text ||
-                      (part.state === "streaming" ? "Thinking..." : "")}
+                    {part.text || "Thinking..."}
                   </div>
                 );
               }
@@ -234,7 +392,7 @@ function MessageBubble({
                 const toolName = getToolName(part);
                 const toolPart = part as {
                   state: string;
-                  output?: unknown;
+                  output?: Record<string, unknown>;
                   errorText?: string;
                 };
                 const isSearching =
@@ -258,130 +416,69 @@ function MessageBubble({
                 if (isError) {
                   return (
                     <div key={index} className="text-xs text-red-500 mb-2">
-                      {toolStatusLabel(toolName)} failed: {toolPart.errorText}
+                      {toolStatusLabel(toolName)} failed:{" "}
+                      {toolPart.errorText}
                     </div>
                   );
                 }
 
                 if (isDone && toolPart.output) {
-                  const output = toolPart.output as {
-                    engine?: string;
-                    results?: Array<{
-                      title: string;
-                      url: string;
-                      snippet: string;
-                      source?: string;
-                    }>;
-                  };
-                  if (output.results?.length) {
+                  if (toolName === "fetch_url") {
                     return (
-                      <div
+                      <FetchUrlResult
                         key={index}
-                        className="my-4 rounded-xl border border-border/70 bg-background/80 p-3 text-sm text-muted-foreground"
-                      >
-                        <div className="mb-2 font-semibold uppercase tracking-[0.16em] text-muted-foreground text-xs">
-                          Web Search Results{" "}
-                          {output.engine ? `(via ${output.engine})` : ""}
-                        </div>
-                        <div className="grid gap-2">
-                          {output.results.map((r, i) => (
-                            <div
-                              key={i}
-                              className="rounded-lg border border-border/50 bg-muted/70 p-2.5"
-                            >
-                              <div className="font-semibold text-xs mb-0.5">
-                                {r.title}
-                              </div>
-                              <a
-                                href={r.url}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="text-blue-600 hover:underline text-[11px] break-all"
-                              >
-                                {r.url}
-                              </a>
-                              <div className="text-[11px] text-muted-foreground mt-1 line-clamp-2">
-                                {r.snippet}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
+                        output={
+                          toolPart.output as {
+                            title?: string;
+                            url?: string;
+                            content?: string;
+                          }
+                        }
+                      />
                     );
                   }
+
+                  return (
+                    <WebSearchResults
+                      key={index}
+                      output={
+                        toolPart.output as {
+                          engine?: string;
+                          results?: Array<{
+                            title: string;
+                            url: string;
+                            snippet: string;
+                            source?: string;
+                          }>;
+                        }
+                      }
+                    />
+                  );
                 }
               }
               return null;
             })}
             {showLoadingDots && <InlineLoadingDots />}
           </>
-          {hasResources && (
+
+          {hasSources && (
             <div className="mt-4 rounded-xl border border-border/70 bg-background/80 p-3 text-sm text-muted-foreground inline-block">
               <div className="mb-2 font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                 Sources
               </div>
-              {Array.isArray(resources) ? (
-                <div className="grid gap-2">
-                  {resources.map((resource, idx) => (
-                    <div
-                      key={idx}
-                      className="rounded-lg border border-border/50 bg-muted/70 p-2.5"
-                    >
-                      {typeof resource === "object" && resource !== null ? (
-                        "type" in resource && resource.type === "source-url" ? (
-                          <div>
-                            <div className="font-semibold text-xs">
-                              {resource.label}
-                            </div>
-                            <a
-                              href={resource.value}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="text-blue-600 hover:underline text-xs break-all"
-                            >
-                              {resource.value}
-                            </a>
-                          </div>
-                        ) : "type" in resource &&
-                          resource.type === "source-document" ? (
-                          <div>
-                            <div className="font-semibold text-xs">
-                              {resource.label}
-                            </div>
-                            <div className="text-xs text-muted-foreground">
-                              {resource.mediaType}
-                              {resource.value ? ` · ${resource.value}` : ""}
-                            </div>
-                          </div>
-                        ) : "label" in resource && "value" in resource ? (
-                          <div>
-                            <div className="font-semibold text-xs">
-                              {String(resource.label)}
-                            </div>
-                            <div className="text-xs text-muted-foreground break-all">
-                              {String(resource.value)}
-                            </div>
-                          </div>
-                        ) : (
-                          <pre className="whitespace-pre-wrap wrap-break-word text-xs">
-                            {JSON.stringify(resource, null, 2)}
-                          </pre>
-                        )
-                      ) : (
-                        <div>{String(resource)}</div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              ) : typeof resources === "object" && resources !== null ? (
-                <pre className="whitespace-pre-wrap wrap-break-word text-xs">
-                  {JSON.stringify(resources, null, 2)}
-                </pre>
-              ) : (
-                <div>{String(resources)}</div>
-              )}
+              <div className="grid gap-2">
+                {allSources.map((src, idx) => (
+                  <div
+                    key={idx}
+                    className="rounded-lg border border-border/50 bg-muted/70 p-2.5"
+                  >
+                    <SourceResource resource={src as Record<string, unknown>} />
+                  </div>
+                ))}
+              </div>
             </div>
           )}
+
           {modelLabel && !isSystem && !isUser && (
             <div className="text-[10px] text-muted-foreground/60 mt-2">
               Generated by {modelLabel}
