@@ -20,7 +20,7 @@ import { Check } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 
 const COLOR_THEMES: { id: ColorTheme; label: string; swatch: string }[] = [
-  { id: "maia", label: "Maia", swatch: "bg-[oklch(0.508_0.118_165.612)]" },
+  { id: "maia", label: "Maia", swatch: "bg-[oklch(0.55_0.15_200)]" },
   { id: "ember", label: "Ember", swatch: "bg-[oklch(0.65_0.18_40)]" },
   { id: "iris", label: "Iris", swatch: "bg-[oklch(0.55_0.22_290)]" },
   { id: "pine", label: "Pine", swatch: "bg-[oklch(0.45_0.14_160)]" },
