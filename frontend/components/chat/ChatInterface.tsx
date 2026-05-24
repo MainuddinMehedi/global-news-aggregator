@@ -25,7 +25,7 @@ import {
   MessageSquare,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { cn } from "@/lib/utils";
 import { useChat } from "@ai-sdk/react";
@@ -182,6 +182,7 @@ export default function ChatInterface() {
   const [activeSessionId, setActiveSessionId] = useState<string | undefined>();
   const [historyOpen, setHistoryOpen] = useState(false);
   const [contextPickerOpen, setContextPickerOpen] = useState(false);
+  const isSelectingRef = useRef(false);
 
   const normalizeError = (err: unknown) => {
     if (typeof err === "string") {
@@ -330,6 +331,7 @@ export default function ChatInterface() {
         );
 
         if (updateUrl) {
+          isSelectingRef.current = true;
           router.replace(`/chat?session=${session.id}`, { scroll: false });
         }
         setHistoryOpen(false);
@@ -428,15 +430,20 @@ export default function ChatInterface() {
 
   useEffect(() => {
     const id = searchParams.get("session");
+
+    if (isSelectingRef.current) {
+      // A session selection with router.replace is in flight. During the URL
+      // transition, searchParams may briefly return null while activeSessionId
+      // is already set, which would hit the reset branch below. Skip it —
+      // the render after the URL settles will reconcile correctly.
+      isSelectingRef.current = false;
+      return;
+    }
+
     if (id && id !== activeSessionId) {
-      // If we are currently deleting this session, the URL will update momentarily,
-      // but React might fire this effect first. Check if it exists in the active sessions list (if loaded).
-      // Or, if selectSession fails, it will now handle its own fallback.
       // eslint-disable-next-line react-hooks/set-state-in-effect
       selectSession(id, false);
     } else if (!id && activeSessionId) {
-      // If the URL has no session, but we have an active session, it means we navigated away (e.g. deleted it).
-      // We should clear the active session state.
       setActiveSessionId(undefined);
       setContexts([]);
       setMessages([INITIAL_ASSISTANT_MESSAGE]);
@@ -633,6 +640,7 @@ export default function ChatInterface() {
 
         {/* Input */}
         <ChatInput
+          compact
           onSend={handleSend}
           onVoiceToggle={() => setIsVoiceMode((v) => !v)}
           isVoiceMode={isVoiceMode}

@@ -38,6 +38,8 @@ interface ChatInputProps {
   /** Render context pills above the input (passed as a slot) */
   contextPillsSlot?: React.ReactNode;
   disabled?: boolean;
+  /** When true, collapses to a single row when unfocused and empty */
+  compact?: boolean;
 }
 
 export default function ChatInput({
@@ -54,6 +56,7 @@ export default function ChatInput({
   onAdaptiveThinkingChange,
   contextPillsSlot,
   disabled = false,
+  compact = false,
 }: ChatInputProps) {
   const [value, setValue] = useState("");
   const [modelPickerOpen, setModelPickerOpen] = useState(false);
@@ -63,7 +66,7 @@ export default function ChatInput({
   const activeModel =
     models.find((model) => model.id === selectedModel) ?? models[0];
   const hasText = value.trim().length > 0;
-  const isCompact = !isFocused && !hasText;
+  const isCompact = compact && !isFocused && !hasText;
 
   // Auto-resize textarea as the user types
   useEffect(() => {
