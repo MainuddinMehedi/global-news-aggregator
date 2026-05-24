@@ -10,14 +10,12 @@ import { MODEL_LABELS } from "@/lib/ai/modelRegistry";
 interface MessageListProps {
   messages: UIMessage[];
   isLoading?: boolean;
-  /** Ref forwarded to the scroll anchor — must be passed from the parent client component */
   scrollAnchorId?: string;
 }
 
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
-// Memoized markdown renderer to prevent re-parsing on every character
 const MemoizedMarkdown = memo(
   ({ text }: { text: string }) => (
     <div className="prose dark:prose-invert max-w-none wrap-break-word">
@@ -74,6 +72,34 @@ function formatResourcePart(part: UIMessage["parts"][number]) {
   };
 }
 
+function StreamingText({ text }: { text: string }) {
+  return (
+    <div className="whitespace-pre-wrap wrap-break-word">
+      {text}
+      <span className="inline-block w-[2px] h-[1em] bg-foreground/60 ml-0.5 animate-blink align-text-bottom" />
+    </div>
+  );
+}
+
+function InlineLoadingDots() {
+  return (
+    <div className="flex items-center gap-1 px-1">
+      <span
+        className="w-1.5 h-1.5 rounded-full bg-muted-foreground/40 animate-bounce"
+        style={{ animationDelay: "0ms" }}
+      />
+      <span
+        className="w-1.5 h-1.5 rounded-full bg-muted-foreground/40 animate-bounce"
+        style={{ animationDelay: "150ms" }}
+      />
+      <span
+        className="w-1.5 h-1.5 rounded-full bg-muted-foreground/40 animate-bounce"
+        style={{ animationDelay: "300ms" }}
+      />
+    </div>
+  );
+}
+
 function MessageBubble({
   message,
   isLastAndLoading,
@@ -107,10 +133,20 @@ function MessageBubble({
       resources !== null &&
       Object.keys(resources).length > 0;
 
+  const hasTextContent = message.parts?.some(
+    (p) => p.type === "text" && p.text,
+  );
+  const hasReasoning = message.parts?.some(
+    (p) => p.type === "reasoning" && p.text,
+  );
+  const hasToolUI = message.parts?.some(isToolUIPart);
+
+  const showLoadingDots = isLastAndLoading && !hasTextContent && !hasReasoning && !hasToolUI;
+
   return (
     <div
       className={cn(
-        "flex flex-col w-full",
+        "flex flex-col w-full animate-in fade-in duration-200",
         isUser ? "items-end" : "items-start",
       )}
     >
@@ -120,7 +156,6 @@ function MessageBubble({
           isUser ? "flex-row-reverse max-w-[85%]" : "w-full",
         )}
       >
-        {/* Avatar */}
         <div
           className={cn(
             "w-8 h-8 rounded-full flex shrink-0 items-center justify-center mt-1",
@@ -142,7 +177,6 @@ function MessageBubble({
           )}
         </div>
 
-        {/* Content */}
         <div
           className={cn(
             isUser ? "text-sm leading-relaxed" : "text-base leading-relaxed",
@@ -155,140 +189,119 @@ function MessageBubble({
                   : "text-foreground w-full",
           )}
         >
-          {!isUser &&
-          isLastAndLoading &&
-          !message.parts?.some((p) => p.type === "text" && p.text) ? (
-            // Show loading dots if streaming but no content yet
-            <div className="flex items-center gap-1.5 px-1 py-2">
-              <span
-                className="w-1.5 h-1.5 rounded-full bg-muted-foreground/60 animate-bounce"
-                style={{ animationDelay: "0ms" }}
-              />
-              <span
-                className="w-1.5 h-1.5 rounded-full bg-muted-foreground/60 animate-bounce"
-                style={{ animationDelay: "150ms" }}
-              />
-              <span
-                className="w-1.5 h-1.5 rounded-full bg-muted-foreground/60 animate-bounce"
-                style={{ animationDelay: "300ms" }}
-              />
-            </div>
-          ) : (
-            <>
-              {message.parts?.map((part, index) => {
-                if (part.type === "text") {
-                  return isUser ? (
-                    <div key={index}>{part.text}</div>
-                  ) : (
-                    <MemoizedMarkdown key={index} text={part.text} />
-                  );
+          <>
+            {message.parts?.map((part, index) => {
+              if (part.type === "text") {
+                if (isUser) {
+                  return <div key={index}>{part.text}</div>;
                 }
-                if (part.type === "reasoning") {
+                if (isLastAndLoading) {
+                  return <StreamingText key={index} text={part.text} />;
+                }
+                return <MemoizedMarkdown key={index} text={part.text} />;
+              }
+
+              if (part.type === "reasoning") {
+                return (
+                  <div
+                    key={index}
+                    className="italic text-muted-foreground/70 text-sm mb-2"
+                  >
+                    {part.text || (isLastAndLoading ? "Thinking..." : "")}
+                  </div>
+                );
+              }
+
+              if (isToolUIPart(part)) {
+                const toolName = getToolName(part);
+                const toolPart = part as {
+                  state: string;
+                  output?: unknown;
+                  errorText?: string;
+                };
+                const isSearching =
+                  toolPart.state === "input-streaming" ||
+                  toolPart.state === "input-available";
+                const isError = toolPart.state === "output-error";
+                const isDone = toolPart.state === "output-available";
+
+                if (isSearching) {
                   return (
                     <div
                       key={index}
-                      className="italic text-muted-foreground mb-4 p-3 bg-muted/20 rounded-md border border-border/30"
+                      className="flex items-center gap-2 text-xs text-muted-foreground/60 mb-2"
                     >
-                      <span className="font-semibold text-sm uppercase mb-1 block">
-                        Reasoning
-                      </span>
-                      <div className="prose dark:prose-invert max-w-none wrap-break-word whitespace-pre-wrap">
-                        {part.text}
-                      </div>
+                      <span className="w-2 h-2 rounded-full bg-muted-foreground/40 animate-pulse" />
+                      Searching the web
                     </div>
                   );
                 }
-                if (isToolUIPart(part)) {
-                  const toolName = getToolName(part);
-                  const toolPart = part as {
-                    state: string;
-                    output?: unknown;
-                    errorText?: string;
+
+                if (isError) {
+                  return (
+                    <div
+                      key={index}
+                      className="text-xs text-red-500 mb-2"
+                    >
+                      Search failed: {toolPart.errorText}
+                    </div>
+                  );
+                }
+
+                if (isDone && toolPart.output) {
+                  const output = toolPart.output as {
+                    engine?: string;
+                    results?: Array<{
+                      title: string;
+                      url: string;
+                      snippet: string;
+                      source?: string;
+                    }>;
                   };
-                  const isSearching =
-                    toolPart.state === "input-streaming" ||
-                    toolPart.state === "input-available";
-                  const isError = toolPart.state === "output-error";
-                  const isDone = toolPart.state === "output-available";
-
-                  if (isSearching) {
+                  if (output.results?.length) {
                     return (
                       <div
                         key={index}
-                        className="flex items-center gap-2 text-xs text-muted-foreground/60 mb-2"
+                        className="my-4 rounded-xl border border-border/70 bg-background/80 p-3 text-sm text-muted-foreground"
                       >
-                        <span className="w-2 h-2 rounded-full bg-muted-foreground/40 animate-pulse" />
-                        Searching the web for{" "}
-                        <span className="italic font-medium">{toolName}</span>
-                      </div>
-                    );
-                  }
-
-                  if (isError) {
-                    return (
-                      <div
-                        key={index}
-                        className="text-xs text-red-500 mb-2"
-                      >
-                        Search failed: {toolPart.errorText}
-                      </div>
-                    );
-                  }
-
-                  if (isDone && toolPart.output) {
-                    const output = toolPart.output as {
-                      engine?: string;
-                      results?: Array<{
-                        title: string;
-                        url: string;
-                        snippet: string;
-                        source?: string;
-                      }>;
-                    };
-                    if (output.results?.length) {
-                      return (
-                        <div
-                          key={index}
-                          className="my-4 rounded-xl border border-border/70 bg-background/80 p-3 text-sm text-muted-foreground"
-                        >
-                          <div className="mb-2 font-semibold uppercase tracking-[0.16em] text-muted-foreground text-xs">
-                            Web Search Results{" "}
-                            {output.engine
-                              ? `(via ${output.engine})`
-                              : ""}
-                          </div>
-                          <div className="grid gap-2">
-                            {output.results.map((r, i) => (
-                              <div
-                                key={i}
-                                className="rounded-lg border border-border/50 bg-muted/70 p-2.5"
-                              >
-                                <div className="font-semibold text-xs mb-0.5">
-                                  {r.title}
-                                </div>
-                                <a
-                                  href={r.url}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="text-blue-600 hover:underline text-[11px] break-all"
-                                >
-                                  {r.url}
-                                </a>
-                                <div className="text-[11px] text-muted-foreground mt-1 line-clamp-2">
-                                  {r.snippet}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
+                        <div className="mb-2 font-semibold uppercase tracking-[0.16em] text-muted-foreground text-xs">
+                          Web Search Results{" "}
+                          {output.engine
+                            ? `(via ${output.engine})`
+                            : ""}
                         </div>
-                      );
-                    }
+                        <div className="grid gap-2">
+                          {output.results.map((r, i) => (
+                            <div
+                              key={i}
+                              className="rounded-lg border border-border/50 bg-muted/70 p-2.5"
+                            >
+                              <div className="font-semibold text-xs mb-0.5">
+                                {r.title}
+                              </div>
+                              <a
+                                href={r.url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-blue-600 hover:underline text-[11px] break-all"
+                              >
+                                {r.url}
+                              </a>
+                              <div className="text-[11px] text-muted-foreground mt-1 line-clamp-2">
+                                {r.snippet}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
                   }
                 }
-                return null;
-              })}
-            </>
-          )}
+              }
+              return null;
+            })}
+            {showLoadingDots && <InlineLoadingDots />}
+          </>
           {hasResources && (
             <div className="mt-4 rounded-xl border border-border/70 bg-background/80 p-3 text-sm text-muted-foreground inline-block">
               <div className="mb-2 font-semibold uppercase tracking-[0.16em] text-muted-foreground">
@@ -370,7 +383,6 @@ function MessageBubble({
   );
 }
 
-// Memoize MessageBubble to prevent re-renders when other messages change
 function areMessagePartsEqual(
   prevParts: UIMessage["parts"],
   nextParts: UIMessage["parts"],
@@ -385,7 +397,6 @@ function areMessagePartsEqual(
 }
 
 const MemoMessageBubble = memo(MessageBubble, (prevProps, nextProps) => {
-  // Only re-render if the message content or loading state actually changed
   const prevMetadata = prevProps.message.metadata;
   const nextMetadata = nextProps.message.metadata;
   return (
@@ -401,11 +412,9 @@ export default function MessageList({ messages, isLoading }: MessageListProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Use requestAnimationFrame to batch scroll updates and prevent jank
     const timer = requestAnimationFrame(() => {
       if (scrollRef.current) {
         const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
-        // Auto-scroll only if user is near the bottom (within 100px)
         if (scrollTop + clientHeight >= scrollHeight - 100) {
           scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
         }

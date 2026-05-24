@@ -1,4 +1,10 @@
-import { streamText, type ModelMessage, type UIMessage } from "ai";
+import {
+  streamText,
+  createUIMessageStream,
+  createUIMessageStreamResponse,
+  type ModelMessage,
+  type UIMessage,
+} from "ai";
 import { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { normalizeContextForDb } from "@/lib/chat/contexts";
@@ -290,7 +296,8 @@ export async function POST(req: Request) {
           : undefined,
     });
 
-    return result.toUIMessageStreamResponse({
+    const thinkingId = `think-${Date.now().toString(36)}`;
+    const modelStream = result.toUIMessageStream({
       originalMessages: messages as UIMessage[],
       messageMetadata: () => ({ model, sessionId: activeSessionId }),
       sendSources: true,
@@ -337,6 +344,28 @@ export async function POST(req: Request) {
         }
       },
     });
+
+    const mergedStream = createUIMessageStream({
+      execute: async ({ writer }) => {
+        writer.write({
+          type: "reasoning-start",
+          id: thinkingId,
+        });
+        writer.write({
+          type: "reasoning-delta",
+          id: thinkingId,
+          delta: "Thinking...",
+        });
+        writer.write({
+          type: "reasoning-end",
+          id: thinkingId,
+        });
+
+        writer.merge(modelStream);
+      },
+    });
+
+    return createUIMessageStreamResponse({ stream: mergedStream });
   } catch (error: unknown) {
     console.error("Chat API Error:", error);
     const errObj =
