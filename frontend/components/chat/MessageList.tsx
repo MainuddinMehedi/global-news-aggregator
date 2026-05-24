@@ -20,7 +20,7 @@ import remarkGfm from "remark-gfm";
 // Memoized markdown renderer to prevent re-parsing on every character
 const MemoizedMarkdown = memo(
   ({ text }: { text: string }) => (
-    <div className="prose prose-sm dark:prose-invert max-w-none wrap-break-word">
+    <div className="prose dark:prose-invert max-w-none wrap-break-word">
       <ReactMarkdown remarkPlugins={[remarkGfm]}>{text}</ReactMarkdown>
     </div>
   ),
@@ -138,7 +138,7 @@ function MessageBubble({
         {/* Content */}
         <div
           className={cn(
-            "text-sm leading-relaxed",
+            isUser ? "text-sm leading-relaxed" : "text-base leading-relaxed",
             isUser
               ? "bg-primary text-primary-foreground rounded-2xl rounded-tr-sm px-4 py-3 shadow-sm"
               : isSystem
@@ -182,10 +182,10 @@ function MessageBubble({
                       key={index}
                       className="italic text-muted-foreground mb-4 p-3 bg-muted/20 rounded-md border border-border/30"
                     >
-                      <span className="font-semibold text-xs uppercase mb-1 block">
+                      <span className="font-semibold text-sm uppercase mb-1 block">
                         Reasoning
                       </span>
-                      <div className="prose prose-sm dark:prose-invert max-w-none wrap-break-word whitespace-pre-wrap">
+                      <div className="prose dark:prose-invert max-w-none wrap-break-word whitespace-pre-wrap">
                         {part.text}
                       </div>
                     </div>
@@ -196,7 +196,7 @@ function MessageBubble({
             </>
           )}
           {hasResources && (
-            <div className="mt-4 rounded-xl border border-border/70 bg-background/80 p-3 text-xs text-muted-foreground inline-block">
+            <div className="mt-4 rounded-xl border border-border/70 bg-background/80 p-3 text-sm text-muted-foreground inline-block">
               <div className="mb-2 font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                 Sources
               </div>
@@ -210,14 +210,14 @@ function MessageBubble({
                       {typeof resource === "object" && resource !== null ? (
                         "type" in resource && resource.type === "source-url" ? (
                           <div>
-                            <div className="font-semibold text-[11.5px]">
+                            <div className="font-semibold text-xs">
                               {resource.label}
                             </div>
                             <a
                               href={resource.value}
                               target="_blank"
                               rel="noreferrer"
-                              className="text-blue-600 hover:underline text-[11.5px] break-all"
+                              className="text-blue-600 hover:underline text-xs break-all"
                             >
                               {resource.value}
                             </a>
@@ -225,25 +225,25 @@ function MessageBubble({
                         ) : "type" in resource &&
                           resource.type === "source-document" ? (
                           <div>
-                            <div className="font-semibold text-[11.5px]">
+                            <div className="font-semibold text-xs">
                               {resource.label}
                             </div>
-                            <div className="text-[11px] text-muted-foreground">
+                            <div className="text-xs text-muted-foreground">
                               {resource.mediaType}
                               {resource.value ? ` · ${resource.value}` : ""}
                             </div>
                           </div>
                         ) : "label" in resource && "value" in resource ? (
                           <div>
-                            <div className="font-semibold text-[11.5px]">
+                            <div className="font-semibold text-xs">
                               {String(resource.label)}
                             </div>
-                            <div className="text-[11px] text-muted-foreground break-all">
+                            <div className="text-xs text-muted-foreground break-all">
                               {String(resource.value)}
                             </div>
                           </div>
                         ) : (
-                          <pre className="whitespace-pre-wrap wrap-break-word text-[11.5px]">
+                          <pre className="whitespace-pre-wrap wrap-break-word text-xs">
                             {JSON.stringify(resource, null, 2)}
                           </pre>
                         )
@@ -254,7 +254,7 @@ function MessageBubble({
                   ))}
                 </div>
               ) : typeof resources === "object" && resources !== null ? (
-                <pre className="whitespace-pre-wrap wrap-break-word text-[11.5px]">
+                <pre className="whitespace-pre-wrap wrap-break-word text-xs">
                   {JSON.stringify(resources, null, 2)}
                 </pre>
               ) : (
@@ -266,12 +266,12 @@ function MessageBubble({
       </div>
 
       {modelLabel && !isSystem && !isUser && (
-        <div className="text-[10px] text-muted-foreground/60 mt-1.5">
+        <div className="text-xs text-muted-foreground/60 mt-1.5">
           Generated by {modelLabel}
         </div>
       )}
       {isSystem && (
-        <div className="text-[10px] text-red-600/60 mt-1.5">System Error</div>
+        <div className="text-xs text-red-600/60 mt-1.5">System Error</div>
       )}
     </div>
   );
