@@ -4,7 +4,7 @@ import { webSearch as exaWebSearch } from "@exalabs/ai-sdk";
 import { extract } from "@extractus/article-extractor";
 
 const MAX_SEARCH_RESULTS = 10;
-const MAX_SEARCH_SNIPPET_CHARS = 420;
+const MAX_SEARCH_SNIPPET_CHARS = 260;
 const MAX_FETCHED_CONTENT_CHARS = 1200;
 
 function clampCount(count: number | undefined) {
@@ -29,7 +29,9 @@ const webSearchInputSchema = zodSchema(
       .max(MAX_SEARCH_RESULTS)
       .optional()
       .default(MAX_SEARCH_RESULTS)
-      .describe(`Number of search results to return, max ${MAX_SEARCH_RESULTS}`),
+      .describe(
+        `Number of search results to return, max ${MAX_SEARCH_RESULTS}`,
+      ),
   }),
 );
 
@@ -63,7 +65,9 @@ async function braveSearch(
   }
 
   const data = (await res.json()) as {
-    web?: { results?: Array<{ title: string; url: string; description: string }> };
+    web?: {
+      results?: Array<{ title: string; url: string; description: string }>;
+    };
   };
 
   return (data.web?.results ?? []).slice(0, count).map((r) => ({
@@ -114,13 +118,14 @@ async function exaSearch(
     numResults: count,
     type: "auto",
     category: "news",
-    contents: { text: { maxCharacters: MAX_SEARCH_SNIPPET_CHARS }, highlights: true },
+    contents: {
+      text: { maxCharacters: MAX_SEARCH_SNIPPET_CHARS },
+      highlights: true,
+    },
   });
-  const exaExecute = (exaTool as { execute: (...args: unknown[]) => unknown }).execute;
-  const data = (await exaExecute(
-    { query },
-    { abortSignal: signal },
-  )) as {
+  const exaExecute = (exaTool as { execute: (...args: unknown[]) => unknown })
+    .execute;
+  const data = (await exaExecute({ query }, { abortSignal: signal })) as {
     results?: Array<{
       title: string;
       url: string;
@@ -133,10 +138,7 @@ async function exaSearch(
   return (data.results ?? []).slice(0, count).map((r) => ({
     title: r.title,
     url: r.url,
-    snippet: compactText(
-      r.highlights?.[0] ?? r.text,
-      MAX_SEARCH_SNIPPET_CHARS,
-    ),
+    snippet: compactText(r.highlights?.[0] ?? r.text, MAX_SEARCH_SNIPPET_CHARS),
     source: "Exa",
     published: r.publishedDate,
   }));
@@ -165,9 +167,7 @@ async function tryEngines(
     }
   }
 
-  throw new Error(
-    `All search engines failed — ${errors.join("; ")}`,
-  );
+  throw new Error(`All search engines failed — ${errors.join("; ")}`);
 }
 
 const fetchUrlInputSchema = zodSchema(
@@ -181,28 +181,49 @@ export const fetchUrlTool = tool({
     "Fetch and extract the main content (title, text, author, etc.) from a given URL. Use this when the user provides a link they want you to read or analyze.",
   inputSchema: fetchUrlInputSchema,
   execute: async ({ url }) => {
-    const article = await extract(url);
+    try {
+      const article = await extract(url);
 
-    if (!article) {
-      return { error: "Could not extract content from the URL." };
+      if (!article) {
+        return {
+          title: "",
+          description: "",
+          content:
+            "Failed to extract content. The site might be blocking scrapers or paywalled.",
+          author: "",
+          published: "",
+          source: url,
+          url: url,
+        };
+      }
+
+      return {
+        title: article.title || "",
+        description: article.description || "",
+        content: article.content
+          ? compactText(
+              article.content.replace(/<[^>]*>/g, ""),
+              MAX_FETCHED_CONTENT_CHARS,
+            )
+          : "",
+        author: Array.isArray(article.author)
+          ? article.author.join(", ")
+          : article.author || "",
+        published: article.published || "",
+        source: article.source || url,
+        url: article.url || url,
+      };
+    } catch (err) {
+      return {
+        title: "",
+        description: "",
+        content: `Failed to fetch URL. Error: ${(err as Error).message}. The site might be blocking access (e.g., 401/403). Try relying on search results instead.`,
+        author: "",
+        published: "",
+        source: url,
+        url: url,
+      };
     }
-
-    return {
-      title: article.title || "",
-      description: article.description || "",
-      content: article.content
-        ? compactText(
-            article.content.replace(/<[^>]*>/g, ""),
-            MAX_FETCHED_CONTENT_CHARS,
-          )
-        : "",
-      author: Array.isArray(article.author)
-        ? article.author.join(", ")
-        : article.author || "",
-      published: article.published || "",
-      source: article.source || url,
-      url: article.url || url,
-    };
   },
 });
 
