@@ -9,7 +9,7 @@ import {
   isToolUIPart,
   type UIMessage,
 } from "ai";
-import { memo, useEffect, useRef } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import { MODEL_LABELS } from "@/lib/ai/modelRegistry";
 
 interface MessageListProps {
@@ -20,6 +20,19 @@ interface MessageListProps {
 
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+
+type SourceItem = {
+  label: string;
+  value: string;
+  type: string;
+  snippet?: string;
+  published?: string;
+  source?: string;
+  sourceId?: string;
+  mediaType?: string;
+  engine?: string;
+  toolName?: string;
+};
 
 const MemoizedMarkdown = memo(
   ({ text }: { text: string }) => (
@@ -50,7 +63,39 @@ function isSourceResourcePart(part: UIMessage["parts"][number]): part is
   return part.type === "source-url" || part.type === "source-document";
 }
 
-function formatResourcePart(part: UIMessage["parts"][number]) {
+function getHostname(url: string) {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return url;
+  }
+}
+
+function getUrlPath(url: string) {
+  try {
+    const parsed = new URL(url);
+    return parsed.pathname
+      .split("/")
+      .filter(Boolean)
+      .slice(0, 2)
+      .join(" > ");
+  } catch {
+    return "";
+  }
+}
+
+function formatPublishedDate(value?: string) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return new Intl.DateTimeFormat(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(date);
+}
+
+function formatResourcePart(part: UIMessage["parts"][number]): SourceItem {
   if (part.type === "source-url") {
     return {
       label: part.title || part.url,
@@ -77,10 +122,11 @@ function formatResourcePart(part: UIMessage["parts"][number]) {
   };
 }
 
-function extractToolResources(parts: UIMessage["parts"]) {
-  const items: Array<{ label: string; value: string; type: string }> = [];
+function extractToolResources(parts: UIMessage["parts"]): SourceItem[] {
+  const items: SourceItem[] = [];
   for (const part of parts) {
     if (!isToolUIPart(part)) continue;
+    const toolName = getToolName(part);
     const tp = part as {
       state: string;
       output?: Record<string, unknown>;
@@ -89,10 +135,17 @@ function extractToolResources(parts: UIMessage["parts"]) {
     const out = tp.output as {
       url?: string;
       title?: string;
+      description?: string;
+      content?: string;
+      published?: string;
+      source?: string;
+      engine?: string;
       results?: Array<{
         url: string;
         title?: string;
         snippet?: string;
+        published?: string;
+        source?: string;
       }>;
     };
     if (out.results) {
@@ -101,6 +154,11 @@ function extractToolResources(parts: UIMessage["parts"]) {
           label: r.title || r.url,
           value: r.url,
           type: "source-url",
+          snippet: r.snippet,
+          published: r.published,
+          source: r.source,
+          engine: out.engine,
+          toolName,
         });
       }
     }
@@ -109,10 +167,25 @@ function extractToolResources(parts: UIMessage["parts"]) {
         label: out.title || out.url,
         value: out.url,
         type: "source-url",
+        snippet: out.description || out.content,
+        published: out.published,
+        source: out.source,
+        engine: out.engine,
+        toolName,
       });
     }
   }
   return items;
+}
+
+function dedupeSources(sources: SourceItem[]) {
+  const seen = new Set<string>();
+  return sources.filter((source) => {
+    const key = source.value.replace(/\/$/, "");
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 function StreamingText({ text }: { text: string }) {
@@ -154,134 +227,104 @@ function toolStatusLabel(toolName: string): string {
   }
 }
 
-function FetchUrlResult({
-  output,
-}: {
-  output: { title?: string; url?: string; content?: string };
-}) {
-  if (!output.url) return null;
-  const preview =
-    output.content && output.content.length > 300
-      ? output.content.slice(0, 300) + "..."
-      : output.content;
-
-  return (
-    <div className="my-4 rounded-xl border border-border/70 bg-background/80 p-3 text-sm text-muted-foreground">
-      <div className="mb-2 font-semibold uppercase tracking-[0.16em] text-muted-foreground text-xs">
-        Fetched URL
-      </div>
-      <div className="rounded-lg border border-border/50 bg-muted/70 p-2.5">
-        {output.title && (
-          <div className="font-semibold text-xs mb-0.5">{output.title}</div>
-        )}
-        <a
-          href={output.url}
-          target="_blank"
-          rel="noreferrer"
-          className="text-blue-600 hover:underline text-[11px] break-all"
-        >
-          {output.url}
-        </a>
-        {preview && (
-          <div className="text-[11px] text-muted-foreground mt-1.5 line-clamp-3">
-            {preview}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function WebSearchResults({
-  output,
-}: {
-  output: {
-    engine?: string;
-    results?: Array<{
-      title: string;
-      url: string;
-      snippet: string;
-      source?: string;
-    }>;
-  };
-}) {
-  if (!output.results?.length) return null;
-  return (
-    <div className="my-4 rounded-xl border border-border/70 bg-background/80 p-3 text-sm text-muted-foreground">
-      <div className="mb-2 font-semibold uppercase tracking-[0.16em] text-muted-foreground text-xs">
-        Web Search Results{" "}
-        {output.engine ? `(via ${output.engine})` : ""}
-      </div>
-      <div className="grid gap-2">
-        {output.results.map((r, i) => (
-          <div
-            key={i}
-            className="rounded-lg border border-border/50 bg-muted/70 p-2.5"
-          >
-            <div className="font-semibold text-xs mb-0.5">{r.title}</div>
-            <a
-              href={r.url}
-              target="_blank"
-              rel="noreferrer"
-              className="text-blue-600 hover:underline text-[11px] break-all"
-            >
-              {r.url}
-            </a>
-            <div className="text-[11px] text-muted-foreground mt-1 line-clamp-2">
-              {r.snippet}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 function SourceResource({
   resource,
 }: {
-  resource: Record<string, unknown>;
+  resource: SourceItem;
 }) {
-  if ("type" in resource && resource.type === "source-url") {
+  if (resource.type === "source-url") {
+    const domain = getHostname(resource.value);
+    const path = getUrlPath(resource.value);
+    const published = formatPublishedDate(resource.published);
+
     return (
-      <div>
-        <div className="font-semibold text-xs">{String(resource.label)}</div>
-        <a
-          href={String(resource.value)}
-          target="_blank"
-          rel="noreferrer"
-          className="text-blue-600 hover:underline text-xs break-all"
-        >
-          {String(resource.value)}
-        </a>
-      </div>
+      <a
+        href={resource.value}
+        target="_blank"
+        rel="noreferrer"
+        className="block h-full rounded-xl border border-border/60 bg-muted/60 p-3 transition-colors hover:bg-muted"
+      >
+        <div className="mb-2 flex min-w-0 items-center gap-1.5 text-[11px] text-muted-foreground">
+          <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-sm bg-background text-[9px] font-semibold uppercase text-muted-foreground">
+            {domain.slice(0, 1)}
+          </span>
+          <span className="truncate">{domain}</span>
+          {path && (
+            <span className="truncate text-muted-foreground/60">
+              &gt; {path}
+            </span>
+          )}
+        </div>
+        <div className="line-clamp-2 text-sm font-medium leading-snug text-foreground">
+          {resource.label}
+        </div>
+        {(published || resource.snippet) && (
+          <div className="mt-2 line-clamp-1 text-xs text-muted-foreground">
+            {published ? `${published} - ` : ""}
+            {resource.snippet}
+          </div>
+        )}
+      </a>
     );
   }
-  if ("type" in resource && resource.type === "source-document") {
+  if (resource.type === "source-document") {
     return (
-      <div>
-        <div className="font-semibold text-xs">{String(resource.label)}</div>
+      <div className="h-full rounded-xl border border-border/60 bg-muted/60 p-3">
+        <div className="font-semibold text-xs">{resource.label}</div>
         <div className="text-xs text-muted-foreground">
-          {String(resource.mediaType)}
-          {resource.value ? ` · ${String(resource.value)}` : ""}
+          {resource.mediaType}
+          {resource.value ? ` - ${resource.value}` : ""}
         </div>
       </div>
     );
   }
-  if ("label" in resource && "value" in resource) {
+  if (resource.label && resource.value) {
     return (
-      <div>
-        <div className="font-semibold text-xs">{String(resource.label)}</div>
+      <div className="h-full rounded-xl border border-border/60 bg-muted/60 p-3">
+        <div className="font-semibold text-xs">{resource.label}</div>
         <div className="text-xs text-muted-foreground break-all">
-          {String(resource.value)}
+          {resource.value}
         </div>
       </div>
     );
   }
+  return null;
+}
+
+function SourcesStrip({ sources }: { sources: SourceItem[] }) {
+  const [showAll, setShowAll] = useState(false);
+  const visibleSources = showAll ? sources : sources.slice(0, 3);
+  const toolLabel =
+    sources.find((source) => source.toolName)?.toolName?.replace(/_/g, " ") ??
+    "source";
+  const engineLabel = sources.find((source) => source.engine)?.engine;
+
   return (
-    <pre className="whitespace-pre-wrap wrap-break-word text-xs">
-      {JSON.stringify(resource, null, 2)}
-    </pre>
+    <div className="mt-5 w-full">
+      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-sleek">
+        {visibleSources.map((src, idx) => (
+          <div key={`${src.value}-${idx}`} className="w-[280px] shrink-0">
+            <SourceResource resource={src} />
+          </div>
+        ))}
+      </div>
+      <div className="mt-1 flex items-center justify-between text-xs text-muted-foreground">
+        <span>
+          {sources.length} source{sources.length === 1 ? "" : "s"}
+          {engineLabel ? ` - ${toolLabel} via ${engineLabel}` : ""}
+        </span>
+        {sources.length > 3 && (
+          <button
+            type="button"
+            onClick={() => setShowAll((value) => !value)}
+            className="inline-flex items-center gap-1 hover:text-foreground"
+          >
+            {showAll ? "Show less" : "View all"}
+            <span aria-hidden="true">-&gt;</span>
+          </button>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -306,16 +349,26 @@ function MessageBubble({
   const hasActiveReasoning = message.parts?.some(
     (p) => isReasoningUIPart(p) && p.state === "streaming",
   );
-  const hasToolUI = message.parts?.some(isToolUIPart);
+  const hasActiveToolUI = message.parts?.some((part) => {
+    if (!isToolUIPart(part)) return false;
+    const toolPart = part as { state: string };
+    return (
+      toolPart.state === "input-streaming" ||
+      toolPart.state === "input-available"
+    );
+  });
 
   const showLoadingDots =
-    isLastAndLoading && !hasTextContent && !hasActiveReasoning && !hasToolUI;
+    isLastAndLoading &&
+    !hasTextContent &&
+    !hasActiveReasoning &&
+    !hasActiveToolUI;
 
   const partResources = (message.parts ?? [])
     .filter(isSourceResourcePart)
     .map(formatResourcePart);
   const toolResources = extractToolResources(message.parts ?? []);
-  const allSources = [...partResources, ...toolResources];
+  const allSources = dedupeSources([...partResources, ...toolResources]);
   const hasSources = allSources.length > 0;
 
   return (
@@ -354,6 +407,7 @@ function MessageBubble({
 
         <div
           className={cn(
+            "min-w-0",
             isUser ? "text-sm leading-relaxed" : "text-base leading-relaxed",
             isUser
               ? "bg-primary text-primary-foreground rounded-2xl rounded-tr-sm px-4 py-3 shadow-sm"
@@ -422,62 +476,14 @@ function MessageBubble({
                   );
                 }
 
-                if (isDone && toolPart.output) {
-                  if (toolName === "fetch_url") {
-                    return (
-                      <FetchUrlResult
-                        key={index}
-                        output={
-                          toolPart.output as {
-                            title?: string;
-                            url?: string;
-                            content?: string;
-                          }
-                        }
-                      />
-                    );
-                  }
-
-                  return (
-                    <WebSearchResults
-                      key={index}
-                      output={
-                        toolPart.output as {
-                          engine?: string;
-                          results?: Array<{
-                            title: string;
-                            url: string;
-                            snippet: string;
-                            source?: string;
-                          }>;
-                        }
-                      }
-                    />
-                  );
-                }
+                if (isDone && toolPart.output) return null;
               }
               return null;
             })}
             {showLoadingDots && <InlineLoadingDots />}
           </>
 
-          {hasSources && (
-            <div className="mt-4 rounded-xl border border-border/70 bg-background/80 p-3 text-sm text-muted-foreground inline-block">
-              <div className="mb-2 font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                Sources
-              </div>
-              <div className="grid gap-2">
-                {allSources.map((src, idx) => (
-                  <div
-                    key={idx}
-                    className="rounded-lg border border-border/50 bg-muted/70 p-2.5"
-                  >
-                    <SourceResource resource={src as Record<string, unknown>} />
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+          {hasSources && hasTextContent && <SourcesStrip sources={allSources} />}
 
           {modelLabel && !isSystem && !isUser && (
             <div className="text-[10px] text-muted-foreground/60 mt-2">
@@ -491,6 +497,19 @@ function MessageBubble({
       )}
     </div>
   );
+}
+
+function hasRenderableMessageContent(
+  message: UIMessage,
+  isLastAndLoading: boolean,
+) {
+  if (message.role !== "assistant") return true;
+  if (isLastAndLoading) return true;
+  return (message.parts ?? []).some((part) => {
+    if (part.type === "text") return Boolean(part.text?.trim());
+    if (!isToolUIPart(part)) return false;
+    return (part as { state?: string }).state === "output-error";
+  });
 }
 
 function areMessagePartsEqual(
@@ -539,7 +558,10 @@ export default function MessageList({ messages, isLoading }: MessageListProps) {
         {messages.map((msg, idx) => {
           const isLastMessage = idx === messages.length - 1;
           const isLastAndLoading =
-            isLastMessage && isLoading && msg.role === "assistant";
+            isLastMessage && Boolean(isLoading) && msg.role === "assistant";
+          if (!hasRenderableMessageContent(msg, isLastAndLoading)) {
+            return null;
+          }
           return (
             <MemoMessageBubble
               key={msg.id}

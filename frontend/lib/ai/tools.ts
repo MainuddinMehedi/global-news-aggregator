@@ -3,14 +3,33 @@ import { z } from "zod";
 import { webSearch as exaWebSearch } from "@exalabs/ai-sdk";
 import { extract } from "@extractus/article-extractor";
 
+const MAX_SEARCH_RESULTS = 10;
+const MAX_SEARCH_SNIPPET_CHARS = 420;
+const MAX_FETCHED_CONTENT_CHARS = 1200;
+
+function clampCount(count: number | undefined) {
+  return Math.min(Math.max(count ?? MAX_SEARCH_RESULTS, 1), MAX_SEARCH_RESULTS);
+}
+
+function compactText(value: string | undefined, maxLength: number) {
+  if (!value) return "";
+  const normalized = value.replace(/\s+/g, " ").trim();
+  return normalized.length > maxLength
+    ? `${normalized.slice(0, maxLength - 3)}...`
+    : normalized;
+}
+
 const webSearchInputSchema = zodSchema(
   z.object({
     query: z.string().describe("The search query to look up online"),
     count: z
       .number()
+      .int()
+      .min(1)
+      .max(MAX_SEARCH_RESULTS)
       .optional()
-      .default(5)
-      .describe("Number of search results to return"),
+      .default(MAX_SEARCH_RESULTS)
+      .describe(`Number of search results to return, max ${MAX_SEARCH_RESULTS}`),
   }),
 );
 
@@ -95,7 +114,7 @@ async function exaSearch(
     numResults: count,
     type: "auto",
     category: "news",
-    contents: { text: { maxCharacters: 3000 }, highlights: true },
+    contents: { text: { maxCharacters: MAX_SEARCH_SNIPPET_CHARS }, highlights: true },
   });
   const exaExecute = (exaTool as { execute: (...args: unknown[]) => unknown }).execute;
   const data = (await exaExecute(
@@ -114,7 +133,10 @@ async function exaSearch(
   return (data.results ?? []).slice(0, count).map((r) => ({
     title: r.title,
     url: r.url,
-    snippet: r.highlights?.[0] ?? r.text ?? "",
+    snippet: compactText(
+      r.highlights?.[0] ?? r.text,
+      MAX_SEARCH_SNIPPET_CHARS,
+    ),
     source: "Exa",
     published: r.publishedDate,
   }));
@@ -158,7 +180,7 @@ export const fetchUrlTool = tool({
   description:
     "Fetch and extract the main content (title, text, author, etc.) from a given URL. Use this when the user provides a link they want you to read or analyze.",
   inputSchema: fetchUrlInputSchema,
-  execute: async ({ url }, { abortSignal }) => {
+  execute: async ({ url }) => {
     const article = await extract(url);
 
     if (!article) {
@@ -169,7 +191,10 @@ export const fetchUrlTool = tool({
       title: article.title || "",
       description: article.description || "",
       content: article.content
-        ? article.content.replace(/<[^>]*>/g, "").trim()
+        ? compactText(
+            article.content.replace(/<[^>]*>/g, ""),
+            MAX_FETCHED_CONTENT_CHARS,
+          )
         : "",
       author: Array.isArray(article.author)
         ? article.author.join(", ")
@@ -186,14 +211,15 @@ export const webSearchTool = tool({
     "Search the web for current information, news, and data. Use this when the user asks about recent events, facts you are not confident about, or any topic that may have changed since your training data.",
   inputSchema: webSearchInputSchema,
   execute: async ({ query, count }, { abortSignal }) => {
-    const { results, engine } = await tryEngines(query, count ?? 5, abortSignal);
+    const safeCount = clampCount(count);
+    const { results, engine } = await tryEngines(query, safeCount, abortSignal);
 
     return {
       engine,
       results: results.map((r) => ({
-        title: r.title,
+        title: compactText(r.title, 140),
         url: r.url,
-        snippet: r.snippet,
+        snippet: compactText(r.snippet, MAX_SEARCH_SNIPPET_CHARS),
         source: r.source,
         published: r.published,
       })),

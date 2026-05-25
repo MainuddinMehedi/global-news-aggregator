@@ -1,7 +1,6 @@
 import {
   streamText,
-  createUIMessageStream,
-  createUIMessageStreamResponse,
+  stepCountIs,
   type ModelMessage,
   type UIMessage,
 } from "ai";
@@ -25,6 +24,8 @@ Your role:
 - Cite specific events, dates, and actors when possible
 - Flag potential biases in narratives
 - Be concise but thorough — prefer structured responses with headers and bullet points
+- When using web search or URL fetching, read the tool results and synthesize a direct answer in your own words. Do not dump raw search results, URLs, or tool payloads as the answer.
+- Use sources as evidence for the answer; the UI will render references separately.
 
 You have access to the user's context items (articles, topics) when provided.
 Ground your analysis in the provided context when available.
@@ -78,6 +79,62 @@ function toContextInput(context: IncomingContextItem) {
   } as ContextItem;
 }
 
+function getIncomingMessageText(message: IncomingMessage) {
+  return message.parts
+    ? message.parts
+        .filter((part) => part.type === "text")
+        .map((part) => part.text || "")
+        .join("\n")
+        .trim()
+    : message.content || "";
+}
+
+function shouldForceWebSearch(latestUserText: string, messages: ModelMessage[]) {
+  const latest = latestUserText.toLowerCase();
+  const recentContext = messages
+    .slice(-6)
+    .map((message) => String(message.content || ""))
+    .join(" ")
+    .toLowerCase();
+
+  const asksForCurrentInfo =
+    /\b(date|dates|schedule|fixture|fixtures|match|matches|play|playing|when|where|latest|today|tomorrow|upcoming)\b/.test(
+      latest,
+    );
+  const hasSportsContext =
+    /\b(world cup|fifa|football|soccer|argentina|fixture|fixtures|match|matches)\b/.test(
+      `${latest} ${recentContext}`,
+    );
+
+  return asksForCurrentInfo && hasSportsContext;
+}
+
+function formatStreamError(error: unknown) {
+  const errObj =
+    error && typeof error === "object"
+      ? (error as Record<string, unknown>)
+      : {};
+  const message =
+    typeof errObj.message === "string"
+      ? errObj.message
+      : "Failed to process chat request.";
+  const code = typeof errObj.code === "string" ? errObj.code : "";
+  const statusCode =
+    typeof errObj.statusCode === "number" ? errObj.statusCode : undefined;
+
+  if (
+    statusCode === 413 ||
+    code === "request_too_large" ||
+    code === "rate_limit_exceeded" ||
+    message.includes("Request Entity Too Large") ||
+    message.includes("tokens per minute")
+  ) {
+    return "Request too large for the selected model's current token limit. Try the 20B model, ask a shorter follow-up, or wait for the token window to reset.";
+  }
+
+  return message;
+}
+
 export async function POST(req: Request) {
   try {
     const {
@@ -100,13 +157,7 @@ export async function POST(req: Request) {
       .reverse()
       .find((msg) => msg.role === "user");
     const latestUserText = latestUserMessage
-      ? latestUserMessage.parts
-        ? latestUserMessage.parts
-            .filter((part) => part.type === "text")
-            .map((part) => part.text || "")
-            .join("\n")
-            .trim()
-        : latestUserMessage.content || ""
+      ? getIncomingMessageText(latestUserMessage)
       : "";
 
     let activeSessionId = sessionId;
@@ -233,6 +284,9 @@ export async function POST(req: Request) {
             parts: msg.parts as UIMessage["parts"],
           });
         }
+        if (msg.role === "assistant" && !getIncomingMessageText(msg).trim()) {
+          return false;
+        }
         return true;
       })
       .map((msg) => {
@@ -242,12 +296,7 @@ export async function POST(req: Request) {
           msg.role === "system"
             ? msg.role
             : "user";
-        const content = msg.parts
-          ? msg.parts
-              .filter((p) => p.type === "text")
-              .map((p) => p.text || "")
-              .join("\n")
-          : msg.content || "";
+        const content = getIncomingMessageText(msg);
 
         return {
           role,
@@ -256,7 +305,12 @@ export async function POST(req: Request) {
       });
 
     const MAX_TOTAL_CHARS = Math.floor(modelConfig.contextWindow * 3.5);
-    const MAX_TURNS = modelConfig.contextWindow > 32000 ? 16 : 8;
+    const MAX_TURNS =
+      modelConfig.provider === "groq"
+        ? 4
+        : modelConfig.contextWindow > 32000
+          ? 16
+          : 8;
 
     while (coreMessages.length > MAX_TURNS) {
       coreMessages.splice(0, 2);
@@ -284,30 +338,60 @@ export async function POST(req: Request) {
     const tools = modelConfig.capabilities.supportsTools
       ? { web_search: webSearchTool, fetch_url: fetchUrlTool }
       : undefined;
+    const forceWebSearch = Boolean(
+      tools && shouldForceWebSearch(latestUserText, coreMessages),
+    );
 
     const result = streamText({
       model: aiModel,
       system: systemPrompt,
       messages: coreMessages,
       tools,
+      stopWhen: stepCountIs(modelConfig.provider === "groq" ? 3 : 4),
+      maxOutputTokens: modelConfig.provider === "groq" ? 700 : undefined,
+      prepareStep: tools
+        ? ({ stepNumber }) => {
+            if (stepNumber === 0 && forceWebSearch) {
+              return {
+                activeTools: ["web_search"],
+                toolChoice: { type: "tool", toolName: "web_search" },
+              };
+            }
+
+            if (stepNumber > 0) {
+              return { activeTools: [] };
+            }
+
+            return undefined;
+          }
+        : undefined,
       providerOptions:
         adaptiveThinking && model.startsWith("openai/gpt-oss")
           ? { openai: { reasoningEffort: "medium" } }
           : undefined,
     });
 
-    const thinkingId = `think-${Date.now().toString(36)}`;
-    const modelStream = result.toUIMessageStream({
+    return result.toUIMessageStreamResponse({
       originalMessages: messages as UIMessage[],
       messageMetadata: () => ({ model, sessionId: activeSessionId }),
       sendSources: true,
-      sendStart: false,
-      sendFinish: false,
+      onError: (error) => {
+        console.error("Chat stream error:", error);
+        return formatStreamError(error);
+      },
       onFinish: async ({ responseMessage, isAborted }) => {
         if (isAborted || !activeSessionId) return;
 
         try {
           const assistantText = getMessageText(responseMessage);
+          if (!assistantText) {
+            console.warn("Skipping empty assistant response", {
+              sessionId: activeSessionId,
+              model,
+              parts: responseMessage.parts,
+            });
+            return;
+          }
           const responseId =
             responseMessage.id || `msg-${Date.now().toString(36)}`;
           const parts = responseMessage.parts || [
@@ -346,38 +430,9 @@ export async function POST(req: Request) {
         }
       },
     });
-
-    const mergedStream = createUIMessageStream({
-      execute: async ({ writer }) => {
-        writer.write({
-          type: "reasoning-start",
-          id: thinkingId,
-        });
-        writer.write({
-          type: "reasoning-delta",
-          id: thinkingId,
-          delta: "Thinking...",
-        });
-        writer.write({
-          type: "reasoning-end",
-          id: thinkingId,
-        });
-
-        writer.merge(modelStream);
-      },
-    });
-
-    return createUIMessageStreamResponse({ stream: mergedStream });
   } catch (error: unknown) {
     console.error("Chat API Error:", error);
-    const errObj =
-      error && typeof error === "object"
-        ? (error as Record<string, unknown>)
-        : {};
-    const message =
-      typeof errObj.message === "string"
-        ? errObj.message
-        : "Failed to process chat request.";
+    const message = formatStreamError(error);
     return new Response(
       JSON.stringify({
         error: message,

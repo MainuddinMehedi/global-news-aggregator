@@ -25,6 +25,10 @@ function toUiMessage(message: {
   };
 }
 
+function hasStoredMessageContent(message: { role: string; text: string }) {
+  return message.role !== "assistant" || message.text.trim().length > 0;
+}
+
 export async function GET(
   _req: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -51,7 +55,9 @@ export async function GET(
         responseMode: session.responseMode,
         createdAt: session.createdAt.toISOString(),
         updatedAt: session.updatedAt.toISOString(),
-        messages: session.messages.map(toUiMessage),
+        messages: session.messages
+          .filter(hasStoredMessageContent)
+          .map(toUiMessage),
         contexts: session.contexts.map((context) => ({
           id: context.sourceId ?? context.id,
           dbId: context.id,
