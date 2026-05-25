@@ -1,9 +1,4 @@
-import {
-  streamText,
-  stepCountIs,
-  type ModelMessage,
-  type UIMessage,
-} from "ai";
+import { streamText, stepCountIs, type ModelMessage, type UIMessage } from "ai";
 import { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { normalizeContextForDb } from "@/lib/chat/contexts";
@@ -17,6 +12,8 @@ import { getModel } from "@/lib/ai/modelRegistry";
 import { createProviderClient } from "@/lib/ai/providers";
 import { webSearchTool, fetchUrlTool } from "@/lib/ai/tools";
 
+export const maxDuration = 120;
+
 const SYSTEM_PROMPT = `You are a senior geopolitical analyst AI embedded in a global news aggregator.
 Your role:
 - Analyze geopolitical events, trends, and their implications
@@ -25,7 +22,9 @@ Your role:
 - Flag potential biases in narratives
 - Be concise but thorough — prefer structured responses with headers and bullet points
 - When using web search or URL fetching, read the tool results and synthesize a direct answer in your own words. Do not dump raw search results, URLs, or tool payloads as the answer.
+- Limit yourself to a few targeted tool calls. Do not loop endlessly. Output a final text answer once you have enough information.
 - Use sources as evidence for the answer; the UI will render references separately.
+- Format answers in Markdown. Do not use raw HTML such as <br>; use paragraphs, bullets, or Markdown line breaks instead.
 
 You have access to the user's context items (articles, topics) when provided.
 Ground your analysis in the provided context when available.
@@ -89,7 +88,10 @@ function getIncomingMessageText(message: IncomingMessage) {
     : message.content || "";
 }
 
-function shouldForceWebSearch(latestUserText: string, messages: ModelMessage[]) {
+function shouldForceWebSearch(
+  latestUserText: string,
+  messages: ModelMessage[],
+) {
   const latest = latestUserText.toLowerCase();
   const recentContext = messages
     .slice(-6)
@@ -347,8 +349,7 @@ export async function POST(req: Request) {
       system: systemPrompt,
       messages: coreMessages,
       tools,
-      stopWhen: stepCountIs(modelConfig.provider === "groq" ? 3 : 4),
-      maxOutputTokens: modelConfig.provider === "groq" ? 700 : undefined,
+      stopWhen: stepCountIs(modelConfig.provider === "groq" ? 6 : 8),
       prepareStep: tools
         ? ({ stepNumber }) => {
             if (stepNumber === 0 && forceWebSearch) {
@@ -356,10 +357,6 @@ export async function POST(req: Request) {
                 activeTools: ["web_search"],
                 toolChoice: { type: "tool", toolName: "web_search" },
               };
-            }
-
-            if (stepNumber > 0) {
-              return { activeTools: [] };
             }
 
             return undefined;
@@ -384,7 +381,11 @@ export async function POST(req: Request) {
 
         try {
           const assistantText = getMessageText(responseMessage);
-          if (!assistantText) {
+          const hasToolCalls = responseMessage.parts?.some(
+            (p) => p.type.startsWith("tool-") || p.type === "tool-invocation",
+          );
+
+          if (!assistantText && !hasToolCalls) {
             console.warn("Skipping empty assistant response", {
               sessionId: activeSessionId,
               model,
@@ -392,25 +393,33 @@ export async function POST(req: Request) {
             });
             return;
           }
+
           const responseId =
             responseMessage.id || `msg-${Date.now().toString(36)}`;
-          const parts = responseMessage.parts || [
-            { type: "text", text: assistantText },
+
+          const fallbackText =
+            "I gathered some information using tools, but encountered an issue synthesizing a final text response. Please try asking again or refining your query.";
+          const finalParts = responseMessage.parts || [
+            { type: "text", text: assistantText || fallbackText },
           ];
+
+          if (!assistantText && hasToolCalls) {
+            finalParts.push({ type: "text", text: fallbackText });
+          }
 
           await prisma.chatMessage.upsert({
             where: { id: responseId },
             update: {
-              text: assistantText,
-              parts: toJsonInput(parts),
+              text: assistantText || fallbackText,
+              parts: toJsonInput(finalParts),
               metadata: toJsonInput(responseMessage.metadata),
             },
             create: {
               id: responseId,
               sessionId: activeSessionId,
               role: "assistant",
-              text: assistantText,
-              parts: toJsonInput(parts) as Prisma.InputJsonValue,
+              text: assistantText || fallbackText,
+              parts: toJsonInput(finalParts) as Prisma.InputJsonValue,
               metadata: toJsonInput(responseMessage.metadata),
             },
           });

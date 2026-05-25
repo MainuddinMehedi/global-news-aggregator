@@ -1,7 +1,12 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { Robot01Icon, UserIcon } from "@hugeicons/core-free-icons";
+import {
+  Robot01Icon,
+  UserIcon,
+  ArrowRight01Icon,
+  ArrowDown01Icon,
+} from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   getToolName,
@@ -20,6 +25,10 @@ interface MessageListProps {
 
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+
+function normalizeMarkdownText(text: string) {
+  return text.replace(/<br\s*\/?>/gi, "\n");
+}
 
 type SourceItem = {
   label: string;
@@ -43,7 +52,7 @@ const MemoizedMarkdown = memo(
           em: ({ children }) => <em className="text-sm">{children}</em>,
         }}
       >
-        {text}
+        {normalizeMarkdownText(text)}
       </ReactMarkdown>
     </div>
   ),
@@ -74,11 +83,7 @@ function getHostname(url: string) {
 function getUrlPath(url: string) {
   try {
     const parsed = new URL(url);
-    return parsed.pathname
-      .split("/")
-      .filter(Boolean)
-      .slice(0, 2)
-      .join(" > ");
+    return parsed.pathname.split("/").filter(Boolean).slice(0, 2).join(" > ");
   } catch {
     return "";
   }
@@ -197,41 +202,81 @@ function StreamingText({ text }: { text: string }) {
   );
 }
 
-function InlineLoadingDots() {
+function InlineLoadingDots({ label = "Thinking" }: { label?: string }) {
   return (
-    <div className="flex items-center gap-1 px-1">
-      <span
-        className="w-1.5 h-1.5 rounded-full bg-muted-foreground/40 animate-bounce"
-        style={{ animationDelay: "0ms" }}
-      />
-      <span
-        className="w-1.5 h-1.5 rounded-full bg-muted-foreground/40 animate-bounce"
-        style={{ animationDelay: "150ms" }}
-      />
-      <span
-        className="w-1.5 h-1.5 rounded-full bg-muted-foreground/40 animate-bounce"
-        style={{ animationDelay: "300ms" }}
-      />
+    <div className="flex items-center gap-2 px-1 text-xs text-muted-foreground/70">
+      <span>{label}</span>
+      <span className="flex items-center gap-1">
+        <span
+          className="w-1.5 h-1.5 rounded-full bg-muted-foreground/40 animate-bounce"
+          style={{ animationDelay: "0ms" }}
+        />
+        <span
+          className="w-1.5 h-1.5 rounded-full bg-muted-foreground/40 animate-bounce"
+          style={{ animationDelay: "150ms" }}
+        />
+        <span
+          className="w-1.5 h-1.5 rounded-full bg-muted-foreground/40 animate-bounce"
+          style={{ animationDelay: "300ms" }}
+        />
+      </span>
     </div>
   );
 }
 
-function toolStatusLabel(toolName: string): string {
+function getToolInputValue(
+  input: Record<string, unknown> | undefined,
+  key: string,
+) {
+  const value = input?.[key];
+  return typeof value === "string" && value.trim() ? value.trim() : "";
+}
+
+function toolStatusLabel(
+  toolName: string,
+  input?: Record<string, unknown>,
+  state: "running" | "done" = "running",
+): string {
   switch (toolName) {
-    case "fetch_url":
-      return "Fetching URL";
-    case "web_search":
-      return "Searching the web";
+    case "fetch_url": {
+      const url = getToolInputValue(input, "url");
+      const prefix = state === "done" ? "Fetched URL" : "Fetching URL";
+      return url ? `${prefix}: ${url}` : prefix;
+    }
+    case "web_search": {
+      const query = getToolInputValue(input, "query");
+      const prefix =
+        state === "done" ? "Searched the web for" : "Searching the web for";
+      return query ? `${prefix}: ${query}` : "Searching the web";
+    }
     default:
-      return "Running tool";
+      return state === "done" ? "Finished tool" : "Running tool";
   }
 }
 
-function SourceResource({
-  resource,
+function ToolStatusLine({
+  label,
+  isDone = false,
 }: {
-  resource: SourceItem;
+  label: string;
+  isDone?: boolean;
 }) {
+  return (
+    <div className="flex max-w-full items-center gap-2 text-xs text-muted-foreground/60 mb-2">
+      <span
+        className={cn(
+          "w-2 h-2 rounded-full",
+          isDone
+            ? "bg-muted-foreground/50"
+            : "bg-muted-foreground/40 animate-pulse",
+        )}
+      />
+      <span className="min-w-0 truncate">{label}</span>
+    </div>
+  );
+}
+
+function SourceResource({ resource }: { resource: SourceItem }) {
   if (resource.type === "source-url") {
     const domain = getHostname(resource.value);
     const path = getUrlPath(resource.value);
@@ -328,6 +373,85 @@ function SourcesStrip({ sources }: { sources: SourceItem[] }) {
   );
 }
 
+function CollapsibleToolLogs({ toolParts }: { toolParts: UIMessage["parts"] }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  if (!toolParts || toolParts.length === 0) return null;
+
+  // Find the first active tool (streaming or available)
+  const activeTool = toolParts.find((part) => {
+    const tp = part as { state: string };
+    return tp.state === "input-streaming" || tp.state === "input-available";
+  });
+
+  const isAnyToolRunning = !!activeTool;
+
+  // If a tool is running, we show it uncollapsed.
+  if (isAnyToolRunning) {
+    const toolName = getToolName(activeTool as any);
+    const tp = activeTool as {
+      state: string;
+      input?: Record<string, unknown>;
+      rawInput?: Record<string, unknown>;
+    };
+    return (
+      <ToolStatusLine
+        label={toolStatusLabel(toolName, tp.input ?? tp.rawInput)}
+      />
+    );
+  }
+
+  // All tools are done (or error).
+  const doneTools = toolParts.filter((part) => {
+    const tp = part as { state: string; output?: Record<string, unknown> };
+    return tp.state === "output-available" && tp.output;
+  });
+
+  if (doneTools.length === 0) return null;
+
+  return (
+    <div className="mb-4">
+      <button
+        type="button"
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mb-2 font-medium"
+      >
+        <HugeiconsIcon
+          icon={isExpanded ? ArrowDown01Icon : ArrowRight01Icon}
+          className="w-3.5 h-3.5"
+        />
+        <span>
+          Performed {doneTools.length} research step
+          {doneTools.length === 1 ? "" : "s"}
+        </span>
+      </button>
+
+      {isExpanded && (
+        <div className="space-y-2 pl-4 border-l-2 border-border/50 ml-1.5 py-1 mb-4">
+          {doneTools.map((part, index) => {
+            const toolName = getToolName(part as any);
+            const tp = part as {
+              input?: Record<string, unknown>;
+              rawInput?: Record<string, unknown>;
+            };
+            return (
+              <ToolStatusLine
+                key={index}
+                label={toolStatusLabel(
+                  toolName,
+                  tp.input ?? tp.rawInput,
+                  "done",
+                )}
+                isDone
+              />
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function MessageBubble({
   message,
   isLastAndLoading,
@@ -419,71 +543,57 @@ function MessageBubble({
           )}
         >
           <>
-            {message.parts?.map((part, index) => {
-              if (part.type === "text") {
-                if (isUser) {
-                  return <div key={index}>{part.text}</div>;
-                }
-                if (isLastAndLoading) {
-                  return <StreamingText key={index} text={part.text} />;
-                }
-                return <MemoizedMarkdown key={index} text={part.text} />;
-              }
+            {(() => {
+              const textParts =
+                message.parts?.filter(
+                  (p) => p.type === "text" || isReasoningUIPart(p),
+                ) || [];
+              const toolParts =
+                message.parts?.filter((p) => isToolUIPart(p)) || [];
 
-              if (isReasoningUIPart(part)) {
-                if (!isLastAndLoading) return null;
-                return (
-                  <div
-                    key={index}
-                    className="italic text-muted-foreground/70 text-sm mb-2"
-                  >
-                    {part.text || "Thinking..."}
-                  </div>
-                );
-              }
+              return (
+                <>
+                  {toolParts.length > 0 && (
+                    <CollapsibleToolLogs toolParts={toolParts} />
+                  )}
+                  {textParts.map((part, index) => {
+                    if (part.type === "text") {
+                      if (isUser) {
+                        return (
+                          <div key={index} className="whitespace-pre-wrap">
+                            {part.text}
+                          </div>
+                        );
+                      }
+                      if (isLastAndLoading) {
+                        if (!part.text) return null;
+                        return <StreamingText key={index} text={part.text} />;
+                      }
+                      return <MemoizedMarkdown key={index} text={part.text} />;
+                    }
 
-              if (isToolUIPart(part)) {
-                const toolName = getToolName(part);
-                const toolPart = part as {
-                  state: string;
-                  output?: Record<string, unknown>;
-                  errorText?: string;
-                };
-                const isSearching =
-                  toolPart.state === "input-streaming" ||
-                  toolPart.state === "input-available";
-                const isError = toolPart.state === "output-error";
-                const isDone = toolPart.state === "output-available";
-
-                if (isSearching) {
-                  return (
-                    <div
-                      key={index}
-                      className="flex items-center gap-2 text-xs text-muted-foreground/60 mb-2"
-                    >
-                      <span className="w-2 h-2 rounded-full bg-muted-foreground/40 animate-pulse" />
-                      {toolStatusLabel(toolName)}
-                    </div>
-                  );
-                }
-
-                if (isError) {
-                  return (
-                    <div key={index} className="text-xs text-red-500 mb-2">
-                      {toolStatusLabel(toolName)} failed:{" "}
-                      {toolPart.errorText}
-                    </div>
-                  );
-                }
-
-                if (isDone && toolPart.output) return null;
-              }
-              return null;
-            })}
+                    if (isReasoningUIPart(part)) {
+                      if (!isLastAndLoading) return null;
+                      return (
+                        <div
+                          key={index}
+                          className="italic text-muted-foreground/70 text-sm mb-2"
+                        >
+                          {part.text || "Thinking..."}
+                        </div>
+                      );
+                    }
+                    return null;
+                  })}
+                </>
+              );
+            })()}
             {showLoadingDots && <InlineLoadingDots />}
           </>
 
-          {hasSources && hasTextContent && <SourcesStrip sources={allSources} />}
+          {hasSources && hasTextContent && (
+            <SourcesStrip sources={allSources} />
+          )}
 
           {modelLabel && !isSystem && !isUser && (
             <div className="text-[10px] text-muted-foreground/60 mt-2">
