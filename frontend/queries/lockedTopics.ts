@@ -2,13 +2,35 @@ import { cacheLife, cacheTag } from "next/cache";
 import prisma from "@/lib/prisma";
 import { LockedTopic } from "@/types/lockedTopic";
 
-export async function getLockedTopics(): Promise<LockedTopic[]> {
+export async function getLockedTopics(
+  search?: string,
+): Promise<LockedTopic[]> {
   "use cache";
   cacheTag("locked-topics");
   cacheLife("minutes");
 
+  const words = search?.trim().split(/\s+/).filter(Boolean) ?? [];
+  const searchFilter =
+    words.length > 0
+      ? {
+          AND: words.map((word) => ({
+            OR: [
+              { displayName: { contains: word, mode: "insensitive" as const } },
+              { userContext: { contains: word, mode: "insensitive" as const } },
+              {
+                aiQuerySummary: {
+                  contains: word,
+                  mode: "insensitive" as const,
+                },
+              },
+            ],
+          })),
+        }
+      : {};
+
   try {
     const topics = await prisma.lockedTopic.findMany({
+      where: searchFilter,
       orderBy: { createdAt: "desc" },
     });
 

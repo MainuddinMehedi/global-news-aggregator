@@ -1,21 +1,39 @@
 import prisma from "@/lib/prisma";
 import { cacheLife, cacheTag } from "next/cache";
 
-export async function getStoryClusters() {
+export async function getStoryClusters(search?: string) {
   "use cache";
   cacheTag("stories");
   cacheLife("minutes");
 
+  const words = search?.trim().split(/\s+/).filter(Boolean) ?? [];
+  const searchFilter =
+    words.length > 0
+      ? {
+          AND: [
+            { isActive: true },
+            ...words.map((word) => ({
+              OR: [
+                { title: { contains: word, mode: "insensitive" as const } },
+                {
+                  summary: { contains: word, mode: "insensitive" as const },
+                },
+              ],
+            })),
+          ],
+        }
+      : { isActive: true };
+
   try {
     const clusters = await prisma.storyCluster.findMany({
-      where: { isActive: true },
+      where: searchFilter,
       orderBy: { updatedAt: "desc" },
       include: {
         _count: {
           select: { articles: true },
         },
       },
-      take: 50, // limit to 50 active stories
+      take: 50,
     });
 
     return clusters.map((cluster) => ({

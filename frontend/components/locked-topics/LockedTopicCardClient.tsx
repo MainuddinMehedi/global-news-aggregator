@@ -74,7 +74,7 @@ export default function LockedTopicCardClient({ topic, unreadCount }: LockedTopi
       <Switch 
         checked={isActive} 
         onCheckedChange={toggleActive}
-        className="data-[state=checked]:bg-green-500"
+        className="data-[state=checked]:bg-primary"
       />
     </div>
   );
