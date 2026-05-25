@@ -14,18 +14,25 @@ export const INITIAL_ASSISTANT_MESSAGE: UIMessage = {
 /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
 export function getMessageText(message: any): string {
   if (message.parts && Array.isArray(message.parts)) {
-    return (
-      message.parts
-        /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-        .filter((part: any) => part.type === "text")
-        /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-        .map((part: any) => (part.type === "text" ? part.text : ""))
-        .join("\n")
-        .trim()
-    );
+    return message.parts
+      .map((part: any) => {
+        if (part.type === "text") return part.text || "";
+        // If it's a reasoning part, we might want to include it IF it's the only thing there
+        // but for synthesis we really want the text part.
+        return "";
+      })
+      .join("\n")
+      .trim();
   }
   if (typeof message.content === "string") {
     return message.content.trim();
+  }
+  // AI SDK Core Message content can be an array of parts
+  if (Array.isArray(message.content)) {
+    return message.content
+      .map((part: any) => (part.type === "text" ? part.text || "" : ""))
+      .join("\n")
+      .trim();
   }
   return "";
 }
