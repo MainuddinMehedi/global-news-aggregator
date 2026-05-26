@@ -45,7 +45,7 @@ type SourceItem = {
 
 const MemoizedMarkdown = memo(
   ({ text }: { text: string }) => (
-    <div className="prose dark:prose-invert max-w-none wrap-break-word">
+    <div className="prose dark:prose-invert max-w-none wrap-break-word prose-stream">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{

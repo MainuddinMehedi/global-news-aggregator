@@ -98,8 +98,10 @@ The frontend chat interface should offer the following options to users:
 | **Groq**   | **Llama 3.3 70B**         | `llama-3.3-70b-versatile`                 | ⚖️ Balanced  | Standard high-quality chat.     |
 | **Google** | **Gemini 3.1 Flash Lite** | `gemini-3.1-flash-lite`                   | 📄 Context   | Summarizing long pasted text.   |
 | **GitHub** | **DeepSeek R1**           | `deepseek/DeepSeek-R1`                    | 🧠 Reasoning | Deep logical analysis.          |
-| **GitHub** | **Grok 3**                | `xai/grok-3`                              | 🧠 Deep      | High-quality general reasoning. |
-| **GitHub** | **Grok 3 Mini**           | `xai/grok-3-mini`                         | ⚡ Fast      | Fast reasoning, xAI quality.    |
+| **GitHub** | **Grok 3**                | `xai/Grok-3`                              | 🧠 Deep      | High-quality general reasoning. |
+| **GitHub** | **Grok 3 Mini**           | `xai/Grok-3-mini`                         | ⚡ Fast      | Fast reasoning, xAI quality.    |
+| **GitHub** | **Llama 4 Scout**         | `meta/Llama-4-Scout-17B-16E-Instruct`     | ⚡ Scout     | 10M context, natively multimodal. |
+| **GitHub** | **Llama 4 Maverick**      | `meta/Llama-4-Maverick-17B-128E-Instruct`  | 🧠 Maverick  | 1M context, high-performance MoE. |
 | **GitHub** | **Llama 405B**            | `meta-llama/Meta-Llama-3.1-405B-Instruct` | 🧠 Deep      | Massive scale reasoning.        |
 | **GitHub** | **GPT-4o**                | `openai/gpt-4o`                           | ⚖️ Balanced  | Industry standard all-rounder.  |
 

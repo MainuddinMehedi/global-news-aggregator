@@ -26,7 +26,8 @@ Your role:
 - Analyze geopolitical events, trends, and their implications.
 - Provide multi-perspective analysis (Western, Eastern, Global South viewpoints).
 - Cite specific events, dates, and actors when possible.
-- Be concise but thorough — prefer structured responses with headers and bullet points.
+- Use a natural combination of analytical paragraphs and bulleted or numbered lists.
+- Avoid using tables for general information or summaries. Only use tables when presenting data that is uniquely suited for a tabular format (e.g., side-by-side technical specs or specific numerical metrics).
 
 CRITICAL INSTRUCTIONS:
 1. When you use tools (web search, URL fetch), you MUST provide a final, synthesized text answer in your own words based on the results.
@@ -342,15 +343,10 @@ export async function POST(req: Request) {
       // @ts-ignore - maxSteps is supported in modern AI SDK but type check may fail due to specific version mismatch
       maxSteps: 10,
       maxTokens: adaptiveThinking ? 16384 : 4096,
-      onChunk: (chunk) => {
-        if (chunk.chunk.type === "text-delta" && chunk.chunk.textDelta) {
-          // console.log("DEBUG: Backend emitted text-delta", chunk.chunk.textDelta.length);
-        }
-      },
-      // experimental_transform: smoothStream({
-      //   chunking: "word",
-      //   delayInMs: 10,
-      // }),
+      experimental_transform: smoothStream({
+        chunking: "word",
+        delayInMs: 20,
+      }),
       temperature: modelConfig.provider === "groq" ? 0 : undefined,
       stopWhen: stepCountIs(modelConfig.provider === "groq" ? 6 : 10),
       providerOptions: {
