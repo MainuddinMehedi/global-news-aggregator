@@ -3,7 +3,8 @@ import {
   stepCountIs,
   convertToModelMessages,
   smoothStream,
-  extractReasoning,
+  wrapLanguageModel,
+  extractReasoningMiddleware,
   type ModelMessage,
   type UIMessage,
 } from "ai";
@@ -266,6 +267,17 @@ export async function POST(req: Request) {
       modelConfig.provider === "github" ? model.slice("github:".length) : model,
     );
 
+    // DeepSeek R1 models on GitHub use <think> tags for reasoning.
+    // Wrap the model with reasoning extraction middleware to handle this.
+    // We only apply this to R1 (reasoning) models, not general V3 models.
+    const effectiveModel =
+      model.includes("deepseek") && model.toLowerCase().includes("r1")
+        ? wrapLanguageModel({
+            model: aiModel,
+            middleware: extractReasoningMiddleware({ tagName: "think" }),
+          })
+        : aiModel;
+
     const hasImageParts = messages.some((msg) =>
       msg.parts?.some((p) => p.type === "file"),
     );
@@ -337,7 +349,7 @@ export async function POST(req: Request) {
     });
 
     const result = streamText({
-      model: aiModel,
+      model: effectiveModel,
       system: `${systemPrompt}\n\nCurrent Date: ${today}`,
       messages: coreMessages,
       tools,
@@ -345,7 +357,6 @@ export async function POST(req: Request) {
       maxSteps: 10,
       maxTokens: adaptiveThinking ? 16384 : 4096,
       experimental_transform: [
-        extractReasoning(),
         smoothStream({
           chunking: "word",
           delayInMs: 20,

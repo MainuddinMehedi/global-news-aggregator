@@ -50,6 +50,23 @@ const MemoizedMarkdown = memo(
         remarkPlugins={[remarkGfm]}
         components={{
           em: ({ children }) => <em className="text-sm">{children}</em>,
+          pre: ({ children }) => (
+            <pre className="whitespace-pre-wrap wrap-break-word overflow-x-hidden bg-muted/20 p-3 rounded-lg border border-border/40 my-3">
+              {children}
+            </pre>
+          ),
+          code: ({ children, className }) => {
+            const isInline = !className;
+            return isInline ? (
+              <code className="bg-muted/30 px-1.5 py-0.5 rounded text-primary text-[0.9em] font-mono">
+                {children}
+              </code>
+            ) : (
+              <code className="whitespace-pre-wrap wrap-break-word block">
+                {children}
+              </code>
+            );
+          },
         }}
       >
         {normalizeMarkdownText(text)}
@@ -598,7 +615,7 @@ function MessageBubble({
                                   />
                                 </span>
                               </div>
-                              <div className="italic text-muted-foreground/80 text-sm whitespace-pre-wrap pl-4 border-l border-primary/20 leading-relaxed font-serif">
+                              <div className="italic text-muted-foreground/80 text-sm whitespace-pre-wrap break-words pl-4 border-l border-primary/20 leading-relaxed font-serif">
                                 {part.text || "Analyzing query..."}
                               </div>
                             </div>
@@ -620,7 +637,7 @@ function MessageBubble({
                                   Hide Thought Process
                                 </span>
                               </summary>
-                              <div className="p-3 text-[11px] text-muted-foreground/80 whitespace-pre-wrap font-mono leading-relaxed border-t border-border/30 bg-muted/5">
+                              <div className="p-3 text-[11px] text-muted-foreground/80 whitespace-pre-wrap break-words font-mono leading-relaxed border-t border-border/30 bg-muted/5 max-w-full overflow-x-hidden">
                                 {part.text}
                               </div>
                             </details>
