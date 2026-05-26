@@ -3,6 +3,7 @@ import {
   stepCountIs,
   convertToModelMessages,
   smoothStream,
+  extractReasoning,
   type ModelMessage,
   type UIMessage,
 } from "ai";
@@ -343,10 +344,13 @@ export async function POST(req: Request) {
       // @ts-ignore - maxSteps is supported in modern AI SDK but type check may fail due to specific version mismatch
       maxSteps: 10,
       maxTokens: adaptiveThinking ? 16384 : 4096,
-      experimental_transform: smoothStream({
-        chunking: "word",
-        delayInMs: 20,
-      }),
+      experimental_transform: [
+        extractReasoning(),
+        smoothStream({
+          chunking: "word",
+          delayInMs: 20,
+        }),
+      ],
       temperature: modelConfig.provider === "groq" ? 0 : undefined,
       stopWhen: stepCountIs(modelConfig.provider === "groq" ? 6 : 10),
       providerOptions: {
