@@ -25,7 +25,8 @@ export function createProviderClient(provider: ProviderName) {
     case "github":
       return createOpenAI({
         baseURL:
-          process.env.GITHUB_MODELS_BASE_URL || "https://models.github.ai/inference",
+          process.env.GITHUB_MODELS_BASE_URL ||
+          "https://models.github.ai/inference",
         apiKey: process.env.GITHUB_MODELS_API_KEY || "",
       });
 
