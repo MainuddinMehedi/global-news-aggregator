@@ -85,7 +85,6 @@ _Critical Constraint: The **8K input token cap** and low RPD make GitHub Models 
 - **Rationale**: Google's "Unlimited TPM" on Gemma 4 is essential here. Groq would rate-limit a single large summary request immediately.
 
 ---
-
 ## AI Chat Interface (Model Picker)
 
 The frontend chat interface should offer the following options to users:
@@ -94,16 +93,18 @@ The frontend chat interface should offer the following options to users:
 | :--------- | :------------------------ | :---------------------------------------- | :----------- | :------------------------------ |
 | **Groq**   | **Compound (Web Search)** | `groq/compound`                           | 🔍 Search    | Current events, fact-checking.  |
 | **Groq**   | **Compound Mini**         | `groq/compound-mini`                      | ⚡ Fast      | Default, quick questions.       |
+| **Groq**   | **GPT OSS 120B**          | `openai/gpt-oss-120b`                      | 🧠 Reasoning | Capable open reasoning.         |
 | **Groq**   | **GPT OSS 20B**           | `openai/gpt-oss-20b`                      | ⚡ Fast      | Rapid factual Q&A.              |
 | **Groq**   | **Llama 3.3 70B**         | `llama-3.3-70b-versatile`                 | ⚖️ Balanced  | Standard high-quality chat.     |
-| **Google** | **Gemini 3.1 Flash Lite** | `gemini-3.1-flash-lite`                   | 📄 Context   | Summarizing long pasted text.   |
-| **GitHub** | **DeepSeek R1**           | `deepseek/DeepSeek-R1`                    | 🧠 Reasoning | Deep logical analysis.          |
-| **GitHub** | **Grok 3**                | `xai/Grok-3`                              | 🧠 Deep      | High-quality general reasoning. |
-| **GitHub** | **Grok 3 Mini**           | `xai/Grok-3-mini`                         | ⚡ Fast      | Fast reasoning, xAI quality.    |
+| **Google** | **Gemini 2.5 Flash Lite** | `gemini-2.5-flash-lite`                   | 📄 Context   | Summarizing long pasted text.   |
+| **Google** | **Gemini 2.5 Flash**      | `gemini-2.5-flash`                        | 🏎️ Fast      | Multimodal and fast.            |
+| **Google** | **Gemma 4 31B**           | `gemma-4-31b-it`                          | 🧠 Reasoning | Deep article analysis.          |
+| **GitHub** | **DeepSeek V3 (0324)**    | `deepseek/DeepSeek-V3-0324`               | ⚡ Fast      | SOTA 671B MoE (Writing, Search).  |
+| **GitHub** | **DeepSeek R1 (0528)**    | `deepseek/DeepSeek-R1-0528`               | 🧠 Reasoning | Upgraded reasoning (87.5% AIME).  |
+| **GitHub** | **Mistral Medium 3**      | `mistralai/Mistral-Medium-3`              | ⚖️ Balanced  | SOTA versatile (Dialogue, Vision). |
 | **GitHub** | **Llama 4 Scout**         | `meta/Llama-4-Scout-17B-16E-Instruct`     | ⚡ Scout     | 10M context, natively multimodal. |
 | **GitHub** | **Llama 4 Maverick**      | `meta/Llama-4-Maverick-17B-128E-Instruct`  | 🧠 Maverick  | 1M context, high-performance MoE. |
-| **GitHub** | **Llama 405B**            | `meta-llama/Meta-Llama-3.1-405B-Instruct` | 🧠 Deep      | Massive scale reasoning.        |
-| **GitHub** | **GPT-4o**                | `openai/gpt-4o`                           | ⚖️ Balanced  | Industry standard all-rounder.  |
+| **GitHub** | **GPT-4.1**               | `openai/gpt-4.1`                          | 🧠 Reasoning | 1M context, superior coding.    |
 
 ---
 
