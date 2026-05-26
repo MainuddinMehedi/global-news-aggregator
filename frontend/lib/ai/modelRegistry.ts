@@ -280,7 +280,7 @@ export const MODEL_REGISTRY: ModelMetadata[] = [
     isActive: true,
   },
   {
-    id: "github:meta/Llama-4-Maverick-17B-128E-Instruct",
+    id: "github:meta/Llama-4-Maverick-17B-128E-Instruct-FP8",
     label: "Llama 4 Maverick",
     provider: "github",
     description: "High-performance MoE model with 1M context",
