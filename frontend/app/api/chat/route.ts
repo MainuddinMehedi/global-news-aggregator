@@ -1,4 +1,13 @@
-import { streamText, stepCountIs, type ModelMessage, type UIMessage } from "ai";
+import {
+  streamText,
+  stepCountIs,
+  convertToModelMessages,
+  smoothStream,
+  wrapLanguageModel,
+  extractReasoningMiddleware,
+  type ModelMessage,
+  type UIMessage,
+} from "ai";
 import { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { normalizeContextForDb } from "@/lib/chat/contexts";
@@ -16,19 +25,17 @@ export const maxDuration = 120;
 
 const SYSTEM_PROMPT = `You are a senior geopolitical analyst AI embedded in a global news aggregator.
 Your role:
-- Analyze geopolitical events, trends, and their implications
-- Provide multi-perspective analysis (Western, Eastern, Global South viewpoints)
-- Cite specific events, dates, and actors when possible
-- Flag potential biases in narratives
-- Be concise but thorough — prefer structured responses with headers and bullet points
-- When using web search or URL fetching, read the tool results and synthesize a direct answer in your own words. Do not dump raw search results, URLs, or tool payloads as the answer.
-- Limit yourself to a few targeted tool calls. Do not loop endlessly. Output a final text answer once you have enough information.
-- Use sources as evidence for the answer; the UI will render references separately.
-- Format answers in Markdown. Do not use raw HTML such as <br>; use paragraphs, bullets, or Markdown line breaks instead.
+- Analyze geopolitical events, trends, and their implications.
+- Provide multi-perspective analysis (Western, Eastern, Global South viewpoints).
+- Cite specific events, dates, and actors when possible.
+- Use a natural combination of analytical paragraphs and bulleted or numbered lists.
+- Avoid using tables for general information or summaries. Only use tables when presenting data that is uniquely suited for a tabular format (e.g., side-by-side technical specs or specific numerical metrics).
 
-You have access to the user's context items (articles, topics) when provided.
-Ground your analysis in the provided context when available.
-If you don't have enough information, say so rather than speculating.`;
+CRITICAL INSTRUCTIONS:
+1. When you use tools (web search, URL fetch), you MUST provide a final, synthesized text answer in your own words based on the results.
+2. NEVER end a response with a tool call or reasoning block alone. Always conclude with a "text" part containing your analysis.
+3. Match your reasoning depth and search intensity to the complexity of the user's request. For simple lookups or daily briefings, be efficient and aim for a single-step search. Reserve deep multi-step reasoning for complex strategic analysis or conflicting data.
+4. Ground your analysis in the provided context items when available.`;
 
 function estimateRequestSize(
   systemPrompt: string,
@@ -88,41 +95,37 @@ function getIncomingMessageText(message: IncomingMessage) {
     : message.content || "";
 }
 
-function shouldForceWebSearch(
-  latestUserText: string,
-  messages: ModelMessage[],
-) {
-  const latest = latestUserText.toLowerCase();
-  const recentContext = messages
-    .slice(-6)
-    .map((message) => String(message.content || ""))
-    .join(" ")
-    .toLowerCase();
-
-  const asksForCurrentInfo =
-    /\b(date|dates|schedule|fixture|fixtures|match|matches|play|playing|when|where|latest|today|tomorrow|upcoming)\b/.test(
-      latest,
-    );
-  const hasSportsContext =
-    /\b(world cup|fifa|football|soccer|argentina|fixture|fixtures|match|matches)\b/.test(
-      `${latest} ${recentContext}`,
-    );
-
-  return asksForCurrentInfo && hasSportsContext;
-}
-
 function formatStreamError(error: unknown) {
   const errObj =
     error && typeof error === "object"
       ? (error as Record<string, unknown>)
       : {};
+
   const message =
     typeof errObj.message === "string"
       ? errObj.message
       : "Failed to process chat request.";
+
   const code = typeof errObj.code === "string" ? errObj.code : "";
+
   const statusCode =
     typeof errObj.statusCode === "number" ? errObj.statusCode : undefined;
+
+  // Groq specific debugging for tool_use_failed
+  if (code === "tool_use_failed" || message.includes("failed_generation")) {
+    const failedGeneration =
+      (errObj as any).failed_generation ||
+      (errObj as any).responseBody?.error?.failed_generation;
+
+    if (failedGeneration) {
+      console.error("GROQ FAILED GENERATION:", failedGeneration);
+    } else {
+      console.error(
+        "GROQ TOOL ERROR OBJECT:",
+        JSON.stringify(error, Object.getOwnPropertyNames(error), 2),
+      );
+    }
+  }
 
   if (
     statusCode === 413 ||
@@ -158,6 +161,7 @@ export async function POST(req: Request) {
     const latestUserMessage = [...messages]
       .reverse()
       .find((msg) => msg.role === "user");
+
     const latestUserText = latestUserMessage
       ? getIncomingMessageText(latestUserMessage)
       : "";
@@ -192,6 +196,7 @@ export async function POST(req: Request) {
     if (latestUserMessage && activeSessionId) {
       const userMessageId =
         latestUserMessage.id || `user-${Date.now().toString(36)}`;
+
       await prisma.chatMessage.upsert({
         where: { id: userMessageId },
         update: {
@@ -262,9 +267,21 @@ export async function POST(req: Request) {
       modelConfig.provider === "github" ? model.slice("github:".length) : model,
     );
 
+    // DeepSeek R1 models on GitHub use <think> tags for reasoning.
+    // Wrap the model with reasoning extraction middleware to handle this.
+    // We only apply this to R1 (reasoning) models, not general V3 models.
+    const effectiveModel =
+      model.includes("deepseek") && model.toLowerCase().includes("r1")
+        ? wrapLanguageModel({
+            model: aiModel,
+            middleware: extractReasoningMiddleware({ tagName: "think" }),
+          })
+        : aiModel;
+
     const hasImageParts = messages.some((msg) =>
       msg.parts?.some((p) => p.type === "file"),
     );
+
     if (hasImageParts && !modelConfig.capabilities.supportsImages) {
       return new Response(
         JSON.stringify({
@@ -277,8 +294,8 @@ export async function POST(req: Request) {
       );
     }
 
-    const coreMessages: ModelMessage[] = messages
-      .filter((msg) => {
+    const coreMessages = await convertToModelMessages(
+      messages.filter((msg) => {
         if (msg.id && msg.role === "assistant") {
           return !isInitialAssistantMessage({
             id: msg.id,
@@ -286,27 +303,21 @@ export async function POST(req: Request) {
             parts: msg.parts as UIMessage["parts"],
           });
         }
-        if (msg.role === "assistant" && !getIncomingMessageText(msg).trim()) {
+        // Keep assistant messages that have tool calls even if text is empty
+        const hasToolCalls = msg.parts?.some(
+          (p) => p.type === "tool-invocation" || p.type.startsWith("tool-"),
+        );
+        if (
+          msg.role === "assistant" &&
+          !getIncomingMessageText(msg).trim() &&
+          !hasToolCalls
+        ) {
           return false;
         }
         return true;
-      })
-      .map((msg) => {
-        const role =
-          msg.role === "user" ||
-          msg.role === "assistant" ||
-          msg.role === "system"
-            ? msg.role
-            : "user";
-        const content = getIncomingMessageText(msg);
+      }) as any,
+    );
 
-        return {
-          role,
-          content,
-        };
-      });
-
-    const MAX_TOTAL_CHARS = Math.floor(modelConfig.contextWindow * 3.5);
     const MAX_TURNS =
       modelConfig.provider === "groq"
         ? 4
@@ -315,24 +326,13 @@ export async function POST(req: Request) {
           : 8;
 
     while (coreMessages.length > MAX_TURNS) {
-      coreMessages.splice(0, 2);
+      coreMessages.splice(0, 1); // Remove one by one to preserve system message if any
     }
 
-    let totalChars =
-      systemPrompt.length +
-      coreMessages.reduce((s, m) => s + m.content.length, 0);
-    while (totalChars > MAX_TOTAL_CHARS && coreMessages.length > 4) {
-      coreMessages.splice(0, 2);
-      totalChars =
-        systemPrompt.length +
-        coreMessages.reduce((s, m) => s + m.content.length, 0);
-    }
-
-    const requestSize = estimateRequestSize(systemPrompt, coreMessages);
+    const requestSize = estimateRequestSize(systemPrompt, coreMessages as any);
     console.log("DEBUG: Sending to streamText", {
       model,
       msgCount: coreMessages.length,
-      totalChars,
       requestSize,
       adaptiveThinking,
     });
@@ -340,40 +340,67 @@ export async function POST(req: Request) {
     const tools = modelConfig.capabilities.supportsTools
       ? { web_search: webSearchTool, fetch_url: fetchUrlTool }
       : undefined;
-    const forceWebSearch = Boolean(
-      tools && shouldForceWebSearch(latestUserText, coreMessages),
-    );
+
+    const today = new Date().toLocaleDateString("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
 
     const result = streamText({
-      model: aiModel,
-      system: systemPrompt,
+      model: effectiveModel,
+      system: `${systemPrompt}\n\nCurrent Date: ${today}`,
       messages: coreMessages,
       tools,
-      stopWhen: stepCountIs(modelConfig.provider === "groq" ? 6 : 8),
-      prepareStep: tools
-        ? ({ stepNumber }) => {
-            if (stepNumber === 0 && forceWebSearch) {
-              return {
-                activeTools: ["web_search"],
-                toolChoice: { type: "tool", toolName: "web_search" },
-              };
+      // @ts-ignore - maxSteps is supported in modern AI SDK but type check may fail due to specific version mismatch
+      maxSteps: 10,
+      maxTokens: adaptiveThinking ? 16384 : 4096,
+      experimental_transform: [
+        smoothStream({
+          chunking: "word",
+          delayInMs: 20,
+        }),
+      ],
+      temperature: modelConfig.provider === "groq" ? 0 : undefined,
+      stopWhen: stepCountIs(modelConfig.provider === "groq" ? 6 : 10),
+      providerOptions: {
+        ...(adaptiveThinking && model.startsWith("openai/gpt-oss")
+          ? {
+              openai: {
+                reasoningEffort: responseMode === "concise" ? "low" : "medium",
+              },
             }
-
-            return undefined;
-          }
-        : undefined,
-      providerOptions:
-        adaptiveThinking && model.startsWith("openai/gpt-oss")
-          ? { openai: { reasoningEffort: "medium" } }
-          : undefined,
+          : {}),
+        ...(adaptiveThinking && modelConfig.provider === "google"
+          ? {
+              google: {
+                thinking: {
+                  type: "enabled",
+                  budgetTokens: responseMode === "concise" ? 2000 : 4000,
+                },
+              },
+            }
+          : {}),
+        ...(modelConfig.provider === "groq"
+          ? { openai: { parallelToolCalls: false } }
+          : {}),
+      },
     });
 
     return result.toUIMessageStreamResponse({
       originalMessages: messages as UIMessage[],
       messageMetadata: () => ({ model, sessionId: activeSessionId }),
       sendSources: true,
+      headers: {
+        "Cache-Control": "no-cache, no-transform",
+        "X-Content-Type-Options": "nosniff",
+      },
       onError: (error) => {
-        console.error("Chat stream error:", error);
+        console.error(
+          "Chat stream error details:",
+          JSON.stringify(error, null, 2),
+        );
         return formatStreamError(error);
       },
       onFinish: async ({ responseMessage, isAborted }) => {
@@ -384,8 +411,11 @@ export async function POST(req: Request) {
           const hasToolCalls = responseMessage.parts?.some(
             (p) => p.type.startsWith("tool-") || p.type === "tool-invocation",
           );
+          const hasReasoning = responseMessage.parts?.some(
+            (p) => p.type === "reasoning" && p.text?.trim(),
+          );
 
-          if (!assistantText && !hasToolCalls) {
+          if (!assistantText && !hasToolCalls && !hasReasoning) {
             console.warn("Skipping empty assistant response", {
               sessionId: activeSessionId,
               model,
@@ -398,19 +428,29 @@ export async function POST(req: Request) {
             responseMessage.id || `msg-${Date.now().toString(36)}`;
 
           const fallbackText =
-            "I gathered some information using tools, but encountered an issue synthesizing a final text response. Please try asking again or refining your query.";
-          const finalParts = responseMessage.parts || [
-            { type: "text", text: assistantText || fallbackText },
-          ];
+            "I performed research using tools, but was unable to synthesize a final text summary. You can review the research steps and sources above for details.";
 
-          if (!assistantText && hasToolCalls) {
+          let finalParts = [...(responseMessage.parts || [])];
+
+          // If we have research but no final text, and NO reasoning was provided in the last turn, add fallback
+          if (!assistantText && hasToolCalls && !hasReasoning) {
+            console.warn(
+              "Synthesis failed for session:",
+              activeSessionId,
+              "Model:",
+              model,
+            );
             finalParts.push({ type: "text", text: fallbackText });
           }
+
+          const resolvedText =
+            assistantText ||
+            (hasReasoning ? "" : hasToolCalls ? fallbackText : "");
 
           await prisma.chatMessage.upsert({
             where: { id: responseId },
             update: {
-              text: assistantText || fallbackText,
+              text: resolvedText,
               parts: toJsonInput(finalParts),
               metadata: toJsonInput(responseMessage.metadata),
             },
@@ -418,7 +458,7 @@ export async function POST(req: Request) {
               id: responseId,
               sessionId: activeSessionId,
               role: "assistant",
-              text: assistantText || fallbackText,
+              text: resolvedText,
               parts: toJsonInput(finalParts) as Prisma.InputJsonValue,
               metadata: toJsonInput(responseMessage.metadata),
             },

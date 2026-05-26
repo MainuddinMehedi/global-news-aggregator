@@ -22,16 +22,6 @@ function compactText(value: string | undefined, maxLength: number) {
 const webSearchInputSchema = zodSchema(
   z.object({
     query: z.string().describe("The search query to look up online"),
-    count: z
-      .number()
-      .int()
-      .min(1)
-      .max(MAX_SEARCH_RESULTS)
-      .optional()
-      .default(MAX_SEARCH_RESULTS)
-      .describe(
-        `Number of search results to return, max ${MAX_SEARCH_RESULTS}`,
-      ),
   }),
 );
 
@@ -231,8 +221,8 @@ export const webSearchTool = tool({
   description:
     "Search the web for current information, news, and data. Use this when the user asks about recent events, facts you are not confident about, or any topic that may have changed since your training data.",
   inputSchema: webSearchInputSchema,
-  execute: async ({ query, count }, { abortSignal }) => {
-    const safeCount = clampCount(count);
+  execute: async ({ query }, { abortSignal }) => {
+    const safeCount = MAX_SEARCH_RESULTS;
     const { results, engine } = await tryEngines(query, safeCount, abortSignal);
 
     return {

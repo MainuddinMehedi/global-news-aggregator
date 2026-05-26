@@ -8,6 +8,7 @@ import {
   CheckmarkCircle02Icon,
   Mic01Icon,
   SentIcon,
+  StopIcon,
   TextFontIcon,
 } from "@hugeicons/core-free-icons";
 import { cn } from "@/lib/utils";
@@ -22,6 +23,10 @@ import type { ModelMetadata } from "@/lib/ai/modelRegistry";
 interface ChatInputProps {
   /** Called with the trimmed message text when the user submits */
   onSend: (text: string) => void;
+  /** Called to stop generation */
+  onStop?: () => void;
+  /** Whether the AI is currently generating */
+  isLoading?: boolean;
   /** Called when the voice-mode toggle button is pressed */
   onVoiceToggle: () => void;
   /** Whether voice mode is currently active (styles the toggle) */
@@ -44,6 +49,8 @@ interface ChatInputProps {
 
 export default function ChatInput({
   onSend,
+  onStop,
+  isLoading = false,
   onVoiceToggle,
   isVoiceMode,
   onAddContext,
@@ -66,22 +73,30 @@ export default function ChatInput({
   const activeModel =
     models.find((model) => model.id === selectedModel) ?? models[0];
   const hasText = value.trim().length > 0;
-  const isCompact = compact && !isFocused && !hasText;
+  const isCompact = compact && !hasText;
 
   // Auto-resize textarea as the user types
   useEffect(() => {
     const el = textareaRef.current;
     if (!el) return;
+    if (isCompact) {
+      el.style.height = "2.25rem"; // Explicitly set to 36px (h-9)
+      return;
+    }
     el.style.height = "auto";
     el.style.height = `${Math.min(el.scrollHeight, 128)}px`;
-  }, [value]);
+  }, [value, isCompact]);
 
   const handleSend = useCallback(() => {
     const trimmed = value.trim();
     if (!trimmed || disabled) return;
     onSend(trimmed);
     setValue("");
-  }, [value, disabled, onSend]);
+    // Ensure height reset after send
+    if (textareaRef.current) {
+      textareaRef.current.style.height = isCompact ? "2.25rem" : "3rem";
+    }
+  }, [value, disabled, onSend, isCompact]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -91,8 +106,8 @@ export default function ChatInput({
   };
 
   return (
-    <div className="px-4 shrink-0 z-10">
-      <div className="max-w-3xl mx-auto flex flex-col gap-2">
+    <div className="px-4 pb-4 shrink-0 z-10">
+      <div className="max-w-3xl mx-auto flex flex-col gap-1.5">
         {/* Mobile context pills slot */}
         {contextPillsSlot}
 
@@ -101,9 +116,7 @@ export default function ChatInput({
           className={cn(
             "flex bg-muted/30 border border-border rounded-2xl p-2 transition-all duration-200",
             "focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/20",
-            isCompact
-              ? "flex-row items-center gap-2"
-              : "flex-col gap-1",
+            isCompact ? "flex-row items-center gap-2" : "flex-col gap-1",
           )}
         >
           {/* Attachment before textarea in compact mode */}
@@ -112,7 +125,7 @@ export default function ChatInput({
               onClick={onAddContext}
               title="Add context"
               aria-label="Add context"
-              className="p-2 rounded-xl hover:bg-accent text-muted-foreground hover:text-primary transition-colors shrink-0"
+              className="p-1.5 rounded-xl hover:bg-accent text-muted-foreground hover:text-primary transition-colors shrink-0"
             >
               <HugeiconsIcon icon={Attachment01Icon} className="w-5 h-5" />
             </button>
@@ -131,23 +144,23 @@ export default function ChatInput({
             rows={1}
             className={cn(
               "w-full bg-transparent resize-none outline-none px-2 text-sm placeholder:text-muted-foreground/70 disabled:opacity-50 scrollbar-sleek",
-              isCompact
-                ? "h-9 py-1.5 flex-1"
-                : "min-h-[48px] max-h-32 py-3",
+              isCompact ? "h-9 py-1.5 flex-1" : "min-h-[48px] max-h-32 py-2",
             )}
           />
 
-          <div className={cn(
-            "flex items-center",
-            isCompact ? "gap-1 shrink-0" : "justify-between gap-2",
-          )}>
+          <div
+            className={cn(
+              "flex items-center",
+              isCompact ? "gap-1 shrink-0" : "justify-between gap-1",
+            )}
+          >
             {/* Attachment in expanded mode (bottom row, left side) */}
             {!isCompact && (
               <button
                 onClick={onAddContext}
                 title="Add context"
                 aria-label="Add context"
-                className="p-2.5 rounded-xl hover:bg-accent text-muted-foreground hover:text-primary transition-colors shrink-0"
+                className="p-2 rounded-xl hover:bg-accent text-muted-foreground hover:text-primary transition-colors shrink-0"
               >
                 <HugeiconsIcon icon={Attachment01Icon} className="w-5 h-5" />
               </button>
@@ -160,7 +173,7 @@ export default function ChatInput({
                   <button
                     type="button"
                     aria-label="Choose response mode"
-                    className="h-9 max-w-[140px] inline-flex items-center gap-1.5 rounded-xl bg-background text-foreground px-3 text-xs font-medium hover:bg-accent transition-colors border border-border/70 capitalize"
+                    className="h-8.5 max-w-[140px] inline-flex items-center gap-2 rounded-xl bg-background text-foreground px-3 text-xs font-medium hover:bg-accent transition-colors border border-border/70 capitalize"
                   >
                     <HugeiconsIcon
                       icon={TextFontIcon}
@@ -173,9 +186,9 @@ export default function ChatInput({
                   align="end"
                   side="top"
                   sideOffset={8}
-                  className="w-[200px] gap-0 rounded-xl border border-border/80 bg-popover p-1 shadow-2xl"
+                  className="w-[190px] gap-0 rounded-xl border border-border/80 bg-popover p-1 shadow-2xl"
                 >
-                  <div className="flex flex-col gap-1">
+                  <div className="flex flex-col gap-0.5">
                     <button
                       type="button"
                       onClick={() => {
@@ -183,17 +196,17 @@ export default function ChatInput({
                         setModePickerOpen(false);
                       }}
                       className={cn(
-                        "flex w-full items-start gap-3 rounded-lg px-3 py-2.5 text-left transition-colors",
+                        "flex w-full items-start gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors",
                         responseMode === "concise"
                           ? "bg-accent/70 text-foreground"
                           : "hover:bg-accent/60 text-muted-foreground hover:text-foreground",
                       )}
                     >
                       <span className="min-w-0 flex-1">
-                        <span className="block text-sm font-medium leading-5">
+                        <span className="block text-sm font-semibold leading-4">
                           Concise
                         </span>
-                        <span className="block text-xs opacity-80 mt-0.5">
+                        <span className="block text-xs opacity-70 mt-0.5">
                           Direct answers, short bullets.
                         </span>
                       </span>
@@ -211,17 +224,17 @@ export default function ChatInput({
                         setModePickerOpen(false);
                       }}
                       className={cn(
-                        "flex w-full items-start gap-3 rounded-lg px-3 py-2.5 text-left transition-colors",
+                        "flex w-full items-start gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors",
                         responseMode === "descriptive"
                           ? "bg-accent/70 text-foreground"
                           : "hover:bg-accent/60 text-muted-foreground hover:text-foreground",
                       )}
                     >
                       <span className="min-w-0 flex-1">
-                        <span className="block text-sm font-medium leading-5">
+                        <span className="block text-sm font-semibold leading-4">
                           Descriptive
                         </span>
-                        <span className="block text-xs opacity-80 mt-0.5">
+                        <span className="block text-xs opacity-70 mt-0.5">
                           Full analysis, timelines, implications.
                         </span>
                       </span>
@@ -241,7 +254,7 @@ export default function ChatInput({
                   <button
                     type="button"
                     aria-label="Choose model"
-                    className="h-9 max-w-[180px] inline-flex items-center gap-1.5 rounded-xl bg-background text-foreground px-3 text-xs font-medium hover:bg-accent transition-colors border border-border/70"
+                    className="h-8.5 max-w-[180px] inline-flex items-center gap-2 rounded-xl bg-background text-foreground px-3 text-xs font-medium hover:bg-accent transition-colors border border-border/70"
                   >
                     <span className="truncate">{activeModel?.label}</span>
                     <HugeiconsIcon
@@ -298,7 +311,7 @@ export default function ChatInput({
 
                   <div className="my-1 h-px bg-border/80" />
 
-                  <div className="flex items-center gap-3 rounded-lg px-3 py-2.5">
+                  <div className="flex items-center gap-3 rounded-lg px-3 py-2">
                     <div className="min-w-0 flex-1">
                       <div className="text-sm font-medium leading-5">
                         Adaptive thinking
@@ -316,7 +329,7 @@ export default function ChatInput({
 
                   <button
                     type="button"
-                    className="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-sm text-muted-foreground hover:bg-accent/60 hover:text-foreground transition-colors"
+                    className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-accent/60 hover:text-foreground transition-colors"
                   >
                     <span>More models</span>
                     <HugeiconsIcon
@@ -328,13 +341,21 @@ export default function ChatInput({
               </Popover>
 
               <button
-                onClick={hasText ? handleSend : onVoiceToggle}
-                disabled={disabled || (hasText && !value.trim())}
-                aria-label={hasText ? "Send message" : "Start voice mode"}
-                aria-pressed={!hasText ? isVoiceMode : undefined}
+                onClick={
+                  isLoading ? onStop : hasText ? handleSend : onVoiceToggle
+                }
+                disabled={disabled || (!isLoading && hasText && !value.trim())}
+                aria-label={
+                  isLoading
+                    ? "Stop generation"
+                    : hasText
+                      ? "Send message"
+                      : "Start voice mode"
+                }
+                aria-pressed={!isLoading && !hasText ? isVoiceMode : undefined}
                 className={cn(
-                  "p-2.5 rounded-xl transition-all shrink-0",
-                  hasText
+                  "p-2 rounded-xl transition-all shrink-0",
+                  isLoading || hasText
                     ? "bg-primary text-primary-foreground hover:bg-primary/90 shadow-md"
                     : isVoiceMode
                       ? "bg-primary text-primary-foreground shadow-md"
@@ -343,8 +364,8 @@ export default function ChatInput({
                 )}
               >
                 <HugeiconsIcon
-                  icon={hasText ? SentIcon : Mic01Icon}
-                  className="w-5 h-5"
+                  icon={isLoading ? StopIcon : hasText ? SentIcon : Mic01Icon}
+                  className="w-4.5 h-4.5"
                 />
               </button>
             </div>
@@ -352,7 +373,7 @@ export default function ChatInput({
         </div>
 
         {/* Disclaimer */}
-        <p className="text-center text-[10px] text-muted-foreground select-none">
+        <p className="text-center text-[9px] text-muted-foreground/60 select-none">
           AI can make mistakes. Verify important information.
         </p>
       </div>

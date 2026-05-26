@@ -45,11 +45,28 @@ type SourceItem = {
 
 const MemoizedMarkdown = memo(
   ({ text }: { text: string }) => (
-    <div className="prose dark:prose-invert max-w-none wrap-break-word">
+    <div className="prose dark:prose-invert max-w-none wrap-break-word prose-stream">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
           em: ({ children }) => <em className="text-sm">{children}</em>,
+          pre: ({ children }) => (
+            <pre className="whitespace-pre-wrap wrap-break-word overflow-x-hidden bg-muted/20 p-3 rounded-lg border border-border/40 my-3">
+              {children}
+            </pre>
+          ),
+          code: ({ children, className }) => {
+            const isInline = !className;
+            return isInline ? (
+              <code className="bg-muted/30 px-1.5 py-0.5 rounded text-primary text-[0.9em] font-mono">
+                {children}
+              </code>
+            ) : (
+              <code className="whitespace-pre-wrap wrap-break-word block">
+                {children}
+              </code>
+            );
+          },
         }}
       >
         {normalizeMarkdownText(text)}
@@ -240,17 +257,16 @@ function toolStatusLabel(
   switch (toolName) {
     case "fetch_url": {
       const url = getToolInputValue(input, "url");
-      const prefix = state === "done" ? "Fetched URL" : "Fetching URL";
-      return url ? `${prefix}: ${url}` : prefix;
+      const prefix = state === "done" ? "Grounded in" : "Accessing";
+      return url ? `${prefix}: ${url}` : `${prefix} remote content`;
     }
     case "web_search": {
       const query = getToolInputValue(input, "query");
-      const prefix =
-        state === "done" ? "Searched the web for" : "Searching the web for";
-      return query ? `${prefix}: ${query}` : "Searching the web";
+      const prefix = state === "done" ? "Researched" : "Searching web for";
+      return query ? `${prefix}: "${query}"` : "Performing web search";
     }
     default:
-      return state === "done" ? "Finished tool" : "Running tool";
+      return state === "done" ? "Processed research step" : "Analyzing data...";
   }
 }
 
@@ -373,7 +389,13 @@ function SourcesStrip({ sources }: { sources: SourceItem[] }) {
   );
 }
 
-function CollapsibleToolLogs({ toolParts }: { toolParts: UIMessage["parts"] }) {
+function CollapsibleToolLogs({
+  toolParts,
+  forceCollapse = false,
+}: {
+  toolParts: UIMessage["parts"];
+  forceCollapse?: boolean;
+}) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   if (!toolParts || toolParts.length === 0) return null;
@@ -386,8 +408,8 @@ function CollapsibleToolLogs({ toolParts }: { toolParts: UIMessage["parts"] }) {
 
   const isAnyToolRunning = !!activeTool;
 
-  // If a tool is running, we show it uncollapsed.
-  if (isAnyToolRunning) {
+  // If a tool is running and we are not forced to collapse, we show it uncollapsed.
+  if (isAnyToolRunning && !forceCollapse) {
     const toolName = getToolName(activeTool as any);
     const tp = activeTool as {
       state: string;
@@ -471,7 +493,8 @@ function MessageBubble({
     (p) => p.type === "text" && p.text,
   );
   const hasActiveReasoning = message.parts?.some(
-    (p) => isReasoningUIPart(p) && p.state === "streaming",
+    // (p) => isReasoningUIPart(p) && p.state === "streaming",
+    (p) => isReasoningUIPart(p) && (p.text?.length ?? 0) > 0,
   );
   const hasActiveToolUI = message.parts?.some((part) => {
     if (!isToolUIPart(part)) return false;
@@ -545,41 +568,124 @@ function MessageBubble({
           <>
             {(() => {
               const textParts =
-                message.parts?.filter(
-                  (p) => p.type === "text" || isReasoningUIPart(p),
-                ) || [];
+                message.parts?.filter((p) => p.type === "text") || [];
+              const reasoningParts =
+                message.parts?.filter((p) => isReasoningUIPart(p)) || [];
               const toolParts =
                 message.parts?.filter((p) => isToolUIPart(p)) || [];
 
+              const hasStartedAnswer = textParts.some(
+                (p) => p.type === "text" && (p.text?.trim().length || 0) > 0,
+              );
+
               return (
                 <>
+                  {reasoningParts.map((part, index) => {
+                    if (isReasoningUIPart(part)) {
+                      if (!part.text && !isLastAndLoading) return null;
+
+                      // Collapse reasoning if we have any answer text or if turn is done
+                      const shouldCollapse =
+                        !isLastAndLoading || hasStartedAnswer;
+
+                      return (
+                        <div key={`reasoning-${index}`} className="mb-3">
+                          {!shouldCollapse ? (
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2 text-xs font-medium text-primary/70 select-none">
+                                <span className="flex items-center gap-1.5">
+                                  <HugeiconsIcon
+                                    icon={ArrowDown01Icon}
+                                    className="w-3 h-3"
+                                  />{" "}
+                                  Thinking
+                                </span>
+                                <span className="flex items-center gap-0.5">
+                                  <span
+                                    className="w-0.5 h-0.5 rounded-full bg-primary/40 animate-bounce"
+                                    style={{ animationDelay: "0ms" }}
+                                  />
+                                  <span
+                                    className="w-0.5 h-0.5 rounded-full bg-primary/40 animate-bounce"
+                                    style={{ animationDelay: "150ms" }}
+                                  />
+                                  <span
+                                    className="w-0.5 h-0.5 rounded-full bg-primary/40 animate-bounce"
+                                    style={{ animationDelay: "300ms" }}
+                                  />
+                                </span>
+                              </div>
+                              <div className="italic text-muted-foreground/80 text-sm whitespace-pre-wrap break-words pl-4 border-l border-primary/20 leading-relaxed font-serif">
+                                {part.text || "Analyzing query..."}
+                              </div>
+                            </div>
+                          ) : (
+                            <details className="group border border-border/40 rounded-md overflow-hidden bg-muted/10">
+                              <summary className="text-xs font-medium cursor-pointer py-1.5 px-3 bg-muted/20 hover:bg-muted/40 transition-colors flex items-center select-none text-muted-foreground/70">
+                                <span className="group-open:hidden flex items-center gap-1.5">
+                                  <HugeiconsIcon
+                                    icon={ArrowRight01Icon}
+                                    className="w-3 h-3"
+                                  />{" "}
+                                  View Thought Process
+                                </span>
+                                <span className="hidden group-open:flex items-center gap-1.5">
+                                  <HugeiconsIcon
+                                    icon={ArrowDown01Icon}
+                                    className="w-3 h-3"
+                                  />{" "}
+                                  Hide Thought Process
+                                </span>
+                              </summary>
+                              <div className="p-3 text-[11px] text-muted-foreground/80 whitespace-pre-wrap break-words font-mono leading-relaxed border-t border-border/30 bg-muted/5 max-w-full overflow-x-hidden">
+                                {part.text}
+                              </div>
+                            </details>
+                          )}
+                        </div>
+                      );
+                    }
+                    return null;
+                  })}
+
                   {toolParts.length > 0 && (
-                    <CollapsibleToolLogs toolParts={toolParts} />
+                    <div className="mb-3">
+                      <CollapsibleToolLogs
+                        toolParts={toolParts}
+                        forceCollapse={hasStartedAnswer}
+                      />
+                    </div>
                   )}
+
                   {textParts.map((part, index) => {
                     if (part.type === "text") {
                       if (isUser) {
                         return (
-                          <div key={index} className="whitespace-pre-wrap">
+                          <div
+                            key={`text-${index}`}
+                            className="whitespace-pre-wrap"
+                          >
                             {part.text}
                           </div>
                         );
                       }
-                      if (isLastAndLoading) {
-                        if (!part.text) return null;
-                        return <StreamingText key={index} text={part.text} />;
-                      }
-                      return <MemoizedMarkdown key={index} text={part.text} />;
-                    }
 
-                    if (isReasoningUIPart(part)) {
-                      if (!isLastAndLoading) return null;
+                      // Render markdown even while streaming for a fluid experience
                       return (
-                        <div
-                          key={index}
-                          className="italic text-muted-foreground/70 text-sm mb-2"
-                        >
-                          {part.text || "Thinking..."}
+                        <div key={`text-${index}`} className="relative">
+                          {/*{isLastAndLoading &&
+                          index === textParts.length - 1 ? (
+                            <StreamingText text={part.text} />
+                          ) : (
+                            <MemoizedMarkdown text={part.text} />
+                          )}*/}
+
+                          <MemoizedMarkdown text={part.text} />
+
+                          {isLastAndLoading &&
+                            index === textParts.length - 1 && (
+                              <span className="inline-block w-1.5 h-4 bg-primary/50 ml-0.5 animate-pulse align-middle" />
+                            )}
                         </div>
                       );
                     }
@@ -617,8 +723,12 @@ function hasRenderableMessageContent(
   if (isLastAndLoading) return true;
   return (message.parts ?? []).some((part) => {
     if (part.type === "text") return Boolean(part.text?.trim());
+    if (part.type === "reasoning") return Boolean(part.text?.trim());
     if (!isToolUIPart(part)) return false;
-    return (part as { state?: string }).state === "output-error";
+    return (
+      (part as { state?: string }).state === "output-error" ||
+      (part as { state?: string }).state === "output-available"
+    );
   });
 }
 
@@ -628,10 +738,18 @@ function areMessagePartsEqual(
 ) {
   if (prevParts === nextParts) return true;
   if (prevParts.length !== nextParts.length) return false;
+
   return prevParts.every((part, index) => {
     const next = nextParts[index];
     if (part.type !== next.type) return false;
-    return JSON.stringify(part) === JSON.stringify(next);
+    // return JSON.stringify(part) === JSON.stringify(next);
+    if ("text" in part && "text" in next) {
+      return (part as any).text === (next as any).text;
+    }
+    if ("state" in part && "state" in next) {
+      return (part as any).state === (next as any).state;
+    }
+    return part === next;
   });
 }
 
