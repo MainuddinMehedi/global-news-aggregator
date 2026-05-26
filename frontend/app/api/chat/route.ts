@@ -31,7 +31,7 @@ Your role:
 CRITICAL INSTRUCTIONS:
 1. When you use tools (web search, URL fetch), you MUST provide a final, synthesized text answer in your own words based on the results.
 2. NEVER end a response with a tool call or reasoning block alone. Always conclude with a "text" part containing your analysis.
-3. If you have gathered enough information, stop using tools and provide your final verdict or summary.
+3. Match your reasoning depth and search intensity to the complexity of the user's request. For simple lookups or daily briefings, be efficient and aim for a single-step search. Reserve deep multi-step reasoning for complex strategic analysis or conflicting data.
 4. Ground your analysis in the provided context items when available.`;
 
 function estimateRequestSize(
@@ -341,6 +341,7 @@ export async function POST(req: Request) {
       tools,
       // @ts-ignore - maxSteps is supported in modern AI SDK but type check may fail due to specific version mismatch
       maxSteps: 10,
+      maxTokens: adaptiveThinking ? 16384 : 4096,
       onChunk: (chunk) => {
         if (chunk.chunk.type === "text-delta" && chunk.chunk.textDelta) {
           // console.log("DEBUG: Backend emitted text-delta", chunk.chunk.textDelta.length);
@@ -354,10 +355,21 @@ export async function POST(req: Request) {
       stopWhen: stepCountIs(modelConfig.provider === "groq" ? 6 : 10),
       providerOptions: {
         ...(adaptiveThinking && model.startsWith("openai/gpt-oss")
-          ? { openai: { reasoningEffort: "medium" } }
+          ? {
+              openai: {
+                reasoningEffort: responseMode === "concise" ? "low" : "medium",
+              },
+            }
           : {}),
         ...(adaptiveThinking && modelConfig.provider === "google"
-          ? { google: { thinking: { type: "enabled", budgetTokens: 4000 } } }
+          ? {
+              google: {
+                thinking: {
+                  type: "enabled",
+                  budgetTokens: responseMode === "concise" ? 2000 : 4000,
+                },
+              },
+            }
           : {}),
         ...(modelConfig.provider === "groq"
           ? { openai: { parallelToolCalls: false } }
