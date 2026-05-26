@@ -556,8 +556,8 @@ function MessageBubble({
               const toolParts =
                 message.parts?.filter((p) => isToolUIPart(p)) || [];
 
-              const hasSignificantText = textParts.some(
-                (p) => p.type === "text" && (p.text?.length || 0) > 50,
+              const hasStartedAnswer = textParts.some(
+                (p) => p.type === "text" && (p.text?.trim().length || 0) > 0,
               );
 
               return (
@@ -566,9 +566,9 @@ function MessageBubble({
                     if (isReasoningUIPart(part)) {
                       if (!part.text && !isLastAndLoading) return null;
 
-                      // Collapse reasoning if we have significant text or if turn is done
+                      // Collapse reasoning if we have any answer text or if turn is done
                       const shouldCollapse =
-                        !isLastAndLoading || hasSignificantText;
+                        !isLastAndLoading || hasStartedAnswer;
 
                       return (
                         <div key={`reasoning-${index}`} className="mb-3">
@@ -634,7 +634,7 @@ function MessageBubble({
                     <div className="mb-3">
                       <CollapsibleToolLogs
                         toolParts={toolParts}
-                        forceCollapse={hasSignificantText}
+                        forceCollapse={hasStartedAnswer}
                       />
                     </div>
                   )}
@@ -651,24 +651,16 @@ function MessageBubble({
                           </div>
                         );
                       }
-                      if (isLastAndLoading) {
-                        if (!part.text) return null;
-                        const isVeryLastTextPart =
-                          index === textParts.length - 1;
-                        if (isVeryLastTextPart) {
-                          return (
-                            <StreamingText
-                              key={`text-${index}`}
-                              text={part.text}
-                            />
-                          );
-                        }
-                      }
+
+                      // Render markdown even while streaming for a fluid experience
                       return (
-                        <MemoizedMarkdown
-                          key={`text-${index}`}
-                          text={part.text}
-                        />
+                        <div key={`text-${index}`} className="relative">
+                          <MemoizedMarkdown text={part.text} />
+                          {isLastAndLoading &&
+                            index === textParts.length - 1 && (
+                              <span className="inline-block w-1.5 h-4 bg-primary/50 ml-0.5 animate-pulse align-middle" />
+                            )}
+                        </div>
                       );
                     }
                     return null;

@@ -2,6 +2,7 @@ import {
   streamText,
   stepCountIs,
   convertToModelMessages,
+  smoothStream,
   type ModelMessage,
   type UIMessage,
 } from "ai";
@@ -297,7 +298,6 @@ export async function POST(req: Request) {
       }) as any,
     );
 
-    const MAX_TOTAL_CHARS = Math.floor(modelConfig.contextWindow * 3.5);
     const MAX_TURNS =
       modelConfig.provider === "groq"
         ? 4
@@ -308,9 +308,6 @@ export async function POST(req: Request) {
     while (coreMessages.length > MAX_TURNS) {
       coreMessages.splice(0, 1); // Remove one by one to preserve system message if any
     }
-
-    // Since convertToModelMessages might return different structure, we need to handle trimming carefully
-    // but for now let's focus on the tool fix.
 
     const requestSize = estimateRequestSize(systemPrompt, coreMessages as any);
     console.log("DEBUG: Sending to streamText", {
@@ -338,6 +335,10 @@ export async function POST(req: Request) {
       tools,
       // @ts-ignore - maxSteps is supported in modern AI SDK but type check may fail due to specific version mismatch
       maxSteps: 10,
+      experimental_transform: smoothStream({
+        chunking: "word",
+        delayInMs: 15,
+      }),
       temperature: modelConfig.provider === "groq" ? 0 : undefined,
       stopWhen: stepCountIs(modelConfig.provider === "groq" ? 6 : 10),
       providerOptions: {
@@ -357,6 +358,10 @@ export async function POST(req: Request) {
       originalMessages: messages as UIMessage[],
       messageMetadata: () => ({ model, sessionId: activeSessionId }),
       sendSources: true,
+      headers: {
+        "Cache-Control": "no-cache, no-transform",
+        "X-Content-Type-Options": "nosniff",
+      },
       onError: (error) => {
         console.error(
           "Chat stream error details:",
