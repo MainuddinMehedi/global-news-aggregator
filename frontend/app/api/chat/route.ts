@@ -29,11 +29,10 @@ Your role:
 - Be concise but thorough — prefer structured responses with headers and bullet points.
 
 CRITICAL INSTRUCTIONS:
-1. When you use tools (web search, URL fetch), you MUST synthesize the results into a final text answer in your own words.
-2. Never end a response after using tools without providing a clear summary or answer to the user's request.
-3. If you perform research, ensure the very last part of your response is the synthesized analysis for the user.
-4. Ground your analysis in the provided context items when available.
-5. If you don't have enough information even after research, say so clearly.`;
+1. When you use tools (web search, URL fetch), you MUST provide a final, synthesized text answer in your own words based on the results.
+2. NEVER end a response with a tool call or reasoning block alone. Always conclude with a "text" part containing your analysis.
+3. If you have gathered enough information, stop using tools and provide your final verdict or summary.
+4. Ground your analysis in the provided context items when available.`;
 
 function estimateRequestSize(
   systemPrompt: string,
@@ -335,9 +334,14 @@ export async function POST(req: Request) {
       tools,
       // @ts-ignore - maxSteps is supported in modern AI SDK but type check may fail due to specific version mismatch
       maxSteps: 10,
+      onChunk: (chunk) => {
+        if (chunk.chunk.type === "text-delta" && chunk.chunk.textDelta) {
+          // console.log("DEBUG: Backend emitted text-delta", chunk.chunk.textDelta.length);
+        }
+      },
       experimental_transform: smoothStream({
         chunking: "word",
-        delayInMs: 15,
+        delayInMs: 10,
       }),
       temperature: modelConfig.provider === "groq" ? 0 : undefined,
       stopWhen: stepCountIs(modelConfig.provider === "groq" ? 6 : 10),
@@ -378,7 +382,7 @@ export async function POST(req: Request) {
             (p) => p.type.startsWith("tool-") || p.type === "tool-invocation",
           );
           const hasReasoning = responseMessage.parts?.some(
-            (p) => p.type === "reasoning",
+            (p) => p.type === "reasoning" && p.text?.trim(),
           );
 
           if (!assistantText && !hasToolCalls && !hasReasoning) {
@@ -394,26 +398,24 @@ export async function POST(req: Request) {
             responseMessage.id || `msg-${Date.now().toString(36)}`;
 
           const fallbackText =
-            "I gathered some information using tools, but encountered an issue synthesizing a final text response. Please try asking again or refining your query.";
-          const finalParts = responseMessage.parts || [
-            { type: "text", text: assistantText || fallbackText },
-          ];
+            "I performed research using tools, but was unable to synthesize a final text summary. You can review the research steps and sources above for details.";
 
-          if (!assistantText && hasToolCalls) {
+          let finalParts = [...(responseMessage.parts || [])];
+
+          // If we have research but no final text, and NO reasoning was provided in the last turn, add fallback
+          if (!assistantText && hasToolCalls && !hasReasoning) {
             console.warn(
               "Synthesis failed for session:",
               activeSessionId,
               "Model:",
               model,
-              "Parts:",
-              JSON.stringify(responseMessage.parts, null, 2),
             );
             finalParts.push({ type: "text", text: fallbackText });
           }
 
           const resolvedText =
             assistantText ||
-            (hasReasoning && !hasToolCalls ? "" : fallbackText);
+            (hasReasoning ? "" : hasToolCalls ? fallbackText : "");
 
           await prisma.chatMessage.upsert({
             where: { id: responseId },
