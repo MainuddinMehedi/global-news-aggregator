@@ -226,7 +226,7 @@ export default function ChatInterface() {
     return errorMessage;
   };
 
-  const { messages, sendMessage, status, setMessages } = useChat({
+  const { messages, sendMessage, status, setMessages, stop } = useChat({
     transport: new DefaultChatTransport({
       api: "/api/chat",
       body: { contexts, sessionId: activeSessionId, responseMode },
@@ -642,6 +642,8 @@ export default function ChatInterface() {
         <ChatInput
           compact
           onSend={handleSend}
+          onStop={stop}
+          isLoading={isLoading}
           onVoiceToggle={() => setIsVoiceMode((v) => !v)}
           isVoiceMode={isVoiceMode}
           onAddContext={addContext}

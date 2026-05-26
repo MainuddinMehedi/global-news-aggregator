@@ -476,7 +476,8 @@ function MessageBubble({
     (p) => p.type === "text" && p.text,
   );
   const hasActiveReasoning = message.parts?.some(
-    (p) => isReasoningUIPart(p) && p.state === "streaming",
+    // (p) => isReasoningUIPart(p) && p.state === "streaming",
+    (p) => isReasoningUIPart(p) && (p.text?.length ?? 0) > 0,
   );
   const hasActiveToolUI = message.parts?.some((part) => {
     if (!isToolUIPart(part)) return false;
@@ -655,7 +656,15 @@ function MessageBubble({
                       // Render markdown even while streaming for a fluid experience
                       return (
                         <div key={`text-${index}`} className="relative">
+                          {/*{isLastAndLoading &&
+                          index === textParts.length - 1 ? (
+                            <StreamingText text={part.text} />
+                          ) : (
+                            <MemoizedMarkdown text={part.text} />
+                          )}*/}
+
                           <MemoizedMarkdown text={part.text} />
+
                           {isLastAndLoading &&
                             index === textParts.length - 1 && (
                               <span className="inline-block w-1.5 h-4 bg-primary/50 ml-0.5 animate-pulse align-middle" />
@@ -712,10 +721,18 @@ function areMessagePartsEqual(
 ) {
   if (prevParts === nextParts) return true;
   if (prevParts.length !== nextParts.length) return false;
+
   return prevParts.every((part, index) => {
     const next = nextParts[index];
     if (part.type !== next.type) return false;
-    return JSON.stringify(part) === JSON.stringify(next);
+    // return JSON.stringify(part) === JSON.stringify(next);
+    if ("text" in part && "text" in next) {
+      return (part as any).text === (next as any).text;
+    }
+    if ("state" in part && "state" in next) {
+      return (part as any).state === (next as any).state;
+    }
+    return part === next;
   });
 }
 

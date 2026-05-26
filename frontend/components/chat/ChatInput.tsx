@@ -8,6 +8,7 @@ import {
   CheckmarkCircle02Icon,
   Mic01Icon,
   SentIcon,
+  StopIcon,
   TextFontIcon,
 } from "@hugeicons/core-free-icons";
 import { cn } from "@/lib/utils";
@@ -22,6 +23,10 @@ import type { ModelMetadata } from "@/lib/ai/modelRegistry";
 interface ChatInputProps {
   /** Called with the trimmed message text when the user submits */
   onSend: (text: string) => void;
+  /** Called to stop generation */
+  onStop?: () => void;
+  /** Whether the AI is currently generating */
+  isLoading?: boolean;
   /** Called when the voice-mode toggle button is pressed */
   onVoiceToggle: () => void;
   /** Whether voice mode is currently active (styles the toggle) */
@@ -44,6 +49,8 @@ interface ChatInputProps {
 
 export default function ChatInput({
   onSend,
+  onStop,
+  isLoading = false,
   onVoiceToggle,
   isVoiceMode,
   onAddContext,
@@ -334,13 +341,21 @@ export default function ChatInput({
               </Popover>
 
               <button
-                onClick={hasText ? handleSend : onVoiceToggle}
-                disabled={disabled || (hasText && !value.trim())}
-                aria-label={hasText ? "Send message" : "Start voice mode"}
-                aria-pressed={!hasText ? isVoiceMode : undefined}
+                onClick={
+                  isLoading ? onStop : hasText ? handleSend : onVoiceToggle
+                }
+                disabled={disabled || (!isLoading && hasText && !value.trim())}
+                aria-label={
+                  isLoading
+                    ? "Stop generation"
+                    : hasText
+                      ? "Send message"
+                      : "Start voice mode"
+                }
+                aria-pressed={!isLoading && !hasText ? isVoiceMode : undefined}
                 className={cn(
                   "p-2 rounded-xl transition-all shrink-0",
-                  hasText
+                  isLoading || hasText
                     ? "bg-primary text-primary-foreground hover:bg-primary/90 shadow-md"
                     : isVoiceMode
                       ? "bg-primary text-primary-foreground shadow-md"
@@ -349,7 +364,7 @@ export default function ChatInput({
                 )}
               >
                 <HugeiconsIcon
-                  icon={hasText ? SentIcon : Mic01Icon}
+                  icon={isLoading ? StopIcon : hasText ? SentIcon : Mic01Icon}
                   className="w-4.5 h-4.5"
                 />
               </button>

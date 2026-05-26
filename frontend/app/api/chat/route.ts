@@ -97,11 +97,14 @@ function formatStreamError(error: unknown) {
     error && typeof error === "object"
       ? (error as Record<string, unknown>)
       : {};
+
   const message =
     typeof errObj.message === "string"
       ? errObj.message
       : "Failed to process chat request.";
+
   const code = typeof errObj.code === "string" ? errObj.code : "";
+
   const statusCode =
     typeof errObj.statusCode === "number" ? errObj.statusCode : undefined;
 
@@ -110,6 +113,7 @@ function formatStreamError(error: unknown) {
     const failedGeneration =
       (errObj as any).failed_generation ||
       (errObj as any).responseBody?.error?.failed_generation;
+
     if (failedGeneration) {
       console.error("GROQ FAILED GENERATION:", failedGeneration);
     } else {
@@ -154,6 +158,7 @@ export async function POST(req: Request) {
     const latestUserMessage = [...messages]
       .reverse()
       .find((msg) => msg.role === "user");
+
     const latestUserText = latestUserMessage
       ? getIncomingMessageText(latestUserMessage)
       : "";
@@ -188,6 +193,7 @@ export async function POST(req: Request) {
     if (latestUserMessage && activeSessionId) {
       const userMessageId =
         latestUserMessage.id || `user-${Date.now().toString(36)}`;
+
       await prisma.chatMessage.upsert({
         where: { id: userMessageId },
         update: {
@@ -261,6 +267,7 @@ export async function POST(req: Request) {
     const hasImageParts = messages.some((msg) =>
       msg.parts?.some((p) => p.type === "file"),
     );
+
     if (hasImageParts && !modelConfig.capabilities.supportsImages) {
       return new Response(
         JSON.stringify({
@@ -339,10 +346,10 @@ export async function POST(req: Request) {
           // console.log("DEBUG: Backend emitted text-delta", chunk.chunk.textDelta.length);
         }
       },
-      experimental_transform: smoothStream({
-        chunking: "word",
-        delayInMs: 10,
-      }),
+      // experimental_transform: smoothStream({
+      //   chunking: "word",
+      //   delayInMs: 10,
+      // }),
       temperature: modelConfig.provider === "groq" ? 0 : undefined,
       stopWhen: stepCountIs(modelConfig.provider === "groq" ? 6 : 10),
       providerOptions: {
