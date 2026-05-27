@@ -282,8 +282,6 @@ export default function ChatInterface() {
     (msg) => !isInitialAssistantMessage(msg),
   );
 
-  // Auto-scroll is now handled in MessageList
-
   // ---------------------------------------------------------------------------
   // Session handling
   // ---------------------------------------------------------------------------

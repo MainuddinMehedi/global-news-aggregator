@@ -49,6 +49,11 @@ const MemoizedMarkdown = memo(
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
+          a: ({ href, children }) => (
+            <a href={href} target="_blank" rel="noopener noreferrer">
+              {children}
+            </a>
+          ),
           em: ({ children }) => <em className="text-sm">{children}</em>,
           pre: ({ children }) => (
             <pre className="whitespace-pre-wrap wrap-break-word overflow-x-hidden bg-muted/20 p-3 rounded-lg border border-border/40 my-3">
