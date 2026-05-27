@@ -47,6 +47,11 @@ interface ChatInputProps {
   compact?: boolean;
 }
 
+function formatContext(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(0)}M`;
+  return `${(n / 1_000).toFixed(0)}K`;
+}
+
 export default function ChatInput({
   onSend,
   onStop,
@@ -297,6 +302,9 @@ export default function ChatInput({
                             <span className="block truncate text-xs text-muted-foreground">
                               {model.description}
                             </span>
+                            {/* <span className="block text-[11px] text-muted-foreground/60 mt-0.5">
+                              {formatContext(model.contextWindow)} context
+                            </span> */}
                           </span>
                           {isSelected && (
                             <HugeiconsIcon

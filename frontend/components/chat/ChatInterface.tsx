@@ -223,6 +223,15 @@ export default function ChatInterface() {
       }
     }
 
+    // Safety net — internal/Prisma errors that leaked past the server
+    if (
+      errorMessage.includes("Invalid prisma.") ||
+      errorMessage.startsWith("\nInvalid prisma.") ||
+      errorMessage.includes("Something went wrong saving")
+    ) {
+      return "Something went wrong saving the conversation. Your message was still sent.";
+    }
+
     return errorMessage;
   };
 
