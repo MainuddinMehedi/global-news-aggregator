@@ -28,11 +28,11 @@ export const MODEL_REGISTRY: ModelMetadata[] = [
     label: "Compound Mini",
     provider: "groq",
     description:
-      "GPT-OSS 120B + Llama 3.3 70B routed with search, code, and browser tools",
+      "GPT-OSS 120B + Llama 3.3 70B routed with built-in search, code, and browser tools (no external tool calling)",
     family: "Groq Compound",
-    tags: ["fast", "search", "tools", "reasoning"],
+    tags: ["fast", "builtin-tools", "reasoning"],
     capabilities: {
-      supportsTools: true,
+      supportsTools: false,
       supportsImages: false,
       supportsReasoning: true,
       supportsStreaming: true,
@@ -47,11 +47,11 @@ export const MODEL_REGISTRY: ModelMetadata[] = [
     label: "Compound",
     provider: "groq",
     description:
-      "GPT-OSS 120B + Llama 4 Scout routed with search, code, and browser tools",
+      "GPT-OSS 120B + Llama 4 Scout routed with built-in search, code, and browser tools (no external tool calling)",
     family: "Groq Compound",
-    tags: ["search", "tools", "reasoning", "multimodal"],
+    tags: ["builtin-tools", "reasoning", "multimodal"],
     capabilities: {
-      supportsTools: true,
+      supportsTools: false,
       supportsImages: true,
       supportsReasoning: true,
       supportsStreaming: true,

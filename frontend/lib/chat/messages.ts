@@ -1,16 +1,3 @@
-import type { UIMessage } from "ai";
-
-export const INITIAL_ASSISTANT_MESSAGE: UIMessage = {
-  id: "init-1",
-  role: "assistant",
-  parts: [
-    {
-      type: "text",
-      text: "I am your AI geopolitical analyst. Grounded in live news and multi-perspective data, I can help you analyze global trends or specific events. How can I help you today?",
-    },
-  ],
-};
-
 /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
 export function getMessageText(message: any): string {
   if (message.parts && Array.isArray(message.parts)) {
@@ -43,6 +30,4 @@ export function createSessionTitle(text: string) {
   return normalized.length > 64 ? `${normalized.slice(0, 61)}...` : normalized;
 }
 
-export function isInitialAssistantMessage(message: UIMessage) {
-  return message.id === INITIAL_ASSISTANT_MESSAGE.id;
-}
+

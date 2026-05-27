@@ -115,6 +115,7 @@ function formatPublishedDate(value?: string) {
   if (!value) return "";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "";
+
   return new Intl.DateTimeFormat(undefined, {
     month: "short",
     day: "numeric",
@@ -151,14 +152,18 @@ function formatResourcePart(part: UIMessage["parts"][number]): SourceItem {
 
 function extractToolResources(parts: UIMessage["parts"]): SourceItem[] {
   const items: SourceItem[] = [];
+
   for (const part of parts) {
     if (!isToolUIPart(part)) continue;
+
     const toolName = getToolName(part);
     const tp = part as {
       state: string;
       output?: Record<string, unknown>;
     };
+
     if (tp.state !== "output-available" || !tp.output) continue;
+
     const out = tp.output as {
       url?: string;
       title?: string;
@@ -175,6 +180,7 @@ function extractToolResources(parts: UIMessage["parts"]): SourceItem[] {
         source?: string;
       }>;
     };
+
     if (out.results) {
       for (const r of out.results) {
         items.push({
@@ -189,6 +195,7 @@ function extractToolResources(parts: UIMessage["parts"]): SourceItem[] {
         });
       }
     }
+
     if (out.url && !items.some((i) => i.value === out.url)) {
       items.push({
         label: out.title || out.url,
@@ -202,19 +209,24 @@ function extractToolResources(parts: UIMessage["parts"]): SourceItem[] {
       });
     }
   }
+
   return items;
 }
 
 function dedupeSources(sources: SourceItem[]) {
   const seen = new Set<string>();
+
   return sources.filter((source) => {
     const key = source.value.replace(/\/$/, "");
+
     if (seen.has(key)) return false;
     seen.add(key);
+
     return true;
   });
 }
 
+// TODO: Check if you need this if not remove this.
 function StreamingText({ text }: { text: string }) {
   return (
     <div className="whitespace-pre-wrap wrap-break-word">
@@ -333,6 +345,7 @@ function SourceResource({ resource }: { resource: SourceItem }) {
       </a>
     );
   }
+
   if (resource.type === "source-document") {
     return (
       <div className="h-full rounded-xl border border-border/60 bg-muted/60 p-3">
@@ -344,6 +357,7 @@ function SourceResource({ resource }: { resource: SourceItem }) {
       </div>
     );
   }
+
   if (resource.label && resource.value) {
     return (
       <div className="h-full rounded-xl border border-border/60 bg-muted/60 p-3">
@@ -421,6 +435,7 @@ function CollapsibleToolLogs({
       input?: Record<string, unknown>;
       rawInput?: Record<string, unknown>;
     };
+
     return (
       <ToolStatusLine
         label={toolStatusLabel(toolName, tp.input ?? tp.rawInput)}

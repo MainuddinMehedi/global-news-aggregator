@@ -11,11 +11,7 @@ import {
 import { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { normalizeContextForDb } from "@/lib/chat/contexts";
-import {
-  createSessionTitle,
-  getMessageText,
-  isInitialAssistantMessage,
-} from "@/lib/chat/messages";
+import { createSessionTitle, getMessageText } from "@/lib/chat/messages";
 import type { ContextItem } from "@/types/chat";
 import { getModel } from "@/lib/ai/modelRegistry";
 import { createProviderClient } from "@/lib/ai/providers";
@@ -130,6 +126,10 @@ function formatStreamError(error: unknown) {
     message.includes("Request Entity Too Large")
   ) {
     return "This conversation is too large for this model\u2019s context window. Switch to a model with a larger context (like Llama 4 Scout or Maverick with 1M\u201310M tokens) or start a new conversation.";
+  }
+
+  if (message.includes("tool calling is not supported")) {
+    return "This model uses built-in tools and doesn\u2019t support external tool definitions. Switch to a different model.";
   }
 
   if (code === "rate_limit_exceeded" || message.includes("tokens per minute")) {
@@ -319,13 +319,6 @@ export async function POST(req: Request) {
 
     const coreMessages = await convertToModelMessages(
       messages.filter((msg) => {
-        if (msg.id && msg.role === "assistant") {
-          return !isInitialAssistantMessage({
-            id: msg.id,
-            role: "assistant",
-            parts: msg.parts as UIMessage["parts"],
-          });
-        }
         // Keep assistant messages that have tool calls even if text is empty
         const hasToolCalls = msg.parts?.some(
           (p) => p.type === "tool-invocation" || p.type.startsWith("tool-"),

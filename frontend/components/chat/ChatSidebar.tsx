@@ -30,7 +30,6 @@ import { MODEL_REGISTRY, getActiveModels } from "@/lib/ai/modelRegistry";
 import type { ContextItem } from "@/types/chat";
 import { contextFromArticle } from "@/lib/chat/contexts";
 import {
-  INITIAL_ASSISTANT_MESSAGE,
   createSessionTitle,
 } from "@/lib/chat/messages";
 
@@ -168,7 +167,6 @@ export default function ChatSidebar() {
       api: "/api/chat",
       body: { contexts, sessionId, responseMode },
     }),
-    messages: [INITIAL_ASSISTANT_MESSAGE],
     onError: (error) => {
       console.error("Sidebar chat error:", error);
       toast.error("Failed to get chat response");
@@ -176,9 +174,6 @@ export default function ChatSidebar() {
   });
 
   const isLoading = status === "submitted" || status === "streaming";
-  const visibleMessages = messages.filter(
-    (message) => message.id !== INITIAL_ASSISTANT_MESSAGE.id,
-  );
 
   const createSession = useCallback(
     async (title: string, initialContexts: ContextItem[] = []) => {
@@ -203,7 +198,7 @@ export default function ChatSidebar() {
 
   const handleNewChat = useCallback(() => {
     setSessionId(undefined);
-    setMessages([INITIAL_ASSISTANT_MESSAGE]);
+    setMessages([]);
     setSelectedModel(MODEL_REGISTRY[0].id);
     preparedArticleIdRef.current = null;
     if (contextArticle) {
@@ -280,7 +275,7 @@ export default function ChatSidebar() {
 
     const articleContext = contextFromArticle(contextArticle);
     setContexts([articleContext]);
-    setMessages([INITIAL_ASSISTANT_MESSAGE]);
+    setMessages([]);
     setSessionId(undefined);
     setSelectedModel(MODEL_REGISTRY[0].id);
 
@@ -389,10 +384,10 @@ export default function ChatSidebar() {
 
         {/* ── Body ────────────────────────────────────────────────────── */}
         <div className="flex flex-1 min-h-0 overflow-hidden">
-          {visibleMessages.length === 0 ? (
+          {messages.length === 0 ? (
             <WelcomeScreen onNewChat={handleNewChat} onSend={handleSend} />
           ) : (
-            <MessageList messages={visibleMessages} isLoading={isLoading} />
+            <MessageList messages={messages} isLoading={isLoading} />
           )}
         </div>
 
