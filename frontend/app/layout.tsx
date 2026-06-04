@@ -65,7 +65,7 @@ export default function RootLayout({
                   <Suspense fallback={<FeedSkeleton />}>
                     <div className="flex-1 min-h-0">{children}</div>
                   </Suspense>
-                  <Footer />
+                  {/*<Footer />*/}
                 </div>
               </main>
             </div>

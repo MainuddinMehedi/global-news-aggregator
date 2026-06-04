@@ -60,7 +60,7 @@ export async function getStoryClusters(search?: string) {
     }));
   } catch (error) {
     console.log("getStoryClusters error:", error);
-    throw new Error("Failed to fetch story clusters from the database");
+    return [];
   }
 }
 
@@ -94,6 +94,6 @@ export async function getStoryDetail(slug: string) {
     };
   } catch (error) {
     console.log(`getStoryDetail error for slug ${slug}:`, error);
-    throw new Error("Failed to fetch story details");
+    return null;
   }
 }

@@ -74,7 +74,10 @@ export async function getFindings({
     };
   } catch (error) {
     console.error("getFindings error:", error);
-    throw new Error("Failed to fetch findings from the database");
+    return {
+      findings: [],
+      nextCursor: null,
+    };
   }
 }
 

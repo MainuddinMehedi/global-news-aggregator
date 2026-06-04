@@ -2,9 +2,7 @@ import { cacheLife, cacheTag } from "next/cache";
 import prisma from "@/lib/prisma";
 import { LockedTopic } from "@/types/lockedTopic";
 
-export async function getLockedTopics(
-  search?: string,
-): Promise<LockedTopic[]> {
+export async function getLockedTopics(search?: string): Promise<LockedTopic[]> {
   "use cache";
   cacheTag("locked-topics");
   cacheLife("minutes");
@@ -37,7 +35,7 @@ export async function getLockedTopics(
     return topics as unknown as LockedTopic[];
   } catch (error) {
     console.error("getLockedTopics error:", error);
-    throw new Error("Failed to fetch locked topics from the database");
+    return [];
   }
 }
 
@@ -59,7 +57,7 @@ export async function getLockedTopicById(
     return topic as unknown as LockedTopic;
   } catch (error) {
     console.error("getLockedTopicById error:", error);
-    throw new Error("Failed to fetch locked topic from the database");
+    return null;
   }
 }
 

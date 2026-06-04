@@ -7,13 +7,18 @@ export async function getCategories() {
   cacheTag("categories");
   cacheLife("days");
 
-  const categories = await prisma.category.findMany({
-    where: { name: { in: CANONICAL_CATEGORIES } },
-  });
+  try {
+    const categories = await prisma.category.findMany({
+      where: { name: { in: CANONICAL_CATEGORIES } },
+    });
 
-  const availableCategories = new Set(categories.map((c) => c.name));
+    const availableCategories = new Set(categories.map((c) => c.name));
 
-  return CANONICAL_CATEGORIES.filter((category) =>
-    availableCategories.has(category),
-  );
+    return CANONICAL_CATEGORIES.filter((category) =>
+      availableCategories.has(category),
+    );
+  } catch (error) {
+    console.error("getCategories error:", error);
+    return CANONICAL_CATEGORIES;
+  }
 }
