@@ -114,7 +114,7 @@ export async function getArticles({
     return { articles, nextCursor };
   } catch (error) {
     console.log("getArticles error:", error);
-    throw new Error("Failed to fetch articles from the database");
+    return { articles: [], nextCursor: null };
   }
 }
 
@@ -134,10 +134,7 @@ export async function getArticleById(id: string): Promise<Article | null> {
   try {
     const raw = await prisma.processedArticle.findFirst({
       where: {
-        OR: [
-          { id: id },
-          { rawArticle: { slug: id } }
-        ]
+        OR: [{ id: id }, { rawArticle: { slug: id } }],
       },
       include: {
         rawArticle: true,
@@ -166,6 +163,6 @@ export async function getArticleById(id: string): Promise<Article | null> {
     };
   } catch (error) {
     console.log("getArticleById error: ", error);
-    throw new Error("Failed to fetch article from the database");
+    return null;
   }
 }

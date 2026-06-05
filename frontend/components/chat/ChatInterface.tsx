@@ -42,9 +42,7 @@ import type { ContextItem } from "@/types/chat";
 import VoiceSession from "./VoiceSession";
 import ContextPickerModal from "./ContextPickerModal";
 import {
-  INITIAL_ASSISTANT_MESSAGE,
   createSessionTitle,
-  isInitialAssistantMessage,
 } from "@/lib/chat/messages";
 import {
   Sheet,
@@ -223,6 +221,15 @@ export default function ChatInterface() {
       }
     }
 
+    // Safety net — internal/Prisma errors that leaked past the server
+    if (
+      errorMessage.includes("Invalid prisma.") ||
+      errorMessage.startsWith("\nInvalid prisma.") ||
+      errorMessage.includes("Something went wrong saving")
+    ) {
+      return "Something went wrong saving the conversation. Your message was still sent.";
+    }
+
     return errorMessage;
   };
 
@@ -231,7 +238,6 @@ export default function ChatInterface() {
       api: "/api/chat",
       body: { contexts, sessionId: activeSessionId, responseMode },
     }),
-    messages: [INITIAL_ASSISTANT_MESSAGE],
     onError: (err) => {
       console.error("Chat error:", err);
       const errorMessage = normalizeError(err);
@@ -278,12 +284,6 @@ export default function ChatInterface() {
 
   const isLoading = status === "submitted" || status === "streaming";
 
-  const visibleMessages = messages.filter(
-    (msg) => !isInitialAssistantMessage(msg),
-  );
-
-  // Auto-scroll is now handled in MessageList
-
   // ---------------------------------------------------------------------------
   // Session handling
   // ---------------------------------------------------------------------------
@@ -312,7 +312,7 @@ export default function ChatInterface() {
             toast.error("Chat not found. Starting a new chat.");
             setActiveSessionId(undefined);
             setContexts([]);
-            setMessages([INITIAL_ASSISTANT_MESSAGE]);
+            setMessages([]);
             router.replace("/chat", { scroll: false });
             return;
           }
@@ -327,7 +327,7 @@ export default function ChatInterface() {
         setMessages(
           session.messages && session.messages.length > 0
             ? session.messages
-            : [INITIAL_ASSISTANT_MESSAGE],
+            : [],
         );
 
         if (updateUrl) {
@@ -370,7 +370,7 @@ export default function ChatInterface() {
   const handleNewChat = useCallback(() => {
     setActiveSessionId(undefined);
     setContexts([]);
-    setMessages([INITIAL_ASSISTANT_MESSAGE]);
+    setMessages([]);
     setSelectedModel(MODEL_REGISTRY[0].id);
     router.replace("/chat", { scroll: false });
     setHistoryOpen(false);
@@ -387,7 +387,7 @@ export default function ChatInterface() {
         if (id === activeSessionId) {
           setActiveSessionId(undefined);
           setContexts([]);
-          setMessages([INITIAL_ASSISTANT_MESSAGE]);
+          setMessages([]);
           setSelectedModel(MODEL_REGISTRY[0].id);
           router.replace("/chat", { scroll: false });
         }
@@ -446,7 +446,7 @@ export default function ChatInterface() {
     } else if (!id && activeSessionId) {
       setActiveSessionId(undefined);
       setContexts([]);
-      setMessages([INITIAL_ASSISTANT_MESSAGE]);
+      setMessages([]);
       setSelectedModel(MODEL_REGISTRY[0].id);
     }
   }, [activeSessionId, searchParams, selectSession]);
@@ -623,7 +623,7 @@ export default function ChatInterface() {
 
         {/* Message list + voice overlay share the same flex-1 area */}
         <div className="flex-1 overflow-hidden relative pt-14">
-          {visibleMessages.length === 0 ? (
+          {messages.length === 0 ? (
             <WelcomeScreen onNewChat={handleNewChat} onSend={handleSend} />
           ) : (
             <MessageList messages={messages} isLoading={isLoading} />

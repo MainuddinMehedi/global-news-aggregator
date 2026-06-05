@@ -38,14 +38,14 @@ export default function ArticleCard({ article }: { article: Article }) {
       <CardContent className="flex-1 flex flex-col space-y-3">
         {/* Source · Time · Sentiment */}
         <div className="flex items-center space-x-2 text-xs">
-          <div className="w-5 h-5 rounded bg-secondary flex items-center justify-center text-[9px] font-bold text-secondary-foreground">
+          <div className="w-5 h-5 rounded bg-secondary flex items-center justify-center text-[9px] font-bold text-secondary-foreground border border-border/50">
             {article.source.substring(0, 2).toUpperCase()}
           </div>
-          <span className="font-medium text-muted-foreground">
+          <span className="font-semibold text-foreground/80">
             {article.source}
           </span>
           <span className="text-border">·</span>
-          <span className="text-muted-foreground font-mono text-[10px]">
+          <span className="text-muted-foreground font-medium text-[10px]">
             <RelativeTime date={article.publishedAt} />
           </span>
           <span className="text-border">·</span>

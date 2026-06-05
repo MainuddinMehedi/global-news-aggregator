@@ -56,10 +56,11 @@ export default async function StoryDetailsPage({
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         <div className="lg:col-span-8 space-y-8">
-          <div className="rounded-[2rem] border border-border bg-card/40 backdrop-blur-xl p-8 shadow-sm space-y-8">
+          <div className="rounded-[2.5rem] border border-border bg-card/40 backdrop-blur-xl p-6 md:p-8 shadow-sm space-y-8">
             <div>
-              <h2 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-4">
-                AI Summary
+              <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground mb-5 flex items-center gap-2">
+                <span className="w-8 h-px bg-border" />
+                AI Analysis Summary
               </h2>
               <p className="text-base leading-relaxed text-foreground/90">
                 {story.summary}
@@ -71,6 +72,7 @@ export default async function StoryDetailsPage({
                 <h2 className="text-xs font-bold uppercase tracking-widest text-primary mb-3 flex items-center gap-2">
                   <HugeiconsIcon icon={Alert01Icon} className="h-4 w-4" />
                   Why It Matters
+                  {/*Strategic Significance*/}
                 </h2>
                 <p className="text-base font-medium leading-relaxed text-foreground">
                   {story.whyItMatters}
@@ -80,11 +82,16 @@ export default async function StoryDetailsPage({
           </div>
 
           <div>
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-bold tracking-tight">
-                Multi-Source Perspectives
+            <div className="flex items-center justify-between mb-8 px-2">
+              <h2 className="text-2xl font-extrabold tracking-tight">
+                Multi-Source <span className="text-primary">Perspectives</span>
               </h2>
-              <Badge variant="outline">{story.articles.length} Reports</Badge>
+              <Badge
+                variant="outline"
+                className="rounded-full px-4 py-1 text-[10px] font-bold uppercase tracking-widest"
+              >
+                {story.articles.length} Reports
+              </Badge>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {story.articles.map((processedArticle) => {
@@ -103,8 +110,9 @@ export default async function StoryDetailsPage({
         </div>
 
         <div className="lg:col-span-4 space-y-8">
-          <div className="rounded-[2rem] border border-border bg-card/40 backdrop-blur-xl p-6 shadow-sm sticky top-6">
-            <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-6">
+          <div className="rounded-[2.5rem] border border-border bg-card/40 backdrop-blur-xl p-8 shadow-sm sticky top-6 max-h-[calc(100vh-3rem)] overflow-y-auto scrollbar-hide">
+            <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground mb-8 flex items-center gap-2">
+              <span className="w-4 h-px bg-border" />
               Timeline of Developments
             </h3>
             <KeyDevelopmentsTimeline

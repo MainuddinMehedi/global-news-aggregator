@@ -28,6 +28,27 @@ export function createProviderClient(provider: ProviderName) {
           process.env.GITHUB_MODELS_BASE_URL ||
           "https://models.github.ai/inference",
         apiKey: process.env.GITHUB_MODELS_API_KEY || "",
+        fetch: async (input, init) => {
+          if (init?.body && typeof init.body === "string") {
+            try {
+              const body = JSON.parse(init.body);
+              if (
+                body.stream_options &&
+                typeof body.model === "string" &&
+                body.model.toLowerCase().includes("mistral")
+              ) {
+                delete body.stream_options;
+              }
+              return fetch(input, {
+                ...init,
+                body: JSON.stringify(body),
+              });
+            } catch {
+              return fetch(input, init);
+            }
+          }
+          return fetch(input, init);
+        },
       });
 
     default:

@@ -11,11 +11,7 @@ import {
 import { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { normalizeContextForDb } from "@/lib/chat/contexts";
-import {
-  createSessionTitle,
-  getMessageText,
-  isInitialAssistantMessage,
-} from "@/lib/chat/messages";
+import { createSessionTitle, getMessageText } from "@/lib/chat/messages";
 import type { ContextItem } from "@/types/chat";
 import { getModel } from "@/lib/ai/modelRegistry";
 import { createProviderClient } from "@/lib/ai/providers";
@@ -96,26 +92,21 @@ function getIncomingMessageText(message: IncomingMessage) {
 }
 
 function formatStreamError(error: unknown) {
-  const errObj =
+  const err =
     error && typeof error === "object"
       ? (error as Record<string, unknown>)
       : {};
-
-  const message =
-    typeof errObj.message === "string"
-      ? errObj.message
-      : "Failed to process chat request.";
-
-  const code = typeof errObj.code === "string" ? errObj.code : "";
-
+  const message = typeof err.message === "string" ? err.message : "";
+  const code = typeof err.code === "string" ? err.code : "";
   const statusCode =
-    typeof errObj.statusCode === "number" ? errObj.statusCode : undefined;
+    typeof err.statusCode === "number" ? err.statusCode : undefined;
+  const constructorName = (err as any)?.constructor?.name || "";
 
   // Groq specific debugging for tool_use_failed
   if (code === "tool_use_failed" || message.includes("failed_generation")) {
     const failedGeneration =
-      (errObj as any).failed_generation ||
-      (errObj as any).responseBody?.error?.failed_generation;
+      (err as any).failed_generation ||
+      (err as any).responseBody?.error?.failed_generation;
 
     if (failedGeneration) {
       console.error("GROQ FAILED GENERATION:", failedGeneration);
@@ -127,17 +118,49 @@ function formatStreamError(error: unknown) {
     }
   }
 
+  // ── Known user-facing errors ──
+
   if (
     statusCode === 413 ||
     code === "request_too_large" ||
-    code === "rate_limit_exceeded" ||
-    message.includes("Request Entity Too Large") ||
-    message.includes("tokens per minute")
+    message.includes("Request Entity Too Large")
   ) {
-    return "Request too large for the selected model's current token limit. Try the 20B model, ask a shorter follow-up, or wait for the token window to reset.";
+    return "This conversation is too large for this model\u2019s context window. Switch to a model with a larger context (like Llama 4 Scout or Maverick with 1M\u201310M tokens) or start a new conversation.";
   }
 
-  return message;
+  if (message.includes("tool calling is not supported")) {
+    return "This model uses built-in tools and doesn\u2019t support external tool definitions. Switch to a different model.";
+  }
+
+  if (code === "rate_limit_exceeded" || message.includes("tokens per minute")) {
+    return "Rate limit reached for this model. Try switching to a different model or wait a moment before sending another message.";
+  }
+
+  // ── Prisma errors (never show DB internals) ──
+  if (
+    constructorName.startsWith("Prisma") ||
+    constructorName.startsWith("PrismaClient")
+  ) {
+    return "Something went wrong saving the conversation. Your message was still sent.";
+  }
+
+  // ── API errors with a statusCode ──
+  if (statusCode) {
+    const responseBody = err.responseBody;
+    if (typeof responseBody === "string") {
+      try {
+        const parsed = JSON.parse(responseBody);
+        const apiMsg = parsed?.error?.message || parsed?.error;
+        if (apiMsg && typeof apiMsg === "string") return apiMsg;
+      } catch {
+        // ignore parse errors, fall through to raw message
+      }
+    }
+    return message || "The API returned an error. Please try again.";
+  }
+
+  // ── Internal/SDK errors (no statusCode) ──
+  return "Something went wrong. Please try again.";
 }
 
 export async function POST(req: Request) {
@@ -296,13 +319,6 @@ export async function POST(req: Request) {
 
     const coreMessages = await convertToModelMessages(
       messages.filter((msg) => {
-        if (msg.id && msg.role === "assistant") {
-          return !isInitialAssistantMessage({
-            id: msg.id,
-            role: "assistant",
-            parts: msg.parts as UIMessage["parts"],
-          });
-        }
         // Keep assistant messages that have tool calls even if text is empty
         const hasToolCalls = msg.parts?.some(
           (p) => p.type === "tool-invocation" || p.type.startsWith("tool-"),

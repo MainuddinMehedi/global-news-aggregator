@@ -19,19 +19,25 @@ import { SourceConfig, CreateTopicData } from "@/types/lockedTopic";
 
 export default function CreateTopicModal({
   trigger,
+  initialData,
+  topicId,
 }: {
   trigger?: React.ReactNode;
+  initialData?: CreateTopicData;
+  topicId?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(1);
-  const [data, setData] = useState<CreateTopicData>({
-    displayName: "",
-    userContext: "",
-    sources: [] as SourceConfig[],
-    aiRefinedQuery: "",
-    aiQuerySummary: "",
-    suggestedSources: [] as unknown[],
-  });
+  const [data, setData] = useState<CreateTopicData>(
+    initialData || {
+      displayName: "",
+      userContext: "",
+      sources: [] as SourceConfig[],
+      aiRefinedQuery: "",
+      aiQuerySummary: "",
+      suggestedSources: [] as unknown[],
+    },
+  );
 
   const nextStep = () => setStep((s) => s + 1);
   const prevStep = () => setStep((s) => s - 1);
@@ -41,16 +47,22 @@ export default function CreateTopicModal({
     // Use a small timeout to let the modal finish closing animation before resetting state
     setTimeout(() => {
       setStep(1);
-      setData({
-        displayName: "",
-        userContext: "",
-        sources: [],
-        aiRefinedQuery: "",
-        aiQuerySummary: "",
-        suggestedSources: [],
-      });
+      if (!initialData) {
+        setData({
+          displayName: "",
+          userContext: "",
+          sources: [],
+          aiRefinedQuery: "",
+          aiQuerySummary: "",
+          suggestedSources: [],
+        });
+      } else {
+        setData(initialData);
+      }
     }, 3000);
   };
+
+  const isEdit = !!topicId;
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -71,7 +83,8 @@ export default function CreateTopicModal({
           <div className="flex items-center justify-between">
             <div>
               <DialogTitle className="text-3xl font-black tracking-tight">
-                Lock New <span className="text-primary">Topic</span>
+                {isEdit ? "Edit" : "Lock New"}{" "}
+                <span className="text-primary">Topic</span>
               </DialogTitle>
               <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground mt-2">
                 Step {step} of 4: {getStepTitle(step)}
@@ -107,7 +120,12 @@ export default function CreateTopicModal({
             />
           )}
           {step === 4 && (
-            <Step4Confirm data={data} onPrev={prevStep} onComplete={reset} />
+            <Step4Confirm
+              data={data}
+              onPrev={prevStep}
+              onComplete={reset}
+              topicId={topicId}
+            />
           )}
         </div>
       </DialogContent>

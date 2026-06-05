@@ -1,4 +1,4 @@
-import { LockedTopic } from "@/types/lockedTopic";
+import { LockedTopic, CreateTopicData } from "@/types/lockedTopic";
 import { Badge } from "@/components/ui/badge";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -12,6 +12,7 @@ import { TopicActions } from "./TopicActions";
 import { DeleteTopicModal } from "./DeleteTopicModal";
 import { RelativeTime } from "@/components/ui/RelativeTime";
 import { ScanNowButton } from "./ScanNowButton";
+import CreateTopicModal from "./CreateTopicModal";
 
 export default function TopicHeader({
   topic,
@@ -20,6 +21,15 @@ export default function TopicHeader({
   topic: LockedTopic;
   unreadCount?: number;
 }) {
+  const initialData: CreateTopicData = {
+    displayName: topic.displayName,
+    userContext: topic.userContext,
+    sources: topic.sources,
+    aiRefinedQuery: topic.aiRefinedQuery,
+    aiQuerySummary: topic.aiQuerySummary,
+    suggestedSources: [],
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
@@ -48,13 +58,13 @@ export default function TopicHeader({
             )}
           </div>
 
-          <h1 className="text-4xl md:text-5xl font-black tracking-tight flex items-center gap-3">
+          <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight flex items-center gap-3">
             {topic.displayName}
 
             {!topic.isActive && (
               <Badge
                 variant="secondary"
-                className="text-[10px] uppercase tracking-widest bg-muted text-muted-foreground"
+                className="text-[10px] uppercase tracking-widest bg-muted text-muted-foreground rounded-full px-3"
               >
                 Archived
               </Badge>
@@ -73,15 +83,20 @@ export default function TopicHeader({
           <div className="h-6 w-px bg-border hidden md:block" />
           <DeleteTopicModal topicId={topic.id} topicName={topic.displayName} />
 
-          {/*TODO: Implement edit tracker.*/}
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-2 rounded-xl border-secondary h-10 px-4"
-          >
-            <HugeiconsIcon icon={Settings01Icon} size={16} />
-            <span className="hidden sm:inline">Edit Tracker</span>
-          </Button>
+          <CreateTopicModal
+            topicId={topic.id}
+            initialData={initialData}
+            trigger={
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2 rounded-xl border-secondary h-10 px-4"
+              >
+                <HugeiconsIcon icon={Settings01Icon} size={16} />
+                <span className="hidden sm:inline">Edit Tracker</span>
+              </Button>
+            }
+          />
 
           <ScanNowButton topicId={topic.id} />
         </div>
@@ -89,7 +104,7 @@ export default function TopicHeader({
 
       {/*AI intelligence report*/}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="md:col-span-2 p-6 rounded-2xl bg-secondary/10 border border-secondary/50 space-y-4 backdrop-blur-sm">
+        <div className="md:col-span-2 p-6 rounded-2xl bg-secondary/30 border border-secondary/50 space-y-4 backdrop-blur-sm">
           <div className="flex items-center gap-2 text-primary">
             <HugeiconsIcon icon={SparklesIcon} size={14} />
             <span className="text-[10px] font-black uppercase tracking-widest">
@@ -97,16 +112,16 @@ export default function TopicHeader({
             </span>
           </div>
 
-          <p className="text-lg leading-relaxed text-foreground/90 font-medium italic">
-            `&quot;`{topic.aiQuerySummary}`&quot;`
+          <p className="text-lg leading-relaxed text-foreground/90 font-medium">
+            &quot;{topic.aiQuerySummary}&quot;
           </p>
 
           <div className="pt-2 flex flex-wrap gap-2">
             {topic.sources.map((s, idx) => (
               <Badge
                 key={idx}
-                variant="secondary"
-                className="bg-background/40 border-secondary text-[9px] uppercase font-bold py-1 px-2 tracking-wider"
+                variant="outline"
+                className="text-[10px] font-semibold py-1 px-2 tracking-widest"
               >
                 {s.label}
               </Badge>
@@ -115,22 +130,26 @@ export default function TopicHeader({
         </div>
 
         {/*Search strategy And Last scanned at, match count*/}
-        <div className="p-6 rounded-2xl bg-primary/5 border border-primary/10 flex flex-col justify-between space-y-4">
-          <div className="space-y-2">
+        <div className="p-6 rounded-2xl bg-muted/20 border border-border flex flex-col justify-between space-y-6">
+          <div className="space-y-4">
             <div className="flex items-center gap-2 text-muted-foreground">
               <HugeiconsIcon icon={Search01Icon} size={14} />
-              <span className="text-[10px] font-black uppercase tracking-widest">
+              <span className="text-[10px] font-bold uppercase tracking-widest">
                 Search Strategy
               </span>
             </div>
-            <div className="font-mono text-[11px] bg-background/40 p-3 rounded-xl border border-primary/10 text-wrap">
+            <div className="font-mono text-[10px] bg-background/50 p-4 rounded-2xl border border-border leading-relaxed text-wrap break-all opacity-80">
               {topic.aiRefinedQuery}
             </div>
           </div>
 
-          <div className="flex items-center justify-between text-[9px] font-black uppercase tracking-[0.15em] text-muted-foreground/60">
-            <span>Matches: {topic.matchCount}</span>
-            <span>
+          <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">
+            <span className="flex items-center gap-1.5">
+              <span className="w-1 h-1 rounded-full bg-border" />
+              Matches: {topic.matchCount}
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-1 h-1 rounded-full bg-border" />
               Last Scan:{" "}
               {topic.lastScannedAt ? (
                 <RelativeTime date={topic.lastScannedAt.toString()} />
