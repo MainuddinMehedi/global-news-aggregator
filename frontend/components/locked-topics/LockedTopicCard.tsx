@@ -36,7 +36,7 @@ export default function LockedTopicCard({
                   {topic.displayName}
                 </CardTitle>
               </Link>
-              <p className="text-[10px] text-muted-foreground font-mono mt-0.5 uppercase tracking-tight">
+              <p className="text-[10px] text-muted-foreground font-bold mt-0.5 uppercase tracking-widest">
                 {topic.matchCount} Matches · Last:{" "}
                 {topic.lastMatchedAt ? (
                   <RelativeTime date={topic.lastMatchedAt} />
@@ -51,7 +51,7 @@ export default function LockedTopicCard({
       </CardHeader>
 
       <CardContent className="flex-1 flex flex-col gap-4 pt-0">
-        <p className="text-sm text-muted-foreground line-clamp-2 italic leading-relaxed">
+        <p className="text-sm text-muted-foreground font-medium line-clamp-2 leading-relaxed tracking-tight">
           &quot;{topic.aiQuerySummary}&quot;
         </p>
 
@@ -80,7 +80,7 @@ export default function LockedTopicCard({
               ))}
             </ul>
           ) : (
-            <p className="text-xs text-muted-foreground/50 italic py-1">
+            <p className="text-[11px] text-muted-foreground/50 py-1">
               No findings yet.
             </p>
           )}

@@ -63,6 +63,7 @@ export default function FindingsList({
     }
   }, [cursor, isLoading, error, topicId, sourceType, sort]);
 
+  // intersection observer
   useEffect(() => {
     const el = sentinelRef.current;
     if (!el || error) return;
@@ -71,7 +72,7 @@ export default function FindingsList({
       ([entry]) => {
         if (entry.isIntersecting) fetchNextPage();
       },
-      { rootMargin: "200px" },
+      { rootMargin: "300px" },
     );
     observer.observe(el);
     return () => observer.disconnect();
@@ -85,7 +86,7 @@ export default function FindingsList({
   if (findings.length === 0 && !isLoading) {
     return (
       <div className="py-24 text-center space-y-6 bg-secondary/5 rounded-[2rem] border border-dashed border-secondary/50">
-        <p className="text-muted-foreground font-medium italic text-lg leading-relaxed max-w-sm mx-auto">
+        <p className="text-muted-foreground font-semibold text-lg leading-relaxed max-w-sm mx-auto tracking-tight">
           No matches found for your current filter criteria.
         </p>
       </div>
@@ -94,7 +95,7 @@ export default function FindingsList({
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-1 gap-4">
+      <div className="grid grid-cols-2 gap-4">
         {findings.map((finding) => (
           <FindingCard key={finding.id} finding={finding} />
         ))}
@@ -109,19 +110,19 @@ export default function FindingsList({
             </div>
           )}
           {!cursor && !isLoading && findings.length > 0 && (
-            <div className="flex items-center justify-center py-16 gap-4">
-              <div className="h-px bg-secondary/50 flex-1" />
-              <p className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground/30 whitespace-nowrap">
+            <div className="flex items-center justify-center py-16 gap-6">
+              <div className="h-px bg-border flex-1" />
+              <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground/30 whitespace-nowrap">
                 Surveillance Complete
               </p>
-              <div className="h-px bg-secondary/50 flex-1" />
+              <div className="h-px bg-border flex-1" />
             </div>
           )}
         </div>
       )}
 
       {error && (
-        <div className="flex flex-col items-center justify-center py-12 px-6 text-center bg-destructive/5 rounded-3xl border border-destructive/10">
+        <div className="flex flex-col items-center justify-center py-12 px-6 text-center bg-destructive/5 rounded-[2rem] border border-destructive/10">
           <p className="text-sm font-bold text-destructive mb-6 leading-relaxed">
             {error}
           </p>
@@ -140,29 +141,25 @@ export default function FindingsList({
 
 function FindingCard({ finding }: { finding: TopicFinding }) {
   return (
-    <div className="p-8 rounded-[1.5rem] border border-secondary bg-background/50 hover:border-primary/40 transition-all duration-500 group hover:shadow-2xl hover:shadow-primary/5 hover:-translate-y-0.5 backdrop-blur-sm">
+    <div className="p-8 rounded-2xl border border-secondary bg-secondary/10 hover:border-primary/40 transition-all duration-500 group hover:shadow-2xl hover:shadow-primary/5 hover:-translate-y-0.5 backdrop-blur-sm">
       <div className="flex flex-col md:flex-row items-start justify-between gap-6">
         <div className="space-y-3 flex-1">
           <div className="flex items-center gap-2">
             <span className="text-[9px] font-black uppercase tracking-[0.2em] text-primary bg-primary/10 px-2.5 py-1 rounded-full">
               {finding.sourceType}
             </span>
-            <span className="text-muted-foreground/20 text-xs">•</span>
-            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">
+            <span className="w-1 h-1 rounded-full bg-border" />
+            <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-muted-foreground/60">
               {finding.sourceName}
             </span>
           </div>
-          <h3 className="text-2xl font-bold group-hover:text-primary transition-colors leading-[1.2] tracking-tight">
-            <a
-              href={finding.sourceUrl}
-              target="_blank"
-              className="hover:underline decoration-primary/30 underline-offset-4 decoration-2"
-            >
+          <h3 className="text-2xl font-extrabold group-hover:text-primary transition-colors leading-tight tracking-tight">
+            <a href={finding.sourceUrl} target="_blank">
               {finding.title}
             </a>
           </h3>
           {finding.summary && (
-            <p className="text-sm text-muted-foreground/80 line-clamp-3 leading-relaxed font-medium">
+            <p className="text-[15px] text-muted-foreground/90 line-clamp-3 leading-relaxed font-medium tracking-tight">
               {finding.summary}
             </p>
           )}
@@ -185,19 +182,19 @@ function FindingCard({ finding }: { finding: TopicFinding }) {
 
 function FindingSkeleton() {
   return (
-    <div className="p-8 rounded-[1.5rem] border border-secondary bg-background/50 space-y-6">
+    <div className="p-6 rounded-[1.5rem] border border-secondary bg-background/50 space-y-6">
       <div className="flex justify-between">
-        <Skeleton className="h-5 w-40 rounded-full" />
-        <Skeleton className="h-10 w-20 rounded-xl" />
+        <Skeleton className="h-6 w-40 rounded-full" />
+        <Skeleton className="h-10 w-20 rounded-2xl" />
       </div>
       <div className="space-y-3">
-        <Skeleton className="h-8 w-full rounded-lg" />
-        <Skeleton className="h-8 w-4/5 rounded-lg" />
+        <Skeleton className="h-8 w-full rounded-xl" />
+        <Skeleton className="h-8 w-4/5 rounded-xl" />
       </div>
       <div className="space-y-2">
-        <Skeleton className="h-4 w-full rounded-md" />
-        <Skeleton className="h-4 w-5/6 rounded-md" />
-        <Skeleton className="h-4 w-2/3 rounded-md" />
+        <Skeleton className="h-4 w-full rounded-lg" />
+        <Skeleton className="h-4 w-5/6 rounded-lg" />
+        <Skeleton className="h-4 w-2/3 rounded-lg" />
       </div>
     </div>
   );

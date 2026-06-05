@@ -47,12 +47,12 @@ export default function StoryCard({ story }: StoryCardProps) {
 
             <div className="flex items-center gap-3">
               {story.status && (
-                <span className="text-xs font-medium text-red-400 flex items-center gap-1">
+                <span className="text-xs font-bold text-rose-500 uppercase tracking-widest flex items-center gap-1">
                   <HugeiconsIcon icon={TradeUpIcon} className="w-3 h-3" />
                   {story.status}
                 </span>
               )}
-              <span className="text-xs font-mono font-medium text-muted-foreground flex items-center gap-1">
+              <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1">
                 <HugeiconsIcon icon={Clock01Icon} className="w-3 h-3" />
                 {story.timeWindow}
               </span>
@@ -60,39 +60,41 @@ export default function StoryCard({ story }: StoryCardProps) {
           </div>
 
           <div className="space-y-2.5">
-            <h2 className="text-xl font-bold leading-tight text-foreground sm:text-2xl group-hover:text-primary transition-colors">
+            <h2 className="text-xl sm:text-2xl md:text-[28px] font-extrabold leading-tight text-foreground group-hover:text-primary transition-colors tracking-tight">
               {story.title}
             </h2>
 
-            <div className="flex flex-col items-start gap-x-4 gap-y-2 text-xs text-muted-foreground pt-1">
+            <div className="flex flex-col items-start gap-x-4 gap-y-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground pt-1">
               {story.regions && story.regions.length > 0 && (
-                <div className="flex items-center gap-1.5">
-                  <span className="font-semibold text-foreground/70">
-                    Regions:
+                <div className="flex items-center gap-2">
+                  <span className="text-foreground/40 font-black">/</span>
+                  <span className="text-foreground/70">Regions:</span>
+                  <span className="text-muted-foreground/60">
+                    {story.regions.slice(0, 3).join(", ")}
+                    {story.regions.length > 3 && ", ..."}
                   </span>
-                  {story.regions.slice(0, 3).join(", ")}
-                  {story.regions.length > 3 && ", ..."}
                 </div>
               )}
               {story.themes && story.themes.length > 0 && (
-                <div className="flex items-center gap-1.5">
-                  <span className="font-semibold text-foreground/70">
-                    Themes:
+                <div className="flex items-center gap-2">
+                  <span className="text-foreground/40 font-black">/</span>
+                  <span className="text-foreground/70">Themes:</span>
+                  <span className="text-muted-foreground/60">
+                    {story.themes.slice(0, 3).join(", ")}
+                    {story.themes.length > 3 && ", ..."}
                   </span>
-                  {story.themes.slice(0, 3).join(", ")}
-                  {story.themes.length > 3 && ", ..."}
                 </div>
               )}
             </div>
 
-            <p className="text-sm leading-relaxed text-muted-foreground line-clamp-2 mt-2">
+            <p className="text-sm leading-relaxed text-muted-foreground/90 font-medium line-clamp-2 mt-2">
               {story.summary}
             </p>
           </div>
         </div>
 
         <div className="px-6 py-6 sm:px-8 bg-card/20">
-          <div className="mb-6 flex items-center gap-3 text-xs font-bold uppercase tracking-widest text-muted-foreground">
+          <div className="mb-6 flex items-center gap-3 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
             Key Developments
             <div className="h-px flex-1 bg-border/50"></div>
           </div>
@@ -102,10 +104,10 @@ export default function StoryCard({ story }: StoryCardProps) {
                 <div className="absolute -left-[31px] top-1.5 h-3.5 w-3.5 rounded-full border-2 border-muted bg-background ring-4 ring-card transition-colors duration-300 group-hover/timeline:border-primary group-hover/timeline:bg-primary/20" />
 
                 <div className="flex flex-col gap-1">
-                  <div className="text-sm font-semibold text-foreground/90 transition-colors group-hover/timeline:text-foreground">
+                  <div className="text-sm font-bold text-foreground/90 transition-colors group-hover/timeline:text-foreground tracking-tight">
                     {dev.title}
                   </div>
-                  <div className="text-xs font-medium text-muted-foreground/80">
+                  <div className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">
                     {dev.date}
                   </div>
                 </div>
@@ -114,8 +116,8 @@ export default function StoryCard({ story }: StoryCardProps) {
             {story.keyDevelopments.length > 6 && (
               <div className="relative group/timeline">
                 <div className="absolute -left-[31px] top-1.5 h-3.5 w-3.5 rounded-full border-2 border-muted bg-muted/30" />
-                <div className="text-xs font-semibold text-muted-foreground italic">
-                  + {story.keyDevelopments.length - 6} more developments
+                <div className="text-[10px] font-bold text-muted-foreground/40 uppercase tracking-widest">
+                  + {story.keyDevelopments.length - 6} more
                 </div>
               </div>
             )}

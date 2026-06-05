@@ -41,7 +41,7 @@ export default async function LockedTopicsPage({
             <h1 className="text-4xl md:text-5xl font-black tracking-tight">
               Locked <span className="text-primary">Topics</span>
             </h1>
-            <p className="text-muted-foreground max-w-2xl text-lg leading-relaxed">
+            <p className="text-muted-foreground max-w-2xl text-base leading-snug tracking-wide">
               Pin specific themes to ensure they are persistently tracked. The
               system acts as your personal researcher, monitoring all sources
               every 2 hours.
