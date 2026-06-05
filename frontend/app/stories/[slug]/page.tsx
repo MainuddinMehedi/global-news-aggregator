@@ -110,7 +110,7 @@ export default async function StoryDetailsPage({
         </div>
 
         <div className="lg:col-span-4 space-y-8">
-          <div className="rounded-[2.5rem] border border-border bg-card/40 backdrop-blur-xl p-8 shadow-sm sticky top-6">
+          <div className="rounded-[2.5rem] border border-border bg-card/40 backdrop-blur-xl p-8 shadow-sm sticky top-6 max-h-[calc(100vh-3rem)] overflow-y-auto scrollbar-hide">
             <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground mb-8 flex items-center gap-2">
               <span className="w-4 h-px bg-border" />
               Timeline of Developments
