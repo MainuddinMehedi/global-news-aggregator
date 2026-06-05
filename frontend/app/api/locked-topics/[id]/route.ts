@@ -51,9 +51,11 @@ export async function PATCH(
       });
     }
 
+    const { suggestedSources, ...updateData } = body;
+
     const updated = await prisma.lockedTopic.update({
       where: { id },
-      data: body,
+      data: updateData,
     });
 
     revalidateTag("locked-topics", "max");

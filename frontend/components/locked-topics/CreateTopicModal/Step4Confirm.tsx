@@ -17,9 +17,15 @@ interface Step4Props {
   data: CreateTopicData;
   onPrev: () => void;
   onComplete: () => void;
+  topicId?: string;
 }
 
-export default function Step4Confirm({ data, onPrev, onComplete }: Step4Props) {
+export default function Step4Confirm({
+  data,
+  onPrev,
+  onComplete,
+  topicId,
+}: Step4Props) {
   const [loading, setLoading] = useState(false);
   const [notify, setNotify] = useState(true);
   const router = useRouter();
@@ -28,8 +34,14 @@ export default function Step4Confirm({ data, onPrev, onComplete }: Step4Props) {
     setLoading(true);
 
     try {
-      const res = await fetch("/api/locked-topics", {
-        method: "POST",
+      const isEdit = !!topicId;
+      const endpoint = isEdit
+        ? `/api/locked-topics/${topicId}`
+        : "/api/locked-topics";
+      const method = isEdit ? "PATCH" : "POST";
+
+      const res = await fetch(endpoint, {
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...data,
@@ -37,18 +49,26 @@ export default function Step4Confirm({ data, onPrev, onComplete }: Step4Props) {
         }),
       });
 
-      if (!res.ok) throw new Error("Activation failed");
+      if (!res.ok)
+        throw new Error(isEdit ? "Update failed" : "Activation failed");
 
-      const { id } = await res.json();
+      const resData = await res.json();
+      const targetId = isEdit ? topicId : resData.id;
 
       // Trigger initial scan (fire and forget)
-      fetch(`/api/locked-topics/${id}/scan`, { method: "POST" });
+      fetch(`/api/locked-topics/${targetId}/scan`, { method: "POST" });
 
-      toast.success("Tracker activated and scanning initiated!");
+      toast.success(
+        isEdit
+          ? "Tracker updated successfully!"
+          : "Tracker activated and scanning initiated!",
+      );
       onComplete();
       router.refresh();
     } catch (err) {
-      toast.error("Failed to activate tracker");
+      toast.error(
+        topicId ? "Failed to update tracker" : "Failed to activate tracker",
+      );
       setLoading(false);
     }
   };
@@ -68,8 +88,8 @@ export default function Step4Confirm({ data, onPrev, onComplete }: Step4Props) {
             <span className="text-foreground font-bold">
               &quot;{data.displayName}&quot;
             </span>{" "}
-            is configured. We&apos;ll start monitoring all selected sources
-            immediately.
+            is {topicId ? "updated" : "configured"}. We&apos;ll start monitoring
+            all selected sources immediately.
           </p>
         </div>
       </div>
@@ -127,8 +147,10 @@ export default function Step4Confirm({ data, onPrev, onComplete }: Step4Props) {
           {loading ? (
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
-              <span>Activating...</span>
+              <span>{topicId ? "Updating..." : "Activating..."}</span>
             </div>
+          ) : topicId ? (
+            "Update Tracker"
           ) : (
             "Launch Tracker"
           )}

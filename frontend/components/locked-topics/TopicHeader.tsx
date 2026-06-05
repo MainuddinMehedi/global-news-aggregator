@@ -1,4 +1,4 @@
-import { LockedTopic } from "@/types/lockedTopic";
+import { LockedTopic, CreateTopicData } from "@/types/lockedTopic";
 import { Badge } from "@/components/ui/badge";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -12,6 +12,7 @@ import { TopicActions } from "./TopicActions";
 import { DeleteTopicModal } from "./DeleteTopicModal";
 import { RelativeTime } from "@/components/ui/RelativeTime";
 import { ScanNowButton } from "./ScanNowButton";
+import CreateTopicModal from "./CreateTopicModal";
 
 export default function TopicHeader({
   topic,
@@ -20,6 +21,15 @@ export default function TopicHeader({
   topic: LockedTopic;
   unreadCount?: number;
 }) {
+  const initialData: CreateTopicData = {
+    displayName: topic.displayName,
+    userContext: topic.userContext,
+    sources: topic.sources,
+    aiRefinedQuery: topic.aiRefinedQuery,
+    aiQuerySummary: topic.aiQuerySummary,
+    suggestedSources: [],
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
@@ -73,15 +83,20 @@ export default function TopicHeader({
           <div className="h-6 w-px bg-border hidden md:block" />
           <DeleteTopicModal topicId={topic.id} topicName={topic.displayName} />
 
-          {/*TODO: Implement edit tracker.*/}
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-2 rounded-xl border-secondary h-10 px-4"
-          >
-            <HugeiconsIcon icon={Settings01Icon} size={16} />
-            <span className="hidden sm:inline">Edit Tracker</span>
-          </Button>
+          <CreateTopicModal
+            topicId={topic.id}
+            initialData={initialData}
+            trigger={
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2 rounded-xl border-secondary h-10 px-4"
+              >
+                <HugeiconsIcon icon={Settings01Icon} size={16} />
+                <span className="hidden sm:inline">Edit Tracker</span>
+              </Button>
+            }
+          />
 
           <ScanNowButton topicId={topic.id} />
         </div>
