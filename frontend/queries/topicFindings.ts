@@ -4,7 +4,7 @@ import { TopicFinding, FindingSource } from "@/types/lockedTopic";
 
 interface getFindingsParams {
   topicId: string;
-  sourceType?: FindingSource | "ALL";
+  sourceType?: FindingSource | "ALL" | "OTHER";
   sort?: "newest" | "oldest" | "relevance";
   cursor?: string;
   limit?: number;
@@ -31,11 +31,13 @@ export async function getFindings({
 
   const where: {
     topicId: string;
-    sourceType?: FindingSource;
+    sourceType?: FindingSource | { notIn: FindingSource[] };
     isRead?: boolean;
   } = { topicId };
 
-  if (sourceType !== "ALL") {
+  if (sourceType === "OTHER") {
+    where.sourceType = { notIn: ["ARTICLE", "GOOGLE", "BRAVE", "REDDIT"] };
+  } else if (sourceType !== "ALL") {
     where.sourceType = sourceType as FindingSource;
   }
 

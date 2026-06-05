@@ -31,7 +31,7 @@ export default async function TopicDetailPage({
 
   const { findings, nextCursor } = await getFindings({
     topicId: id,
-    sourceType: source as FindingSource | "ALL",
+    sourceType: source as FindingSource | "ALL" | "OTHER",
     sort: sort as "newest" | "oldest" | "relevance",
     limit: 20,
   });
@@ -41,7 +41,11 @@ export default async function TopicDetailPage({
       <TopicHeader topic={topic} unreadCount={unreadCount} />
 
       <div className="space-y-8">
-        <FindingsFilter currentSource={source} currentSort={sort} />
+        <FindingsFilter
+          currentSource={source}
+          currentSort={sort}
+          sources={topic.sources}
+        />
 
         <FindingsList
           initialFindings={findings}

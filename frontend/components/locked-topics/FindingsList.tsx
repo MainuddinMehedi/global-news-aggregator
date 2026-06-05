@@ -11,7 +11,7 @@ interface FindingsListProps {
   initialFindings: TopicFinding[];
   initialNextCursor: string | null;
   topicId: string;
-  sourceType: FindingSource | "ALL";
+  sourceType: FindingSource | "ALL" | "OTHER";
   sort: "newest" | "oldest" | "relevance";
 }
 

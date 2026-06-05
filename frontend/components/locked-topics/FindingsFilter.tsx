@@ -8,14 +8,7 @@ import {
   SelectContent,
   SelectItem,
 } from "../ui/select";
-
-const SOURCES = [
-  { value: "ALL", label: "All Sources" },
-  { value: "ARTICLE", label: "Internal DB" },
-  { value: "GOOGLE", label: "Google News" },
-  { value: "BRAVE", label: "Brave Search" },
-  { value: "REDDIT", label: "Reddit" },
-];
+import { SourceConfig } from "@/types/lockedTopic";
 
 const SORTS = [
   { value: "newest", label: "Newest First" },
@@ -26,9 +19,11 @@ const SORTS = [
 export default function FindingsFilter({
   currentSource,
   currentSort,
+  sources,
 }: {
   currentSource: string;
   currentSort: string;
+  sources: SourceConfig[];
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -39,10 +34,31 @@ export default function FindingsFilter({
     router.push(`?${params.toString()}`, { scroll: false });
   };
 
+  // Generate dynamic source tabs based on tracker sources
+  const sourceTabs = [{ value: "ALL", label: "All Sources" }];
+
+  const hasInternal = sources.some((s) => s.type === "internal_db");
+  const hasGoogle = sources.some((s) => s.type === "google_news");
+  const hasBrave = sources.some((s) => s.type === "brave");
+  const hasReddit = sources.some((s) => s.type === "reddit");
+
+  if (hasInternal) sourceTabs.push({ value: "ARTICLE", label: "Internal DB" });
+  if (hasGoogle) sourceTabs.push({ value: "GOOGLE", label: "Google News" });
+  if (hasBrave) sourceTabs.push({ value: "BRAVE", label: "Brave Search" });
+  if (hasReddit) sourceTabs.push({ value: "REDDIT", label: "Reddit" });
+
+  const hasOtherSources = sources.some(
+    (s) => !["internal_db", "google_news", "brave", "reddit"].includes(s.type),
+  );
+
+  if (hasOtherSources) {
+    sourceTabs.push({ value: "OTHER", label: "Others" });
+  }
+
   return (
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-6 border-y border-secondary/50">
       <div className="flex flex-wrap gap-2">
-        {SOURCES.map((s) => (
+        {sourceTabs.map((s) => (
           <button
             key={s.value}
             onClick={() => updateParam("source", s.value)}
