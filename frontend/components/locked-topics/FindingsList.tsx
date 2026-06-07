@@ -13,7 +13,6 @@ interface FindingsListProps {
   topicId: string;
   sourceType: FindingSource | "ALL" | "OTHER";
   sort: "newest" | "oldest" | "relevance";
-  lastScannedAt?: string | null;
 }
 
 export default function FindingsList({
@@ -22,7 +21,6 @@ export default function FindingsList({
   topicId,
   sourceType,
   sort,
-  lastScannedAt,
 }: FindingsListProps) {
   const [findings, setFindings] = useState(initialFindings);
   const [cursor, setCursor] = useState(initialNextCursor);
@@ -99,11 +97,7 @@ export default function FindingsList({
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
         {findings.map((finding) => (
-          <FindingCard
-            key={finding.id}
-            finding={finding}
-            lastScannedAt={lastScannedAt}
-          />
+          <FindingCard key={finding.id} finding={finding} />
         ))}
       </div>
 
@@ -145,19 +139,8 @@ export default function FindingsList({
   );
 }
 
-function FindingCard({
-  finding,
-  lastScannedAt,
-}: {
-  finding: TopicFinding;
-  lastScannedAt?: string | null;
-}) {
-  const isJustScanned =
-    lastScannedAt &&
-    new Date(finding.foundAt).getTime() >=
-      new Date(lastScannedAt).getTime() - 1000 * 60; // Within 1 minute of last scan
-
-  const showNewBadge = !finding.isRead && isJustScanned;
+function FindingCard({ finding }: { finding: TopicFinding }) {
+  const showNewBadge = !finding.isRead;
 
   return (
     <div className="p-8 rounded-2xl border border-secondary bg-secondary/10 hover:border-primary/40 transition-all duration-500 group hover:shadow-2xl hover:shadow-primary/5 hover:-translate-y-0.5 backdrop-blur-sm relative overflow-hidden">
