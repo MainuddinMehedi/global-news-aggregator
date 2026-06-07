@@ -145,6 +145,11 @@ function FindingCard({ finding }: { finding: TopicFinding }) {
       <div className="flex flex-col md:flex-row items-start justify-between gap-6">
         <div className="space-y-3 flex-1">
           <div className="flex items-center gap-2">
+            {!finding.isRead && (
+              <span className="text-[9px] font-black uppercase tracking-[0.2em] bg-primary text-primary-foreground px-2.5 py-1 rounded-full shadow-[0_0_12px_rgba(var(--primary),0.3)] animate-pulse">
+                New
+              </span>
+            )}
             <span className="text-[9px] font-black uppercase tracking-[0.2em] text-primary bg-primary/10 px-2.5 py-1 rounded-full">
               {finding.sourceType}
             </span>
