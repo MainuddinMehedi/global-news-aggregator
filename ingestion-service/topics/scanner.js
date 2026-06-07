@@ -180,9 +180,22 @@ export async function runScannersForTopic(topic, options = {}) {
   // 4. Relevance Scoring
   const scoredFindings = await scoreFindings(topic, newFindings);
 
-  // 5. Bulk Insert
+  // 5. Filter by Minimum Relevance (e.g., 0.5)
+  const MIN_RELEVANCE = 0.5;
+  const highQualityFindings = scoredFindings.filter(
+    (f) => f.relevanceScore === null || f.relevanceScore >= MIN_RELEVANCE,
+  );
+
+  const discardedCount = scoredFindings.length - highQualityFindings.length;
+  if (discardedCount > 0) {
+    console.log(
+      `   🗑️ [orchestrator] Discarded ${discardedCount} findings due to low relevance score (< ${MIN_RELEVANCE}).`,
+    );
+  }
+
+  // 6. Bulk Insert
   let insertedCount = 0;
-  for (const finding of scoredFindings) {
+  for (const finding of highQualityFindings) {
     try {
       await prisma.topicFinding.create({
         data: {
@@ -203,7 +216,7 @@ export async function runScannersForTopic(topic, options = {}) {
     }
   }
 
-  // 6. Update Topic Metadata
+  // 7. Update Topic Metadata
   const updateData = { lastScannedAt: new Date() };
   if (insertedCount > 0) {
     updateData.matchCount = { increment: insertedCount };
@@ -215,7 +228,7 @@ export async function runScannersForTopic(topic, options = {}) {
     data: updateData,
   });
 
-  // 7. Trigger Revalidation
+  // 8. Trigger Revalidation
   if (insertedCount > 0) {
     try {
       const revalidateUrl = `${process.env.NEXT_PUBLIC_API_URL}/revalidate?tag=topic-findings-${topic.id}&secret=${process.env.REVALIDATE_SECRET}`;
@@ -231,9 +244,9 @@ export async function runScannersForTopic(topic, options = {}) {
     }
   }
 
-  // 8. Send Notifications
+  // 9. Send Notifications
   if (insertedCount > 0) {
-    await processNotifications(topic, scoredFindings);
+    await processNotifications(topic, highQualityFindings);
   }
 
   console.log(

@@ -10,6 +10,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { TopicActions } from "./TopicActions";
 import { DeleteTopicModal } from "./DeleteTopicModal";
+import { ClearFindingsModal } from "./ClearFindingsModal";
 import { RelativeTime } from "@/components/ui/RelativeTime";
 import { ScanNowButton } from "./ScanNowButton";
 import CreateTopicModal from "./CreateTopicModal";
@@ -81,7 +82,18 @@ export default function TopicHeader({
           />
 
           <div className="h-6 w-px bg-border hidden md:block" />
-          <DeleteTopicModal topicId={topic.id} topicName={topic.displayName} />
+
+          <div className="flex items-center gap-2">
+            <ClearFindingsModal
+              topicId={topic.id}
+              topicName={topic.displayName}
+            />
+
+            <DeleteTopicModal
+              topicId={topic.id}
+              topicName={topic.displayName}
+            />
+          </div>
 
           <CreateTopicModal
             topicId={topic.id}

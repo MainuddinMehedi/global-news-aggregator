@@ -98,7 +98,7 @@ export function NotificationsPopover({
           className={`relative h-9 w-9 rounded-xl transition-colors ${
             unreadCount > 0 && isActive
               ? "bg-primary/10 text-primary hover:bg-primary/20"
-              : "text-muted-foreground hover:bg-muted hover:text-foreground"
+              : "text-muted-foreground hover:bg-muted hover:text-primary"
           }`}
           title="Recent findings"
         >
