@@ -13,6 +13,7 @@ interface FindingsListProps {
   topicId: string;
   sourceType: FindingSource | "ALL" | "OTHER";
   sort: "newest" | "oldest" | "relevance";
+  lastScannedAt?: string | null;
 }
 
 export default function FindingsList({
@@ -21,6 +22,7 @@ export default function FindingsList({
   topicId,
   sourceType,
   sort,
+  lastScannedAt,
 }: FindingsListProps) {
   const [findings, setFindings] = useState(initialFindings);
   const [cursor, setCursor] = useState(initialNextCursor);
@@ -97,7 +99,11 @@ export default function FindingsList({
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
         {findings.map((finding) => (
-          <FindingCard key={finding.id} finding={finding} />
+          <FindingCard
+            key={finding.id}
+            finding={finding}
+            lastScannedAt={lastScannedAt}
+          />
         ))}
       </div>
 
@@ -139,17 +145,25 @@ export default function FindingsList({
   );
 }
 
-function FindingCard({ finding }: { finding: TopicFinding }) {
+function FindingCard({
+  finding,
+  lastScannedAt,
+}: {
+  finding: TopicFinding;
+  lastScannedAt?: string | null;
+}) {
+  const isJustScanned =
+    lastScannedAt &&
+    new Date(finding.foundAt).getTime() >=
+      new Date(lastScannedAt).getTime() - 1000 * 60; // Within 1 minute of last scan
+
+  const showNewBadge = !finding.isRead && isJustScanned;
+
   return (
-    <div className="p-8 rounded-2xl border border-secondary bg-secondary/10 hover:border-primary/40 transition-all duration-500 group hover:shadow-2xl hover:shadow-primary/5 hover:-translate-y-0.5 backdrop-blur-sm">
+    <div className="p-8 rounded-2xl border border-secondary bg-secondary/10 hover:border-primary/40 transition-all duration-500 group hover:shadow-2xl hover:shadow-primary/5 hover:-translate-y-0.5 backdrop-blur-sm relative overflow-hidden">
       <div className="flex flex-col md:flex-row items-start justify-between gap-6">
         <div className="space-y-3 flex-1">
           <div className="flex items-center gap-2">
-            {!finding.isRead && (
-              <span className="text-[9px] font-black uppercase tracking-[0.2em] bg-primary text-primary-foreground px-2.5 py-1 rounded-full shadow-[0_0_12px_rgba(var(--primary),0.3)] animate-pulse">
-                New
-              </span>
-            )}
             <span className="text-[9px] font-black uppercase tracking-[0.2em] text-primary bg-primary/10 px-2.5 py-1 rounded-full">
               {finding.sourceType}
             </span>
@@ -169,17 +183,26 @@ function FindingCard({ finding }: { finding: TopicFinding }) {
             </p>
           )}
         </div>
-        {finding.relevanceScore && (
-          <div className="flex flex-col items-start md:items-end shrink-0 p-4 rounded-2xl bg-secondary/10 border border-secondary/20 md:min-w-[100px]">
-            <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/40 mb-1">
-              Signal
+
+        <div className="flex flex-col items-start md:items-end gap-3 shrink-0">
+          {showNewBadge && (
+            <span className="text-[9px] font-black uppercase tracking-[0.2em] bg-primary text-primary-foreground px-2.5 py-1 rounded-full shadow-[0_0_12px_rgba(var(--primary),0.4)] animate-pulse">
+              New
             </span>
-            <div className="text-3xl font-black text-primary font-mono leading-none tracking-tighter">
-              {(finding.relevanceScore * 100).toFixed(0)}
-              <span className="text-[10px] ml-0.5 opacity-50">%</span>
+          )}
+
+          {finding.relevanceScore && (
+            <div className="flex flex-col items-start md:items-end p-4 rounded-2xl bg-secondary/10 border border-secondary/20 md:min-w-[100px]">
+              <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/40 mb-1">
+                Signal
+              </span>
+              <div className="text-3xl font-black text-primary font-mono leading-none tracking-tighter">
+                {(finding.relevanceScore * 100).toFixed(0)}
+                <span className="text-[10px] ml-0.5 opacity-50">%</span>
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );

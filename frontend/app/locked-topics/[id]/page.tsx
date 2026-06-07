@@ -53,6 +53,7 @@ export default async function TopicDetailPage({
           topicId={id}
           sourceType={source as FindingSource | "ALL"}
           sort={sort as "newest" | "oldest" | "relevance"}
+          lastScannedAt={topic.lastScannedAt?.toString()}
         />
       </div>
     </div>
