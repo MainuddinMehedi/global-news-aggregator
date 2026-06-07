@@ -49,12 +49,13 @@ export async function DELETE(
       where: { topicId: id },
     });
 
-    // 2. Reset topic metadata (matchCount)
+    // 2. Reset topic metadata (matchCount and lastScannedAt)
     await prisma.lockedTopic.update({
       where: { id },
       data: {
         matchCount: 0,
         lastMatchedAt: null,
+        lastScannedAt: null,
       },
     });
 

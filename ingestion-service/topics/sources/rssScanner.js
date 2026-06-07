@@ -43,7 +43,7 @@ function buildFeedUrl(topic, sourceConfig) {
  * @returns {Array<object>} Normalized finding objects
  */
 export async function scanRss(topic, sourceConfig, options = {}) {
-  const { limit = MAX_RESULTS } = options;
+  const { limit = MAX_RESULTS, fullScan = false } = options;
   const feedUrl = buildFeedUrl(topic, sourceConfig);
 
   if (!feedUrl) {
@@ -58,8 +58,8 @@ export async function scanRss(topic, sourceConfig, options = {}) {
       ? "Google News"
       : sourceConfig.name || "Custom RSS";
 
-  const sinceDate = topic.lastScannedAt;
-  let sinceStr = "";
+  const sinceDate = fullScan ? null : topic.lastScannedAt;
+  let sinceStr = fullScan ? " (full scan)" : "";
   if (sinceDate) {
     const months = [
       "Jan",
@@ -95,9 +95,9 @@ export async function scanRss(topic, sourceConfig, options = {}) {
       if (count >= limit) break;
 
       // 1. Filter by sinceDate if this is an incremental scan
-      if (topic.lastScannedAt && item.publishedAt) {
+      if (!fullScan && sinceDate && item.publishedAt) {
         const pubDate = new Date(item.publishedAt);
-        const lastScan = new Date(topic.lastScannedAt);
+        const lastScan = new Date(sinceDate);
         if (pubDate <= lastScan) {
           // Skip older articles
           skipped++;
