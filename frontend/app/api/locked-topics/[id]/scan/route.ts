@@ -9,7 +9,6 @@ export async function POST(
   try {
     const { id } = await params;
 
-    // Spawn the background worker (processTopics.js) detached from this request
     const workerPath = path.join(
       process.cwd(),
       "..",
@@ -17,25 +16,43 @@ export async function POST(
       "processTopics.js",
     );
 
-    console.log(`[Scan Route] Spawning background worker for topic ${id}...`);
-    console.log(`[Scan Route] Worker Path: ${workerPath}`);
+    console.log(`[Scan Route] Starting scan for topic ${id}...`);
 
     const repoRoot = path.join(process.cwd(), "..");
 
+    // For manual "Scan Now", we wait for the process to finish to return the count
     const child = spawn(process.execPath, [workerPath, `--topic-id=${id}`], {
-      detached: true,
-      stdio: "ignore",
       cwd: repoRoot,
     });
 
-    // Unref allows the parent (Next.js server) to exit independently of the child
-    child.unref();
+    let output = "";
+    child.stdout.on("data", (data) => {
+      output += data.toString();
+    });
 
-    return NextResponse.json({ id, status: "initiated" });
+    child.stderr.on("data", (data) => {
+      console.error(`[Scan Worker Error] ${data}`);
+    });
+
+    const exitCode = await new Promise((resolve) => {
+      child.on("close", resolve);
+    });
+
+    if (exitCode !== 0) {
+      throw new Error(`Scan worker exited with code ${exitCode}`);
+    }
+
+    // Parse output for "Found X new findings total"
+    const match = output.match(/Found (\d+) new findings total/);
+    const count = match ? parseInt(match[1]) : 0;
+
+    console.log(`[Scan Route] Scan finished. Found ${count} new findings.`);
+
+    return NextResponse.json({ id, status: "completed", count });
   } catch (error) {
-    console.error("Scan trigger failed:", error);
+    console.error("Scan failed:", error);
     return NextResponse.json(
-      { error: "Failed to trigger scan" },
+      { error: "Failed to perform scan" },
       { status: 500 },
     );
   }
