@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { PrismaPg } from "@prisma/adapter-pg";
-import { PrismaClient } from "../../shared/prisma-client/index.js";
+import { PrismaClient } from "@news/db";
 import pg from "pg";
 
 // Initialize a pg pool with the database connection string
