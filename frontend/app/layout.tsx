@@ -13,6 +13,8 @@ import FeedSkeleton from "@/components/Feed/FeedSkeleton";
 import ChatFAB from "@/components/chat/ChatFAB";
 import ChatSidebar from "@/components/chat/ChatSidebar";
 
+import { Toaster } from "@/components/ui/sonner";
+
 const figtree = Figtree({ subsets: ["latin"], variable: "--font-sans" });
 
 const inter = Inter({
@@ -76,6 +78,8 @@ export default function RootLayout({
             <ChatFAB />
             <ChatSidebar />
           </Suspense>
+
+          <Toaster />
         </Providers>
       </body>
     </html>

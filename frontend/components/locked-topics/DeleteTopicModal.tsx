@@ -144,7 +144,8 @@ export function DeleteTopicModal({
         <Button
           variant="ghost"
           size="icon"
-          className="text-destructive hover:bg-destructive/10 hover:text-destructive transition-colors"
+          className="rounded-xl text-destructive hover:bg-destructive/10 hover:text-destructive transition-colors"
+          title="Delete Topic and generate summary"
         >
           <HugeiconsIcon icon={Delete01Icon} size={18} />
         </Button>

@@ -140,8 +140,10 @@ export default function FindingsList({
 }
 
 function FindingCard({ finding }: { finding: TopicFinding }) {
+  const showNewBadge = !finding.isRead;
+
   return (
-    <div className="p-8 rounded-2xl border border-secondary bg-secondary/10 hover:border-primary/40 transition-all duration-500 group hover:shadow-2xl hover:shadow-primary/5 hover:-translate-y-0.5 backdrop-blur-sm">
+    <div className="p-8 rounded-2xl border border-secondary bg-secondary/10 hover:border-primary/40 transition-all duration-500 group hover:shadow-2xl hover:shadow-primary/5 hover:-translate-y-0.5 backdrop-blur-sm relative overflow-hidden">
       <div className="flex flex-col md:flex-row items-start justify-between gap-6">
         <div className="space-y-3 flex-1">
           <div className="flex items-center gap-2">
@@ -164,17 +166,26 @@ function FindingCard({ finding }: { finding: TopicFinding }) {
             </p>
           )}
         </div>
-        {finding.relevanceScore && (
-          <div className="flex flex-col items-start md:items-end shrink-0 p-4 rounded-2xl bg-secondary/10 border border-secondary/20 md:min-w-[100px]">
-            <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/40 mb-1">
-              Signal
+
+        <div className="flex flex-col items-start md:items-end gap-3 shrink-0">
+          {showNewBadge && (
+            <span className="text-[9px] font-black uppercase tracking-[0.2em] bg-primary text-primary-foreground px-2.5 py-1 rounded-full shadow-[0_0_12px_rgba(var(--primary),0.4)] animate-pulse">
+              New
             </span>
-            <div className="text-3xl font-black text-primary font-mono leading-none tracking-tighter">
-              {(finding.relevanceScore * 100).toFixed(0)}
-              <span className="text-[10px] ml-0.5 opacity-50">%</span>
+          )}
+
+          {finding.relevanceScore && (
+            <div className="flex flex-col items-start md:items-end p-4 rounded-2xl bg-secondary/10 border border-secondary/20 md:min-w-[100px]">
+              <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/40 mb-1">
+                Signal
+              </span>
+              <div className="text-3xl font-black text-primary font-mono leading-none tracking-tighter">
+                {(finding.relevanceScore * 100).toFixed(0)}
+                <span className="text-[10px] ml-0.5 opacity-50">%</span>
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );

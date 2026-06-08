@@ -17,20 +17,39 @@ export function ScanNowButton({ topicId }: ScanNowButtonProps) {
 
   const handleScanNow = async () => {
     setIsScanning(true);
-    toast.info("Scan initiated. This may take a few moments...");
+    const toastId = toast.info(
+      "Scan initiated. This may take a few moments...",
+      {
+        duration: Infinity,
+      },
+    );
 
     try {
       const res = await fetch(`/api/locked-topics/${topicId}/scan`, {
         method: "POST",
       });
 
-      if (!res.ok) throw new Error("Scan failed to start");
+      if (!res.ok) throw new Error("Scan failed");
 
-      toast.success("Scan completed in the background.");
+      const data = await res.json();
+      const count = data.count || 0;
+
+      if (count > 0) {
+        toast.success(`Scan completed! Found ${count} new items.`, {
+          id: toastId,
+          duration: 5000,
+        });
+      } else {
+        toast.info("No new items found. We'll keep looking periodically!", {
+          id: toastId,
+          duration: 5000,
+        });
+      }
+
       // Refresh the page to show new findings if any
       router.refresh();
     } catch (err) {
-      toast.error("Failed to initiate scan.");
+      toast.error("Failed to complete scan.", { id: toastId });
     } finally {
       setIsScanning(false);
     }

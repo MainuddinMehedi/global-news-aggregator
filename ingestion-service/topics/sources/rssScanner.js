@@ -5,6 +5,7 @@
  */
 
 import fetchRSSStream from "../../sources/rss.js";
+import { parseQuery } from "../utils/parseQuery.js";
 
 const MAX_RESULTS = 100;
 
@@ -42,7 +43,7 @@ function buildFeedUrl(topic, sourceConfig) {
  * @returns {Array<object>} Normalized finding objects
  */
 export async function scanRss(topic, sourceConfig, options = {}) {
-  const { limit = MAX_RESULTS } = options;
+  const { limit = MAX_RESULTS, fullScan = false } = options;
   const feedUrl = buildFeedUrl(topic, sourceConfig);
 
   if (!feedUrl) {
@@ -57,8 +58,8 @@ export async function scanRss(topic, sourceConfig, options = {}) {
       ? "Google News"
       : sourceConfig.name || "Custom RSS";
 
-  const sinceDate = topic.lastScannedAt;
-  let sinceStr = "";
+  const sinceDate = fullScan ? null : topic.lastScannedAt;
+  let sinceStr = fullScan ? " (full scan)" : "";
   if (sinceDate) {
     const months = [
       "Jan",
@@ -84,18 +85,35 @@ export async function scanRss(topic, sourceConfig, options = {}) {
   const findings = [];
   let count = 0;
   let skipped = 0;
+  let keywordFiltered = 0;
+
+  const queryGroups = sourceConfig.type === "rss" ? parseQuery(topic) : [];
 
   try {
     for await (const item of fetchRSSStream(sourceName, null, feedUrl)) {
       if (count >= limit) break;
 
-      // Filter by sinceDate if this is an incremental scan
-      if (topic.lastScannedAt && item.publishedAt) {
+      // 1. Filter by sinceDate if this is an incremental scan
+      if (!fullScan && sinceDate && item.publishedAt) {
         const pubDate = new Date(item.publishedAt);
-        const lastScan = new Date(topic.lastScannedAt);
+        const lastScan = new Date(sinceDate);
         if (pubDate <= lastScan) {
           // Skip older articles
           skipped++;
+          continue;
+        }
+      }
+
+      // 2. Keyword Pre-filtering for Custom RSS
+      if (sourceConfig.type === "rss" && queryGroups.length > 0) {
+        const textToSearch =
+          `${item.title} ${item.contentSnippet || ""}`.toLowerCase();
+        const matchesKeywords = queryGroups.some((group) =>
+          group.every((term) => textToSearch.includes(term.toLowerCase())),
+        );
+
+        if (!matchesKeywords) {
+          keywordFiltered++;
           continue;
         }
       }
@@ -112,8 +130,10 @@ export async function scanRss(topic, sourceConfig, options = {}) {
       count++;
     }
 
+    const filteredSuffix =
+      keywordFiltered > 0 ? `, ${keywordFiltered} filtered by keywords` : "";
     console.log(
-      `   📊 [rssScanner] Found ${findings.length} new matches from ${sourceName} (${skipped} skipped as old/duplicate)`,
+      `   📊 [rssScanner] Found ${findings.length} new matches from ${sourceName} (${skipped} skipped as old/duplicate${filteredSuffix})`,
     );
   } catch (err) {
     console.error(

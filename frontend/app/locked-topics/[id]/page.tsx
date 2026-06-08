@@ -7,6 +7,7 @@ import { notFound } from "next/navigation";
 import TopicHeader from "@/components/locked-topics/TopicHeader";
 import FindingsFilter from "@/components/locked-topics/FindingsFilter";
 import FindingsList from "@/components/locked-topics/FindingsList";
+import { MarkAsRead } from "@/components/locked-topics/MarkAsRead";
 import { FindingSource } from "@/types/lockedTopic";
 
 interface TopicDetailPageProps {
@@ -38,6 +39,7 @@ export default async function TopicDetailPage({
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-12 space-y-12">
+      <MarkAsRead topicId={id} />
       <TopicHeader topic={topic} unreadCount={unreadCount} />
 
       <div className="space-y-8">

@@ -1,6 +1,11 @@
 {
   "name": "global-news-aggregator",
   "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "shared/prisma-client"
+  ],
   "description": "",
   "main": "index.js",
   "directories": {

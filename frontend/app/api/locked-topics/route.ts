@@ -10,6 +10,7 @@ export async function POST(req: NextRequest) {
       userContext,
       aiRefinedQuery,
       aiQuerySummary,
+      conceptualKeywords,
       sources,
       notifyEnabled,
     } = body;
@@ -20,6 +21,7 @@ export async function POST(req: NextRequest) {
         userContext,
         aiRefinedQuery,
         aiQuerySummary,
+        conceptualKeywords: conceptualKeywords || [],
         sources: sources || [],
         notifyEnabled: notifyEnabled ?? false,
         notifyMode: "DIGEST",

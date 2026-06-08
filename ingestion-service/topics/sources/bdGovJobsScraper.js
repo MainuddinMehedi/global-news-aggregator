@@ -21,7 +21,7 @@ const USER_AGENT =
 function detectGrade(text) {
   const content = text.toLowerCase();
 
-  // Grade 9 markers (Top priority)
+  // Grade 9 markers
   if (
     content.includes("৯ম গ্রেড") ||
     content.includes("9th grade") ||

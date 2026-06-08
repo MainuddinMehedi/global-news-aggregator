@@ -2,9 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   cacheComponents: true,
-  turbopack: {
-    root: process.cwd(),
-  },
+  serverExternalPackages: ["@prisma/client"],
 };
 
 export default nextConfig;

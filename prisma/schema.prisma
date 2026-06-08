@@ -1,5 +1,6 @@
 generator client {
   provider = "prisma-client-js"
+  output   = "../shared/prisma-client"
 }
 
 datasource db {
@@ -82,14 +83,14 @@ model AiUsage {
 }
 
 model ChatSession {
-  id           String        @id @default(uuid())
+  id           String   @id @default(uuid())
   userId       String?
-  title        String        @default("New Chat")
-  model        String        @default("groq/compound-mini")
-  responseMode String        @default("descriptive")
-  isArchived   Boolean       @default(false)
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  title        String   @default("New Chat")
+  model        String   @default("groq/compound-mini")
+  responseMode String   @default("descriptive")
+  isArchived   Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   messages ChatMessage[]
   contexts ChatContext[]
@@ -184,6 +185,7 @@ model LockedTopic {
   userContext         String     @db.Text
   aiRefinedQuery      String     @db.Text
   aiQuerySummary      String     @db.Text
+  conceptualKeywords  Json? // Array of keyword groups for broad pre-filtering
   liveWebSummary      String?    @db.Text
   sources             Json // SourceConfig[]
   searchBeyondSources Boolean    @default(true)

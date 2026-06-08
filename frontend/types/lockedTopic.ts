@@ -42,6 +42,7 @@ export interface LockedTopic {
   userContext: string;
   aiRefinedQuery: string;
   aiQuerySummary: string;
+  conceptualKeywords?: string[][];
   liveWebSummary: string | null;
   sources: SourceConfig[];
   searchBeyondSources: boolean;
@@ -64,6 +65,7 @@ export interface CreateTopicData {
   sources: SourceConfig[];
   aiRefinedQuery: string;
   aiQuerySummary: string;
+  conceptualKeywords?: string[][];
   suggestedSources: unknown[];
 }
 

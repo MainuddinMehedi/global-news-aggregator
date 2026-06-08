@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getFindings } from "@/queries/topicFindings";
 import { FindingSource } from "@/types/lockedTopic";
+import prisma from "@/lib/prisma";
+import { revalidateTag } from "next/cache";
 
 export async function GET(
   req: NextRequest,
@@ -30,6 +32,42 @@ export async function GET(
     console.error("Fetch Findings Error:", error);
     return NextResponse.json(
       { error: "Failed to fetch findings" },
+      { status: 500 },
+    );
+  }
+}
+
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  try {
+    const { id } = await params;
+
+    // 1. Delete all findings for this topic
+    await prisma.topicFinding.deleteMany({
+      where: { topicId: id },
+    });
+
+    // 2. Reset topic metadata (matchCount and lastScannedAt)
+    await prisma.lockedTopic.update({
+      where: { id },
+      data: {
+        matchCount: 0,
+        lastMatchedAt: null,
+        lastScannedAt: null,
+      },
+    });
+
+    // 3. Revalidate cache
+    revalidateTag(`locked-topic-${id}`, "max");
+    revalidateTag(`topic-findings-${id}`, "max");
+
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    console.error("Clear Findings Error:", error);
+    return NextResponse.json(
+      { error: "Failed to clear findings" },
       { status: 500 },
     );
   }

@@ -14,7 +14,7 @@
 
 import * as cheerio from "cheerio";
 import hashSnippet from "../../utils/hashSnippet.js";
-import { prisma } from "../../db/prisma.js";
+import { parseQuery } from "../utils/parseQuery.js";
 
 const USER_AGENT = "global-news-aggregator/1.0 (LockedTopics Webpage Monitor)";
 
@@ -39,7 +39,7 @@ function extractCleanText(html) {
  * @param {object} topic - The LockedTopic record
  * @param {object} sourceConfig - The specific source config { type: 'webpage', url, lastSeenHash, label }
  * @param {object} options
- * @returns {Array<object>} Normalized findings
+ * @returns {object} { findings: Array, metadata: object }
  */
 export async function scanWebpage(topic, sourceConfig, options = {}) {
   const { url, label } = sourceConfig;
@@ -64,60 +64,48 @@ export async function scanWebpage(topic, sourceConfig, options = {}) {
     // 1. Check if content has changed since last scan
     if (sourceConfig.lastSeenHash && sourceConfig.lastSeenHash === newHash) {
       console.log(`   ⚪ [webpageScanner] No changes detected for ${url}.`);
-      return [];
+      return { findings: [], metadata: {} };
     }
 
     console.log(
       `   ✨ [webpageScanner] Change detected! Analyzing content for relevance...`,
     );
 
-    // 2. Update the hash in the topic's source config immediately to prevent repeat alerts
-    // We update the JSON blob by mapping over sources
-    const updatedSources = topic.sources.map((s) => {
-      if (s.url === url && s.type === "webpage") {
-        return { ...s, lastSeenHash: newHash };
-      }
-      return s;
-    });
-
-    await prisma.lockedTopic.update({
-      where: { id: topic.id },
-      data: { sources: updatedSources },
-    });
-
-    // 3. Simple Keyword Relevance Check
+    // 2. Simple Keyword Relevance Check
     const contentLower = cleanText.toLowerCase();
-    const queryTerms = (topic.aiRefinedQuery || topic.displayName)
-      .toLowerCase()
-      .split(/\s+/)
-      .filter((t) => t.length > 2);
+    const groups = parseQuery(topic);
 
-    const matches = queryTerms.every((term) => contentLower.includes(term));
+    const matches = groups.some((group) =>
+      group.every((term) => contentLower.includes(term.toLowerCase())),
+    );
 
     if (!matches) {
       console.log(
         `   ⚪ [webpageScanner] Page changed, but doesn't match query terms.`,
       );
-      return [];
+      // We still update the hash to acknowledge we've seen this change
+      return { findings: [], metadata: { newHash, url } };
     }
 
-    // 4. Return as a finding
-    // For a webpage, the "title" is often the <title> tag or the provided label
+    // 3. Return as a finding
     const $ = cheerio.load(html);
     const pageTitle = $("title").text().trim() || sourceName;
 
-    return [
-      {
-        title: `[Update] ${pageTitle}`,
-        sourceUrl: url,
-        sourceName: sourceName,
-        summary: cleanText.slice(0, 400) + "...",
-        rawArticleId: null,
-        sourceType: "WEBPAGE",
-      },
-    ];
+    return {
+      findings: [
+        {
+          title: `[Update] ${pageTitle}`,
+          sourceUrl: url,
+          sourceName: sourceName,
+          summary: cleanText.slice(0, 400) + "...",
+          rawArticleId: null,
+          sourceType: "WEBPAGE",
+        },
+      ],
+      metadata: { newHash, url },
+    };
   } catch (err) {
     console.error(`❌ [webpageScanner] Failed to fetch ${url}:`, err.message);
-    return [];
+    return { findings: [], metadata: {} };
   }
 }

@@ -46,68 +46,63 @@ export async function runScannersForTopic(topic, options = {}) {
   }
 
   // 2. Iterate through configured external sources
+  const metadataUpdates = {};
+  const sourceUpdates = [];
+
   for (const sourceConfig of sources) {
     if (!sourceConfig.enabled) continue;
 
     try {
+      let result;
       switch (sourceConfig.type) {
         case "google_news":
         case "rss":
-          const rssFindings = await scanRss(topic, sourceConfig, options);
-          allFindings.push(...rssFindings);
+          result = await scanRss(topic, sourceConfig, options);
           break;
         case "brave":
-          const braveFindings = await scanBrave(topic, sourceConfig, options);
-          allFindings.push(...braveFindings);
+          result = await scanBrave(topic, sourceConfig, options);
           break;
         case "reddit":
-          const redditFindings = await scanReddit(topic, sourceConfig, options);
-          allFindings.push(...redditFindings);
+          result = await scanReddit(topic, sourceConfig, options);
           break;
         case "github":
-          const githubFindings = await scanGithub(topic, sourceConfig, options);
-          allFindings.push(...githubFindings);
+          result = await scanGithub(topic, sourceConfig, options);
           break;
         case "youtube":
-          const youtubeFindings = await scanYoutube(
-            topic,
-            sourceConfig,
-            options,
-          );
-          allFindings.push(...youtubeFindings);
+          result = await scanYoutube(topic, sourceConfig, options);
           break;
         case "bd_gov_jobs":
-          const bdGovJobsFindings = await scanBdGovJobs(
-            topic,
-            sourceConfig,
-            options,
-          );
-          allFindings.push(...bdGovJobsFindings);
+          result = await scanBdGovJobs(topic, sourceConfig, options);
           break;
         case "company_careers":
-          const companyCareersFindings = await scanCompanyCareers(
-            topic,
-            sourceConfig,
-            options,
-          );
-          allFindings.push(...companyCareersFindings);
+          result = await scanCompanyCareers(topic, sourceConfig, options);
           break;
         case "internal_db":
-          // Handled above to ensure it runs even if only searchBeyondSources is enabled
-          break;
+          // Handled above
+          continue;
         case "scrape":
         case "webpage":
-          const webpageFindings = await scanWebpage(
-            topic,
-            sourceConfig,
-            options,
-          );
-          allFindings.push(...webpageFindings);
+          result = await scanWebpage(topic, sourceConfig, options);
           break;
         default:
           console.warn(
             `⚠️ [orchestrator] Unknown source type: ${sourceConfig.type}`,
           );
+          continue;
+      }
+
+      // Handle both Array and { findings, metadata } return shapes
+      const findings = Array.isArray(result) ? result : result.findings || [];
+      const metadata = !Array.isArray(result) ? result.metadata || {} : {};
+
+      allFindings.push(...findings);
+
+      // Collect metadata for batch update at the end
+      if (metadata.liveWebSummary) {
+        metadataUpdates.liveWebSummary = metadata.liveWebSummary;
+      }
+      if (metadata.newHash) {
+        sourceUpdates.push({ url: metadata.url, newHash: metadata.newHash });
       }
     } catch (err) {
       console.error(
@@ -115,6 +110,26 @@ export async function runScannersForTopic(topic, options = {}) {
         err.message,
       );
     }
+  }
+
+  // Apply metadata updates (summaries, hashes) to the topic record
+  if (Object.keys(metadataUpdates).length > 0 || sourceUpdates.length > 0) {
+    const data = { ...metadataUpdates };
+
+    if (sourceUpdates.length > 0) {
+      const updatedSources = sources.map((s) => {
+        const update = sourceUpdates.find(
+          (u) => u.url === s.url && s.type === "webpage",
+        );
+        return update ? { ...s, lastSeenHash: update.newHash } : s;
+      });
+      data.sources = updatedSources;
+    }
+
+    await prisma.lockedTopic.update({
+      where: { id: topic.id },
+      data,
+    });
   }
 
   if (allFindings.length === 0) {
@@ -180,9 +195,22 @@ export async function runScannersForTopic(topic, options = {}) {
   // 4. Relevance Scoring
   const scoredFindings = await scoreFindings(topic, newFindings);
 
-  // 5. Bulk Insert
+  // 5. Filter by Minimum Relevance (e.g., 0.5)
+  const MIN_RELEVANCE = 0.5;
+  const highQualityFindings = scoredFindings.filter(
+    (f) => f.relevanceScore === null || f.relevanceScore >= MIN_RELEVANCE,
+  );
+
+  const discardedCount = scoredFindings.length - highQualityFindings.length;
+  if (discardedCount > 0) {
+    console.log(
+      `   🗑️ [orchestrator] Discarded ${discardedCount} findings due to low relevance score (< ${MIN_RELEVANCE}).`,
+    );
+  }
+
+  // 6. Bulk Insert
   let insertedCount = 0;
-  for (const finding of scoredFindings) {
+  for (const finding of highQualityFindings) {
     try {
       await prisma.topicFinding.create({
         data: {
@@ -203,7 +231,7 @@ export async function runScannersForTopic(topic, options = {}) {
     }
   }
 
-  // 6. Update Topic Metadata
+  // 7. Update Topic Metadata
   const updateData = { lastScannedAt: new Date() };
   if (insertedCount > 0) {
     updateData.matchCount = { increment: insertedCount };
@@ -215,7 +243,7 @@ export async function runScannersForTopic(topic, options = {}) {
     data: updateData,
   });
 
-  // 7. Trigger Revalidation
+  // 8. Trigger Revalidation
   if (insertedCount > 0) {
     try {
       const revalidateUrl = `${process.env.NEXT_PUBLIC_API_URL}/revalidate?tag=topic-findings-${topic.id}&secret=${process.env.REVALIDATE_SECRET}`;
@@ -231,9 +259,9 @@ export async function runScannersForTopic(topic, options = {}) {
     }
   }
 
-  // 8. Send Notifications
+  // 9. Send Notifications
   if (insertedCount > 0) {
-    await processNotifications(topic, scoredFindings);
+    await processNotifications(topic, highQualityFindings);
   }
 
   console.log(
