@@ -4,8 +4,6 @@
  * Used by the scanner orchestrator for Locked Topics.
  */
 
-import { prisma } from "../../db/prisma.js";
-
 const MAX_RESULTS = 20;
 
 /**
@@ -15,7 +13,7 @@ const MAX_RESULTS = 20;
  * @param {object} sourceConfig - The specific source to scan (from topic.sources array)
  * @param {object} options
  * @param {number} options.limit - Max results to return
- * @returns {Array<object>} Normalized finding objects
+ * @returns {object} { findings: Array, metadata: object }
  */
 export async function scanBrave(topic, sourceConfig, options = {}) {
   const { limit = MAX_RESULTS } = options;
@@ -25,7 +23,7 @@ export async function scanBrave(topic, sourceConfig, options = {}) {
     console.warn(
       "⚠️ [braveScanner] BRAVE_API_KEY is not set. Skipping Brave search.",
     );
-    return [];
+    return { findings: [], metadata: {} };
   }
 
   const query = topic.aiRefinedQuery || topic.displayName;
@@ -34,6 +32,7 @@ export async function scanBrave(topic, sourceConfig, options = {}) {
   );
 
   const findings = [];
+  const metadata = {};
 
   // 1. Fetch AI Summary
   let liveWebSummary = null;
@@ -77,17 +76,7 @@ export async function scanBrave(topic, sourceConfig, options = {}) {
 
   if (liveWebSummary) {
     console.log(`   ✨ [braveScanner] Successfully retrieved AI summary.`);
-    try {
-      await prisma.lockedTopic.update({
-        where: { id: topic.id },
-        data: { liveWebSummary },
-      });
-    } catch (err) {
-      console.error(
-        "⚠️ [braveScanner] Failed to update topic with AI summary:",
-        err.message,
-      );
-    }
+    metadata.liveWebSummary = liveWebSummary;
   }
 
   // 2. Fetch News Findings
@@ -139,5 +128,5 @@ export async function scanBrave(topic, sourceConfig, options = {}) {
     );
   }
 
-  return findings;
+  return { findings, metadata };
 }
