@@ -15,7 +15,7 @@ import {
   ArrowUpRight01Icon,
   InformationCircleIcon,
 } from "@hugeicons/core-free-icons";
-import { detectSourceType } from "@/lib/sourceDetection";
+import { detectSourceType, generateSourceLabel } from "@/lib/sourceDetection";
 import { toast } from "sonner";
 import { CreateTopicData, SourceConfig } from "@/types/lockedTopic";
 
@@ -69,7 +69,7 @@ export default function Step2Sources({
     const exists = data.sources.find((s) => s.url === customUrl);
 
     if (!exists) {
-      const label = new URL(customUrl).hostname.replace("www.", "");
+      const label = generateSourceLabel(customUrl, type);
       setData({
         ...data,
         sources: [
