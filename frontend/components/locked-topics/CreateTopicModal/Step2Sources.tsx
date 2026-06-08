@@ -10,6 +10,7 @@ import {
   GoogleIcon,
   Search01Icon,
   RedditIcon,
+  Github01Icon,
   Add01Icon,
   LinkSquare01Icon,
   ArrowUpRight01Icon,
@@ -33,6 +34,48 @@ export default function Step2Sources({
   onPrev,
 }: Step2Props) {
   const [customUrl, setCustomUrl] = useState("");
+
+  const existingGithub = data.sources.find((s) => s.type === "github");
+  const [githubUrl, setGithubUrl] = useState(existingGithub?.url || "");
+
+  const isGithubEnabled = data.sources.some(
+    (s) => s.type === "github",
+  );
+
+  const toggleGithub = (enabled: boolean) => {
+    if (enabled) {
+      setData({
+        ...data,
+        sources: [
+          ...data.sources,
+          {
+            id: "github",
+            type: "github",
+            label: "GitHub",
+            enabled: true,
+            url: githubUrl || undefined,
+          },
+        ],
+      });
+    } else {
+      setData({
+        ...data,
+        sources: data.sources.filter((s) => s.type !== "github"),
+      });
+    }
+  };
+
+  const updateGithubUrl = (url: string) => {
+    setGithubUrl(url);
+    if (isGithubEnabled) {
+      setData({
+        ...data,
+        sources: data.sources.map((s) =>
+          s.type === "github" ? { ...s, url: url || undefined } : s,
+        ),
+      });
+    }
+  };
 
   const toggleSource = (type: SourceConfig["type"], label: string) => {
     const exists = data.sources.find((s) => s.type === type && !s.url);
@@ -128,6 +171,26 @@ export default function Step2Sources({
             enabled={isSourceEnabled("reddit")}
             onToggle={() => toggleSource("reddit", "Reddit")}
           />
+          <SourceToggle
+            label="GitHub"
+            icon={Github01Icon}
+            enabled={isGithubEnabled}
+            onToggle={() => toggleGithub(!isGithubEnabled)}
+          />
+          {isGithubEnabled && (
+            <div className="ml-4 p-3 rounded-xl border border-primary/20 bg-primary/5 space-y-2">
+              <Input
+                placeholder="Paste GitHub repo URL (optional)"
+                value={githubUrl}
+                onChange={(e) => updateGithubUrl(e.target.value)}
+                className="bg-secondary/10 border-secondary rounded-xl"
+              />
+              <p className="text-[10px] text-muted-foreground/70 leading-relaxed">
+                Enter a URL like <span className="font-mono text-primary/80">https://github.com/facebook/react</span> to track that repo&apos;s releases and merged PRs.{" "}
+                Leave blank to search GitHub broadly for repos and merged PRs matching your topic.
+              </p>
+            </div>
+          )}
         </div>
       </div>
 

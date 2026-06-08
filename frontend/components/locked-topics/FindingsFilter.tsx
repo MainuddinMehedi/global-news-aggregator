@@ -34,24 +34,35 @@ export default function FindingsFilter({
     router.push(`?${params.toString()}`, { scroll: false });
   };
 
-  // Generate dynamic source tabs based on tracker sources
+  // Maps each source config type to its corresponding FindingSource and display label
+  const sourceTypeToTab: Record<string, { value: string; label: string }> = {
+    internal_db: { value: "ARTICLE", label: "Internal DB" },
+    google_news: { value: "GOOGLE", label: "Google News" },
+    brave: { value: "BRAVE", label: "Brave Search" },
+    reddit: { value: "REDDIT", label: "Reddit" },
+    github: { value: "GITHUB", label: "GitHub" },
+    youtube: { value: "RSS", label: "YouTube" },
+    webpage: { value: "WEBPAGE", label: "Webpage" },
+    scrape: { value: "SCRAPE", label: "Scrape" },
+    bd_gov_jobs: { value: "BD_GOV_JOBS", label: "BD Gov Jobs" },
+    company_careers: { value: "COMPANY_CAREERS", label: "Company Careers" },
+  };
+
+  // Generate tabs dynamically from enabled sources
   const sourceTabs = [{ value: "ALL", label: "All Sources" }];
+  const addedTabs = new Set<string>();
 
-  const hasInternal = sources.some((s) => s.type === "internal_db");
-  const hasGoogle = sources.some((s) => s.type === "google_news");
-  const hasBrave = sources.some((s) => s.type === "brave");
-  const hasReddit = sources.some((s) => s.type === "reddit");
+  for (const source of sources) {
+    const tab = sourceTypeToTab[source.type];
+    if (tab && !addedTabs.has(tab.value)) {
+      sourceTabs.push(tab);
+      addedTabs.add(tab.value);
+    }
+  }
 
-  if (hasInternal) sourceTabs.push({ value: "ARTICLE", label: "Internal DB" });
-  if (hasGoogle) sourceTabs.push({ value: "GOOGLE", label: "Google News" });
-  if (hasBrave) sourceTabs.push({ value: "BRAVE", label: "Brave Search" });
-  if (hasReddit) sourceTabs.push({ value: "REDDIT", label: "Reddit" });
-
-  const hasOtherSources = sources.some(
-    (s) => !["internal_db", "google_news", "brave", "reddit"].includes(s.type),
-  );
-
-  if (hasOtherSources) {
+  // Any source type not in the mapping falls under "Others"
+  const hasUnmappedSource = sources.some((s) => !sourceTypeToTab[s.type]);
+  if (hasUnmappedSource) {
     sourceTabs.push({ value: "OTHER", label: "Others" });
   }
 

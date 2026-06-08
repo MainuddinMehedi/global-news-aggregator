@@ -1,24 +1,13 @@
-/**
- * GitHub Release Scanner — monitors specific repositories for new releases.
- *
- * This scanner uses the GitHub REST API to fetch releases,
- * checks if they are newer than the last scan, and filters
- * them based on the topic's query.
- */
+import { parseQuery } from "../utils/parseQuery.js";
 
 const USER_AGENT = 'global-news-aggregator/1.0 (LockedTopics GitHub Monitor)';
 
-/**
- * Extracts owner and repo from various GitHub URL formats.
- * e.g., "https://github.com/facebook/react" -> { owner: "facebook", repo: "react" }
- */
 function parseGithubUrl(url) {
   try {
-    const cleanUrl = url.replace(/\/$/, ""); // Remove trailing slash
+    const cleanUrl = url.replace(/\/$/, "");
     const parts = cleanUrl.split("/");
     const repo = parts.pop();
     const owner = parts.pop();
-
     if (!owner || !repo) return null;
     return { owner, repo };
   } catch (err) {
@@ -26,90 +15,191 @@ function parseGithubUrl(url) {
   }
 }
 
-/**
- * Scan a GitHub repository for new releases.
- *
- * @param {object} topic - The LockedTopic record
- * @param {object} sourceConfig - { type: 'github', url, label }
- * @param {object} options
- * @returns {Array<object>} Normalized findings
- */
+function getHeaders() {
+  const headers = {
+    'User-Agent': USER_AGENT,
+    'Accept': 'application/vnd.github.v3+json'
+  };
+  if (process.env.GITHUB_TOKEN) {
+    headers['Authorization'] = `token ${process.env.GITHUB_TOKEN}`;
+  }
+  return headers;
+}
+
+function isRelevant(topic, content) {
+  const groups = parseQuery(topic);
+  if (groups.length === 0) return true;
+  const contentLower = content.toLowerCase();
+  return groups.some(group =>
+    group.every(term => contentLower.includes(term.toLowerCase()))
+  );
+}
+
 export async function scanGithub(topic, sourceConfig, options = {}) {
   const { url, label } = sourceConfig;
-  const repoInfo = parseGithubUrl(url);
 
+  if (url) {
+    return scanSpecificRepo(topic, url, label, options);
+  } else {
+    return searchGithub(topic, label, options);
+  }
+}
+
+async function scanSpecificRepo(topic, url, label, options) {
+  const repoInfo = parseGithubUrl(url);
   if (!repoInfo) {
     console.warn(`⚠️ [githubScanner] Invalid GitHub URL: ${url}`);
     return [];
   }
 
-  const sourceName = label || `${repoInfo.owner}/${repoInfo.repo}`;
-  console.log(`🔍 [githubScanner] Checking GitHub releases for ${sourceName}...`);
+  const { owner, repo } = repoInfo;
+  const sourceName = label || `${owner}/${repo}`;
+  console.log(`🔍 [githubScanner] Tracking ${sourceName}...`);
 
-  const headers = {
-    'User-Agent': USER_AGENT,
-    'Accept': 'application/vnd.github.v3+json'
-  };
+  const headers = getHeaders();
+  const findings = [];
+  const lastScan = topic.lastScannedAt ? new Date(topic.lastScannedAt) : new Date(0);
 
-  // Optional: Add GITHUB_TOKEN if available to increase rate limits
-  if (process.env.GITHUB_TOKEN) {
-    headers['Authorization'] = `token ${process.env.GITHUB_TOKEN}`;
-  }
-
+  // 1. Releases
   try {
-    const apiUrl = `https://api.github.com/repos/${repoInfo.owner}/${repoInfo.repo}/releases?per_page=5`;
+    const apiUrl = `https://api.github.com/repos/${owner}/${repo}/releases?per_page=5`;
     const response = await fetch(apiUrl, { headers, signal: AbortSignal.timeout(10000) });
 
-    if (!response.ok) {
-      if (response.status === 404) throw new Error("Repository not found or has no releases.");
-      if (response.status === 403) throw new Error("GitHub API rate limit exceeded.");
-      throw new Error(`HTTP ${response.status} ${response.statusText}`);
-    }
+    if (response.ok) {
+      const releases = await response.json();
+      for (const release of releases) {
+        const pubDate = new Date(release.published_at || release.created_at);
+        if (pubDate <= lastScan) continue;
 
-    const releases = await response.json();
-    const findings = [];
+        const content = `${release.name || ""} ${release.tag_name || ""} ${release.body || ""}`;
+        if (!isRelevant(topic, content)) continue;
 
-    const lastScan = topic.lastScannedAt ? new Date(topic.lastScannedAt) : new Date(0);
-
-    for (const release of releases) {
-      const pubDate = new Date(release.published_at || release.created_at);
-
-      // 1. Newness Check
-      if (pubDate <= lastScan) continue;
-
-      // 2. Relevance Check (Query terms in title or body)
-      const content = (
-        (release.name || "") +
-        " " +
-        (release.tag_name || "") +
-        " " +
-        (release.body || "")
-      ).toLowerCase();
-
-      const queryTerms = (topic.aiRefinedQuery || topic.displayName)
-        .toLowerCase()
-        .split(/\s+/)
-        .filter(t => t.length > 2);
-
-      const isMatch = queryTerms.every(term => content.includes(term));
-
-      if (isMatch) {
         findings.push({
           title: `[Release] ${release.tag_name}${release.name ? `: ${release.name}` : ""}`,
           sourceUrl: release.html_url,
-          sourceName: sourceName,
+          sourceName,
           summary: release.body?.slice(0, 500) + (release.body?.length > 500 ? "..." : "") || "No release notes provided.",
           rawArticleId: null,
           sourceType: 'GITHUB'
         });
       }
+    } else {
+      if (response.status === 404) console.warn(`   ⚠️ [githubScanner] Repo not found: ${sourceName}`);
+      else if (response.status === 403) console.warn(`   ⚠️ [githubScanner] Rate limited`);
+      else console.warn(`   ⚠️ [githubScanner] Releases fetch failed: ${response.status}`);
     }
-
-    console.log(`   📊 [githubScanner] Found ${findings.length} new matching releases.`);
-    return findings;
-
   } catch (err) {
-    console.error(`❌ [githubScanner] Failed to fetch ${sourceName}:`, err.message);
-    return [];
+    console.error(`   ❌ [githubScanner] Failed to fetch releases for ${sourceName}:`, err.message);
   }
+
+  // 2. Merged PRs
+  try {
+    const apiUrl = `https://api.github.com/repos/${owner}/${repo}/pulls?state=closed&sort=updated&direction=desc&per_page=10`;
+    const response = await fetch(apiUrl, { headers, signal: AbortSignal.timeout(10000) });
+
+    if (response.ok) {
+      const prs = await response.json();
+      for (const pr of prs) {
+        if (!pr.merged_at) continue;
+        const mergedDate = new Date(pr.merged_at);
+        if (mergedDate <= lastScan) continue;
+
+        const content = `${pr.title || ""} ${pr.body || ""}`;
+        if (!isRelevant(topic, content)) continue;
+
+        findings.push({
+          title: `[PR] #${pr.number}: ${pr.title}`,
+          sourceUrl: pr.html_url,
+          sourceName,
+          summary: pr.body?.slice(0, 500) + (pr.body?.length > 500 ? "..." : "") || "No description provided.",
+          rawArticleId: null,
+          sourceType: 'GITHUB'
+        });
+      }
+    } else {
+      console.warn(`   ⚠️ [githubScanner] PRs fetch failed: ${response.status}`);
+    }
+  } catch (err) {
+    console.error(`   ❌ [githubScanner] Failed to fetch PRs for ${sourceName}:`, err.message);
+  }
+
+  console.log(`   📊 [githubScanner] Found ${findings.length} new items from ${sourceName}.`);
+  return findings;
+}
+
+async function searchGithub(topic, label, options) {
+  const query = topic.aiRefinedQuery || topic.displayName;
+  if (!query) return [];
+
+  const sourceName = label || "GitHub Search";
+  console.log(`🔍 [githubScanner] Searching GitHub for "${query}"...`);
+
+  const headers = getHeaders();
+  const findings = [];
+
+  // 1. Search repositories
+  try {
+    const encodedQuery = encodeURIComponent(query);
+    const apiUrl = `https://api.github.com/search/repositories?q=${encodedQuery}&sort=updated&per_page=5`;
+    const response = await fetch(apiUrl, { headers, signal: AbortSignal.timeout(10000) });
+
+    if (response.ok) {
+      const data = await response.json();
+      for (const repo of data.items || []) {
+        const content = `${repo.full_name} ${repo.description || ""} ${repo.topics?.join(" ") || ""}`;
+        if (!isRelevant(topic, content)) continue;
+
+        const stars = repo.stargazers_count ? `⭐ ${repo.stargazers_count}` : "";
+        const lang = repo.language ? `[${repo.language}]` : "";
+        const desc = repo.description?.slice(0, 120) || "";
+        findings.push({
+          title: `[Repo] ${repo.full_name}` + (desc ? ` — ${desc}` : ""),
+          sourceUrl: repo.html_url,
+          sourceName,
+          summary: `${lang} ${stars} ${repo.description || ""}`.trim().slice(0, 500) || "No description.",
+          rawArticleId: null,
+          sourceType: 'GITHUB'
+        });
+      }
+      console.log(`   📊 [githubScanner] Found ${data.items?.length || 0} matching repos.`);
+    } else {
+      if (response.status === 403) console.warn(`   ⚠️ [githubScanner] Search rate limited`);
+      else console.warn(`   ⚠️ [githubScanner] Repo search failed: ${response.status}`);
+    }
+  } catch (err) {
+    console.error(`   ❌ [githubScanner] Failed to search repos:`, err.message);
+  }
+
+  // 2. Search merged PRs
+  try {
+    const encodedQuery = encodeURIComponent(`${query} is:pr is:merged`);
+    const apiUrl = `https://api.github.com/search/issues?q=${encodedQuery}&sort=updated&per_page=10`;
+    const response = await fetch(apiUrl, { headers, signal: AbortSignal.timeout(10000) });
+
+    if (response.ok) {
+      const data = await response.json();
+      for (const item of data.items || []) {
+        const content = `${item.title || ""} ${item.body || ""}`;
+        if (!isRelevant(topic, content)) continue;
+
+        const repoFullName = item.repository_url?.split("/").slice(-2).join("/") || "";
+        findings.push({
+          title: `[PR] #${item.number}: ${item.title} (${repoFullName})`,
+          sourceUrl: item.html_url,
+          sourceName,
+          summary: item.body?.slice(0, 500) + (item.body?.length > 500 ? "..." : "") || "No description.",
+          rawArticleId: null,
+          sourceType: 'GITHUB'
+        });
+      }
+      console.log(`   📊 [githubScanner] Found ${data.items?.length || 0} matching merged PRs.`);
+    } else {
+      console.warn(`   ⚠️ [githubScanner] Issues search failed: ${response.status}`);
+    }
+  } catch (err) {
+    console.error(`   ❌ [githubScanner] Failed to search merged PRs:`, err.message);
+  }
+
+  console.log(`   📊 [githubScanner] Total search findings: ${findings.length}`);
+  return findings;
 }
