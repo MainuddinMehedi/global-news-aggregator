@@ -4,7 +4,12 @@
 import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { SparklesIcon, RefreshIcon } from "@hugeicons/core-free-icons";
+import {
+  SparklesIcon,
+  RefreshIcon,
+  InformationCircleIcon,
+  ArrowUpRight01Icon,
+} from "@hugeicons/core-free-icons";
 import { Input } from "@/components/ui/input";
 import { detectSourceType } from "@/lib/sourceDetection";
 import { toast } from "sonner";
@@ -196,9 +201,15 @@ export default function Step3AIReview({
 
         {data.suggestedSources?.length > 0 && (
           <div className="space-y-3">
-            <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">
-              High-Signal Recommendations
-            </label>
+            <div className="flex items-center justify-between">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">
+                High-Signal Recommendations
+              </label>
+              <div className="flex items-center gap-1 text-[9px] font-bold text-amber-500/80 uppercase tracking-tighter bg-amber-500/5 px-2 py-0.5 rounded-full border border-amber-500/10">
+                <HugeiconsIcon icon={InformationCircleIcon} size={10} />
+                Verify URLs before adding
+              </div>
+            </div>
             <div className="space-y-2">
               {(data.suggestedSources as any).map(
                 (source: any, idx: number) => (
@@ -206,11 +217,22 @@ export default function Step3AIReview({
                     key={idx}
                     className="flex items-center justify-between p-4 rounded-xl border border-secondary bg-secondary/10 group hover:border-primary/30 transition-colors"
                   >
-                    <div className="flex flex-col gap-0.5">
-                      <span className="text-xs font-bold truncate max-w-[250px]">
-                        {source.label}
-                      </span>
-                      <span className="text-[10px] text-muted-foreground truncate max-w-[250px]">
+                    <div className="flex flex-col gap-0.5 min-w-0 flex-1 mr-4">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold truncate">
+                          {source.label}
+                        </span>
+                        <a
+                          href={source.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-muted-foreground hover:text-primary transition-colors"
+                          title="Open URL to verify"
+                        >
+                          <HugeiconsIcon icon={ArrowUpRight01Icon} size={12} />
+                        </a>
+                      </div>
+                      <span className="text-[10px] text-muted-foreground truncate italic">
                         {source.url}
                       </span>
                     </div>
