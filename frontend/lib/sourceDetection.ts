@@ -51,10 +51,7 @@ export function generateSourceLabel(url: string, type: SourceConfig["type"]): st
 
     switch (type) {
       case "rss": {
-        // Extract site name from the path segments or use hostname
-        const path = parsed.pathname.replace(/\/?(feed|rss)\/?.*$/i, "").replace(/\/$/, "");
-        const siteName = path.split("/").pop() || hostname.replace(/\..+$/, "");
-        return `${capitalize(siteName.replace(/[-_]/g, " "))} RSS`;
+        return `${hostname} RSS`;
       }
       case "reddit": {
         const match = url.match(/reddit\.com\/r\/([^/?#]+)/i);

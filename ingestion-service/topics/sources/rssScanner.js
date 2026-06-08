@@ -56,7 +56,10 @@ export async function scanRss(topic, sourceConfig, options = {}) {
   const sourceName =
     sourceConfig.type === "google_news"
       ? "Google News"
-      : sourceConfig.name || "Custom RSS";
+      : sourceConfig.label
+        || (sourceConfig.url
+          ? `${new URL(sourceConfig.url).hostname} RSS`
+          : "Custom RSS");
 
   const sinceDate = fullScan ? null : topic.lastScannedAt;
   let sinceStr = fullScan ? " (full scan)" : "";
