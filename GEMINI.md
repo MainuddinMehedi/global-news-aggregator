@@ -237,9 +237,11 @@ Search is URL-driven (`?search=query`) and consistent with the category/sort pat
 
 - **Ingestion**: Fully functional with rate-limited AI enrichment and fixed-category enforcement.
 - **Frontend**: Responsive UI with category/sort/search filtering, cursor-based infinite scroll, Zustand state management, PPR with explicit caching, and an Analytics page.
+- **Topics**: Semantic Concept Filtering and independent scanners implemented.
 - **Caching**: `getArticles()` and `getCategories()` are cached with `'use cache'`. On-demand invalidation endpoint exists at `/api/revalidate` — needs to be wired to the ingestion service with `REVALIDATE_SECRET` set in env.
 - **Analytics page** (`/analytics`): Currently hosts the four static insight widgets (PerspectiveWidget, EventClustersWidget, BiasDistributionWidget, DiversityInsightWidget). Data is still hardcoded — needs to be wired to real DB aggregations.
-- **Pending**: User system, notifications (Discord/Telegram), full-text search upgrade, widget data from real DB queries, ingestion → revalidate webhook, deployment configuration, and **Prisma Monorepo Fix** (define a custom `output` path in `schema.prisma` generator block so it always outputs to a shared custom folder, rather than having separate generated clients for frontend and backend).
+- **Prisma Architecture**: The Prisma client is configured to output to a single shared directory (`shared/prisma-client`). Both the frontend and backend import from this location to prevent schema desynchronization.
+- **Pending**: User system, notifications (Discord/Telegram), full-text search upgrade, widget data from real DB queries, ingestion → revalidate webhook, deployment configuration.
 
 ---
 *Last Updated: June 2026*
