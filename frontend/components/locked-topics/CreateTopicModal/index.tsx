@@ -35,6 +35,7 @@ export default function CreateTopicModal({
       sources: [] as SourceConfig[],
       aiRefinedQuery: "",
       aiQuerySummary: "",
+      conceptualKeywords: [] as string[][],
       suggestedSources: [] as unknown[],
     },
   );
@@ -54,6 +55,7 @@ export default function CreateTopicModal({
           sources: [],
           aiRefinedQuery: "",
           aiQuerySummary: "",
+          conceptualKeywords: [],
           suggestedSources: [],
         });
       } else {

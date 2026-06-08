@@ -28,6 +28,7 @@ export default function TopicHeader({
     sources: topic.sources,
     aiRefinedQuery: topic.aiRefinedQuery,
     aiQuerySummary: topic.aiQuerySummary,
+    conceptualKeywords: topic.conceptualKeywords,
     suggestedSources: [],
   };
 

@@ -1,10 +1,10 @@
 "use client";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { SparklesIcon } from "@hugeicons/core-free-icons";
+import { SparklesIcon, RefreshIcon } from "@hugeicons/core-free-icons";
 import { Input } from "@/components/ui/input";
 import { detectSourceType } from "@/lib/sourceDetection";
 import { toast } from "sonner";
@@ -26,12 +26,10 @@ export default function Step3AIReview({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const refine = async () => {
-      if (data.aiRefinedQuery || data.aiQuerySummary) {
-        setLoading(false);
-        return;
-      }
+  const handleRefine = useCallback(
+    async (isRegenerate = false) => {
+      setLoading(true);
+      setError(null);
 
       try {
         const res = await fetch("/api/locked-topics/ai-refine", {
@@ -50,16 +48,28 @@ export default function Step3AIReview({
           ...data,
           aiRefinedQuery: result.aiRefinedQuery,
           aiQuerySummary: result.aiQuerySummary,
+          conceptualKeywords: result.conceptualKeywords,
           suggestedSources: result.suggestedSources,
         });
         setLoading(false);
+        if (isRegenerate) {
+          toast.success("Topic re-analyzed successfully.");
+        }
       } catch (err) {
         setError("Failed to analyze topic. Please try again.");
         setLoading(false);
       }
-    };
+    },
+    [data.displayName, data.userContext, data.sources, setData],
+  );
 
-    refine();
+  useEffect(() => {
+    if (data.aiRefinedQuery || data.aiQuerySummary) {
+      setLoading(false);
+      return;
+    }
+
+    handleRefine();
   }, []);
 
   if (loading) {
@@ -92,9 +102,21 @@ export default function Step3AIReview({
     return (
       <div className="py-20 text-center space-y-6">
         <p className="text-destructive font-bold text-lg">{error}</p>
-        <Button onClick={onPrev} variant="outline" className="rounded-xl px-8">
-          Go Back
-        </Button>
+        <div className="flex justify-center gap-4">
+          <Button
+            onClick={onPrev}
+            variant="outline"
+            className="rounded-xl px-8"
+          >
+            Go Back
+          </Button>
+          <Button
+            onClick={() => handleRefine(true)}
+            className="rounded-xl px-8"
+          >
+            Retry
+          </Button>
+        </div>
       </div>
     );
   }
@@ -103,11 +125,22 @@ export default function Step3AIReview({
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="space-y-6">
         <div className="space-y-4 p-5 rounded-2xl bg-primary/5 border border-primary/10">
-          <div className="flex items-center gap-2 text-primary">
-            <HugeiconsIcon icon={SparklesIcon} size={16} />
-            <span className="text-[10px] font-black uppercase tracking-widest">
-              AI Intelligence Report
-            </span>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-primary">
+              <HugeiconsIcon icon={SparklesIcon} size={16} />
+              <span className="text-[10px] font-black uppercase tracking-widest">
+                AI Intelligence Report
+              </span>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleRefine(true)}
+              className="h-7 px-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-primary hover:bg-primary/5 gap-1.5 rounded-lg"
+            >
+              <HugeiconsIcon icon={RefreshIcon} size={12} />
+              Regenerate
+            </Button>
           </div>
           <p className="text-sm leading-relaxed font-medium italic text-foreground/90">
             &quot;{data.aiQuerySummary}&quot;
@@ -129,6 +162,37 @@ export default function Step3AIReview({
             This query will be used to scan Google News, Brave, and Reddit.
           </p>
         </div>
+
+        {data.conceptualKeywords && data.conceptualKeywords.length > 0 && (
+          <div className="space-y-3">
+            <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">
+              Semantic Concept Buckets
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {data.conceptualKeywords.map((group, i) => (
+                <div
+                  key={i}
+                  className="px-3 py-1.5 rounded-lg bg-primary/10 border border-primary/20 flex flex-wrap gap-1 items-center"
+                >
+                  {group.map((term, j) => (
+                    <span
+                      key={j}
+                      className="text-[10px] font-bold text-primary"
+                    >
+                      {term}
+                      {j < group.length - 1 && (
+                        <span className="ml-1 text-muted-foreground/50">+</span>
+                      )}
+                    </span>
+                  ))}
+                </div>
+              ))}
+            </div>
+            <p className="text-[10px] text-muted-foreground italic">
+              Matches ANY bucket (terms inside a bucket must match together).
+            </p>
+          </div>
+        )}
 
         {data.suggestedSources?.length > 0 && (
           <div className="space-y-3">
