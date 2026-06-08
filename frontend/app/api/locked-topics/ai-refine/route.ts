@@ -61,7 +61,9 @@ TASK:
    - Example for "Nvidia B200": [["Blackwell"], ["B200"], ["Vera Rubin"], ["Nvidia", "AI Factory"], ["Nvidia", "Azure"]]
    - This allows high recall while keeping signal sharp. Avoid buckets with 3+ terms unless they are a mandatory exact phrase.
 3. Summarize the user's intent in one short, sharp sentence (AI Query Summary).
-4. Identify 1-3 specific high-signal sources (RSS feeds, specific subreddits, or unique webpages).
+4. Identify 1-3 specific high-signal sources (RSS feeds, subreddits, or unique webpages).
+   - CRITICAL: AI data can be stale. Do NOT invent or guess exact RSS XML paths if you are unsure.
+   - If you recommend a publication but don't know the exact RSS URL, provide the homepage URL and append " (Find RSS)" to the label. This serves as a cue for the user to visit the site and find the correct feed themselves.
 
 OUTPUT FORMAT (JSON ONLY, no markdown):
 {
