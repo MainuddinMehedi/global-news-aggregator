@@ -8,7 +8,7 @@ import {
   type ModelMessage,
   type UIMessage,
 } from "ai";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "../../../../shared/prisma-client";
 import prisma from "@/lib/prisma";
 import { normalizeContextForDb } from "@/lib/chat/contexts";
 import { createSessionTitle, getMessageText } from "@/lib/chat/messages";
