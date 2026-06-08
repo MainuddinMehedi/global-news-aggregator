@@ -12,6 +12,8 @@ import {
   RedditIcon,
   Add01Icon,
   LinkSquare01Icon,
+  ArrowUpRight01Icon,
+  InformationCircleIcon,
 } from "@hugeicons/core-free-icons";
 import { detectSourceType } from "@/lib/sourceDetection";
 import { toast } from "sonner";
@@ -57,7 +59,7 @@ export default function Step2Sources({
   const handleAddCustomSource = () => {
     if (!customUrl) return;
     try {
-      new URL(customUrl); // Simple validation
+      new URL(customUrl);
     } catch {
       toast.error("Please enter a valid URL (including https://)");
       return;
@@ -86,6 +88,11 @@ export default function Step2Sources({
     data.sources.some((s) => s.type === type && !s.url);
 
   const customSources = data.sources.filter((s) => s.url);
+  const suggestedSources = (data.suggestedSources || []) as {
+    type: string;
+    label: string;
+    url: string;
+  }[];
 
   return (
     <div className="space-y-8">
@@ -95,22 +102,14 @@ export default function Step2Sources({
         </h4>
 
         <div className="space-y-3">
-          {/* Internal DB is always on */}
-          <div className="flex items-center justify-between p-4 rounded-xl border border-secondary bg-secondary/10 opacity-80">
-            <div className="flex items-center gap-4">
-              <div className="p-2 rounded-lg bg-primary/10 text-primary">
-                <HugeiconsIcon icon={DatabaseIcon} size={20} />
-              </div>
-              <div>
-                <p className="text-sm font-bold">Internal Article DB</p>
-                <p className="text-[10px] text-muted-foreground uppercase tracking-tight">
-                  Scans existing aggregate
-                </p>
-              </div>
-            </div>
-            <Switch checked disabled />
-          </div>
-
+          <SourceToggle
+            label="Internal Article DB"
+            icon={DatabaseIcon}
+            enabled={isSourceEnabled("internal_db")}
+            onToggle={() =>
+              toggleSource("internal_db", "Internal Article DB")
+            }
+          />
           <SourceToggle
             label="Google News RSS"
             icon={GoogleIcon}
@@ -154,7 +153,7 @@ export default function Step2Sources({
         </div>
 
         {customSources.length > 0 && (
-          <div className="space-y-2 mt-4">
+          <div className="space-y-2">
             {customSources.map((source) => (
               <div
                 key={source.url}
@@ -187,6 +186,85 @@ export default function Step2Sources({
             ))}
           </div>
         )}
+
+        {suggestedSources.length > 0 && (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">
+                AI-Suggested Sources
+              </span>
+              <div className="flex items-center gap-1 text-[9px] font-bold text-amber-500/80 uppercase tracking-tighter bg-amber-500/5 px-2 py-0.5 rounded-full border border-amber-500/10">
+                <HugeiconsIcon icon={InformationCircleIcon} size={10} />
+                Verify URLs before adding
+              </div>
+            </div>
+            <div className="space-y-2">
+              {suggestedSources.map((source, idx) => {
+                const alreadyAdded = data.sources.some(
+                  (s) => s.url === source.url,
+                );
+                return (
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between p-3 rounded-xl border border-secondary bg-secondary/10 group hover:border-primary/30 transition-colors"
+                  >
+                    <div className="flex flex-col gap-0.5 min-w-0 flex-1 mr-4">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold truncate">
+                          {source.label}
+                        </span>
+                        <a
+                          href={source.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-muted-foreground hover:text-primary transition-colors"
+                          title="Open URL to verify"
+                        >
+                          <HugeiconsIcon
+                            icon={ArrowUpRight01Icon}
+                            size={12}
+                          />
+                        </a>
+                      </div>
+                      <span className="text-[10px] text-muted-foreground truncate italic">
+                        {source.url}
+                      </span>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      disabled={alreadyAdded}
+                      onClick={() => {
+                        const type =
+                          source.type || detectSourceType(source.url);
+                        setData({
+                          ...data,
+                          sources: [
+                            ...data.sources,
+                            {
+                              id: source.url,
+                              type: type as SourceConfig["type"],
+                              label: source.label,
+                              url: source.url,
+                              enabled: true,
+                            },
+                          ],
+                          suggestedSources: suggestedSources.filter(
+                            (s) => s.url !== source.url,
+                          ),
+                        });
+                        toast.success(`Added ${source.label} to sources.`);
+                      }}
+                      className="h-8 px-4 text-[10px] font-black uppercase tracking-widest text-primary hover:bg-primary/10"
+                    >
+                      {alreadyAdded ? "Added" : "Add"}
+                    </Button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="flex gap-4">
@@ -201,7 +279,7 @@ export default function Step2Sources({
           onClick={onNext}
           className="flex-2 rounded-xl py-7 font-bold text-lg shadow-xl shadow-primary/20 hover:scale-[1.02] transition-transform"
         >
-          Analyze with AI
+          Review & Launch
         </Button>
       </div>
     </div>

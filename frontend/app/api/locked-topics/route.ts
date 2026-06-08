@@ -13,6 +13,8 @@ export async function POST(req: NextRequest) {
       conceptualKeywords,
       sources,
       notifyEnabled,
+      notifyMode,
+      notifyChannels,
     } = body;
 
     const topic = await prisma.lockedTopic.create({
@@ -24,8 +26,8 @@ export async function POST(req: NextRequest) {
         conceptualKeywords: conceptualKeywords || [],
         sources: sources || [],
         notifyEnabled: notifyEnabled ?? false,
-        notifyMode: "DIGEST",
-        notifyChannels: { discord: false, telegram: false },
+        notifyMode: notifyMode || "DIGEST",
+        notifyChannels: notifyChannels || { discord: false, telegram: false },
         isActive: true,
       },
     });
