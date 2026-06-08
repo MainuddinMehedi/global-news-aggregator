@@ -5,7 +5,7 @@
  */
 
 import fetchRSSStream from "../../sources/rss.js";
-import { parseQuery } from "./internalDb.js";
+import { parseQuery } from "../utils/parseQuery.js";
 
 const MAX_RESULTS = 100;
 
@@ -87,8 +87,7 @@ export async function scanRss(topic, sourceConfig, options = {}) {
   let skipped = 0;
   let keywordFiltered = 0;
 
-  const queryGroups =
-    sourceConfig.type === "rss" ? parseQuery(topic.aiRefinedQuery) : [];
+  const queryGroups = sourceConfig.type === "rss" ? parseQuery(topic) : [];
 
   try {
     for await (const item of fetchRSSStream(sourceName, null, feedUrl)) {

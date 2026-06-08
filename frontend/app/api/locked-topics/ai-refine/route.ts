@@ -48,25 +48,32 @@ export async function POST(req: NextRequest) {
   try {
     const { displayName, userContext } = await req.json();
 
-    const prompt = `You are an expert news researcher. A user wants to track a specific topic.
+    const prompt = `You are an expert news researcher and intelligence analyst. A user wants to track a specific topic.
 USER INTENT: "${userContext}"
 DISPLAY NAME: "${displayName}"
 
 TASK:
-1. Generate an OPTIMIZED search query (keyword based) that can be used across Google News, Brave Search, and Reddit to find matches for this intent. Use advanced search operators if helpful (OR, quotes). Keep it concise but high recall.
-2. Summarize the user's intent in one short, sharp sentence (AI Query Summary).
-3. Identify 1-3 specific high-signal sources (RSS feeds, specific subreddits, or unique webpages) that would be ideal for this tracker.
+1. Generate an OPTIMIZED search query (keyword based) that can be used across Google News, Brave Search, and Reddit to find matches for this intent. Use standard operators (OR, quotes) if helpful. Keep it concise
+2. Generate SEMANTIC CONCEPT BUCKETS (conceptualKeywords). This is an array of string arrays.
+   - Each inner array is a "concept bucket".
+   - LOGIC: Terms INSIDE a bucket are AND-ed (must all match). Buckets are OR-ed (any bucket match = pass).
+   - TASK: Create several short buckets (1-2 terms each) to capture "signals behind the noise", synonyms, and related technologies.
+   - Example for "Nvidia B200": [["Blackwell"], ["B200"], ["Vera Rubin"], ["Nvidia", "AI Factory"], ["Nvidia", "Azure"]]
+   - This allows high recall while keeping signal sharp. Avoid buckets with 3+ terms unless they are a mandatory exact phrase.
+3. Summarize the user's intent in one short, sharp sentence (AI Query Summary).
+4. Identify 1-3 specific high-signal sources (RSS feeds, specific subreddits, or unique webpages).
 
 OUTPUT FORMAT (JSON ONLY, no markdown):
 {
   "aiRefinedQuery": "string",
+  "conceptualKeywords": [["term1", "term2"], ["term3"]],
   "aiQuerySummary": "string",
   "suggestedSources": [
     { "type": "rss|reddit|webpage", "label": "string", "url": "string" }
   ]
 }
 
-Ensure suggestedSources have valid public URLs if possible (e.g. subreddits should be r/name or reddit.com/r/name).`;
+Ensure suggestedSources have valid public URLs if possible.`;
 
     let raw: string;
 

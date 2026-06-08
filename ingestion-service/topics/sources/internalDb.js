@@ -10,65 +10,9 @@
  */
 
 import { prisma } from "../../db/prisma.js";
+import { parseQuery } from "../utils/parseQuery.js";
 
 const MAX_RESULTS = 200;
-
-/**
- * Parse an AI-refined query string into structured search conditions.
- *
- * Handles:
- *   - Quoted phrases: "exact match" → searched as a single unit
- *   - OR operator:    termA OR termB → either can match
- *   - Bare words:     filtered to 3+ chars, all must match within a group
- *
- * Returns an array of term-groups. A match occurs if ANY group fully matches
- * (i.e. groups are OR'd, terms within a group are AND'd).
- *
- * Example: `"iran nuclear" OR "israel defense"` → two groups, each with one phrase.
- * Example: `google AI hiring` → one group with three terms (all must match).
- */
-function parseQuery(aiRefinedQuery) {
-  if (!aiRefinedQuery || typeof aiRefinedQuery !== "string") return [];
-
-  // Split by OR (case-insensitive, surrounded by spaces)
-  const orSegments = aiRefinedQuery
-    .split(/\s+OR\s+/i)
-    .map((s) => s.trim())
-    .filter(Boolean);
-
-  const groups = [];
-
-  for (const segment of orSegments) {
-    const terms = [];
-
-    // Extract quoted phrases first
-    const quotedRegex = /"([^"]+)"/g;
-    let match;
-    let remainder = segment;
-
-    while ((match = quotedRegex.exec(segment)) !== null) {
-      const phrase = match[1].trim();
-      if (phrase.length > 0) {
-        terms.push(phrase);
-      }
-      remainder = remainder.replace(match[0], " ");
-    }
-
-    // Remaining bare words — filter short ones (≤2 chars)
-    const bareWords = remainder
-      .split(/\s+/)
-      .map((w) => w.trim().toLowerCase())
-      .filter((w) => w.length > 2);
-
-    terms.push(...bareWords);
-
-    if (terms.length > 0) {
-      groups.push(terms);
-    }
-  }
-
-  return groups;
-}
 
 /**
  * Build a Prisma WHERE clause from parsed query groups.
@@ -120,7 +64,7 @@ function buildWhereClause(groups, sinceDate) {
 export async function scanInternalDb(topic, options = {}) {
   const { fullScan = false, limit = MAX_RESULTS } = options;
 
-  const groups = parseQuery(topic.aiRefinedQuery);
+  const groups = parseQuery(topic);
 
   if (groups.length === 0) {
     console.warn(
@@ -190,4 +134,4 @@ export async function scanInternalDb(topic, options = {}) {
 }
 
 // Export for unit testing / direct usage
-export { parseQuery, buildWhereClause };
+export { buildWhereClause };

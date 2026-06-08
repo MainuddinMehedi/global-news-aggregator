@@ -184,6 +184,7 @@ model LockedTopic {
   userContext         String     @db.Text
   aiRefinedQuery      String     @db.Text
   aiQuerySummary      String     @db.Text
+  conceptualKeywords  Json?      // Array of keyword groups for broad pre-filtering
   liveWebSummary      String?    @db.Text
   sources             Json // SourceConfig[]
   searchBeyondSources Boolean    @default(true)
