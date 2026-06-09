@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { TopicFinding } from "@/types/lockedTopic";
 import { useExtractedContent } from "@/hooks/useExtractedContent";
 
@@ -46,21 +46,129 @@ export default function FindingContentSection({
   }
 
   if (finding.sourceType === "GOOGLE") {
-    return <GoogleNewsContent />;
+    return <GoogleNewsContent finding={finding} />;
   }
 
   return <ExtractableContent finding={finding} />;
 }
 
-function GoogleNewsContent() {
+const GOOGLE_CACHE_PREFIX = "google-news:";
+const GOOGLE_CACHE_TTL = 60 * 60 * 1000;
+
+function getGoogleCacheKey(title: string): string {
+  return GOOGLE_CACHE_PREFIX + title;
+}
+
+function readGoogleCache(title: string): { content: string; url: string } | null {
+  try {
+    const raw = localStorage.getItem(getGoogleCacheKey(title));
+    if (!raw) return null;
+    const entry = JSON.parse(raw);
+    if (Date.now() - entry.ts > GOOGLE_CACHE_TTL) {
+      localStorage.removeItem(getGoogleCacheKey(title));
+      return null;
+    }
+    return entry;
+  } catch {
+    return null;
+  }
+}
+
+function writeGoogleCache(title: string, content: string, url: string): void {
+  try {
+    localStorage.setItem(
+      getGoogleCacheKey(title),
+      JSON.stringify({ content, url, ts: Date.now() }),
+    );
+  } catch {}
+}
+
+function GoogleNewsContent({ finding }: { finding: TopicFinding }) {
+  const [content, setContent] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    return readGoogleCache(finding.title)?.content ?? null;
+  });
+  const [articleUrl, setArticleUrl] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    return readGoogleCache(finding.title)?.url ?? null;
+  });
+  const [loading, setLoading] = useState(!content);
+  const [error, setError] = useState<string | null>(null);
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    if (content) return;
+
+    mountedRef.current = true;
+
+    let cancelled = false;
+
+    async function resolve() {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const res = await fetch("/api/resolve-article", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title: finding.title }),
+        });
+
+        if (cancelled) return;
+
+        if (res.ok) {
+          const data = await res.json();
+          setContent(data.content);
+          setArticleUrl(data.url || null);
+          writeGoogleCache(finding.title, data.content, data.url || "");
+        } else {
+          setError("Could not fetch article. Open the original link to read.");
+        }
+      } catch {
+        if (!cancelled) setError("Could not fetch article. Open the original link to read.");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    resolve();
+
+    return () => {
+      cancelled = true;
+      mountedRef.current = false;
+    };
+  }, [finding.title, content]);
+
   return (
-    <div className="p-8 text-center">
-      <div className="rounded-xl bg-muted/10 border border-dashed border-border/50 p-6 space-y-3">
-        <p className="text-sm text-muted-foreground leading-relaxed">
-          Google News sources cannot be extracted. Navigate the link to read
-          the full article.
-        </p>
-      </div>
+    <div className="space-y-4">
+      {loading && <ContentSkeleton message="Searching for article..." />}
+      {error && (
+        <div className="p-8 text-center">
+          <div className="rounded-xl bg-muted/10 border border-dashed border-border/50 p-6 space-y-3">
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              {error}
+            </p>
+          </div>
+        </div>
+      )}
+      {content && (
+        <>
+          <div className="article-prose max-w-none">
+            <div dangerouslySetInnerHTML={{ __html: content }} />
+          </div>
+          {articleUrl && (
+            <div className="border-t border-border/50 pt-3 text-center">
+              <a
+                href={articleUrl}
+                target="_blank"
+                className="text-xs text-muted-foreground hover:text-primary underline transition-colors"
+              >
+                View original article
+              </a>
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }
