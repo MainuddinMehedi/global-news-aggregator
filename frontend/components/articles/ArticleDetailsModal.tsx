@@ -37,7 +37,7 @@ export function ArticleDetailsModal({ article }: { article: Article | null }) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-190 max-h-[85vh] flex-col overflow-y-auto p-0 rounded-lg border border-border/50 shadow-2xl no-scrollbar">
+      <DialogContent className="sm:max-w-[52rem] max-h-[85vh] flex-col overflow-y-auto p-0 rounded-lg border border-border/50 shadow-2xl no-scrollbar">
         <DialogHeader className="px-5 py-4 border-b border-border/50 shrink-0">
           <div className="flex flex-wrap items-center gap-2 mb-2">
             <span className="w-6 h-6 rounded bg-secondary flex items-center justify-center text-[9px] font-bold text-secondary-foreground">

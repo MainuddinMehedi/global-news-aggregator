@@ -6,6 +6,7 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { RefreshIcon } from "@hugeicons/core-free-icons";
 import { Button } from "../ui/button";
 import { Skeleton } from "../ui/skeleton";
+import { FindingDetailsModal } from "./FindingDetailsModal";
 
 interface FindingsListProps {
   initialFindings: TopicFinding[];
@@ -26,6 +27,8 @@ export default function FindingsList({
   const [cursor, setCursor] = useState(initialNextCursor);
   const [isLoading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedFinding, setSelectedFinding] =
+    useState<TopicFinding | null>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
   // Reset list when filters change
@@ -97,9 +100,20 @@ export default function FindingsList({
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
         {findings.map((finding) => (
-          <FindingCard key={finding.id} finding={finding} />
+          <FindingCard
+            key={finding.id}
+            finding={finding}
+            onSelect={setSelectedFinding}
+          />
         ))}
       </div>
+
+      {selectedFinding && (
+        <FindingDetailsModal
+          finding={selectedFinding}
+          onClose={() => setSelectedFinding(null)}
+        />
+      )}
 
       {!error && (
         <div ref={sentinelRef}>
@@ -139,11 +153,29 @@ export default function FindingsList({
   );
 }
 
-function FindingCard({ finding }: { finding: TopicFinding }) {
+function FindingCard({
+  finding,
+  onSelect,
+}: {
+  finding: TopicFinding;
+  onSelect: (f: TopicFinding) => void;
+}) {
   const showNewBadge = !finding.isRead;
 
   return (
-    <div className="p-8 rounded-2xl border border-secondary bg-secondary/10 hover:border-primary/40 transition-all duration-500 group hover:shadow-2xl hover:shadow-primary/5 hover:-translate-y-0.5 backdrop-blur-sm relative overflow-hidden">
+    <div
+      className="p-8 rounded-2xl border border-secondary bg-secondary/10 hover:border-primary/40 transition-all duration-500 group hover:shadow-2xl hover:shadow-primary/5 hover:-translate-y-0.5 backdrop-blur-sm relative overflow-hidden cursor-pointer"
+      onClick={() => onSelect(finding)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onSelect(finding);
+        }
+      }}
+      tabIndex={0}
+      role="button"
+      aria-label={`View details for ${finding.title}`}
+    >
       <div className="flex flex-col md:flex-row items-start justify-between gap-6">
         <div className="space-y-3 flex-1">
           <div className="flex items-center gap-2">
@@ -156,9 +188,7 @@ function FindingCard({ finding }: { finding: TopicFinding }) {
             </span>
           </div>
           <h3 className="text-2xl font-extrabold group-hover:text-primary transition-colors leading-tight tracking-tight">
-            <a href={finding.sourceUrl} target="_blank">
-              {finding.title}
-            </a>
+            {finding.title}
           </h3>
           {finding.summary && (
             <p className="text-[15px] text-muted-foreground/90 line-clamp-3 leading-relaxed font-medium tracking-tight">

@@ -73,17 +73,7 @@ export async function GET(request: Request) {
     }
   }
 
-  // 4. Save the extracted content back to the database for future use
   if (finalContent) {
-    try {
-      await prisma.rawArticle.update({
-        where: { url },
-        data: { extractedContent: finalContent },
-      });
-    } catch (error) {
-      console.error(`[Extract API] Failed to save extracted content to DB for ${url}:`, error);
-    }
-
     return NextResponse.json({
       content: finalContent,
       source: sourceUsed,
