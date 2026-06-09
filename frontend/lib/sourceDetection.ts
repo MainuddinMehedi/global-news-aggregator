@@ -5,6 +5,39 @@ export function detectSourceType(url: string): SourceConfig["type"] {
 
   const lowerUrl = url.toLowerCase();
 
+  // 1. Feed file extensions — strongest signal
+  if (
+    lowerUrl.endsWith(".rss") ||
+    lowerUrl.endsWith(".xml") ||
+    lowerUrl.endsWith(".atom")
+  ) {
+    return "rss";
+  }
+
+  // 2. Feed path indicators
+  if (/\/(feed|rss|atom|feeds)(\/|$|\.|\?)/.test(lowerUrl)) {
+    return "rss";
+  }
+
+  // 3. Feed query parameters
+  try {
+    const parsed = new URL(url);
+    const params = parsed.searchParams;
+    if (
+      params.has("feed") ||
+      params.get("format") === "rss" ||
+      params.get("alt") === "rss"
+    ) {
+      return "rss";
+    }
+  } catch {}
+
+  // 4. Feedburner
+  if (lowerUrl.includes("feeds.feedburner.com")) {
+    return "rss";
+  }
+
+  // 5. Platform-specific URLs
   if (
     lowerUrl.includes("reddit.com/r/") ||
     lowerUrl.includes("reddit.com/u/") ||
@@ -31,16 +64,6 @@ export function detectSourceType(url: string): SourceConfig["type"] {
     return "company_careers";
   }
 
-  if (
-    lowerUrl.endsWith(".rss") ||
-    lowerUrl.endsWith(".xml") ||
-    lowerUrl.includes("/feed") ||
-    lowerUrl.includes("/rss")
-  ) {
-    return "rss";
-  }
-
-  // Default fallback for any other URL
   return "webpage";
 }
 

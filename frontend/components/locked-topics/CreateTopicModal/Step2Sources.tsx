@@ -37,12 +37,28 @@ export default function Step2Sources({
 
   const existingGithub = data.sources.find((s) => s.type === "github");
   const [githubUrl, setGithubUrl] = useState(existingGithub?.url || "");
+  const [githubUrlError, setGithubUrlError] = useState("");
 
   const isGithubEnabled = data.sources.some(
     (s) => s.type === "github",
   );
 
+  function getGithubUrlError(url: string): string | null {
+    if (!url) return null;
+    try { new URL(url); } catch { return "Enter a valid URL."; }
+
+    if (detectSourceType(url) === "rss") return "This looks like a feed URL. Paste it in the custom sources input below.";
+    if (detectSourceType(url) !== "github") return "Enter a GitHub repo URL like https://github.com/owner/repo";
+
+    const path = new URL(url).pathname.replace(/\/$/, "").split("/").filter(Boolean);
+    if (path.length < 2) return "Enter a full repo URL like https://github.com/owner/repo";
+    if (path.length > 2) return "Enter a repo URL without extra path segments.";
+
+    return null;
+  }
+
   const toggleGithub = (enabled: boolean) => {
+    setGithubUrlError("");
     if (enabled) {
       setData({
         ...data,
@@ -67,6 +83,7 @@ export default function Step2Sources({
 
   const updateGithubUrl = (url: string) => {
     setGithubUrl(url);
+    setGithubUrlError(getGithubUrlError(url) || "");
     if (isGithubEnabled) {
       setData({
         ...data,
@@ -189,6 +206,11 @@ export default function Step2Sources({
                 Enter a URL like <span className="font-mono text-primary/80">https://github.com/facebook/react</span> to track that repo&apos;s releases and merged PRs.{" "}
                 Leave blank to search GitHub broadly for repos and merged PRs matching your topic.
               </p>
+              {githubUrlError && (
+                <p className="text-[10px] text-destructive/90 font-semibold">
+                  {githubUrlError}
+                </p>
+              )}
             </div>
           )}
         </div>
