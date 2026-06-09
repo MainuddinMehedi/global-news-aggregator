@@ -34,6 +34,25 @@ function buildFeedUrl(topic, sourceConfig) {
 }
 
 /**
+ * Resolve a Google News redirect URL to the actual article URL.
+ * Google News RSS items point to news.google.com/rss/articles/... which
+ * redirects (302) to the real article. This follows that redirect via HEAD.
+ *
+ * @param {string} url - The Google News redirect URL
+ * @returns {Promise<string>} The resolved article URL (or original on failure)
+ */
+async function resolveRedirectUrl(url) {
+  try {
+    const resp = await fetch(url, { method: "HEAD", redirect: "manual" });
+    const location = resp.headers.get("location");
+    if (location) return location;
+  } catch {
+    // resolve failed — use original URL
+  }
+  return url;
+}
+
+/**
  * Scan an RSS feed for a locked topic.
  *
  * @param {object} topic - A LockedTopic record
@@ -121,12 +140,17 @@ export async function scanRss(topic, sourceConfig, options = {}) {
         }
       }
 
+      // Resolve Google News redirect URLs to the actual article link
+      const finalUrl =
+        sourceConfig.type === "google_news"
+          ? await resolveRedirectUrl(item.url)
+          : item.url;
+
       findings.push({
         title: item.title,
-        sourceUrl: item.url,
+        sourceUrl: finalUrl,
         sourceName: sourceName,
         summary: item.contentSnippet?.slice(0, 500) || null,
-        rawArticleId: null, // External finding
         sourceType: sourceConfig.type === "google_news" ? "GOOGLE" : "RSS",
       });
 
