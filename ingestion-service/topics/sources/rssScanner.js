@@ -6,6 +6,7 @@
 
 import fetchRSSStream from "../../sources/rss.js";
 import { parseQuery } from "../utils/parseQuery.js";
+import { resolveRedirectUrl } from "../../utils/resolveUrl.js";
 
 const MAX_RESULTS = 100;
 
@@ -31,25 +32,6 @@ function buildFeedUrl(topic, sourceConfig) {
   }
 
   return null;
-}
-
-/**
- * Resolve a Google News redirect URL to the actual article URL.
- * Google News RSS items point to news.google.com/rss/articles/... which
- * redirects (302) to the real article. This follows that redirect via HEAD.
- *
- * @param {string} url - The Google News redirect URL
- * @returns {Promise<string>} The resolved article URL (or original on failure)
- */
-async function resolveRedirectUrl(url) {
-  try {
-    const resp = await fetch(url, { method: "HEAD", redirect: "manual" });
-    const location = resp.headers.get("location");
-    if (location) return location;
-  } catch {
-    // resolve failed — use original URL
-  }
-  return url;
 }
 
 /**
