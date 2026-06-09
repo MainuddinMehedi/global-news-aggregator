@@ -7,7 +7,6 @@ import { useExtractedContent } from "@/hooks/useExtractedContent";
 const loadingMessages: Record<string, string> = {
   ARTICLE: "Extracting article content...",
   RSS: "Extracting article content...",
-  GOOGLE: "Extracting article content...",
   BRAVE: "Extracting article content...",
   SCRAPE: "Extracting content...",
   WEBPAGE: "Extracting content...",
@@ -46,7 +45,24 @@ export default function FindingContentSection({
     return <YouTubeContent finding={finding} />;
   }
 
+  if (finding.sourceType === "GOOGLE") {
+    return <GoogleNewsContent />;
+  }
+
   return <ExtractableContent finding={finding} />;
+}
+
+function GoogleNewsContent() {
+  return (
+    <div className="p-8 text-center">
+      <div className="rounded-xl bg-muted/10 border border-dashed border-border/50 p-6 space-y-3">
+        <p className="text-sm text-muted-foreground leading-relaxed">
+          Google News sources cannot be extracted. Navigate the link to read
+          the full article.
+        </p>
+      </div>
+    </div>
+  );
 }
 
 function YouTubeContent({ finding }: { finding: TopicFinding }) {

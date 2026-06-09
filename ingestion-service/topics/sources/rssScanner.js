@@ -6,7 +6,6 @@
 
 import fetchRSSStream from "../../sources/rss.js";
 import { parseQuery } from "../utils/parseQuery.js";
-import { resolveRedirectUrl } from "../../utils/resolveUrl.js";
 
 const MAX_RESULTS = 100;
 
@@ -122,15 +121,9 @@ export async function scanRss(topic, sourceConfig, options = {}) {
         }
       }
 
-      // Resolve Google News redirect URLs to the actual article link
-      const finalUrl =
-        sourceConfig.type === "google_news"
-          ? await resolveRedirectUrl(item.url)
-          : item.url;
-
       findings.push({
         title: item.title,
-        sourceUrl: finalUrl,
+        sourceUrl: item.url,
         sourceName: sourceName,
         summary: item.contentSnippet?.slice(0, 500) || null,
         sourceType: sourceConfig.type === "google_news" ? "GOOGLE" : "RSS",
