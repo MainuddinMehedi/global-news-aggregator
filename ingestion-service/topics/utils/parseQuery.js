@@ -1,62 +1,182 @@
 /**
- * Parse an AI-refined query string OR conceptualKeywords JSON into structured search conditions.
+ * Parse an AI-refined boolean query string into a structured AST and evaluate it.
  *
- * If topic.conceptualKeywords exists, it uses that directly.
- * Otherwise, it parses topic.aiRefinedQuery string.
+ * Supports AND, OR, NOT, parentheses (), and exact quoted strings "".
+ * Implicit operator between consecutive terms is AND.
  *
- * Returns an array of term-groups. A match occurs if ANY group fully matches
- * (i.e. groups are OR'd, terms within a group are AND'd).
+ * Example: `(OpenAI OR DeepSeek) AND "product launch"`
+ */
+
+export function tokenize(query) {
+  const regex = /"([^"]*)"|\(|\)|AND|OR|NOT|[^\s()]+/ig;
+  const tokens = [];
+  let match;
+  while ((match = regex.exec(query)) !== null) {
+    if (match[1] !== undefined) {
+      tokens.push({ type: 'TERM', value: match[1].toLowerCase() });
+    } else {
+      const val = match[0].toUpperCase();
+      if (['AND', 'OR', 'NOT'].includes(val)) {
+        tokens.push({ type: val });
+      } else if (val === '(' || val === ')') {
+        tokens.push({ type: val });
+      } else {
+        tokens.push({ type: 'TERM', value: match[0].toLowerCase() });
+      }
+    }
+  }
+  return tokens;
+}
+
+export function parse(tokens) {
+  let pos = 0;
+
+  function parseExpression() {
+    return parseOr();
+  }
+
+  function parseOr() {
+    let node = parseAnd();
+    while (pos < tokens.length && tokens[pos].type === 'OR') {
+      pos++;
+      const right = parseAnd();
+      node = { type: 'OR', left: node, right };
+    }
+    return node;
+  }
+
+  function parseAnd() {
+    let node = parseTerm();
+    // Implicit AND or Explicit AND
+    while (pos < tokens.length && tokens[pos].type !== 'OR' && tokens[pos].type !== ')') {
+      if (tokens[pos].type === 'AND') {
+        pos++;
+      }
+      const right = parseTerm();
+      if (right) {
+        node = { type: 'AND', left: node, right };
+      } else {
+        break; // Stop if no valid right term
+      }
+    }
+    return node;
+  }
+
+  function parseTerm() {
+    if (pos >= tokens.length) return null;
+    
+    const token = tokens[pos];
+    
+    if (token.type === 'NOT') {
+      pos++;
+      const expr = parseTerm();
+      return { type: 'NOT', expr };
+    }
+    
+    if (token.type === '(') {
+      pos++;
+      const expr = parseExpression();
+      if (pos < tokens.length && tokens[pos].type === ')') {
+        pos++;
+      }
+      return expr;
+    }
+    
+    if (token.type === 'TERM') {
+      pos++;
+      return token;
+    }
+    
+    // Ignore stray operators
+    pos++;
+    return null;
+  }
+
+  const ast = parseExpression();
+  return ast;
+}
+
+export function evaluateAST(ast, textLower) {
+  if (!ast) return true; // empty query matches anything
+  
+  if (ast.type === 'TERM') {
+    return textLower.includes(ast.value);
+  }
+  if (ast.type === 'AND') {
+    return evaluateAST(ast.left, textLower) && evaluateAST(ast.right, textLower);
+  }
+  if (ast.type === 'OR') {
+    return evaluateAST(ast.left, textLower) || evaluateAST(ast.right, textLower);
+  }
+  if (ast.type === 'NOT') {
+    return !evaluateAST(ast.expr, textLower);
+  }
+  return false;
+}
+
+/**
+ * Main exported function to evaluate a text against a topic's boolean query.
+ */
+export function evaluateQuery(topic, text) {
+  // Quick pre-check if using conceptualKeywords (fallback for backward compatibility)
+  if (topic.conceptualKeywords && Array.isArray(topic.conceptualKeywords) && topic.conceptualKeywords.length > 0) {
+     const textToSearch = text.toLowerCase();
+     return topic.conceptualKeywords.some((group) =>
+       group.every((term) => textToSearch.includes(term.toLowerCase())),
+     );
+  }
+
+  const query = topic.aiRefinedQuery || topic.displayName || "";
+  if (!query) return true;
+
+  const tokens = tokenize(query);
+  const ast = parse(tokens);
+  return evaluateAST(ast, text.toLowerCase());
+}
+
+/**
+ * Converts the AST into a Prisma where clause for the rawArticle table.
+ */
+export function astToPrismaWhere(ast) {
+  if (!ast) return {};
+  
+  if (ast.type === 'TERM') {
+    return {
+      OR: [
+        { rawArticle: { title: { contains: ast.value, mode: "insensitive" } } },
+        { rawArticle: { contentSnippet: { contains: ast.value, mode: "insensitive" } } }
+      ]
+    };
+  }
+  if (ast.type === 'AND') {
+    return { AND: [astToPrismaWhere(ast.left), astToPrismaWhere(ast.right)] };
+  }
+  if (ast.type === 'OR') {
+    return { OR: [astToPrismaWhere(ast.left), astToPrismaWhere(ast.right)] };
+  }
+  if (ast.type === 'NOT') {
+    return { NOT: astToPrismaWhere(ast.expr) };
+  }
+  return {};
+}
+
+/**
+ * Helper to get Prisma where clause directly from topic.
+ */
+export function getPrismaWhere(topic) {
+  const query = topic.aiRefinedQuery || topic.displayName || "";
+  if (!query) return {};
+  
+  const tokens = tokenize(query);
+  const ast = parse(tokens);
+  return astToPrismaWhere(ast);
+}
+
+/**
+ * Legacy export for backward compatibility in cases where it's still imported as parseQuery
+ * We export a dummy function that returns an empty array, or you should migrate callers
+ * to use evaluateQuery instead.
  */
 export function parseQuery(topic) {
-  // 1. Prefer structured conceptualKeywords if available
-  if (
-    topic.conceptualKeywords &&
-    Array.isArray(topic.conceptualKeywords) &&
-    topic.conceptualKeywords.length > 0
-  ) {
-    return topic.conceptualKeywords;
-  }
-
-  const query = topic.aiRefinedQuery;
-  if (!query || typeof query !== "string") return [];
-
-  // 2. Fallback to parsing the aiRefinedQuery string
-  // Split by OR (case-insensitive, surrounded by spaces)
-  const orSegments = query
-    .split(/\s+OR\s+/i)
-    .map((s) => s.trim())
-    .filter(Boolean);
-
-  const groups = [];
-
-  for (const segment of orSegments) {
-    const terms = [];
-
-    // Extract quoted phrases first
-    const quotedRegex = /"([^"]+)"/g;
-    let match;
-    let remainder = segment;
-
-    while ((match = quotedRegex.exec(segment)) !== null) {
-      const phrase = match[1].trim();
-      if (phrase.length > 0) {
-        terms.push(phrase);
-      }
-      remainder = remainder.replace(match[0], " ");
-    }
-
-    // Remaining bare words — filter short ones (≤2 chars)
-    const bareWords = remainder
-      .split(/\s+/)
-      .map((w) => w.trim().toLowerCase())
-      .filter((w) => w.length > 2);
-
-    terms.push(...bareWords);
-
-    if (terms.length > 0) {
-      groups.push(terms);
-    }
-  }
-
-  return groups;
+  return []; // We no longer return grouped arrays
 }

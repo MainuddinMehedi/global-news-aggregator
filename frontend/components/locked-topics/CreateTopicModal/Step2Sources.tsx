@@ -11,6 +11,7 @@ import {
   Search01Icon,
   RedditIcon,
   Github01Icon,
+  YoutubeIcon,
   Add01Icon,
   LinkSquare01Icon,
   ArrowUpRight01Icon,
@@ -43,6 +44,14 @@ export default function Step2Sources({
     (s) => s.type === "github",
   );
 
+  const existingYoutube = data.sources.find((s) => s.type === "youtube");
+  const [youtubeUrl, setYoutubeUrl] = useState(existingYoutube?.url || "");
+  const [youtubeUrlError, setYoutubeUrlError] = useState("");
+
+  const isYoutubeEnabled = data.sources.some(
+    (s) => s.type === "youtube",
+  );
+
   function getGithubUrlError(url: string): string | null {
     if (!url) return null;
     try { new URL(url); } catch { return "Enter a valid URL."; }
@@ -56,6 +65,24 @@ export default function Step2Sources({
 
     return null;
   }
+
+  function getYoutubeUrlError(input: string): string | null {
+    if (!input) return null;
+    const parts = input.split(",").map((p) => p.trim()).filter(Boolean);
+
+    for (const part of parts) {
+      try {
+        new URL(part);
+        if (detectSourceType(part) !== "youtube") {
+          return `"${part}" is not a valid YouTube URL.`;
+        }
+      } catch {
+        // Not a URL, so it's a name. Names are allowed.
+      }
+    }
+    return null;
+  }
+
 
   const toggleGithub = (enabled: boolean) => {
     setGithubUrlError("");
@@ -89,6 +116,43 @@ export default function Step2Sources({
         ...data,
         sources: data.sources.map((s) =>
           s.type === "github" ? { ...s, url: url || undefined } : s,
+        ),
+      });
+    }
+  };
+
+  const toggleYoutube = (enabled: boolean) => {
+    setYoutubeUrlError("");
+    if (enabled) {
+      setData({
+        ...data,
+        sources: [
+          ...data.sources,
+          {
+            id: "youtube",
+            type: "youtube",
+            label: "YouTube",
+            enabled: true,
+            url: youtubeUrl || undefined,
+          },
+        ],
+      });
+    } else {
+      setData({
+        ...data,
+        sources: data.sources.filter((s) => s.type !== "youtube"),
+      });
+    }
+  };
+
+  const updateYoutubeUrl = (url: string) => {
+    setYoutubeUrl(url);
+    setYoutubeUrlError(getYoutubeUrlError(url) || "");
+    if (isYoutubeEnabled) {
+      setData({
+        ...data,
+        sources: data.sources.map((s) =>
+          s.type === "youtube" ? { ...s, url: url || undefined } : s,
         ),
       });
     }
@@ -189,6 +253,31 @@ export default function Step2Sources({
             onToggle={() => toggleSource("reddit", "Reddit")}
           />
           <SourceToggle
+            label="YouTube"
+            icon={YoutubeIcon}
+            enabled={isYoutubeEnabled}
+            onToggle={() => toggleYoutube(!isYoutubeEnabled)}
+          />
+          {isYoutubeEnabled && (
+            <div className="ml-4 p-3 rounded-xl border border-primary/20 bg-primary/5 space-y-2">
+              <Input
+                placeholder="Enter channel names or URLs (comma separated)"
+                value={youtubeUrl}
+                onChange={(e) => updateYoutubeUrl(e.target.value)}
+                className="bg-secondary/10 border-secondary rounded-xl"
+              />
+              <p className="text-[10px] text-muted-foreground/70 leading-relaxed">
+                Enter names like <span className="font-mono text-primary/80">Bloomberg, ColdFusion</span> or direct URLs to prioritize specific channels.{" "}
+                The system will discover videos from these channels and others related to your topic.
+              </p>
+              {youtubeUrlError && (
+                <p className="text-[10px] text-destructive/90 font-semibold">
+                  {youtubeUrlError}
+                </p>
+              )}
+            </div>
+          )}
+          <SourceToggle
             label="GitHub"
             icon={Github01Icon}
             enabled={isGithubEnabled}
@@ -248,7 +337,7 @@ export default function Step2Sources({
                   <HugeiconsIcon
                     icon={LinkSquare01Icon}
                     size={16}
-                    className="text-primary flex-shrink-0"
+                    className="text-primary shrink-0"
                   />
                   <div className="flex flex-col truncate">
                     <span className="text-xs font-bold truncate">

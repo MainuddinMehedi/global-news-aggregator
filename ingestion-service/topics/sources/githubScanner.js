@@ -1,4 +1,4 @@
-import { parseQuery } from "../utils/parseQuery.js";
+import { evaluateQuery } from "../utils/parseQuery.js";
 
 const USER_AGENT = 'global-news-aggregator/1.0 (LockedTopics GitHub Monitor)';
 
@@ -27,12 +27,7 @@ function getHeaders() {
 }
 
 function isRelevant(topic, content) {
-  const groups = parseQuery(topic);
-  if (groups.length === 0) return true;
-  const contentLower = content.toLowerCase();
-  return groups.some(group =>
-    group.every(term => contentLower.includes(term.toLowerCase()))
-  );
+  return evaluateQuery(topic, content);
 }
 
 export async function scanGithub(topic, sourceConfig, options = {}) {
