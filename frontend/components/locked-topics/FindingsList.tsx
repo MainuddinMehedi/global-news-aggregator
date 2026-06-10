@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { TopicFinding, FindingSource } from "@/types/lockedTopic";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { RefreshIcon } from "@hugeicons/core-free-icons";
+import { RefreshIcon, LinkSquare02Icon } from "@hugeicons/core-free-icons";
 import { Button } from "../ui/button";
 import { Skeleton } from "../ui/skeleton";
 import { FindingDetailsModal } from "./FindingDetailsModal";
@@ -162,6 +162,24 @@ function FindingCard({
 }) {
   const showNewBadge = !finding.isRead;
 
+  const isReddit = finding.sourceType === "REDDIT";
+  const redditMeta = isReddit ? (finding.metadata as {
+    author?: string;
+    subreddit?: string;
+    isSelfPost?: boolean;
+    externalUrl?: string;
+    commentsUrl?: string;
+  } | null) : null;
+
+  let domain = "";
+  if (redditMeta?.externalUrl) {
+    try {
+      domain = new URL(redditMeta.externalUrl).hostname.replace("www.", "");
+    } catch {
+      domain = "external link";
+    }
+  }
+
   return (
     <div
       className="p-8 rounded-2xl border border-secondary bg-secondary/10 hover:border-primary/40 transition-all duration-500 group hover:shadow-2xl hover:shadow-primary/5 hover:-translate-y-0.5 backdrop-blur-sm relative overflow-hidden cursor-pointer"
@@ -178,14 +196,37 @@ function FindingCard({
     >
       <div className="flex flex-col md:flex-row items-start justify-between gap-6">
         <div className="space-y-3 flex-1">
-          <div className="flex items-center gap-2">
-            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-primary bg-primary/10 px-2.5 py-1 rounded-full">
-              {finding.sourceType}
-            </span>
-            <span className="w-1 h-1 rounded-full bg-border" />
-            <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-muted-foreground/60">
-              {finding.sourceName}
-            </span>
+          <div className="flex flex-wrap items-center gap-2 text-[10px]">
+            {isReddit ? (
+              <>
+                <span className="font-extrabold text-[#FF4500] bg-[#FF4500]/10 px-2.5 py-1 rounded-full whitespace-nowrap">
+                  {redditMeta?.subreddit || "r/Reddit"}
+                </span>
+                <span className="w-1 h-1 rounded-full bg-border" />
+                <span className="font-semibold text-muted-foreground/60 truncate max-w-[150px]">
+                  posted by u/{redditMeta?.author || "unknown"}
+                </span>
+                {!redditMeta?.isSelfPost && domain && (
+                  <>
+                    <span className="w-1 h-1 rounded-full bg-border" />
+                    <span className="inline-flex items-center gap-1 font-extrabold text-[#0079D3] bg-[#0079D3]/10 px-2 py-0.5 rounded-full text-[9px] whitespace-nowrap">
+                      <HugeiconsIcon icon={LinkSquare02Icon} className="w-2.5 h-2.5" />
+                      {domain}
+                    </span>
+                  </>
+                )}
+              </>
+            ) : (
+              <>
+                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-primary bg-primary/10 px-2.5 py-1 rounded-full">
+                  {finding.sourceType}
+                </span>
+                <span className="w-1 h-1 rounded-full bg-border" />
+                <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-muted-foreground/60">
+                  {finding.sourceName}
+                </span>
+              </>
+            )}
           </div>
           <h3 className="text-2xl font-extrabold group-hover:text-primary transition-colors leading-tight tracking-tight">
             {finding.title}
