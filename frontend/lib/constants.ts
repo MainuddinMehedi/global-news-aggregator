@@ -12,6 +12,17 @@ export const CANONICAL_CATEGORIES = [
   "other",
 ];
 
+export const EXTRA_CATEGORIES = [
+  "science",
+  "sports",
+  "entertainment",
+  "lifestyle",
+  "gaming",
+  "crypto",
+];
+
+export const ALL_CATEGORIES = [...CANONICAL_CATEGORIES, ...EXTRA_CATEGORIES];
+
 export const DEFAULT_CUSTOM_SOURCES = [
   { id: "1", name: "The Daily Star", url: "https://www.thedailystar.net/frontpage/rss.xml", country: "Bangladesh", priority: "medium", enabled: true },
   { id: "2", name: "Dhaka Tribune", url: "https://www.dhakatribune.com/feed/", country: "Bangladesh", priority: "medium", enabled: true },

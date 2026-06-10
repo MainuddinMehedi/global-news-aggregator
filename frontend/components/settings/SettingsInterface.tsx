@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { CANONICAL_CATEGORIES } from "@/lib/constants";
+import { CANONICAL_CATEGORIES, EXTRA_CATEGORIES, ALL_CATEGORIES } from "@/lib/constants";
 import { Check } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import NotificationsSection from "./NotificationsSection";
@@ -72,25 +72,27 @@ export default function SettingsInterface() {
   useEffect(() => {
     setMounted(true);
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visibleEntries = entries.filter((entry) => entry.isIntersecting);
-        if (visibleEntries.length > 0) {
-          visibleEntries.sort(
-            (a, b) => a.boundingClientRect.top - b.boundingClientRect.top,
-          );
-          setActiveSection(visibleEntries[0].target.id);
+    const handleScroll = () => {
+      let currentSection = SETTINGS_SECTIONS[0].id;
+      for (const section of SETTINGS_SECTIONS) {
+        const el = document.getElementById(section.id);
+        if (el) {
+          const rect = el.getBoundingClientRect();
+          if (rect.top <= 300) {
+            currentSection = section.id;
+          } else {
+            break;
+          }
         }
-      },
-      { rootMargin: "-20% 0px -60% 0px" },
-    );
+      }
+      setActiveSection(currentSection);
+    };
 
-    SETTINGS_SECTIONS.forEach(({ id }) => {
-      const el = document.getElementById(id);
-      if (el) observer.observe(el);
-    });
+    window.addEventListener("scroll", handleScroll, { capture: true, passive: true });
+    
+    handleScroll();
 
-    return () => observer.disconnect();
+    return () => window.removeEventListener("scroll", handleScroll, { capture: true });
   }, []);
 
   if (!mounted) {
@@ -115,8 +117,17 @@ export default function SettingsInterface() {
   const scrollToSection = (id: string) => {
     const el = document.getElementById(id);
     if (el) {
-      const y = el.getBoundingClientRect().top + window.scrollY - 120;
-      window.scrollTo({ top: y, behavior: "smooth" });
+      const scrollContainer = el.closest('.overflow-y-auto') || window;
+      if (scrollContainer === window) {
+        const y = el.getBoundingClientRect().top + window.scrollY - 120;
+        window.scrollTo({ top: y, behavior: "smooth" });
+      } else {
+        const container = scrollContainer as HTMLElement;
+        const containerRect = container.getBoundingClientRect();
+        const elRect = el.getBoundingClientRect();
+        const scrollTop = container.scrollTop + (elRect.top - containerRect.top) - 32;
+        container.scrollTo({ top: scrollTop, behavior: "smooth" });
+      }
     }
   };
 
@@ -155,18 +166,32 @@ export default function SettingsInterface() {
   };
 
   const disableCategory = (cat: string) => {
-    setSetting("hiddenCategories", [...settings.hiddenCategories, cat]);
+    if (EXTRA_CATEGORIES.includes(cat)) {
+      setSetting("extraCategories", (settings.extraCategories || []).filter(c => c !== cat));
+    } else {
+      setSetting("hiddenCategories", [...settings.hiddenCategories, cat]);
+    }
     if (settings.favoriteCategories.includes(cat)) {
       setSetting("favoriteCategories", settings.favoriteCategories.filter(c => c !== cat));
     }
   };
 
   const enableCategory = (cat: string) => {
-    setSetting("hiddenCategories", settings.hiddenCategories.filter(c => c !== cat));
+    if (EXTRA_CATEGORIES.includes(cat)) {
+      setSetting("extraCategories", [...(settings.extraCategories || []), cat]);
+    } else {
+      setSetting("hiddenCategories", settings.hiddenCategories.filter(c => c !== cat));
+    }
   };
 
-  const enabledCategories = CANONICAL_CATEGORIES.filter(cat => !settings.hiddenCategories.includes(cat));
-  const disabledCategories = CANONICAL_CATEGORIES.filter(cat => settings.hiddenCategories.includes(cat));
+  const enabledCategories = [
+    ...CANONICAL_CATEGORIES.filter(cat => !settings.hiddenCategories.includes(cat)),
+    ...EXTRA_CATEGORIES.filter(cat => (settings.extraCategories || []).includes(cat))
+  ];
+  const disabledCategories = [
+    ...CANONICAL_CATEGORIES.filter(cat => settings.hiddenCategories.includes(cat)),
+    ...EXTRA_CATEGORIES.filter(cat => !(settings.extraCategories || []).includes(cat))
+  ];
 
   const aiModels = MODEL_REGISTRY.filter(m => ALLOWED_AI_MODELS.includes(m.id));
 
@@ -331,7 +356,7 @@ export default function SettingsInterface() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All News</SelectItem>
-                    {CANONICAL_CATEGORIES.map((cat) => (
+                    {ALL_CATEGORIES.map((cat) => (
                       <SelectItem key={cat} value={cat}>
                         {cat.charAt(0).toUpperCase() + cat.slice(1)}
                       </SelectItem>
@@ -412,7 +437,7 @@ export default function SettingsInterface() {
                   </p>
                 </div>
                 <Select
-                  value={settings.defaultAiModel}
+                  value={ALLOWED_AI_MODELS.includes(settings.defaultAiModel) ? settings.defaultAiModel : "groq/compound"}
                   onValueChange={(v) => setSetting("defaultAiModel", v)}
                 >
                   <SelectTrigger className="w-[180px]">

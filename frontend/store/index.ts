@@ -83,6 +83,7 @@ interface SettingsState {
   responseStyle: ResponseStyle;
   favoriteCategories: string[];
   hiddenCategories: string[];
+  extraCategories: string[];
   homePageMode: HomePageMode;
   notificationChannels: NotificationChannels;
   customSources: CustomSource[];
@@ -152,10 +153,11 @@ export const useAppStore = create<AppStore>()(
       compactMode: false,
       showBiasBadges: true,
       showSentiment: true,
-      defaultAiModel: "groq-llama-3",
+      defaultAiModel: "groq/compound",
       responseStyle: "concise",
       favoriteCategories: [],
       hiddenCategories: [],
+      extraCategories: [],
       homePageMode: "continuous",
       notificationChannels: { discord: "", telegram: "", mode: "none" },
       customSources: [],
@@ -180,6 +182,7 @@ export const useAppStore = create<AppStore>()(
         responseStyle: state.responseStyle,
         favoriteCategories: state.favoriteCategories,
         hiddenCategories: state.hiddenCategories,
+        extraCategories: state.extraCategories,
         homePageMode: state.homePageMode,
         notificationChannels: state.notificationChannels,
         customSources: state.customSources,
