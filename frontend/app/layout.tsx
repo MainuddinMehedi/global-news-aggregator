@@ -54,13 +54,16 @@ export default function RootLayout({
       data-color-theme="maia"
       suppressHydrationWarning
     >
-      <body className="bg-background text-foreground">
+      <head>
         {/* Blocking script: sync data-color-theme from localStorage before first paint */}
         <script
+          suppressHydrationWarning
           dangerouslySetInnerHTML={{
             __html: `(function(){try{var d=JSON.parse(localStorage.getItem('global-news-aggregator-settings'));if(d&&d.state&&d.state.colorTheme){document.documentElement.setAttribute('data-color-theme',d.state.colorTheme)}}catch(e){}})();`,
           }}
         />
+      </head>
+      <body className="bg-background text-foreground">
         <AuthProvider>
           <Providers>
             <TooltipProvider>
