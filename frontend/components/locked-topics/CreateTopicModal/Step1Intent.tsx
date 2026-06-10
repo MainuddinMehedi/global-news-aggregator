@@ -145,7 +145,7 @@ export default function Step1Intent({ data, setData, onNext }: Step1Props) {
             placeholder="I want to track whether Google is posting any new AI or ML engineering roles, specifically in their DeepMind or Search divisions..."
             value={data.userContext}
             onChange={(e) => setData({ ...data, userContext: e.target.value })}
-            className="min-h-[160px] rounded-xl border-secondary bg-secondary/30 focus-visible:ring-primary/20 resize-none leading-relaxed p-4"
+            className="min-h-[160px] rounded-xl border-secondary bg-secondary/30 focus-visible:ring-primary/20 resize-none leading-relaxed p-4 scrollbar-sleek"
           />
           <p className="text-xs text-muted-foreground leading-relaxed italic">
             Describe your intent in detail. Our AI will analyze this to generate

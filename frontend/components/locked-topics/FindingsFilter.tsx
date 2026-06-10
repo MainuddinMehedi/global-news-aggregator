@@ -20,10 +20,12 @@ export default function FindingsFilter({
   currentSource,
   currentSort,
   sources,
+  counts = {},
 }: {
   currentSource: string;
   currentSort: string;
   sources: SourceConfig[];
+  counts?: Record<string, number>;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -69,19 +71,31 @@ export default function FindingsFilter({
   return (
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-6 border-y border-secondary/50">
       <div className="flex flex-wrap gap-2">
-        {sourceTabs.map((s) => (
-          <button
-            key={s.value}
-            onClick={() => updateParam("source", s.value)}
-            className={`px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all duration-200 ${
-              currentSource === s.value
-                ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20 scale-105"
-                : "bg-secondary/40 text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
-            }`}
-          >
-            {s.label}
-          </button>
-        ))}
+        {sourceTabs.map((s) => {
+          const count = counts[s.value] || 0;
+          return (
+            <button
+              key={s.value}
+              onClick={() => updateParam("source", s.value)}
+              className={`px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all duration-200 flex items-center gap-2 ${
+                currentSource === s.value
+                  ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20 scale-105"
+                  : "bg-secondary/40 text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
+              }`}
+            >
+              <span>{s.label}</span>
+              <span
+                className={`inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[9px] font-bold min-w-[16px] ${
+                  currentSource === s.value
+                    ? "bg-primary-foreground/20 text-primary-foreground"
+                    : "bg-foreground/10 text-muted-foreground"
+                }`}
+              >
+                {count}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       <div className="flex items-center gap-4">

@@ -115,9 +115,9 @@ export function useExtractedContent({
     return readFromCache(url)?.source ?? "";
   });
 
-  const extract = useCallback(async () => {
+  const extract = useCallback(async (force = false) => {
     const cached = readFromCache(url);
-    if (cached) {
+    if (cached && !force) {
       setContent(cached.content);
       setSource(cached.source);
       setError(null);
@@ -127,7 +127,10 @@ export function useExtractedContent({
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/extract?url=${encodeURIComponent(url)}`);
+      const fetchUrl = force 
+        ? `/api/extract?url=${encodeURIComponent(url)}&force=true`
+        : `/api/extract?url=${encodeURIComponent(url)}`;
+      const res = await fetch(fetchUrl);
       if (!res.ok) throw new Error("Failed to extract");
       const data = await res.json();
       setContent(data.content);
@@ -140,6 +143,8 @@ export function useExtractedContent({
     }
   }, [url]);
 
+  const reExtract = useCallback(() => extract(true), [extract]);
+
   useEffect(() => {
     if (enabled && !content) {
       extract();
@@ -148,5 +153,5 @@ export function useExtractedContent({
 
   const isCached = !!initialContent || (typeof window !== "undefined" && !!readFromLocalCache(url));
 
-  return { content, loading, error, source, extract, isCached };
+  return { content, loading, error, source, extract, reExtract, isCached };
 }

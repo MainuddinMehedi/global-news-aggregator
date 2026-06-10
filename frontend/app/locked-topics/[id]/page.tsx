@@ -2,7 +2,7 @@ import {
   getLockedTopicById,
   getUnreadFindingCount,
 } from "@/queries/lockedTopics";
-import { getFindings } from "@/queries/topicFindings";
+import { getFindings, getFindingCounts } from "@/queries/topicFindings";
 import { notFound } from "next/navigation";
 import TopicHeader from "@/components/locked-topics/TopicHeader";
 import FindingsFilter from "@/components/locked-topics/FindingsFilter";
@@ -29,6 +29,7 @@ export default async function TopicDetailPage({
   if (!topic) notFound();
 
   const unreadCount = await getUnreadFindingCount(id);
+  const counts = await getFindingCounts(id);
 
   const { findings, nextCursor } = await getFindings({
     topicId: id,
@@ -47,6 +48,7 @@ export default async function TopicDetailPage({
           currentSource={source}
           currentSort={sort}
           sources={topic.sources}
+          counts={counts}
         />
 
         <FindingsList

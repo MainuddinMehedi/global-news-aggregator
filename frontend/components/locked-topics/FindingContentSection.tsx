@@ -59,7 +59,9 @@ function getGoogleCacheKey(title: string): string {
   return GOOGLE_CACHE_PREFIX + title;
 }
 
-function readGoogleCache(title: string): { content: string; url: string } | null {
+function readGoogleCache(
+  title: string,
+): { content: string; url: string } | null {
   try {
     const raw = localStorage.getItem(getGoogleCacheKey(title));
     if (!raw) return null;
@@ -125,7 +127,8 @@ function GoogleNewsContent({ finding }: { finding: TopicFinding }) {
           setError("Could not fetch article. Open the original link to read.");
         }
       } catch {
-        if (!cancelled) setError("Could not fetch article. Open the original link to read.");
+        if (!cancelled)
+          setError("Could not fetch article. Open the original link to read.");
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -176,7 +179,7 @@ function GoogleNewsContent({ finding }: { finding: TopicFinding }) {
 function YouTubeContent({ finding }: { finding: TopicFinding }) {
   const videoId = getYouTubeVideoId(finding.sourceUrl);
 
-  const { content, loading, error } = useExtractedContent({
+  const { content, loading, error, reExtract } = useExtractedContent({
     url: finding.sourceUrl,
     enabled: true,
   });
@@ -184,7 +187,7 @@ function YouTubeContent({ finding }: { finding: TopicFinding }) {
   return (
     <div className="space-y-4">
       {videoId ? (
-        <div className="relative w-full aspect-video max-h-[300px] rounded-xl overflow-hidden bg-black">
+        <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-black">
           <iframe
             src={`https://www.youtube.com/embed/${videoId}`}
             className="absolute inset-0 w-full h-full"
@@ -206,6 +209,16 @@ function YouTubeContent({ finding }: { finding: TopicFinding }) {
         </div>
       )}
 
+      <div className="flex justify-end border-b border-border/50 pb-2">
+        <button 
+          onClick={reExtract} 
+          disabled={loading}
+          className="text-xs text-muted-foreground hover:text-primary underline transition-colors disabled:opacity-50"
+        >
+          {loading ? "Extracting..." : "Re-extract description"}
+        </button>
+      </div>
+
       {loading ? (
         <ContentSkeleton message="Loading description..." />
       ) : error ? (
@@ -226,13 +239,12 @@ function ExtractableContent({ finding }: { finding: TopicFinding }) {
     "extracted",
   );
 
-  const { content, loading, error, source } = useExtractedContent({
+  const { content, loading, error, source, reExtract } = useExtractedContent({
     url: finding.sourceUrl,
     enabled: true,
   });
 
-  const message =
-    loadingMessages[finding.sourceType] || defaultMessage;
+  const message = loadingMessages[finding.sourceType] || defaultMessage;
 
   return (
     <div className="space-y-4">
@@ -256,6 +268,14 @@ function ExtractableContent({ finding }: { finding: TopicFinding }) {
           }`}
         >
           View Original
+        </button>
+        <div className="flex-1" />
+        <button
+          onClick={reExtract}
+          disabled={loading}
+          className="text-xs text-muted-foreground hover:text-primary underline transition-colors disabled:opacity-50"
+        >
+          {loading ? "Extracting..." : "Re-extract"}
         </button>
       </div>
 

@@ -87,3 +87,46 @@ export async function getFindings({
 export async function getInitialFindings(topicId: string) {
   return getFindings({ topicId });
 }
+
+export async function getFindingCounts(topicId: string): Promise<Record<string, number>> {
+  "use cache";
+  cacheTag(`topic-findings-${topicId}`);
+  cacheLife("minutes");
+
+  try {
+    const groups = await prisma.topicFinding.groupBy({
+      by: ["sourceType"],
+      where: { topicId },
+      _count: {
+        _all: true,
+      },
+    });
+
+    const counts: Record<string, number> = {};
+    let total = 0;
+    let otherCount = 0;
+
+    for (const group of groups) {
+      const type = group.sourceType;
+      const count = group._count._all;
+      counts[type] = count;
+      total += count;
+
+      if (type !== "ARTICLE" && type !== "GOOGLE" && type !== "BRAVE" && type !== "REDDIT") {
+        otherCount += count;
+      }
+    }
+
+    counts["ALL"] = total;
+    counts["OTHER"] = otherCount;
+
+    return counts;
+  } catch (error) {
+    console.error("getFindingCounts error:", error);
+    return {
+      ALL: 0,
+      OTHER: 0,
+    };
+  }
+}
+

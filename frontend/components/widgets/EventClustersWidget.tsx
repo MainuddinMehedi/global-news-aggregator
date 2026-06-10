@@ -13,7 +13,13 @@ export async function EventClustersWidget() {
   const stats = await getClusterStats();
 
   // Fetch top 3 active clusters
-  let topClusters = [];
+  let topClusters: Array<{
+    id: string;
+    title: string;
+    articleCount: number;
+    topSources: string[] | any;
+    impact: string | null;
+  }> = [];
   try {
     topClusters = await prisma.storyCluster.findMany({
       where: { isActive: true },
