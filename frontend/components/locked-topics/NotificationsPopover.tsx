@@ -16,6 +16,7 @@ import { Skeleton } from "../ui/skeleton";
 import Link from "next/link";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { Badge } from "../ui/badge";
 
 interface NotificationsPopoverProps {
   topicId: string;
@@ -105,9 +106,12 @@ export function NotificationsPopover({
         >
           <HugeiconsIcon icon={Notification01Icon} className="h-4 w-4" />
           {unreadCount > 0 && isActive && (
-            <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[9px] font-bold text-destructive-foreground ring-2 ring-background">
-              {unreadCount}
-            </span>
+            <Badge
+              variant="destructive"
+              className="absolute -top-1.5 -right-2 rounded-full px-1.5 text-[10px] bg-destructive/20! [&>svg]:size-2! has-data-[icon=inline-end]:pr-1!"
+            >
+              {unreadCount > 99 ? "99+" : unreadCount}
+            </Badge>
           )}
         </Button>
       </PopoverTrigger>

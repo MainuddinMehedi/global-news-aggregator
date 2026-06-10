@@ -4,15 +4,13 @@ import { useState } from "react";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { NotificationsPopover } from "./NotificationsPopover";
 
 interface TopicActionsProps {
   id: string;
   initialActive: boolean;
-  unread: number;
 }
 
-export function TopicActions({ id, initialActive, unread }: TopicActionsProps) {
+export function TopicActions({ id, initialActive }: TopicActionsProps) {
   const [active, setActive] = useState(initialActive);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
@@ -43,14 +41,7 @@ export function TopicActions({ id, initialActive, unread }: TopicActionsProps) {
   };
 
   return (
-    <div className="flex items-center gap-4">
-      {/*Notification icon & dropdown*/}
-      <NotificationsPopover
-        topicId={id}
-        unreadCount={unread}
-        isActive={active}
-      />
-
+    <div className="flex items-center">
       {/*On/Off switch*/}
       <Switch
         checked={active}

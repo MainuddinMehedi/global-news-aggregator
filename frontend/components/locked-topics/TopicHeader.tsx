@@ -17,10 +17,8 @@ import CreateTopicModal from "./CreateTopicModal";
 
 export default function TopicHeader({
   topic,
-  unreadCount = 0,
 }: {
   topic: LockedTopic;
-  unreadCount?: number;
 }) {
   const initialData: CreateTopicData = {
     displayName: topic.displayName,
@@ -79,7 +77,6 @@ export default function TopicHeader({
           <TopicActions
             id={topic.id}
             initialActive={topic.isActive}
-            unread={unreadCount}
           />
 
           <div className="h-6 w-px bg-border hidden md:block" />
