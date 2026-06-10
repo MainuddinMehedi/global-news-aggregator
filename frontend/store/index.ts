@@ -51,6 +51,24 @@ export type Theme = "light" | "dark" | "system";
 export type ColorTheme = "maia" | "ember" | "iris" | "pine" | "slate";
 export type ResponseStyle = "concise" | "detailed";
 
+export type HomePageMode = "continuous" | "daily" | "hourly";
+export type NotificationMode = "alert" | "digest" | "none";
+
+export interface CustomSource {
+  id: string;
+  name: string;
+  url: string;
+  country: string;
+  priority: "high" | "medium" | "low";
+  enabled: boolean;
+}
+
+export interface NotificationChannels {
+  discord: string;
+  telegram: string;
+  mode: NotificationMode;
+}
+
 interface SettingsState {
   theme: Theme;
   colorTheme: ColorTheme;
@@ -65,6 +83,10 @@ interface SettingsState {
   responseStyle: ResponseStyle;
   favoriteCategories: string[];
   hiddenCategories: string[];
+  homePageMode: HomePageMode;
+  notificationChannels: NotificationChannels;
+  customSources: CustomSource[];
+  hasOnboardedSources: boolean;
 }
 
 interface SettingsActions {
@@ -134,6 +156,10 @@ export const useAppStore = create<AppStore>()(
       responseStyle: "concise",
       favoriteCategories: [],
       hiddenCategories: [],
+      homePageMode: "continuous",
+      notificationChannels: { discord: "", telegram: "", mode: "none" },
+      customSources: [],
+      hasOnboardedSources: false,
       setSetting: (key, value) => set((state) => ({ ...state, [key]: value })),
     }),
     {
@@ -154,6 +180,10 @@ export const useAppStore = create<AppStore>()(
         responseStyle: state.responseStyle,
         favoriteCategories: state.favoriteCategories,
         hiddenCategories: state.hiddenCategories,
+        homePageMode: state.homePageMode,
+        notificationChannels: state.notificationChannels,
+        customSources: state.customSources,
+        hasOnboardedSources: state.hasOnboardedSources,
       }),
     },
   ),

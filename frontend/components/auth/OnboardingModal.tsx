@@ -1,0 +1,92 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
+import { useSettings } from "@/store";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { DEFAULT_CUSTOM_SOURCES } from "@/lib/constants";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { CheckListIcon, Settings02Icon } from "@hugeicons/core-free-icons";
+import { toast } from "sonner";
+
+export default function OnboardingModal() {
+  const { data: session, status } = useSession();
+  const { settings, setSetting } = useSettings();
+  const [isOpen, setIsOpen] = useState(false);
+
+  // Open the modal if the user is authenticated and hasn't onboarded yet
+  useEffect(() => {
+    if (status === "authenticated" && !settings.hasOnboardedSources) {
+      setIsOpen(true);
+    }
+  }, [status, settings.hasOnboardedSources]);
+
+  const handleChoice = (useDefaults: boolean) => {
+    if (useDefaults) {
+      setSetting("customSources", DEFAULT_CUSTOM_SOURCES as any[]); // Use default sources
+      toast.success("Global news sources added to your pipeline.");
+    } else {
+      setSetting("customSources", []); // Use empty array
+      toast.success("Ready for you to add your own sources.");
+    }
+    setSetting("hasOnboardedSources", true);
+    setIsOpen(false);
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      {/* Remove the close button entirely if we want to force them to choose, 
+          but usually it's fine to let them click outside which acts as 'skip',
+          however if they skip, `hasOnboardedSources` stays false so it'll pop up again.
+          Let's force a choice by omitting the close button or preventing close on interact outside.
+      */}
+      <DialogContent 
+        className="max-w-md"
+        onInteractOutside={(e) => e.preventDefault()}
+        onEscapeKeyDown={(e) => e.preventDefault()}
+      >
+        <DialogHeader>
+          <DialogTitle className="text-2xl font-bold">Welcome to Global News!</DialogTitle>
+          <DialogDescription className="text-base pt-2">
+            Before we build your feed, how would you like to set up your news sources?
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="grid gap-4 py-4">
+          <Button 
+            variant="outline" 
+            className="h-auto p-4 justify-start text-left flex gap-4 hover:bg-muted/50"
+            onClick={() => handleChoice(true)}
+          >
+            <div className="bg-primary/10 p-2 rounded-full shrink-0">
+              <HugeiconsIcon icon={CheckListIcon} className="w-6 h-6 text-primary" />
+            </div>
+            <div>
+              <div className="font-semibold text-lg">Use Default Sources</div>
+              <div className="text-sm text-muted-foreground whitespace-normal">
+                Start with a curated list of global news sources (Al Jazeera, UN News, TechCrunch, etc.).
+              </div>
+            </div>
+          </Button>
+
+          <Button 
+            variant="outline" 
+            className="h-auto p-4 justify-start text-left flex gap-4 hover:bg-muted/50"
+            onClick={() => handleChoice(false)}
+          >
+            <div className="bg-primary/10 p-2 rounded-full shrink-0">
+              <HugeiconsIcon icon={Settings02Icon} className="w-6 h-6 text-primary" />
+            </div>
+            <div>
+              <div className="font-semibold text-lg">Start Fresh</div>
+              <div className="text-sm text-muted-foreground whitespace-normal">
+                Don't add any sources yet. I will manually add my own specific RSS feeds.
+              </div>
+            </div>
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}

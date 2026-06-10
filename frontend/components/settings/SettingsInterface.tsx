@@ -13,11 +13,20 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { CANONICAL_CATEGORIES } from "@/lib/constants";
 import { Check } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
+import NotificationsSection from "./NotificationsSection";
+import SourcesSection from "./SourcesSection";
+import type { HomePageMode } from "@/store";
+import { useSession, signOut } from "next-auth/react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
+import { MODEL_REGISTRY } from "@/lib/ai/modelRegistry";
 
 const COLOR_THEMES: { id: ColorTheme; label: string; swatch: string }[] = [
   { id: "maia", label: "Maia", swatch: "bg-[oklch(0.55_0.15_200)]" },
@@ -31,8 +40,11 @@ const SETTINGS_SECTIONS = [
   { id: "general", label: "General" },
   { id: "feed", label: "Feed Preferences" },
   { id: "ai", label: "AI & Analysis" },
-  { id: "categories", label: "Categories" },
+  { id: "notifications", label: "Notifications" },
+  { id: "advanced", label: "Advanced" },
 ];
+
+const ALLOWED_AI_MODELS = ["groq/compound", "gemini-3.1-flash-lite", "gemma-4-26b-a4b-it"];
 
 export default function SettingsInterface() {
   const [mounted, setMounted] = useState(false);
@@ -40,6 +52,22 @@ export default function SettingsInterface() {
   const { theme, setTheme } = useTheme();
   const { colorTheme } = settings;
   const [activeSection, setActiveSection] = useState<string>("general");
+  const { data: session } = useSession();
+
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  useEffect(() => {
+    // Sync settings to server after a debounce
+    const timeout = setTimeout(() => {
+      fetch("/api/user/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(settings),
+      }).catch(err => console.error("Failed to sync settings:", err));
+    }, 1000);
+    return () => clearTimeout(timeout);
+  }, [settings]);
 
   useEffect(() => {
     setMounted(true);
@@ -87,11 +115,60 @@ export default function SettingsInterface() {
   const scrollToSection = (id: string) => {
     const el = document.getElementById(id);
     if (el) {
-      // Adjusted offset to account for sticky headers if any, or general padding
       const y = el.getBoundingClientRect().top + window.scrollY - 120;
       window.scrollTo({ top: y, behavior: "smooth" });
     }
   };
+
+  const getInitials = (name?: string | null, email?: string | null) => {
+    const displayValue = name || email || "?";
+    return displayValue.charAt(0).toUpperCase();
+  };
+
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmText !== "DELETE") {
+      toast.error("Please type DELETE to confirm.");
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      const res = await fetch("/api/user/delete", { method: "POST" });
+      if (!res.ok) throw new Error("Failed to delete account");
+      
+      toast.success("Account deleted successfully. Logging out...");
+      signOut({ callbackUrl: "/" });
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to delete account.");
+      setIsDeleting(false);
+    }
+  };
+
+  const toggleCategoryFavorite = (cat: string) => {
+    const isFav = settings.favoriteCategories.includes(cat);
+    if (isFav) {
+      setSetting("favoriteCategories", settings.favoriteCategories.filter(c => c !== cat));
+    } else {
+      setSetting("favoriteCategories", [...settings.favoriteCategories, cat]);
+    }
+  };
+
+  const disableCategory = (cat: string) => {
+    setSetting("hiddenCategories", [...settings.hiddenCategories, cat]);
+    if (settings.favoriteCategories.includes(cat)) {
+      setSetting("favoriteCategories", settings.favoriteCategories.filter(c => c !== cat));
+    }
+  };
+
+  const enableCategory = (cat: string) => {
+    setSetting("hiddenCategories", settings.hiddenCategories.filter(c => c !== cat));
+  };
+
+  const enabledCategories = CANONICAL_CATEGORIES.filter(cat => !settings.hiddenCategories.includes(cat));
+  const disabledCategories = CANONICAL_CATEGORIES.filter(cat => settings.hiddenCategories.includes(cat));
+
+  const aiModels = MODEL_REGISTRY.filter(m => ALLOWED_AI_MODELS.includes(m.id));
 
   return (
     <div className="flex flex-col md:flex-row gap-10 items-start">
@@ -121,11 +198,29 @@ export default function SettingsInterface() {
           <div>
             <h2 className="text-2xl font-bold tracking-tight">General</h2>
             <p className="text-sm text-muted-foreground mt-1">
-              Basic interface and display preferences.
+              Basic interface and profile preferences.
             </p>
           </div>
           <Card>
             <CardContent className="p-6 space-y-6">
+              {session?.user && (
+                <>
+                  <div className="flex items-center gap-4">
+                    <Avatar className="w-16 h-16">
+                      <AvatarImage src={session.user.image || undefined} alt={session.user.name || "User"} />
+                      <AvatarFallback className="bg-primary text-primary-foreground text-xl font-bold">
+                        {getInitials(session.user.name, session.user.email)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col">
+                      <h3 className="text-xl font-bold">{session.user.name || "Anonymous User"}</h3>
+                      <p className="text-sm text-muted-foreground">{session.user.email}</p>
+                    </div>
+                  </div>
+                  <Separator />
+                </>
+              )}
+
               <div className="flex items-center justify-between">
                 <div className="space-y-1">
                   <Label>Appearance</Label>
@@ -141,6 +236,27 @@ export default function SettingsInterface() {
                     <SelectItem value="light">Light</SelectItem>
                     <SelectItem value="dark">Dark</SelectItem>
                     <SelectItem value="system">System</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <Separator />
+
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <Label>Home Page View</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Choose how the home page presents news to you.
+                  </p>
+                </div>
+                <Select value={settings.homePageMode} onValueChange={(v: HomePageMode) => setSetting("homePageMode", v)}>
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Select view mode" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="continuous">Continuous Feed</SelectItem>
+                    <SelectItem value="daily">Daily View (Today's News)</SelectItem>
+                    <SelectItem value="hourly">Hourly View</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -182,23 +298,6 @@ export default function SettingsInterface() {
                     </button>
                   ))}
                 </div>
-              </div>
-
-              <Separator />
-
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <Label>Compact Mode</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Reduce whitespace in article cards for a denser view.
-                  </p>
-                </div>
-                <Switch
-                  checked={settings.compactMode}
-                  onCheckedChange={(checked) =>
-                    setSetting("compactMode", checked)
-                  }
-                />
               </div>
             </CardContent>
           </Card>
@@ -320,12 +419,9 @@ export default function SettingsInterface() {
                     <SelectValue placeholder="Select model" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="groq-llama-3">
-                      Groq (Llama 3 - Fast)
-                    </SelectItem>
-                    <SelectItem value="google-gemini-1.5-pro">
-                      Google (Gemini 1.5 Pro - Quality)
-                    </SelectItem>
+                    {aiModels.map(m => (
+                      <SelectItem key={m.id} value={m.id}>{m.label}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -394,87 +490,132 @@ export default function SettingsInterface() {
           </Card>
         </section>
 
-        {/* Categories Settings */}
-        <section id="categories" className="scroll-mt-32 space-y-6">
+        {/* Notifications Settings */}
+        <section id="notifications" className="scroll-mt-32 space-y-6">
           <div>
-            <h2 className="text-2xl font-bold tracking-tight">Categories</h2>
+            <h2 className="text-2xl font-bold tracking-tight">Notifications</h2>
             <p className="text-sm text-muted-foreground mt-1">
-              Personalize your feed by favoring or hiding specific topics.
+              Configure external channels and alerts for your topics.
             </p>
           </div>
-          <Card>
-            <CardContent className="p-6 space-y-6">
-              <div className="space-y-4">
-                <Label>Favorite Categories</Label>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {CANONICAL_CATEGORIES.map((cat) => (
-                    <div
-                      key={`fav-${cat}`}
-                      className="flex items-center space-x-2"
-                    >
-                      <Checkbox
-                        id={`fav-${cat}`}
-                        checked={settings.favoriteCategories.includes(cat)}
-                        onCheckedChange={(checked) => {
-                          const next = checked
-                            ? [...settings.favoriteCategories, cat]
-                            : settings.favoriteCategories.filter(
-                                (c) => c !== cat,
-                              );
-                          setSetting("favoriteCategories", next);
-                        }}
-                      />
-                      <label
-                        htmlFor={`fav-${cat}`}
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                      >
-                        {cat.charAt(0).toUpperCase() + cat.slice(1)}
-                      </label>
-                    </div>
-                  ))}
-                </div>
-              </div>
+          <NotificationsSection />
+        </section>
 
-              <Separator />
-
-              <div className="space-y-4">
+        {/* Advanced Settings */}
+        <section id="advanced" className="scroll-mt-32 space-y-6">
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight">Advanced</h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              Manage categories, custom RSS sources, and account deletion.
+            </p>
+          </div>
+          
+          <div className="space-y-6">
+            <Card>
+              <CardContent className="p-6 space-y-4">
                 <div className="space-y-1">
-                  <Label>Hidden Categories</Label>
+                  <Label className="text-base">Active Categories</Label>
                   <p className="text-sm text-muted-foreground">
-                    Articles from these categories will be removed from your
-                    main feed.
+                    Click a category to toggle favorite status. <span className="font-medium text-primary">Primary</span> = Favorite. <span className="text-muted-foreground">Gray</span> = Neutral.
                   </p>
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {CANONICAL_CATEGORIES.map((cat) => (
-                    <div
-                      key={`hide-${cat}`}
-                      className="flex items-center space-x-2"
-                    >
-                      <Checkbox
-                        id={`hide-${cat}`}
-                        checked={settings.hiddenCategories.includes(cat)}
-                        onCheckedChange={(checked) => {
-                          const next = checked
-                            ? [...settings.hiddenCategories, cat]
-                            : settings.hiddenCategories.filter(
-                                (c) => c !== cat,
-                              );
-                          setSetting("hiddenCategories", next);
-                        }}
-                      />
-                      <label
-                        htmlFor={`hide-${cat}`}
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                      >
-                        {cat.charAt(0).toUpperCase() + cat.slice(1)}
-                      </label>
-                    </div>
-                  ))}
+                <div className="flex flex-wrap gap-2 pt-2">
+                  {enabledCategories.map(cat => {
+                    const isFav = settings.favoriteCategories.includes(cat);
+                    
+                    let pillStyle = "bg-muted text-muted-foreground hover:bg-muted/80";
+                    if (isFav) pillStyle = "bg-primary text-primary-foreground shadow-sm hover:bg-primary/90";
+                    
+                    return (
+                      <div key={cat} className="flex items-center">
+                        <button 
+                          onClick={() => toggleCategoryFavorite(cat)} 
+                          className={`px-4 py-1.5 rounded-l-full text-sm font-medium transition-colors ${pillStyle}`}
+                        >
+                          {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                        </button>
+                        <button 
+                          onClick={() => disableCategory(cat)}
+                          className="px-2.5 py-1.5 rounded-r-full bg-muted/60 text-muted-foreground hover:bg-destructive hover:text-destructive-foreground transition-colors"
+                          title="Hide Category"
+                        >
+                          &times;
+                        </button>
+                      </div>
+                    )
+                  })}
+                  {enabledCategories.length === 0 && (
+                    <span className="text-sm text-muted-foreground italic">All categories are hidden.</span>
+                  )}
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+
+                {disabledCategories.length > 0 && (
+                  <div className="pt-4 space-y-4">
+                    <Separator />
+                    <div className="space-y-1">
+                      <Label className="text-base">More Categories</Label>
+                      <p className="text-sm text-muted-foreground">
+                        These are hidden from your feed. Click to add them back.
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2 pt-2">
+                      {disabledCategories.map(cat => (
+                        <button 
+                          key={cat}
+                          onClick={() => enableCategory(cat)} 
+                          className="px-4 py-1.5 rounded-full text-sm font-medium border border-dashed border-muted-foreground/40 text-muted-foreground hover:text-foreground hover:border-foreground transition-colors"
+                        >
+                          + {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <SourcesSection />
+
+            <Card className="border-destructive/30">
+              <CardContent className="p-6">
+                <div className="space-y-1 mb-4">
+                  <h4 className="text-sm font-semibold text-destructive">Danger Zone</h4>
+                  <p className="text-sm text-muted-foreground">Permanently delete your account and all associated data.</p>
+                </div>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button variant="destructive" size="sm">
+                      Delete Account
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle className="text-destructive">Are you absolutely sure?</DialogTitle>
+                      <DialogDescription>
+                        This action cannot be undone. This will permanently delete your account, including your saved topics, custom sources, bookmarks, and chat history.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <p className="text-sm font-medium">
+                        Please type <span className="font-bold select-none text-foreground">DELETE</span> to confirm.
+                      </p>
+                      <Input 
+                        value={deleteConfirmText}
+                        onChange={(e) => setDeleteConfirmText(e.target.value)}
+                        placeholder="DELETE"
+                        className="max-w-[200px]"
+                      />
+                    </div>
+                    <DialogFooter>
+                      <Button variant="destructive" disabled={deleteConfirmText !== "DELETE" || isDeleting} onClick={handleDeleteAccount}>
+                        {isDeleting ? "Deleting..." : "Permanently Delete Account"}
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </CardContent>
+            </Card>
+          </div>
         </section>
       </div>
     </div>

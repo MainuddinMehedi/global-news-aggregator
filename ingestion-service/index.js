@@ -22,7 +22,6 @@ const aiLimitArg = args.find((a) => a.startsWith("--ai-limit="));
 const aiLimit = aiLimitArg ? parseInt(aiLimitArg.split("=")[1]) : Infinity;
 
 const aiProcessor = skipAI ? null : createArticleProcessor();
-const sources = getActiveFeeds();
 
 const startTime = Date.now();
 
@@ -34,6 +33,8 @@ async function run() {
     console.log(`🚀 Running with AI limit: ${aiLimit} articles max\n`);
   }
 
+  const sources = await getActiveFeeds();
+  
   let totalFetched = 0;
   let totalInserted = 0;
   let totalDupes = 0;

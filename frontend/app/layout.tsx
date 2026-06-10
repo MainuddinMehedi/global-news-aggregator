@@ -13,6 +13,7 @@ import SidebarWrapper from "@/components/layout/SidebarWrapper";
 import FeedSkeleton from "@/components/Feed/FeedSkeleton";
 import ChatFAB from "@/components/chat/ChatFAB";
 import ChatSidebar from "@/components/chat/ChatSidebar";
+import OnboardingModal from "@/components/auth/OnboardingModal";
 
 import { Toaster } from "@/components/ui/sonner";
 
@@ -80,6 +81,8 @@ export default function RootLayout({
               <ChatFAB />
               <ChatSidebar />
             </Suspense>
+
+            <OnboardingModal />
 
             <Toaster />
           </Providers>

@@ -175,7 +175,7 @@ export default function SidebarContent({
                 <div className="flex flex-col gap-2 pt-3 border-t border-border/50">
                   <Link href="/settings" className="w-full">
                     <Button variant="outline" size="sm" className="w-full justify-start text-xs font-semibold rounded-lg">
-                      Settings
+                      Account Settings
                     </Button>
                   </Link>
                   <Button 
