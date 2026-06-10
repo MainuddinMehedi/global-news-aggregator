@@ -83,19 +83,19 @@ export default function EventClustersList({ clusters }: EventClustersListProps) 
               {cluster.title}
             </h4>
             
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center space-x-1.5 min-w-0">
-                <span className="text-[10px] font-medium text-muted-foreground whitespace-nowrap">
-                  {cluster.articleCount} articles • {sourceCount} {sourceCount === 1 ? "source" : "sources"}
-                </span>
-                
-                {/* Perspective Dots */}
+            <div className="flex items-center justify-between gap-2 mt-2">
+              <div className="text-[10px] font-medium text-muted-foreground truncate">
+                {cluster.articleCount} articles • {sourceCount} {sourceCount === 1 ? "source" : "sources"}
+              </div>
+              
+              <div className="flex items-center space-x-1.5 shrink-0">
+                {/* Perspective Dots Pill */}
                 {cluster.perspectives && cluster.perspectives.length > 0 && (
-                  <div className="flex items-center space-x-1 pl-1">
+                  <div className="flex items-center space-x-1 bg-muted/40 px-1.5 py-0.5 rounded-md border border-border/20">
                     {cluster.perspectives.map((p) => (
                       <span
                         key={p}
-                        title={p}
+                        title={`${p} perspective`}
                         className={cn(
                           "w-1.5 h-1.5 rounded-full inline-block shrink-0",
                           PERSPECTIVE_DOT_COLORS[p] || "bg-slate-400"
@@ -104,17 +104,18 @@ export default function EventClustersList({ clusters }: EventClustersListProps) 
                     ))}
                   </div>
                 )}
+                
+                {/* Impact Indicator Dot */}
+                {cluster.impact && (
+                  <div
+                    title={`Impact: ${cluster.impact}`}
+                    className={cn(
+                      "w-2 h-2 rounded-full border border-background shadow-sm shrink-0",
+                      IMPACT_COLORS[cluster.impact] || "bg-blue-500"
+                    )}
+                  />
+                )}
               </div>
-
-              {cluster.impact && (
-                <div
-                  title={`Impact: ${cluster.impact}`}
-                  className={cn(
-                    "w-1.5 h-1.5 rounded-full shrink-0",
-                    IMPACT_COLORS[cluster.impact] || "bg-blue-500"
-                  )}
-                />
-              )}
             </div>
           </button>
         );
