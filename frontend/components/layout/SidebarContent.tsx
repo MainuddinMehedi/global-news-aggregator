@@ -143,10 +143,19 @@ export default function SidebarContent({
                 </AvatarFallback>
               </Avatar>
               {!effectiveCollapsed && (
-                <div className="flex flex-col min-w-0">
-                  <span className="text-sm font-medium truncate text-sidebar-foreground">
-                    {status === "loading" ? "Loading..." : session?.user ? session.user.name : "Sign In"}
+                <div className="flex flex-col min-w-0 text-left">
+                  <span className="text-sm font-semibold truncate text-sidebar-foreground">
+                    {status === "loading"
+                      ? "Loading..."
+                      : session?.user
+                      ? (session.user.name || "User")
+                      : "Sign In"}
                   </span>
+                  {session?.user && (
+                    <span className="text-[11px] text-sidebar-foreground/50 truncate">
+                      {session.user.email}
+                    </span>
+                  )}
                 </div>
               )}
             </div>
