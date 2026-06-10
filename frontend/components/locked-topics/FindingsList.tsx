@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { TopicFinding, FindingSource } from "@/types/lockedTopic";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { RefreshIcon, LinkSquare02Icon } from "@hugeicons/core-free-icons";
+import { RefreshIcon, LinkSquare02Icon, Delete01Icon } from "@hugeicons/core-free-icons";
 import { Button } from "../ui/button";
 import { Skeleton } from "../ui/skeleton";
 import { FindingDetailsModal } from "./FindingDetailsModal";
@@ -81,6 +81,22 @@ export default function FindingsList({
     return () => observer.disconnect();
   }, [fetchNextPage, error]);
 
+  const handleDeleteFinding = useCallback(async (findingId: string) => {
+    // Optimistic UI update: remove from state immediately
+    setFindings((prev) => prev.filter((f) => f.id !== findingId));
+
+    try {
+      const res = await fetch(`/api/locked-topics/${topicId}/findings/${findingId}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) {
+        throw new Error("Failed to delete from database");
+      }
+    } catch (err) {
+      console.error("Error deleting finding:", err);
+    }
+  }, [topicId]);
+
   const handleRetry = () => {
     setError(null);
     setTimeout(() => fetchNextPage(), 0);
@@ -104,6 +120,7 @@ export default function FindingsList({
             key={finding.id}
             finding={finding}
             onSelect={setSelectedFinding}
+            onDelete={handleDeleteFinding}
           />
         ))}
       </div>
@@ -112,6 +129,11 @@ export default function FindingsList({
         <FindingDetailsModal
           finding={selectedFinding}
           onClose={() => setSelectedFinding(null)}
+          onDelete={async () => {
+            const idToDelete = selectedFinding.id;
+            setSelectedFinding(null);
+            await handleDeleteFinding(idToDelete);
+          }}
         />
       )}
 
@@ -156,9 +178,11 @@ export default function FindingsList({
 function FindingCard({
   finding,
   onSelect,
+  onDelete,
 }: {
   finding: TopicFinding;
   onSelect: (f: TopicFinding) => void;
+  onDelete: (findingId: string) => void;
 }) {
   const showNewBadge = !finding.isRead;
 
@@ -227,6 +251,17 @@ function FindingCard({
                 </span>
               </>
             )}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(finding.id);
+              }}
+              className="ml-auto p-1 rounded-lg text-destructive hover:bg-destructive/10 opacity-100 md:opacity-0 group-hover:opacity-100 transition-all duration-300 inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-wider"
+              title="Delete finding"
+            >
+              <HugeiconsIcon icon={Delete01Icon} size={12} />
+              Delete
+            </button>
           </div>
           <h3 className="text-2xl font-extrabold group-hover:text-primary transition-colors leading-tight tracking-tight">
             {finding.title}

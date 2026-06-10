@@ -10,17 +10,19 @@ import {
 } from "@/components/ui/dialog";
 import FindingContentSection from "./FindingContentSection";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { LinkSquare02Icon } from "@hugeicons/core-free-icons";
+import { LinkSquare02Icon, Delete01Icon } from "@hugeicons/core-free-icons";
 import { RelativeTime } from "@/components/ui/RelativeTime";
 
 interface FindingDetailsModalProps {
   finding: TopicFinding | null;
   onClose: () => void;
+  onDelete: () => Promise<void>;
 }
 
 export function FindingDetailsModal({
   finding,
   onClose,
+  onDelete,
 }: FindingDetailsModalProps) {
   if (!finding) return null;
 
@@ -89,39 +91,49 @@ export function FindingDetailsModal({
           <FindingContentSection finding={finding} />
         </div>
 
-        <div className="p-4 border-t border-border/50 backdrop-blur-sm shrink-0 flex justify-end gap-3">
-          {finding.sourceType === "REDDIT" && !(finding.metadata as any)?.isSelfPost && (finding.metadata as any)?.externalUrl ? (
-            <>
+        <div className="p-4 border-t border-border/50 backdrop-blur-sm shrink-0 flex justify-between items-center gap-3">
+          <button
+            onClick={onDelete}
+            className="flex items-center justify-center rounded-lg text-sm font-semibold transition-colors focus-visible:outline-none bg-destructive/10 text-destructive hover:bg-destructive/20 h-9 px-4 gap-2"
+          >
+            <HugeiconsIcon icon={Delete01Icon} className="w-4 h-4" />
+            Delete Finding
+          </button>
+
+          <div className="flex gap-3">
+            {finding.sourceType === "REDDIT" && !(finding.metadata as any)?.isSelfPost && (finding.metadata as any)?.externalUrl ? (
+              <>
+                <a
+                  href={finding.sourceUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex w-full sm:w-auto items-center justify-center whitespace-nowrap rounded-lg text-sm font-semibold transition-colors focus-visible:outline-none bg-secondary text-secondary-foreground hover:bg-secondary/80 h-9 px-4 gap-2 border border-border"
+                >
+                  <HugeiconsIcon icon={LinkSquare02Icon} className="w-4 h-4" />
+                  Reddit Discussion
+                </a>
+                <a
+                  href={(finding.metadata as any).externalUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex w-full sm:w-auto items-center justify-center whitespace-nowrap rounded-lg text-sm font-semibold transition-colors focus-visible:outline-none bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 gap-2"
+                >
+                  <HugeiconsIcon icon={LinkSquare02Icon} className="w-4 h-4" />
+                  Open Linked Article
+                </a>
+              </>
+            ) : (
               <a
                 href={finding.sourceUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex w-full sm:w-auto items-center justify-center whitespace-nowrap rounded-lg text-sm font-semibold transition-colors focus-visible:outline-none bg-secondary text-secondary-foreground hover:bg-secondary/80 h-9 px-4 gap-2 border border-border"
+                className="flex w-full sm:w-auto items-center justify-center whitespace-nowrap rounded-lg text-sm font-semibold ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 gap-2"
               >
                 <HugeiconsIcon icon={LinkSquare02Icon} className="w-4 h-4" />
-                Reddit Discussion
+                Open Original
               </a>
-              <a
-                href={(finding.metadata as any).externalUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex w-full sm:w-auto items-center justify-center whitespace-nowrap rounded-lg text-sm font-semibold transition-colors focus-visible:outline-none bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 gap-2"
-              >
-                <HugeiconsIcon icon={LinkSquare02Icon} className="w-4 h-4" />
-                Open Linked Article
-              </a>
-            </>
-          ) : (
-            <a
-              href={finding.sourceUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex w-full sm:w-auto items-center justify-center whitespace-nowrap rounded-lg text-sm font-semibold ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 gap-2"
-            >
-              <HugeiconsIcon icon={LinkSquare02Icon} className="w-4 h-4" />
-              Open Original
-            </a>
-          )}
+            )}
+          </div>
         </div>
       </DialogContent>
     </Dialog>

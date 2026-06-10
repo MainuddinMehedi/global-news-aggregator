@@ -53,7 +53,12 @@ USER INTENT: "${userContext}"
 DISPLAY NAME: "${displayName}"
 
 TASK:
-1. Generate an OPTIMIZED search query (keyword based) that can be used across Google News, Brave Search, and Reddit to find matches for this intent. Use standard operators (OR, quotes) if helpful. Keep it concise
+1. Generate an OPTIMIZED boolean search query (aiRefinedQuery) that can be used across Google News, Brave Search, and Reddit.
+   - The query MUST follow a strict nested AND structure to balance high-recall and precision:
+     (Core Subject Terms) AND (Evaluation/Performance/Key Synonyms) AND (Conversational/Context/Competitor/Application Synonyms)
+   - Do NOT just search for rigid academic or marketing keywords. Include conversational synonyms that are used in informal settings or social media (e.g. use "prod", "production", "coding", "workflow", "app", "experience", "thoughts", "tweak", "vs" alongside formal terms like "benchmark", "case study", "performance").
+   - Example structure for tracking a model performance:
+     ("Deepseek v4" OR "Deepseek-v4") AND (performance OR benchmark OR test OR speed OR vs OR compare) AND ("real world" OR prod OR production OR coding OR app OR thoughts OR experience OR "use case" OR Gemini OR Claude)
 2. Generate SEMANTIC CONCEPT BUCKETS (conceptualKeywords). This is an array of string arrays.
    - Each inner array is a "concept bucket".
    - LOGIC: Terms INSIDE a bucket are AND-ed (must all match). Buckets are OR-ed (any bucket match = pass).
