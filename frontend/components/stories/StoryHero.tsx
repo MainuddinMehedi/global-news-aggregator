@@ -2,6 +2,12 @@ import { Badge } from "@/components/ui/badge";
 import { ImpactBadge } from "./ImpactBadge";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Clock01Icon, Earth, TradeUpIcon } from "@hugeicons/core-free-icons";
+import { SourceAvatarStack } from "@/components/ui/SourceAvatar";
+
+interface Source {
+  name: string;
+  url: string;
+}
 
 interface StoryHeroProps {
   story: {
@@ -16,9 +22,10 @@ interface StoryHeroProps {
     themes?: string[];
     topSources?: string[];
   };
+  sources: Source[];
 }
 
-export default function StoryHero({ story }: StoryHeroProps) {
+export default function StoryHero({ story, sources }: StoryHeroProps) {
   return (
     <div className="rounded-[2.5rem] border border-border bg-card/40 backdrop-blur-xl p-6 md:p-8 shadow-sm relative overflow-hidden">
       <div className="absolute inset-0 -z-10 bg-linear-to-br from-primary/5 via-transparent to-transparent opacity-50" />
@@ -90,19 +97,23 @@ export default function StoryHero({ story }: StoryHeroProps) {
             <span className="w-4 h-px bg-border group-hover:w-8 transition-all" />
             Intelligence Sources
           </p>
-          <div className="flex flex-wrap gap-2">
-            {story.topSources && story.topSources.length > 0 ? (
-              story.topSources.slice(0, 4).map((s) => (
-                <Badge key={s} variant="outline" className="bg-background/50">
-                  {s}
-                </Badge>
-              ))
-            ) : (
-              <span className="text-sm text-muted-foreground">
-                Sources pending
-              </span>
-            )}
-          </div>
+          {sources && sources.length > 0 ? (
+            <div className="flex items-center gap-3">
+              <SourceAvatarStack sources={sources} max={5} />
+              <div className="flex flex-col min-w-0">
+                <span className="text-xs font-bold text-foreground leading-none">
+                  {sources.length} {sources.length === 1 ? "Source" : "Sources"}
+                </span>
+                <span className="text-[9px] text-muted-foreground font-semibold uppercase tracking-wider truncate max-w-[120px] mt-1" title={sources.map(s => s.name).join(", ")}>
+                  {sources.map(s => s.name).join(", ")}
+                </span>
+              </div>
+            </div>
+          ) : (
+            <span className="text-sm text-muted-foreground">
+              Sources pending
+            </span>
+          )}
         </div>
       </div>
     </div>

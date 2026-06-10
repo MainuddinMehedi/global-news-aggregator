@@ -29,6 +29,16 @@ export async function getStoryClusters(search?: string) {
       where: searchFilter,
       orderBy: { updatedAt: "desc" },
       include: {
+        articles: {
+          select: {
+            rawArticle: {
+              select: {
+                source: true,
+                url: true,
+              },
+            },
+          },
+        },
         _count: {
           select: { articles: true },
         },
@@ -36,28 +46,42 @@ export async function getStoryClusters(search?: string) {
       take: 50,
     });
 
-    return clusters.map((cluster) => ({
-      id: cluster.id,
-      slug: cluster.slug,
-      title: cluster.title,
-      summary: cluster.summary,
-      timeWindow: cluster.timeWindow || "Recent",
-      articleCount: cluster._count.articles,
-      // Intelligence fields
-      impact: cluster.impact,
-      status: cluster.status,
-      regions: cluster.regions || [],
-      themes: cluster.themes || [],
-      sourceCount: cluster.sourceCount || 0,
-      topSources: cluster.topSources || [],
-      whyItMatters: cluster.whyItMatters,
-      keyDevelopments: (cluster.keyDevelopments || []) as unknown as Array<{
-        title: string;
-        date: string;
-      }>,
-      updatedAt: cluster.updatedAt.toISOString(),
-      trendData: cluster.trendData,
-    }));
+    return clusters.map((cluster) => {
+      const sourcesMap = new Map<string, string>();
+      cluster.articles.forEach((art) => {
+        if (art.rawArticle.source && !sourcesMap.has(art.rawArticle.source)) {
+          sourcesMap.set(art.rawArticle.source, art.rawArticle.url);
+        }
+      });
+      const sources = Array.from(sourcesMap.entries()).map(([name, url]) => ({
+        name,
+        url,
+      }));
+
+      return {
+        id: cluster.id,
+        slug: cluster.slug,
+        title: cluster.title,
+        summary: cluster.summary,
+        timeWindow: cluster.timeWindow || "Recent",
+        articleCount: cluster._count.articles,
+        // Intelligence fields
+        impact: cluster.impact,
+        status: cluster.status,
+        regions: cluster.regions || [],
+        themes: cluster.themes || [],
+        sourceCount: cluster.sourceCount || 0,
+        topSources: cluster.topSources || [],
+        sources,
+        whyItMatters: cluster.whyItMatters,
+        keyDevelopments: (cluster.keyDevelopments || []) as unknown as Array<{
+          title: string;
+          date: string;
+        }>,
+        updatedAt: cluster.updatedAt.toISOString(),
+        trendData: cluster.trendData,
+      };
+    });
   } catch (error) {
     console.log("getStoryClusters error:", error);
     return [];

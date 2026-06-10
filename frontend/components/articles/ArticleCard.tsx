@@ -9,6 +9,7 @@ import AiButton from "./AiButton";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Globe } from "@hugeicons/core-free-icons";
 import { RelativeTime } from "@/components/ui/RelativeTime";
+import { SourceAvatar } from "@/components/ui/SourceAvatar";
 
 export default function ArticleCard({
   article,
@@ -49,9 +50,11 @@ export default function ArticleCard({
       <CardContent className="flex-1 flex flex-col space-y-3">
         {/* Source · Time · Sentiment */}
         <div className="flex items-center space-x-2 text-xs">
-          <div className="w-5 h-5 rounded bg-secondary flex items-center justify-center text-[9px] font-bold text-secondary-foreground border border-border/50">
-            {article.source.substring(0, 2).toUpperCase()}
-          </div>
+          <SourceAvatar
+            name={article.source}
+            url={article.url}
+            className="w-5 h-5 rounded"
+          />
           <span className="font-semibold text-foreground/80">
             {article.source}
           </span>

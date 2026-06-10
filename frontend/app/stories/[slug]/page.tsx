@@ -42,6 +42,17 @@ export default async function StoryDetailsPage({
     slug: processedArticle.rawArticle.slug,
   });
 
+  const uniqueSourcesMap = new Map<string, string>();
+  story.articles.forEach((art) => {
+    if (art.rawArticle.source && !uniqueSourcesMap.has(art.rawArticle.source)) {
+      uniqueSourcesMap.set(art.rawArticle.source, art.rawArticle.url);
+    }
+  });
+  const sources = Array.from(uniqueSourcesMap.entries()).map(([name, url]) => ({
+    name,
+    url,
+  }));
+
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-8">
       <Link
@@ -52,7 +63,7 @@ export default async function StoryDetailsPage({
         Back to Stories
       </Link>
 
-      <StoryHero story={story} />
+      <StoryHero story={story} sources={sources} />
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         <div className="lg:col-span-8 space-y-8">

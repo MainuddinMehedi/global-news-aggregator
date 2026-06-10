@@ -2,10 +2,16 @@ import { ImpactBadge } from "./ImpactBadge";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Clock01Icon, Earth, TradeUpIcon } from "@hugeicons/core-free-icons";
 import Link from "next/link";
+import { SourceAvatarStack } from "@/components/ui/SourceAvatar";
 
 interface KeyDevelopment {
   title: string;
   date: string;
+}
+
+interface Source {
+  name: string;
+  url: string;
 }
 
 interface StoryCardProps {
@@ -20,6 +26,7 @@ interface StoryCardProps {
     status?: string | null;
     regions?: string[];
     themes?: string[];
+    sources: Source[];
     keyDevelopments: KeyDevelopment[];
   };
 }
@@ -83,6 +90,13 @@ export default function StoryCard({ story }: StoryCardProps) {
                     {story.themes.slice(0, 3).join(", ")}
                     {story.themes.length > 3 && ", ..."}
                   </span>
+                </div>
+              )}
+              {story.sources && story.sources.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <span className="text-foreground/40 font-black">/</span>
+                  <span className="text-foreground/70">Sources:</span>
+                  <SourceAvatarStack sources={story.sources} max={4} className="py-0.5" />
                 </div>
               )}
             </div>
