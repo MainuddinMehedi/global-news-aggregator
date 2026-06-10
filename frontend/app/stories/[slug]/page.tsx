@@ -102,6 +102,7 @@ export default async function StoryDetailsPage({
                   <ArticleCard
                     key={processedArticle.id}
                     article={mappedArticle}
+                    storySlug={resolvedParams.slug}
                   />
                 );
               })}

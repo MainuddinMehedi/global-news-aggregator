@@ -17,10 +17,17 @@ import { RelativeTime } from "@/components/ui/RelativeTime";
 
 export default async function ArticleDetailsPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const { slug } = await params;
+  const resolvedSearchParams = await searchParams;
+  const storySlug =
+    typeof resolvedSearchParams.story === "string"
+      ? resolvedSearchParams.story
+      : undefined;
   const article = await getArticleById(slug);
 
   if (!article) {
@@ -30,11 +37,11 @@ export default async function ArticleDetailsPage({
   return (
     <div className="mx-auto w-full max-w- px-4 py-8 sm:px-6 lg:px-8 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <Link
-        href="/"
+        href={storySlug ? `/stories/${storySlug}` : "/"}
         className="inline-flex items-center text-sm text-muted-foreground hover:text-primary transition-colors"
       >
         <HugeiconsIcon icon={ArrowLeft} className="w-4 h-4 mr-1" />
-        Back to Feed
+        {storySlug ? "Go Back" : "Back to Feed"}
       </Link>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

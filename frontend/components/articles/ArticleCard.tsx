@@ -10,13 +10,23 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { Globe } from "@hugeicons/core-free-icons";
 import { RelativeTime } from "@/components/ui/RelativeTime";
 
-export default function ArticleCard({ article }: { article: Article }) {
+export default function ArticleCard({
+  article,
+  storySlug,
+}: {
+  article: Article;
+  storySlug?: string;
+}) {
+  const articleHref = storySlug
+    ? `/article/${article.slug || article.id}?story=${storySlug}`
+    : `/article/${article.slug || article.id}`;
+
   return (
     <Card className="h-full flex flex-col gap-3 group hover:border-primary/50 transition-colors duration-200">
       <CardHeader className="">
         <div className="flex items-start justify-between gap-2">
           <Link
-            href={`/article/${article.slug || article.id}`}
+            href={articleHref}
             scroll={false}
             className="flex-1"
           >
@@ -55,7 +65,7 @@ export default function ArticleCard({ article }: { article: Article }) {
 
         {/* Snippet */}
         <Link
-          href={`/article/${article.slug || article.id}`}
+          href={articleHref}
           scroll={false}
           className="flex-1 block"
         >
