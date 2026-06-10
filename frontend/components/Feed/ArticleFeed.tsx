@@ -9,6 +9,8 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { RefreshIcon } from "@hugeicons/core-free-icons";
 import { Button } from "../ui/button";
 import { getGroupingKey, formatGroupingKey } from "@/lib/helpers/dateUtils";
+import { useRouter, useSearchParams } from "next/navigation";
+import { cn } from "@/lib/utils";
 
 interface ArticleFeedProps {
   initialArticles: Article[];
@@ -16,6 +18,9 @@ interface ArticleFeedProps {
   category: string;
   sort: string;
   search: string;
+  perspective: string;
+  story: string;
+  activeStoryTitle?: string;
 }
 
 export default function ArticleFeed({
@@ -24,7 +29,12 @@ export default function ArticleFeed({
   category,
   sort,
   search,
+  perspective,
+  story,
+  activeStoryTitle,
 }: ArticleFeedProps) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const { settings } = useSettings();
   const mode = settings.homePageMode || "continuous";
 
@@ -43,7 +53,7 @@ export default function ArticleFeed({
     if (articles.length > 0) {
       setCurrentGroupKey(getGroupingKey(articles[0].publishedAt, mode));
     }
-  }, [mode]);
+  }, [mode, articles]);
 
   // Keep the store in sync with the live article list
   useEffect(() => {
@@ -84,6 +94,9 @@ export default function ArticleFeed({
 
     try {
       const params = new URLSearchParams({ category, sort, search, cursor });
+      if (perspective !== "all") params.set("perspective", perspective);
+      if (story !== "all") params.set("story", story);
+      
       const res = await fetch(`/api/articles?${params}`);
 
       if (!res.ok) throw new Error("Failed to fetch");
@@ -101,7 +114,7 @@ export default function ArticleFeed({
     } finally {
       setLoading(false);
     }
-  }, [cursor, isLoading, error, category, sort, search]);
+  }, [cursor, isLoading, error, category, sort, search, perspective, story]);
 
   // Intersection observer logic
   useEffect(() => {
@@ -126,8 +139,67 @@ export default function ArticleFeed({
     }, 0);
   };
 
+  const handleClearFilter = (filterKey: "perspective" | "story") => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete(filterKey);
+    params.delete("cursor");
+    router.push(`?${params.toString()}`);
+  };
+
   return (
     <div className="flex flex-col gap-8">
+      {/* Active filters summary */}
+      {(perspective !== "all" || story !== "all") && (
+        <div className="flex flex-wrap items-center gap-2 p-3 bg-muted/40 rounded-xl border border-border/50 text-xs text-muted-foreground animate-in fade-in duration-200">
+          <span className="font-semibold text-foreground">Active Filters:</span>
+          {perspective !== "all" && (
+            <div className="inline-flex items-center space-x-1.5 bg-card text-foreground border border-border px-2.5 py-1 rounded-lg">
+              <span className={cn(
+                "w-1.5 h-1.5 rounded-full inline-block",
+                perspective.toLowerCase() === "wire" ? "bg-amber-500" :
+                perspective.toLowerCase() === "western" ? "bg-blue-500" :
+                perspective.toLowerCase() === "non-western" ? "bg-emerald-500" :
+                perspective.toLowerCase() === "eastern" ? "bg-red-500" : "bg-slate-400"
+              )} />
+              <span className="capitalize font-medium text-[11px]">{perspective} Perspective</span>
+              <button
+                onClick={() => handleClearFilter("perspective")}
+                className="hover:text-destructive transition-colors ml-1 font-bold text-[10px] cursor-pointer"
+                title="Clear filter"
+              >
+                ✕
+              </button>
+            </div>
+          )}
+          {story !== "all" && (
+            <div className="inline-flex items-center space-x-1.5 bg-card text-foreground border border-border px-2.5 py-1 rounded-lg">
+              <span className="font-medium text-[11px] line-clamp-1 max-w-[200px]" title={activeStoryTitle || story}>
+                Story: {activeStoryTitle || story}
+              </span>
+              <button
+                onClick={() => handleClearFilter("story")}
+                className="hover:text-destructive transition-colors ml-1 font-bold text-[10px] cursor-pointer"
+                title="Clear filter"
+              >
+                ✕
+              </button>
+            </div>
+          )}
+          <button
+            onClick={() => {
+              const params = new URLSearchParams(searchParams.toString());
+              params.delete("perspective");
+              params.delete("story");
+              params.delete("cursor");
+              router.push(`?${params.toString()}`);
+            }}
+            className="text-[11px] text-primary hover:underline ml-auto font-semibold cursor-pointer"
+          >
+            Clear All
+          </button>
+        </div>
+      )}
+
       {visibleGroups.length === 0 && !isLoading ? (
         <p className="text-muted-foreground text-sm py-10 text-center">
           {search ? (

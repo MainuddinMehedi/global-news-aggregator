@@ -7,6 +7,7 @@ import { EventClustersWidget } from "@/components/widgets/EventClustersWidget";
 import { PerspectiveWidget } from "@/components/widgets/PerspectiveWidget";
 import { getArticles, getArticleById } from "@/queries/articles";
 import { Article } from "@/types/article";
+import prisma from "@/lib/prisma";
 
 export default async function Home({
   searchParams,
@@ -18,6 +19,9 @@ export default async function Home({
     typeof params.category === "string" ? params.category : "all";
   const sort = typeof params.sort === "string" ? params.sort : "latest";
   const search = typeof params.search === "string" ? params.search : "";
+  const perspective =
+    typeof params.perspective === "string" ? params.perspective : "all";
+  const story = typeof params.story === "string" ? params.story : "all";
   const articleId =
     typeof params.article === "string" ? params.article : undefined;
 
@@ -25,17 +29,27 @@ export default async function Home({
   let nextCursor = null;
   let selectedArticle = null;
   let error: string | null = null;
+  let activeStoryTitle: string | undefined = undefined;
 
   try {
-    // Fetch articles and (if needed) the selected article in parallel
-    const [result, selected] = await Promise.all([
-      getArticles({ category, sort, search }),
+    // Fetch articles, selected article, and story cluster title if active, in parallel
+    const [result, selected, storyCluster] = await Promise.all([
+      getArticles({ category, sort, search, perspective, story }),
       articleId ? getArticleById(articleId) : Promise.resolve(null),
+      story !== "all"
+        ? prisma.storyCluster.findUnique({
+            where: { slug: story },
+            select: { title: true },
+          })
+        : Promise.resolve(null),
     ]);
 
     articles = result.articles;
     nextCursor = result.nextCursor;
     selectedArticle = selected;
+    if (storyCluster) {
+      activeStoryTitle = storyCluster.title;
+    }
   } catch (e) {
     console.error("Home Page Fetch Error:", e);
     error =
@@ -58,12 +72,15 @@ export default async function Home({
             list and cursor so the new first page doesn't append to the old one.
           */
           <ArticleFeed
-            key={`${category}|${sort}|${search}`}
+            key={`${category}|${sort}|${search}|${perspective}|${story}`}
             initialArticles={articles}
             initialCursor={nextCursor}
             category={category}
             sort={sort}
             search={search}
+            perspective={perspective}
+            story={story}
+            activeStoryTitle={activeStoryTitle}
           />
         )}
       </div>

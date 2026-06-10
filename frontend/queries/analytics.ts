@@ -477,3 +477,85 @@ export async function getClusterStats() {
     return null;
   }
 }
+
+export async function getPerspectiveCounts() {
+  "use cache";
+  cacheTag("articles");
+  cacheLife("minutes");
+
+  const wireSources = ["reuters", "ap", "associated press", "bloomberg", "afp", "press association", "upi"];
+
+  try {
+    const [all, western, eastern, nonWestern, wire] = await Promise.all([
+      prisma.processedArticle.count(),
+      prisma.processedArticle.count({ where: { biasCategory: "Western" } }),
+      prisma.processedArticle.count({ where: { biasCategory: "Eastern" } }),
+      prisma.processedArticle.count({ where: { biasCategory: "Non-Western" } }),
+      prisma.processedArticle.count({
+        where: {
+          rawArticle: {
+            OR: wireSources.map((w) => ({
+              source: { contains: w, mode: "insensitive" },
+            })),
+          },
+        },
+      }),
+    ]);
+
+    return {
+      all,
+      western,
+      eastern,
+      nonWestern,
+      wire,
+    };
+  } catch (error) {
+    console.error("getPerspectiveCounts error:", error);
+    return { all: 0, western: 0, eastern: 0, nonWestern: 0, wire: 0 };
+  }
+}
+
+export async function getStoryClustersWithPerspectives() {
+  "use cache";
+  cacheTag("stories");
+  cacheTag("articles");
+  cacheLife("minutes");
+
+  try {
+    const clusters = await prisma.storyCluster.findMany({
+      where: { isActive: true },
+      orderBy: { articleCount: "desc" },
+      take: 5,
+      include: {
+        articles: {
+          select: {
+            biasCategory: true,
+          },
+        },
+      },
+    });
+
+    return clusters.map((c) => {
+      const uniquePerspectives = Array.from(
+        new Set(
+          c.articles
+            .map((a) => a.biasCategory)
+            .filter((p): p is string => !!p)
+        )
+      );
+
+      return {
+        id: c.id,
+        slug: c.slug,
+        title: c.title,
+        articleCount: c.articleCount,
+        impact: c.impact,
+        topSources: c.topSources,
+        perspectives: uniquePerspectives,
+      };
+    });
+  } catch (error) {
+    console.error("getStoryClustersWithPerspectives error:", error);
+    return [];
+  }
+}

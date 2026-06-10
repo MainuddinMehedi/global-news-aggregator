@@ -6,10 +6,12 @@ export async function GET(req: NextRequest) {
 
   try {
     const data = await getArticles({
-      category: searchParams.get("category") ?? "all",
-      sort:     searchParams.get("sort")     ?? "latest",
-      search:   searchParams.get("search")   ?? "",
-      cursor:   searchParams.get("cursor")   ?? undefined,
+      category:    searchParams.get("category")    ?? "all",
+      sort:        searchParams.get("sort")        ?? "latest",
+      search:      searchParams.get("search")      ?? "",
+      perspective: searchParams.get("perspective") ?? undefined,
+      story:       searchParams.get("story")       ?? undefined,
+      cursor:      searchParams.get("cursor")      ?? undefined,
     });
 
     return NextResponse.json(data);

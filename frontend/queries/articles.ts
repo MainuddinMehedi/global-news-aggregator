@@ -6,6 +6,8 @@ interface getArticlesParams {
   category: string;
   sort: string;
   search: string;
+  perspective?: string;
+  story?: string;
   cursor?: string;
 }
 
@@ -15,6 +17,8 @@ export async function getArticles({
   category,
   sort,
   search,
+  perspective,
+  story,
   cursor,
 }: getArticlesParams): Promise<{
   articles: Article[];
@@ -31,6 +35,48 @@ export async function getArticles({
             categories: {
               some: {
                 name: category,
+              },
+            },
+          },
+        ]
+      : [];
+
+  const wireSources = ["reuters", "ap", "associated press", "bloomberg", "afp", "press association", "upi"];
+
+  let perspectiveFilter: any[] = [];
+  if (perspective && perspective !== "all") {
+    if (perspective.toLowerCase() === "wire") {
+      perspectiveFilter = [
+        {
+          rawArticle: {
+            OR: wireSources.map((w) => ({
+              source: { contains: w, mode: "insensitive" as const },
+            })),
+          },
+        },
+      ];
+    } else {
+      let formattedBias = perspective.trim();
+      if (formattedBias.toLowerCase() === "western") formattedBias = "Western";
+      else if (formattedBias.toLowerCase() === "eastern") formattedBias = "Eastern";
+      else if (formattedBias.toLowerCase() === "non-western") formattedBias = "Non-Western";
+      else if (formattedBias.toLowerCase() === "neutral") formattedBias = "Neutral";
+
+      perspectiveFilter = [
+        {
+          biasCategory: formattedBias,
+        },
+      ];
+    }
+  }
+
+  const storyFilter =
+    story && story !== "all"
+      ? [
+          {
+            storyClusters: {
+              some: {
+                slug: story,
               },
             },
           },
@@ -79,7 +125,7 @@ export async function getArticles({
       take: TAKE + 1,
       ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
       where: {
-        AND: [...categoryFilter, ...searchFilter],
+        AND: [...categoryFilter, ...searchFilter, ...perspectiveFilter, ...storyFilter],
       },
       orderBy,
       include: {

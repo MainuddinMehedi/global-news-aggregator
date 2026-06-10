@@ -1,6 +1,8 @@
-import { getClusterStats } from "@/queries/analytics";
-import prisma from "@/lib/prisma";
+import { getClusterStats, getStoryClustersWithPerspectives } from "@/queries/analytics";
 import { cn } from "@/lib/utils";
+import EventClustersList from "./EventClustersList";
+import { Suspense } from "react";
+import { Skeleton } from "../ui/skeleton";
 
 const IMPACT_COLORS: Record<string, string> = {
   CRITICAL: "bg-red-500",
@@ -10,25 +12,10 @@ const IMPACT_COLORS: Record<string, string> = {
 };
 
 export async function EventClustersWidget() {
-  const stats = await getClusterStats();
-
-  // Fetch top 3 active clusters
-  let topClusters: Array<{
-    id: string;
-    title: string;
-    articleCount: number;
-    topSources: string[] | any;
-    impact: string | null;
-  }> = [];
-  try {
-    topClusters = await prisma.storyCluster.findMany({
-      where: { isActive: true },
-      orderBy: { articleCount: "desc" },
-      take: 3,
-    });
-  } catch (error) {
-    console.error("EventClustersWidget error:", error);
-  }
+  const [stats, clusters] = await Promise.all([
+    getClusterStats(),
+    getStoryClustersWithPerspectives(),
+  ]);
 
   if (!stats) return null;
 
@@ -38,6 +25,7 @@ export async function EventClustersWidget() {
         Active Event Clusters ({stats.activeCount})
       </h3>
 
+      {/* Impact distribution header */}
       <div className="grid grid-cols-4 gap-1 mb-4">
         {["CRITICAL", "HIGH", "MEDIUM", "LOW"].map((impact) => {
           const count =
@@ -69,29 +57,20 @@ export async function EventClustersWidget() {
         <p className="text-[10px] font-bold text-muted-foreground uppercase px-1 mb-1">
           Top Stories
         </p>
-        {topClusters.map((cluster) => (
-          <div
-            key={cluster.id}
-            className="p-3 rounded-xl bg-muted/30 border border-border hover:border-primary/50 transition-all group"
-          >
-            <h4 className="text-xs font-medium text-foreground group-hover:text-primary transition-colors leading-tight mb-1 line-clamp-2">
-              {cluster.title}
-            </h4>
-            <div className="flex items-center justify-between">
-              <span className="text-[9px] text-muted-foreground font-medium">
-                {cluster.articleCount} articles • {cluster.topSources.length}{" "}
-                sources
-              </span>
-              <div
-                className={cn(
-                  "w-1.5 h-1.5 rounded-full",
-                  IMPACT_COLORS[cluster.impact || "MEDIUM"],
-                )}
-              />
-            </div>
-          </div>
-        ))}
+        <Suspense fallback={<EventClustersListSkeleton />}>
+          <EventClustersList clusters={clusters} />
+        </Suspense>
       </div>
+    </div>
+  );
+}
+
+function EventClustersListSkeleton() {
+  return (
+    <div className="space-y-2">
+      {Array.from({ length: 3 }).map((_, i) => (
+        <Skeleton key={i} className="h-20 w-full rounded-xl" />
+      ))}
     </div>
   );
 }
