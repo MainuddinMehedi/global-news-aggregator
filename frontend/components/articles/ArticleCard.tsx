@@ -25,13 +25,12 @@ export default function ArticleCard({ article }: { article: Article }) {
             </CardTitle>
           </Link>
           <div className="flex items-center gap-2">
-            <BookmarkButton type="article" targetId={article.id} />
             {article.biasCategory && (
               <Badge variant={getBiasBadgeVariant(article.biasCategory)}>
                 {article.biasCategory}
               </Badge>
             )}
-
+            <BookmarkButton type="article" targetId={article.id} />
             <AiButton article={article} />
           </div>
         </div>

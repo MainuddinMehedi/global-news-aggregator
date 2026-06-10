@@ -8,6 +8,9 @@ import { Article } from "@/types/article";
 import ArticleCard from "@/components/articles/ArticleCard";
 import { TopicFinding } from "@/types/lockedTopic";
 import { FindingCard } from "@/components/locked-topics/FindingCard";
+import { Bookmark01Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
+import Link from "next/link";
 
 export default function BookmarksPage() {
   const { data: session, status } = useSession();
@@ -37,11 +40,48 @@ export default function BookmarksPage() {
   }, [status]);
 
   if (status === "loading" || loading) {
-    return <div className="p-8 text-center animate-pulse">Loading bookmarks...</div>;
+    return (
+      <div className="flex flex-col items-center justify-center flex-1 min-h-[60vh] bg-background px-6 text-center">
+        <div className="max-w-md space-y-4">
+          <div className="mx-auto w-10 h-10 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
+          <p className="text-muted-foreground font-medium animate-pulse">Loading bookmarks...</p>
+        </div>
+      </div>
+    );
   }
 
   if (status === "unauthenticated") {
-    return <div className="p-8 text-center">Please sign in to view your bookmarks.</div>;
+    return (
+      <div className="flex flex-col items-center justify-center flex-1 min-h-[60vh] bg-background px-6 text-center">
+        <div className="max-w-md space-y-6 animate-in fade-in zoom-in duration-500">
+          {/* Icon */}
+          <div className="mx-auto w-20 h-20 rounded-2xl bg-muted flex items-center justify-center shadow-inner">
+            <HugeiconsIcon
+              icon={Bookmark01Icon}
+              className="w-10 h-10 text-muted-foreground"
+            />
+          </div>
+
+          {/* Text Content */}
+          <div className="space-y-3">
+            <h2 className="text-2xl font-bold text-foreground">Sign in to view bookmarks</h2>
+            <p className="text-muted-foreground leading-relaxed text-sm">
+              Save important articles and key concept findings to access them later. Your bookmarked items will be synchronized across your devices.
+            </p>
+          </div>
+
+          {/* Action */}
+          <div className="pt-2">
+            <Link
+              href="/settings"
+              className="inline-flex items-center gap-2 bg-primary text-primary-foreground text-sm font-semibold rounded-xl px-6 py-3 shadow-lg shadow-primary/20 transition-all hover:bg-primary/90 hover:-translate-y-0.5 active:translate-y-0"
+            >
+              Go to Settings to Sign In
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (

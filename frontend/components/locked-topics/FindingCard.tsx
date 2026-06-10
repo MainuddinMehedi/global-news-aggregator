@@ -94,7 +94,7 @@ export function FindingCard({
               <HugeiconsIcon icon={Delete01Icon} size={12} />
               Delete
             </button>
-            <div onClick={(e) => e.stopPropagation()} className="ml-2 z-10 relative cursor-pointer">
+            <div onClick={(e) => e.stopPropagation()} className="z-10 relative cursor-pointer">
               <BookmarkButton type="finding" targetId={finding.id} />
             </div>
           </div>
