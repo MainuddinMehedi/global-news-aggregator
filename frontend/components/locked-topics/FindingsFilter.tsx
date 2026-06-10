@@ -70,8 +70,8 @@ export default function FindingsFilter({
   }
 
   return (
-    <div className="flex flex-col gap-4 py-6 border-y border-secondary/50">
-      <div className="flex overflow-x-auto sm:flex-wrap gap-2 no-scrollbar pb-1">
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-6 border-y border-secondary/50">
+      <div className="flex flex-wrap gap-2 flex-1">
         {sourceTabs.map((s) => {
           const count = counts[s.value] || 0;
           return (
@@ -99,7 +99,7 @@ export default function FindingsFilter({
         })}
       </div>
 
-      <div className="flex items-center gap-3 sm:gap-4 self-end">
+      <div className="flex items-center gap-3 sm:gap-4 shrink-0 self-end sm:self-auto">
         <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">
           Sequence
         </span>
