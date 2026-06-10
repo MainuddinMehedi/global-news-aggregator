@@ -51,9 +51,16 @@ export default function RootLayout({
         jetbrainsMono.variable,
         "font-sans",
       )}
+      data-color-theme="maia"
       suppressHydrationWarning
     >
       <body className="bg-background text-foreground">
+        {/* Blocking script: sync data-color-theme from localStorage before first paint */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var d=JSON.parse(localStorage.getItem('global-news-aggregator-settings'));if(d&&d.state&&d.state.colorTheme){document.documentElement.setAttribute('data-color-theme',d.state.colorTheme)}}catch(e){}})();`,
+          }}
+        />
         <AuthProvider>
           <Providers>
             <TooltipProvider>
