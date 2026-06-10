@@ -2,18 +2,15 @@
 
 import { LockedTopic } from "@/types/lockedTopic";
 import { Switch } from "@/components/ui/switch";
-import { Bell } from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
-interface LockedTopicCardClientProps {
+interface TopicActiveToggleProps {
   topic: LockedTopic;
-  unreadCount: number;
 }
 
-export default function LockedTopicCardClient({ topic, unreadCount }: LockedTopicCardClientProps) {
+export default function TopicActiveToggle({ topic }: TopicActiveToggleProps) {
   const [isActive, setIsActive] = useState(topic.isActive);
   const [isScanning, setIsScanning] = useState(!topic.lastScannedAt);
   const router = useRouter();
@@ -62,15 +59,7 @@ export default function LockedTopicCardClient({ topic, unreadCount }: LockedTopi
   };
 
   return (
-    <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
-      <div className="relative cursor-pointer text-muted-foreground hover:text-primary transition-colors">
-        <HugeiconsIcon icon={Bell} size={20} />
-        {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 w-4 h-4 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-background">
-            {unreadCount}
-          </span>
-        )}
-      </div>
+    <div className="flex items-center" onClick={(e) => e.stopPropagation()}>
       <Switch 
         checked={isActive} 
         onCheckedChange={toggleActive}

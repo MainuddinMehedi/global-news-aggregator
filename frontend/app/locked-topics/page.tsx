@@ -1,4 +1,4 @@
-import { getLockedTopics } from "@/queries/lockedTopics";
+import { getLockedTopics, getUnreadFindingCount } from "@/queries/lockedTopics";
 import { getInitialFindings } from "@/queries/topicFindings";
 import LockedTopicGrid from "@/components/locked-topics/LockedTopicGrid";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -15,17 +15,22 @@ export default async function LockedTopicsPage({
   const search = typeof params.search === "string" ? params.search : "";
   const topics = await getLockedTopics(search || undefined);
 
-  // Fetch latest 3 findings for each topic to show on the card
-  // This is efficient because getInitialFindings is cached
+  // Fetch latest 3 findings and unread count for each topic to show on the card
+  // This is efficient because getInitialFindings and getUnreadFindingCount are cached
   const latestFindingsMap: Record<string, TopicFinding[]> = {};
+  const unreadCountsMap: Record<string, number> = {};
 
   await Promise.all(
     topics.map(async (topic) => {
-      const { findings } = await getInitialFindings(topic.id);
+      const [{ findings }, unreadCount] = await Promise.all([
+        getInitialFindings(topic.id),
+        getUnreadFindingCount(topic.id),
+      ]);
       console.log(
-        `[LockedTopicsPage] Topic: ${topic.displayName}, Findings: ${findings.length}`,
+        `[LockedTopicsPage] Topic: ${topic.displayName}, Findings: ${findings.length}, Unread: ${unreadCount}`,
       );
       latestFindingsMap[topic.id] = findings.slice(0, 3);
+      unreadCountsMap[topic.id] = unreadCount;
     }),
   );
 
@@ -52,7 +57,11 @@ export default async function LockedTopicsPage({
         <CreateTopicModal />
       </div>
 
-      <LockedTopicGrid topics={topics} latestFindingsMap={latestFindingsMap} />
+      <LockedTopicGrid
+        topics={topics}
+        latestFindingsMap={latestFindingsMap}
+        unreadCountsMap={unreadCountsMap}
+      />
     </div>
   );
 }

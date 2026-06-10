@@ -9,11 +9,13 @@ import CreateTopicModal from "./CreateTopicModal";
 interface LockedTopicGridProps {
   topics: LockedTopic[];
   latestFindingsMap: Record<string, TopicFinding[]>;
+  unreadCountsMap: Record<string, number>;
 }
 
 export default function LockedTopicGrid({
   topics,
   latestFindingsMap,
+  unreadCountsMap,
 }: LockedTopicGridProps) {
   if (topics.length === 0) {
     return (
@@ -52,6 +54,7 @@ export default function LockedTopicGrid({
           key={topic.id}
           topic={topic}
           latestFindings={latestFindingsMap[topic.id] || []}
+          unreadCount={unreadCountsMap[topic.id] || 0}
         />
       ))}
     </div>

@@ -101,6 +101,7 @@ export function NotificationsPopover({
               : "text-muted-foreground hover:bg-muted hover:text-primary"
           }`}
           title="Recent findings"
+          onClick={(e) => e.stopPropagation()}
         >
           <HugeiconsIcon icon={Notification01Icon} className="h-4 w-4" />
           {unreadCount > 0 && isActive && (
