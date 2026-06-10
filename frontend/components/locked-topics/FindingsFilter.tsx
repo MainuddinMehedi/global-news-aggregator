@@ -48,6 +48,7 @@ export default function FindingsFilter({
     scrape: { value: "SCRAPE", label: "Scrape" },
     bd_gov_jobs: { value: "BD_GOV_JOBS", label: "BD Gov Jobs" },
     company_careers: { value: "COMPANY_CAREERS", label: "Company Careers" },
+    search: { value: "SEARCH", label: "Web Search" },
   };
 
   // Generate tabs dynamically from enabled sources
@@ -69,21 +70,21 @@ export default function FindingsFilter({
   }
 
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-6 border-y border-secondary/50">
-      <div className="flex flex-wrap gap-2">
+    <div className="flex flex-col gap-4 py-6 border-y border-secondary/50">
+      <div className="flex overflow-x-auto sm:flex-wrap gap-2 no-scrollbar pb-1">
         {sourceTabs.map((s) => {
           const count = counts[s.value] || 0;
           return (
             <button
               key={s.value}
               onClick={() => updateParam("source", s.value)}
-              className={`px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all duration-200 flex items-center gap-2 ${
+              className={`shrink-0 px-3 sm:px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all duration-200 flex items-center gap-1.5 sm:gap-2 ${
                 currentSource === s.value
                   ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20 scale-105"
                   : "bg-secondary/40 text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
               }`}
             >
-              <span>{s.label}</span>
+              <span className="whitespace-nowrap">{s.label}</span>
               <span
                 className={`inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[9px] font-bold min-w-[16px] ${
                   currentSource === s.value
@@ -98,7 +99,7 @@ export default function FindingsFilter({
         })}
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3 sm:gap-4 self-end">
         <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">
           Sequence
         </span>

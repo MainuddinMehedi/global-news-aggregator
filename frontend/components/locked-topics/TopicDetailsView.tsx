@@ -24,7 +24,8 @@ export function TopicDetailsView({ topic }: { topic: LockedTopic }) {
             {decodedTopic}
           </h2>
           <p className="max-w-3xl leading-relaxed text-muted-foreground">
-            {topic.liveWebSummary ||
+            {topic.liveSummary ||
+              topic.liveWebSummary ||
               "Live intelligence gathering in progress. A synthesis of the current situational reality will appear here shortly after the next scan."}
           </p>
         </div>

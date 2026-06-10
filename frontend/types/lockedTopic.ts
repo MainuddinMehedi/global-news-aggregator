@@ -9,7 +9,8 @@ export type FindingSource =
   | "SCRAPE"
   | "WEBPAGE"
   | "GITHUB"
-  | "COMPANY_CAREERS";
+  | "COMPANY_CAREERS"
+  | "SEARCH";
 
 export interface SourceConfig {
   id: string;
@@ -24,7 +25,8 @@ export interface SourceConfig {
     | "github"
     | "youtube"
     | "bd_gov_jobs"
-    | "company_careers";
+    | "company_careers"
+    | "search";
   label: string; // "BD PSC", "Google Careers RSS"
   enabled: boolean;
   url?: string; // for rss, scrape, webpage types
@@ -33,6 +35,7 @@ export interface SourceConfig {
   subConfig?: Record<string, string>; // e.g. { channelId: "UCxxx" } for YouTube
   lastSeenHash?: string; // for webpage diff: last known content hash
   lastFetchedAt?: string; // ISO timestamp
+  siteRestriction?: string; // for search type: domain restriction (e.g. "reddit.com")
 }
 
 export interface LockedTopic {
@@ -44,6 +47,7 @@ export interface LockedTopic {
   aiQuerySummary: string;
   conceptualKeywords?: string[][];
   liveWebSummary: string | null;
+  liveSummary: string | null;
   sources: SourceConfig[];
   searchBeyondSources: boolean;
   isActive: boolean;
