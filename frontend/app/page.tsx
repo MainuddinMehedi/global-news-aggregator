@@ -62,7 +62,12 @@ export default async function Home({
     <div className="flex flex-1 w-full">
       {/* Feed: Main content area */}
       <div className="flex-1 min-w-0 p-5 space-y-5">
-        <Filters />
+        <Filters
+          category={category}
+          perspective={perspective}
+          story={story}
+          activeStoryTitle={activeStoryTitle}
+        />
 
         {error ? (
           <FeedError message={error} />
