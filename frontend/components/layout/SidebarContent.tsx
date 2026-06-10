@@ -1,5 +1,8 @@
 "use client";
 
+import { useSession } from "next-auth/react";
+import Link from "next/link";
+
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -25,6 +28,7 @@ export default function SidebarContent({
   const [mounted, setMounted] = useState(false);
   const isCollapsed = useIsSidebarCollapsed();
   const setCollapsed = useSetSidebarCollapsed();
+  const { data: session, status } = useSession();
 
   useEffect(() => {
     setMounted(true);
@@ -75,22 +79,28 @@ export default function SidebarContent({
           {!effectiveCollapsed && <span>Collapse</span>}
         </button>
 
-        {/* User Profile Stub */}
-        <div
-          className={cn(
-            "flex items-center gap-3 px-3 py-2 rounded-lg text-sidebar-foreground/70",
-            effectiveCollapsed && "justify-center px-0",
-          )}
-        >
-          <HugeiconsIcon icon={UserCircle02Icon} className="shrink-0 w-6 h-6" />
-          {!effectiveCollapsed && (
-            <div className="flex flex-col min-w-0">
-              <span className="text-sm font-medium truncate text-sidebar-foreground">
-                MainuddinMehedi
-              </span>
-            </div>
-          )}
-        </div>
+        {/* User Profile */}
+        <Link href="/settings">
+          <div
+            className={cn(
+              "flex items-center gap-3 px-3 py-2 rounded-lg text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground cursor-pointer",
+              effectiveCollapsed && "justify-center px-0",
+            )}
+          >
+            {session?.user?.image ? (
+              <img src={session.user.image} alt="Avatar" className="shrink-0 w-6 h-6 rounded-full" />
+            ) : (
+              <HugeiconsIcon icon={UserCircle02Icon} className="shrink-0 w-6 h-6" />
+            )}
+            {!effectiveCollapsed && (
+              <div className="flex flex-col min-w-0">
+                <span className="text-sm font-medium truncate text-sidebar-foreground">
+                  {status === "loading" ? "Loading..." : session?.user ? session.user.name || session.user.email?.split("@")[0] || "User" : "Sign In"}
+                </span>
+              </div>
+            )}
+          </div>
+        </Link>
       </div>
     </aside>
   );

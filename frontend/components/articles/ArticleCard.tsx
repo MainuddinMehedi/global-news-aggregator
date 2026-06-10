@@ -1,5 +1,6 @@
 import { SentimentBadge } from "./SentimentBadge";
 import { Article } from "@/types/article";
+import BookmarkButton from "@/components/ui/BookmarkButton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
@@ -24,6 +25,7 @@ export default function ArticleCard({ article }: { article: Article }) {
             </CardTitle>
           </Link>
           <div className="flex items-center gap-2">
+            <BookmarkButton type="article" targetId={article.id} />
             {article.biasCategory && (
               <Badge variant={getBiasBadgeVariant(article.biasCategory)}>
                 {article.biasCategory}

@@ -3,6 +3,7 @@
 import { TopicFinding } from "@/types/lockedTopic";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { LinkSquare02Icon, Delete01Icon } from "@hugeicons/core-free-icons";
+import BookmarkButton from "@/components/ui/BookmarkButton";
 
 export function FindingCard({
   finding,
@@ -93,6 +94,9 @@ export function FindingCard({
               <HugeiconsIcon icon={Delete01Icon} size={12} />
               Delete
             </button>
+            <div onClick={(e) => e.stopPropagation()} className="ml-2 z-10 relative cursor-pointer">
+              <BookmarkButton type="finding" targetId={finding.id} />
+            </div>
           </div>
           <h3 className="text-2xl font-extrabold group-hover:text-primary transition-colors leading-tight tracking-tight">
             {finding.title}

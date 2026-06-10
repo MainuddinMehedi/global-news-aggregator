@@ -1,5 +1,5 @@
 import { Metadata } from "next";
-import SettingsInterface from "@/components/settings/SettingsInterface";
+import SettingsClient from "@/components/settings/SettingsClient";
 
 export const metadata: Metadata = {
   title: "Settings | Global News Aggregator",
@@ -16,7 +16,7 @@ export default function SettingsPage() {
         </p>
       </div>
 
-      <SettingsInterface />
+      <SettingsClient />
     </div>
   );
 }

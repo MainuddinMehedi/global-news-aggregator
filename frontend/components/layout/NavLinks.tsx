@@ -8,6 +8,7 @@ import {
   PresentationBarChart02FreeIcons,
   RssLockedIcon,
   Settings,
+  Bookmark02Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import Link from "next/link";
@@ -28,6 +29,7 @@ const navItems = [
     label: "Analytics",
     icon: PresentationBarChart02FreeIcons,
   },
+  { id: "/bookmarks", label: "Bookmarks", icon: Bookmark02Icon },
   { id: "/settings", label: "Settings", icon: Settings },
 ];
 
