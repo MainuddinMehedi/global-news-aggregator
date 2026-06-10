@@ -117,21 +117,68 @@ export function evaluateAST(ast, textLower) {
 /**
  * Main exported function to evaluate a text against a topic's boolean query.
  */
-export function evaluateQuery(topic, text) {
-  // Quick pre-check if using conceptualKeywords (fallback for backward compatibility)
-  if (topic.conceptualKeywords && Array.isArray(topic.conceptualKeywords) && topic.conceptualKeywords.length > 0) {
-     const textToSearch = text.toLowerCase();
-     return topic.conceptualKeywords.some((group) =>
-       group.every((term) => textToSearch.includes(term.toLowerCase())),
-     );
+export function evaluateRelaxed(topic, text) {
+  const textLower = text.toLowerCase();
+  
+  // Combine displayName and userContext for the terms we want to check
+  const intentText = `${topic.displayName || ""} ${topic.userContext || ""}`.toLowerCase();
+  
+  // Tokenize and filter out stop words and short/non-word terms
+  const STOP_WORDS = new Set([
+    "a", "an", "the", "in", "on", "at", "without", "with", "can", "is", "are", "of", "to", "for",
+    "and", "or", "not", "about", "how", "what", "why", "who", "whom", "where", "when", "which",
+    "this", "that", "these", "those", "it", "its", "they", "them", "their", "our", "us", "we",
+    "you", "your", "i", "my", "me", "he", "she", "him", "her", "his", "has", "have", "had",
+    "do", "does", "did", "been", "be", "was", "were", "by", "from", "as", "but", "so", "if", "than"
+  ]);
+
+  const words = intentText
+    .replace(/[^\w\s]/g, " ")
+    .split(/\s+/)
+    .map(w => w.trim())
+    .filter(w => w.length > 2 && !STOP_WORDS.has(w));
+
+  const uniqueWords = Array.from(new Set(words));
+  if (uniqueWords.length === 0) return false;
+
+  let matches = 0;
+  for (const word of uniqueWords) {
+    if (textLower.includes(word)) {
+      matches++;
+    }
   }
 
-  const query = topic.aiRefinedQuery || topic.displayName || "";
-  if (!query) return true;
+  // Pass if at least 50% of the key intent words are present in the text
+  return (matches / uniqueWords.length) >= 0.5;
+}
 
-  const tokens = tokenize(query);
-  const ast = parse(tokens);
-  return evaluateAST(ast, text.toLowerCase());
+/**
+ * Main exported function to evaluate a text against a topic's boolean query.
+ */
+export function evaluateQuery(topic, text) {
+  let strictMatch = false;
+
+  // 1. Try strict keyword evaluation (conceptualKeywords or boolean AST)
+  if (topic.conceptualKeywords && Array.isArray(topic.conceptualKeywords) && topic.conceptualKeywords.length > 0) {
+     const textToSearch = text.toLowerCase();
+     strictMatch = topic.conceptualKeywords.some((group) =>
+       group.every((term) => textToSearch.includes(term.toLowerCase())),
+     );
+  } else {
+    const query = topic.aiRefinedQuery || topic.displayName || "";
+    if (query) {
+      const tokens = tokenize(query);
+      const ast = parse(tokens);
+      strictMatch = evaluateAST(ast, text.toLowerCase());
+    } else {
+      strictMatch = true; // empty query matches anything
+    }
+  }
+
+  if (strictMatch) return true;
+
+  // 2. Fallback to relaxed matching based on displayName and userContext keywords
+  return evaluateRelaxed(topic, text);
 }
 
 /**

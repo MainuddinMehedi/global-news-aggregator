@@ -49,7 +49,7 @@ async function fetchAndParseRss(url) {
   try {
     const response = await fetchWithBackoff(url, {
       headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/119.0",
+        "User-Agent": "global-news-aggregator/1.0 (LockedTopics Reddit Monitor; contact: mainuddinmehedi@example.com)",
         Accept: "application/rss+xml, application/xml, text/xml;q=0.9, */*;q=0.8",
       }
     });
@@ -88,20 +88,30 @@ export async function scanReddit(topic, sourceConfig, options = {}) {
     const subreddit = sourceConfig.url.split("/r/")[1].split("/")[0];
     sourceName = `r/${subreddit}`;
     
-    // Fetch both raw feed and search feed for maximum indexing coverage
+    // Fetch raw feed + search feed with displayName + search feed with aiRefinedQuery
     const rawUrl = `https://www.reddit.com/r/${subreddit}/.rss`;
-    const searchQuery = topic.aiRefinedQuery || topic.displayName;
-    const searchUrl = `https://www.reddit.com/r/${subreddit}/search.rss?q=${encodeURIComponent(searchQuery)}&restrict_sr=on&sort=new`;
-
-    console.log(`🔍 [redditScanner] Fetching raw feed for ${sourceName}: ${rawUrl}`);
-    const rawItems = await fetchAndParseRss(rawUrl);
+    const cleanSearchUrl = `https://www.reddit.com/r/${subreddit}/search.rss?q=${encodeURIComponent(topic.displayName)}&restrict_sr=on&sort=new`;
     
-    console.log(`🔍 [redditScanner] Fetching search feed for ${sourceName}: ${searchUrl}`);
-    const searchItems = await fetchAndParseRss(searchUrl);
+    const urlsToFetch = [
+      { type: "raw", url: rawUrl },
+      { type: `search (displayName: "${topic.displayName}")`, url: cleanSearchUrl }
+    ];
+
+    if (topic.aiRefinedQuery && topic.aiRefinedQuery !== topic.displayName) {
+      const booleanSearchUrl = `https://www.reddit.com/r/${subreddit}/search.rss?q=${encodeURIComponent(topic.aiRefinedQuery)}&restrict_sr=on&sort=new`;
+      urlsToFetch.push({ type: "search (booleanQuery)", url: booleanSearchUrl });
+    }
+
+    const allItems = [];
+    for (const target of urlsToFetch) {
+      console.log(`🔍 [redditScanner] Fetching ${target.type} for ${sourceName}: ${target.url}`);
+      const fetchedItems = await fetchAndParseRss(target.url);
+      allItems.push(...fetchedItems);
+    }
 
     // Merge and deduplicate by link
     const seenLinks = new Set();
-    for (const item of [...rawItems, ...searchItems]) {
+    for (const item of allItems) {
       if (!seenLinks.has(item.link)) {
         seenLinks.add(item.link);
         items.push(item);
@@ -119,11 +129,32 @@ export async function scanReddit(topic, sourceConfig, options = {}) {
     items = await fetchAndParseRss(url);
   } else {
     sourceName = "Reddit Global Search";
-    const searchQuery = topic.aiRefinedQuery || topic.displayName;
-    const url = `https://www.reddit.com/search.rss?q=${encodeURIComponent(searchQuery)}&sort=new`;
+    const cleanSearchUrl = `https://www.reddit.com/search.rss?q=${encodeURIComponent(topic.displayName)}&sort=new`;
     
-    console.log(`🔍 [redditScanner] Fetching global search for ${searchQuery}: ${url}`);
-    items = await fetchAndParseRss(url);
+    const urlsToFetch = [
+      { type: `global (displayName: "${topic.displayName}")`, url: cleanSearchUrl }
+    ];
+
+    if (topic.aiRefinedQuery && topic.aiRefinedQuery !== topic.displayName) {
+      const booleanSearchUrl = `https://www.reddit.com/search.rss?q=${encodeURIComponent(topic.aiRefinedQuery)}&sort=new`;
+      urlsToFetch.push({ type: "global (booleanQuery)", url: booleanSearchUrl });
+    }
+
+    const allItems = [];
+    for (const target of urlsToFetch) {
+      console.log(`🔍 [redditScanner] Fetching ${target.type}: ${target.url}`);
+      const fetchedItems = await fetchAndParseRss(target.url);
+      allItems.push(...fetchedItems);
+    }
+
+    // Merge and deduplicate by link
+    const seenLinks = new Set();
+    for (const item of allItems) {
+      if (!seenLinks.has(item.link)) {
+        seenLinks.add(item.link);
+        items.push(item);
+      }
+    }
   }
 
   const sinceDate = topic.lastScannedAt;
@@ -161,7 +192,8 @@ export async function scanReddit(topic, sourceConfig, options = {}) {
     // 3. Extract metadata and post content via Cheerio
     let isSelfPost = true;
     let externalUrl = null;
-    let body = "";
+    let bodyText = "";
+    let bodyHtml = "";
 
     const contentHtml = item.content || "";
     if (contentHtml) {
@@ -170,7 +202,15 @@ export async function scanReddit(topic, sourceConfig, options = {}) {
       // Select the selftext markdown container
       const mdContainer = $("div.md");
       if (mdContainer.length > 0) {
-        body = mdContainer.text().trim();
+        bodyHtml = mdContainer.html()?.trim() || "";
+        
+        // Extract plain text with newlines for block elements to preserve readability
+        const blocks = [];
+        mdContainer.find("p, h1, h2, h3, h4, h5, h6, li, blockquote, pre").each((i, el) => {
+          const t = $(el).text().trim();
+          if (t) blocks.push(t);
+        });
+        bodyText = blocks.length > 0 ? blocks.join("\n\n") : mdContainer.text().trim();
       }
 
       // Check if it's a link post (contains a [link] anchor pointing to external domain)
@@ -184,13 +224,37 @@ export async function scanReddit(topic, sourceConfig, options = {}) {
       }
     }
 
-    // Fallback: use split contentSnippet if cheerio did not yield body
-    if (isSelfPost && !body && item.contentSnippet) {
-      body = item.contentSnippet.split(/\bsubmitted by\b/i)[0].trim();
+    // Fallback: use split contentSnippet if cheerio did not yield bodyText
+    if (isSelfPost && !bodyText && item.contentSnippet) {
+      bodyText = item.contentSnippet.split(/\bsubmitted by\b/i)[0].trim();
+      bodyHtml = `<p>${bodyText}</p>`;
+    }
+
+    // Clean title prefix if prepended in the feed
+    const titleLower = item.title.toLowerCase().trim();
+    if (bodyText.toLowerCase().startsWith(titleLower)) {
+      bodyText = bodyText.slice(item.title.length).trim().replace(/^[:\-\s\n]+/, "");
+    }
+    
+    if (bodyHtml) {
+      const $body = cheerio.load(bodyHtml);
+      const firstP = $body("p").first();
+      if (firstP.length > 0) {
+        const firstPText = firstP.text().toLowerCase().trim();
+        if (firstPText === titleLower || firstPText.startsWith(titleLower)) {
+          if (firstPText === titleLower) {
+            firstP.remove();
+          } else {
+            const cleanText = firstP.text().slice(item.title.length).trim().replace(/^[:\-\s\n]+/, "");
+            firstP.text(cleanText);
+          }
+          bodyHtml = $body("body").html()?.trim() || bodyHtml;
+        }
+      }
     }
 
     // 4. Local Boolean AST query evaluation
-    const textToSearch = `${item.title} ${body}`;
+    const textToSearch = `${item.title} ${bodyText}`;
     const isMatch = evaluateQuery(topic, textToSearch);
 
     if (!isMatch) {
@@ -206,7 +270,7 @@ export async function scanReddit(topic, sourceConfig, options = {}) {
       title: item.title,
       sourceUrl: item.link,
       sourceName: `Reddit (${subreddit})`,
-      summary: body || "Reddit post.",
+      summary: bodyText ? (bodyText.slice(0, 300) + (bodyText.length > 300 ? "..." : "")) : "Reddit post.",
       rawArticleId: null,
       sourceType: "REDDIT",
       metadata: {
@@ -215,6 +279,7 @@ export async function scanReddit(topic, sourceConfig, options = {}) {
         isSelfPost,
         externalUrl,
         commentsUrl: item.link,
+        contentHtml: bodyHtml || null,
       }
     });
 

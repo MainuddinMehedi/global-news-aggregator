@@ -11,10 +11,13 @@ export async function scoreFindings(topic, findings) {
   if (findings.length === 0) return findings;
 
   const BATCH_SIZE = 20;
-  const query = topic.aiRefinedQuery || topic.displayName;
+  const topicName = topic.displayName;
+  const userIntent = topic.userContext || "None provided";
+  const conceptSummary = topic.aiQuerySummary || "None provided";
+  const booleanQuery = topic.aiRefinedQuery || "None provided";
 
   console.log(
-    `🧠 [scorer] Scoring ${findings.length} findings against topic: "${topic.displayName}" (using batches of ${BATCH_SIZE})...`,
+    `🧠 [scorer] Scoring ${findings.length} findings against topic: "${topicName}" (using batches of ${BATCH_SIZE})...`,
   );
 
   for (let i = 0; i < findings.length; i += BATCH_SIZE) {
@@ -26,41 +29,63 @@ export async function scoreFindings(topic, findings) {
       return `[${index}] Title: ${f.title}\n    Summary: ${safeSummary}`;
     });
 
-    const prompt = `Given this search topic: "${query}", rate how relevant each finding is on a scale of 0.0 to 1.0 based on its title and summary.
-  A score of 1.0 means it is highly relevant and exactly matches the topic.
-  A score of 0.0 means it is completely irrelevant.
-  Return ONLY a valid JSON object with a single key "scores" containing an array of numbers in the same order as the input.
+    const prompt = `You are an AI research assistant and intelligence analyst. Given the following tracking topic and context, evaluate the relevance of each finding on a scale of 0.0 to 1.0 based on its title and summary.
 
-  Findings:
-  ${findingTitles.join("\n")}`;
+TRACKING TOPIC DETAILS:
+- Topic Title: "${topicName}"
+- User Intent/Context: "${userIntent}"
+- AI Refined Concept: "${conceptSummary}"
+- Boolean Query Filter: "${booleanQuery}"
+
+SCORING RULES:
+- A score of 1.0 means the finding directly and perfectly matches the user's intent or tracking topic.
+- A score of 0.5 to 0.9 means it is highly relevant, discussing the same concepts, news, or technologies.
+- A score of 0.1 to 0.4 means it is weakly relevant or tangentially related.
+- A score of 0.0 means it is completely irrelevant or off-topic.
+
+You must return a valid JSON object containing a "results" array. Each item in the array must have the "index" (number), "score" (number), and a short "reason" (string).
+Output format:
+{
+  "results": [
+    { "index": 0, "score": 0.95, "reason": "Directly compares DeepSeek v4 Pro coding benchmarks with Claude 3.5." }
+  ]
+}
+
+Findings to evaluate:
+${findingTitles.join("\n")}`;
 
     try {
       const aiResponse = await requestAI(primaryConfig, prompt);
 
       // Parse the JSON array
-      let scores = [];
+      let results = [];
       try {
         const parsed = JSON.parse(aiResponse.content);
-        scores = parsed.scores || [];
+        results = parsed.results || [];
       } catch (e) {
         console.warn(
           `⚠️ [scorer] Batch ${i / BATCH_SIZE + 1} failed to parse JSON.`,
         );
       }
 
-      if (Array.isArray(scores) && scores.length === batch.length) {
-        batch.forEach((finding, j) => {
-          let score = parseFloat(scores[j]);
-          if (isNaN(score)) score = null;
-          else if (score > 1) score = 1;
-          else if (score < 0) score = 0;
-          finding.relevanceScore = score;
-        });
-      } else {
-        console.warn(
-          `⚠️ [scorer] Batch ${i / BATCH_SIZE + 1} mismatch: got ${scores.length} scores for ${batch.length} items.`,
-        );
+      // Map scores by index to guarantee correct pairing
+      const scoreMap = new Map();
+      if (Array.isArray(results)) {
+        for (const res of results) {
+          if (res && typeof res.index === "number") {
+            scoreMap.set(res.index, parseFloat(res.score));
+          }
+        }
       }
+
+      // Assign scores to the batch, defaulting to 0.0 if the AI missed the index
+      batch.forEach((finding, j) => {
+        let score = scoreMap.has(j) ? scoreMap.get(j) : 0.0;
+        if (isNaN(score) || score === undefined || score === null) score = 0.0;
+        else if (score > 1) score = 1.0;
+        else if (score < 0) score = 0.0;
+        finding.relevanceScore = score;
+      });
 
       // Log AI Usage
       try {

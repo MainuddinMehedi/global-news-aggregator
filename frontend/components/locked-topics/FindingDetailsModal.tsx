@@ -76,11 +76,17 @@ export function FindingDetailsModal({
             {finding.title}
           </DialogTitle>
 
-          {finding.summary && (
-            <p className="text-[15px] text-muted-foreground/90 leading-relaxed mt-1">
-              {finding.summary}
-            </p>
-          )}
+          {(() => {
+            const isRedditSelfPost = finding.sourceType === "REDDIT" && (finding.metadata as any)?.isSelfPost !== false;
+            if (finding.summary && !isRedditSelfPost) {
+              return (
+                <p className="text-[15px] text-muted-foreground/90 leading-relaxed mt-1 text-left">
+                  {finding.summary}
+                </p>
+              );
+            }
+            return null;
+          })()}
 
           <DialogDescription className="sr-only">
             Detailed view of finding: {finding.title}

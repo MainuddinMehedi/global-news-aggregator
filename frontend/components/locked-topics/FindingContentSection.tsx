@@ -38,20 +38,83 @@ function isYouTubeUrl(url: string): boolean {
   return /(?:youtube\.com|youtu\.be)/i.test(url);
 }
 
+function autoFormatPlainText(title: string, text: string): string {
+  if (!text) return "";
+  
+  // Clean duplicate title prefix
+  let cleanText = text.trim();
+  const titleLower = title.toLowerCase().trim();
+  if (cleanText.toLowerCase().startsWith(titleLower)) {
+    cleanText = cleanText.slice(title.length).trim().replace(/^[:\-\s\n]+/, "");
+  }
+  
+  // If the text already has newlines, convert them to HTML paragraphs
+  if (cleanText.includes("\n")) {
+    return cleanText
+      .split(/\n\n+/)
+      .map((para, i) => `<p key="${i}">${para.replace(/\n/g, '<br/>')}</p>`)
+      .join("");
+  }
+  
+  // Heuristic sentence-to-paragraph and heading splitter for legacy flat text
+  const sentences = cleanText.split(/(?<=[.!?])\s+(?=[A-Z])/);
+  if (sentences.length <= 3) {
+    return `<p>${cleanText}</p>`;
+  }
+  
+  const paragraphs: string[] = [];
+  let currentParagraph: string[] = [];
+  
+  for (const sentence of sentences) {
+    const trimmed = sentence.trim();
+    if (!trimmed) continue;
+    
+    // Header heuristic: short, Title Case, no ending period
+    const words = trimmed.split(/\s+/);
+    const isTitleCase = words.length > 1 && words.every(w => {
+      // Check if it starts with capital or is a common lower case subheader preposition/article
+      return /^[A-Z]/.test(w) || /^(and|or|of|in|on|at|with|without|a|an|the|to|for|is|are|vs)$/i.test(w);
+    });
+    const isHeader = trimmed.length < 60 && !trimmed.endsWith(".") && isTitleCase;
+    
+    if (isHeader) {
+      if (currentParagraph.length > 0) {
+        paragraphs.push(`<p>${currentParagraph.join(" ")}</p>`);
+        currentParagraph = [];
+      }
+      paragraphs.push(`<h2>${trimmed}</h2>`);
+    } else {
+      currentParagraph.push(trimmed);
+      if (currentParagraph.length >= 3) {
+        paragraphs.push(`<p>${currentParagraph.join(" ")}</p>`);
+        currentParagraph = [];
+      }
+    }
+  }
+  
+  if (currentParagraph.length > 0) {
+    paragraphs.push(`<p>${currentParagraph.join(" ")}</p>`);
+  }
+  
+  return paragraphs.join("");
+}
+
 function RedditContent({ finding }: { finding: TopicFinding }) {
   const meta = finding.metadata as {
     isSelfPost?: boolean;
     externalUrl?: string;
     commentsUrl?: string;
+    contentHtml?: string;
   } | null;
 
   const isSelfPost = meta?.isSelfPost !== false;
 
   if (isSelfPost) {
+    const htmlContent = meta?.contentHtml || autoFormatPlainText(finding.title, finding.summary || "");
     return (
       <div className="space-y-4">
-        <div className="p-6 rounded-xl border border-secondary bg-secondary/5 leading-relaxed text-foreground whitespace-pre-wrap font-medium text-[15px] tracking-tight">
-          {finding.summary || "No post body."}
+        <div className="article-prose max-w-none p-6 rounded-xl border border-secondary bg-secondary/5">
+          <div dangerouslySetInnerHTML={{ __html: htmlContent }} />
         </div>
       </div>
     );
