@@ -256,7 +256,7 @@ export default function SettingsInterface() {
                   <SelectContent>
                     <SelectItem value="continuous">Continuous Feed</SelectItem>
                     <SelectItem value="daily">Daily View (Today's News)</SelectItem>
-                    <SelectItem value="hourly">Hourly View</SelectItem>
+                    <SelectItem value="hourly">Shift View (4-Hour Blocks)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
