@@ -27,8 +27,7 @@ export function contextFromArticle(article: {
   publishedAt: string;
   contentSnippet: string;
   extractedContent?: string | null;
-  biasNote?: string | null;
-  biasCategory?: string | null;
+  eventRegion?: string | null;
   sentimentScore?: number | null;
   perspectiveCountries?: string[];
   entities?: string[];
@@ -49,8 +48,7 @@ export function contextFromArticle(article: {
       url: article.url,
       contentSnippet: article.contentSnippet,
       extractedContent: article.extractedContent,
-      biasNote: article.biasNote,
-      biasCategory: article.biasCategory,
+      eventRegion: article.eventRegion,
       sentimentScore: article.sentimentScore,
       perspectiveCountries: article.perspectiveCountries,
       entities: article.entities,

@@ -40,7 +40,7 @@ export async function GET(req: NextRequest) {
         contentSnippet: article.rawArticle.contentSnippet,
         extractedContent: article.rawArticle.extractedContent,
         biasNote: article.biasNote,
-        biasCategory: article.biasCategory,
+        eventRegion: article.eventRegion,
         sentimentScore: article.sentimentScore,
         perspectiveCountries: article.perspectiveCountries,
         url: article.rawArticle.url,

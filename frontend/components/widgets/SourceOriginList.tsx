@@ -3,35 +3,61 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 
-interface PerspectiveListProps {
-  counts: {
+interface SourceOriginListProps {
+  countsData: {
     all: number;
-    wire: number;
-    western: number;
-    nonWestern: number;
-    eastern: number;
+    counts: Record<string, number>;
   };
 }
 
-export default function PerspectiveList({ counts }: PerspectiveListProps) {
+const ORIGIN_COLORS: Record<string, string> = {
+  "North America": "bg-blue-500",
+  "Middle East": "bg-amber-500",
+  "Asia-Pacific": "bg-emerald-500",
+  "Europe": "bg-indigo-500",
+  "Latin America": "bg-orange-500",
+  "Africa": "bg-yellow-500",
+  "Global": "bg-purple-500",
+  "Unknown": "bg-slate-400 dark:bg-slate-500",
+};
+
+const ORIGIN_LABELS: Record<string, string> = {
+  "North America": "North American",
+  "Middle East": "Middle Eastern",
+  "Asia-Pacific": "Asia-Pacific",
+  "Europe": "European",
+  "Latin America": "Latin American",
+  "Africa": "African",
+  "Global": "Global",
+  "Unknown": "Unknown",
+};
+
+export default function SourceOriginList({ countsData }: SourceOriginListProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const activePerspective = searchParams.get("perspective") ?? "all";
+  const activeOrigin = searchParams.get("origin") ?? "all";
+
+  // Create items list, sorted by count
+  const originItems = Object.entries(countsData.counts)
+    .sort((a, b) => b[1] - a[1])
+    .map(([origin, count]) => ({
+      id: origin,
+      label: ORIGIN_LABELS[origin] || origin,
+      count,
+      dotColor: ORIGIN_COLORS[origin] || "bg-slate-400 dark:bg-slate-500",
+    }));
 
   const items = [
-    { id: "all", label: "All Sources", count: counts.all, dotColor: "bg-slate-400 dark:bg-slate-500" },
-    { id: "wire", label: "Wire Services", count: counts.wire, dotColor: "bg-amber-500" },
-    { id: "western", label: "Western", count: counts.western, dotColor: "bg-blue-500" },
-    { id: "non-western", label: "Non-Western", count: counts.nonWestern, dotColor: "bg-emerald-500" },
-    { id: "eastern", label: "Eastern", count: counts.eastern, dotColor: "bg-red-500" },
+    { id: "all", label: "All Origins", count: countsData.all, dotColor: "bg-slate-400 dark:bg-slate-500" },
+    ...originItems,
   ];
 
   const handleSelect = (id: string) => {
     const params = new URLSearchParams(searchParams.toString());
     if (id === "all") {
-      params.delete("perspective");
+      params.delete("origin");
     } else {
-      params.set("perspective", id);
+      params.set("origin", id);
     }
     // Reset page cursor when filter changes
     params.delete("cursor");
@@ -41,7 +67,7 @@ export default function PerspectiveList({ counts }: PerspectiveListProps) {
   return (
     <div className="space-y-1">
       {items.map((item) => {
-        const isActive = activePerspective === item.id;
+        const isActive = activeOrigin === item.id;
         return (
           <button
             key={item.id}

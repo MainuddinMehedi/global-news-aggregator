@@ -10,7 +10,7 @@ interface StoryCluster {
   articleCount: number;
   impact: string | null;
   topSources: string[];
-  perspectives: string[];
+  origins: string[];
 }
 
 interface EventClustersListProps {
@@ -24,12 +24,14 @@ const IMPACT_COLORS: Record<string, string> = {
   LOW: "bg-emerald-500",
 };
 
-const PERSPECTIVE_DOT_COLORS: Record<string, string> = {
-  Western: "bg-blue-500",
-  "Non-Western": "bg-emerald-500",
-  Eastern: "bg-red-500",
-  Neutral: "bg-slate-400",
-  Wire: "bg-amber-500",
+const ORIGIN_DOT_COLORS: Record<string, string> = {
+  "North America": "bg-blue-500",
+  Europe: "bg-emerald-500",
+  "Middle East": "bg-amber-500",
+  "Asia-Pacific": "bg-red-500",
+  "Latin America": "bg-purple-500",
+  Africa: "bg-orange-500",
+  Global: "bg-slate-400",
 };
 
 export default function EventClustersList({ clusters }: EventClustersListProps) {
@@ -89,16 +91,16 @@ export default function EventClustersList({ clusters }: EventClustersListProps) 
               </div>
               
               <div className="flex items-center space-x-1.5 shrink-0">
-                {/* Perspective Dots Pill */}
-                {cluster.perspectives && cluster.perspectives.length > 0 && (
+                {/* Origin Dots Pill */}
+                {cluster.origins && cluster.origins.length > 0 && (
                   <div className="flex items-center space-x-1 bg-muted/40 px-1.5 py-0.5 rounded-md border border-border/20">
-                    {cluster.perspectives.map((p) => (
+                    {cluster.origins.map((o) => (
                       <span
-                        key={p}
-                        title={`${p} perspective`}
+                        key={o}
+                        title={`${o} origin`}
                         className={cn(
                           "w-1.5 h-1.5 rounded-full inline-block shrink-0",
-                          PERSPECTIVE_DOT_COLORS[p] || "bg-slate-400"
+                          ORIGIN_DOT_COLORS[o] || "bg-slate-400"
                         )}
                       />
                     ))}

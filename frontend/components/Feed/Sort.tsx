@@ -21,12 +21,9 @@ export default function Sort() {
   };
 
   return (
-    <div className="flex items-center space-x-2">
-      <span className="text-xs text-muted-foreground uppercase font-bold tracking-widest">
-        Sort:
-      </span>
+    <div className="flex items-center space-x-1">
       <Select value={currentSort} onValueChange={handleSortChange}>
-        <SelectTrigger size="sm">
+        <SelectTrigger className="w-[110px] h-8 text-xs">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>

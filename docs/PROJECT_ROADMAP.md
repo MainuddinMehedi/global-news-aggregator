@@ -15,11 +15,14 @@ This document serves as the master checklist and brainstorming board for the rem
   - Activate the scheduled ingestion pipeline.
 
 ### 1.2 The 3-Axis Filter Architecture (Revamp)
+
 - **The Problem:** We are currently confusing the publisher's origin with the event's location. We need to categorize news across three distinct axes to allow deep analytical filtering:
-  1. **`Event Region` (What is the news about?):** The geographical subject of the article. *Extracted by AI.* (e.g., North America, Europe, Middle East, Asia).
-  2. **`Source Origin` (Where is the publisher based?):** The geopolitical base of the news outlet. *Hardcoded on RSS Feed.* (e.g., US/UK, China/Russia, Middle East).
-  3. **`Source Type` (What kind of publisher is it?):** The editorial structure of the publisher. *Hardcoded on RSS Feed.* (e.g., State Media, Independent Wire, Commercial Publisher, Amplifier/Aggregator).
-- **Why this works:** It unlocks incredibly smart filtering. A user can say: *"Show me news about the **Middle East** (Event Region) reported by **State Media** (Source Type) from **Asia** (Source Origin)."*
+  1. **`Event Region` (What is the news about?):** The geographical subject of the article. _Extracted by AI._ (e.g., North America, Europe, Middle East, Asia).
+  2. **`Source Origin` (Where is the publisher based?):** The geopolitical base of the news outlet. _Hardcoded on RSS Feed._ (e.g., US/UK, China/Russia, Middle East).
+  3. **`Source Type` (What kind of publisher is it?):** The editorial structure of the publisher. _Hardcoded on RSS Feed._ (e.g., State Media, Independent Wire, Commercial Publisher, Amplifier/Aggregator).
+- **Why this works:** It unlocks incredibly smart filtering. A user can say: _"Show me news about the **Middle East** (Event Region) reported by **State Media** (Source Type) from **Asia** (Source Origin)."_
+
+Changing the rss feed structure changes how we take input(feed) from user and how i as an admin add feeds.
 
 ---
 
@@ -31,7 +34,8 @@ This document serves as the master checklist and brainstorming board for the rem
 - **Action Item:** Audit both pages and unify the design language (typography, spacing, card layouts, header styles).
 
 ### 2.2 Side-by-Side "Compare" Feature
-- **Concept:** Since multiple sources cover the same event (Story Clusters), allow users to select an event and view how different `Source Types` or `Source Origins` covered it side-by-side. 
+
+- **Concept:** Since multiple sources cover the same event (Story Clusters), allow users to select an event and view how different `Source Types` or `Source Origins` covered it side-by-side.
 - **Example:** Compare NYT (Commercial, US) coverage of an event vs. Xinhua (State Media, China) coverage of the exact same event.
 
 ### 2.3 User Scopes & Authentication

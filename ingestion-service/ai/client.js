@@ -50,7 +50,7 @@ For EACH article, do the following:
 2. Extract named entities (countries, organizations, people) - max 10
 3. Score sentiment: -1.0 (very negative) to +1.0 (very positive)
 4. Note any detectable bias or perspective (e.g., "Western-centric", "state-media tone")
-5. Classify bias category: exactly one of "Western", "Eastern", "Non-Western", "Neutral"
+5. Extract the geographical subject: exactly one of "North America", "Europe", "Middle East", "Asia-Pacific", "Latin America", "Africa", "Global". Assign to "eventRegion"
 6. List countries whose perspective is represented (ISO codes if possible)
 
 OUTPUT FORMAT (strict JSON, no markdown):
@@ -66,7 +66,7 @@ Use only article refs listed above. Do not invent refs.
       "entities": ["China", "UN", "Xi Jinping"],
       "sentimentScore": 0.3,
       "biasNote": "Neutral reporting with slight institutional framing",
-      "biasCategory": "Western",
+      "eventRegion": "Asia-Pacific",
       "perspectiveCountries": ["CN", "US"]
     }
   ]

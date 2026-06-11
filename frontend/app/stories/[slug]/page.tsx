@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { getStoryDetail } from "@/queries/stories";
+import { getEventRegionBadgeVariant } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import ArticleCard from "@/components/articles/ArticleCard";
@@ -32,7 +33,6 @@ export default async function StoryDetailsPage({
     contentSnippet: processedArticle.rawArticle.contentSnippet,
     extractedContent: processedArticle.rawArticle.extractedContent,
     biasNote: processedArticle.biasNote,
-    biasCategory: processedArticle.biasCategory,
     sentimentScore: processedArticle.sentimentScore,
     perspectiveCountries: processedArticle.perspectiveCountries,
     url: processedArticle.rawArticle.url,
@@ -40,6 +40,9 @@ export default async function StoryDetailsPage({
     entities: processedArticle.entities,
     sourceCountry: processedArticle.rawArticle.sourceCountry,
     slug: processedArticle.rawArticle.slug,
+    eventRegion: processedArticle.eventRegion,
+    sourceOrigin: processedArticle.rawArticle.sourceOrigin,
+    sourceType: processedArticle.rawArticle.sourceType,
   });
 
   const uniqueSourcesMap = new Map<string, string>();

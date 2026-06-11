@@ -1,27 +1,41 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { cn } from "@/lib/utils";
 
 interface ActiveFiltersProps {
   category: string;
-  perspective: string;
+  region: string;
+  origin: string;
+  type: string;
   story: string;
   activeStoryTitle?: string;
 }
 
+const ORIGIN_LABELS: Record<string, string> = {
+  "North America": "North American",
+  "Middle East": "Middle Eastern",
+  "Asia-Pacific": "Asia-Pacific",
+  "Europe": "European",
+  "Latin America": "Latin American",
+  "Africa": "African",
+  "Global": "Global",
+  "Unknown": "Unknown",
+};
+
 export default function ActiveFilters({
   category,
-  perspective,
+  region,
+  origin,
+  type,
   story,
   activeStoryTitle,
 }: ActiveFiltersProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  if (category === "all" && perspective === "all" && story === "all") return null;
+  if (category === "all" && region === "all" && origin === "all" && type === "all" && story === "all") return null;
 
-  const handleClearFilter = (filterKey: "category" | "perspective" | "story") => {
+  const handleClearFilter = (filterKey: "category" | "region" | "origin" | "type" | "story") => {
     const params = new URLSearchParams(searchParams.toString());
     params.delete(filterKey);
     params.delete("cursor");
@@ -31,7 +45,9 @@ export default function ActiveFilters({
   const handleClearAll = () => {
     const params = new URLSearchParams(searchParams.toString());
     params.delete("category");
-    params.delete("perspective");
+    params.delete("region");
+    params.delete("origin");
+    params.delete("type");
     params.delete("story");
     params.delete("cursor");
     router.push(`?${params.toString()}`);
@@ -56,27 +72,41 @@ export default function ActiveFilters({
           </button>
         </div>
       )}
-      {perspective !== "all" && (
+      {region !== "all" && (
         <div className="inline-flex items-center space-x-1 bg-card text-foreground border border-border px-2 py-0.5 rounded-lg">
-          <span
-            className={cn(
-              "w-1.5 h-1.5 rounded-full inline-block",
-              perspective.toLowerCase() === "wire"
-                ? "bg-amber-500"
-                : perspective.toLowerCase() === "western"
-                  ? "bg-blue-500"
-                  : perspective.toLowerCase() === "non-western"
-                    ? "bg-emerald-500"
-                    : perspective.toLowerCase() === "eastern"
-                      ? "bg-red-500"
-                      : "bg-slate-400",
-            )}
-          />
           <span className="capitalize font-medium text-[11px]">
-            {perspective}
+            Region: {region}
           </span>
           <button
-            onClick={() => handleClearFilter("perspective")}
+            onClick={() => handleClearFilter("region")}
+            className="hover:text-destructive transition-colors ml-1 font-bold text-[10px] cursor-pointer"
+            title="Clear filter"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+      {origin !== "all" && (
+        <div className="inline-flex items-center space-x-1 bg-card text-foreground border border-border px-2 py-0.5 rounded-lg">
+          <span className="capitalize font-medium text-[11px]">
+            Origin: {ORIGIN_LABELS[origin] || origin}
+          </span>
+          <button
+            onClick={() => handleClearFilter("origin")}
+            className="hover:text-destructive transition-colors ml-1 font-bold text-[10px] cursor-pointer"
+            title="Clear filter"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+      {type !== "all" && (
+        <div className="inline-flex items-center space-x-1 bg-card text-foreground border border-border px-2 py-0.5 rounded-lg">
+          <span className="capitalize font-medium text-[11px]">
+            Type: {type}
+          </span>
+          <button
+            onClick={() => handleClearFilter("type")}
             className="hover:text-destructive transition-colors ml-1 font-bold text-[10px] cursor-pointer"
             title="Clear filter"
           >

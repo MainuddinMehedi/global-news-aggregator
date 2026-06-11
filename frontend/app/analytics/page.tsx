@@ -325,17 +325,17 @@ export default async function AnalyticsPage(props: {
           />
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Bias Distribution */}
+            {/* Event Region Distribution */}
             <PanelShell>
               <SectionHeader
-                title="Bias Distribution"
+                title="Event Region Distribution"
                 sub="Interactive Donut Analysis"
               />
-              {data.biasDistribution.length > 0 ? (
+              {data.eventRegionDistribution.length > 0 ? (
                 <div className="flex flex-col md:flex-row items-center gap-6">
-                  <BiasDonutChart data={data.biasDistribution} />
+                  <BiasDonutChart data={data.eventRegionDistribution} />
                   <div className="w-full md:w-48 space-y-2">
-                    {data.biasDistribution.map((item) => (
+                    {data.eventRegionDistribution.map((item) => (
                       <div
                         key={item.label}
                         className="flex items-center justify-between group"
@@ -357,7 +357,7 @@ export default async function AnalyticsPage(props: {
                   </div>
                 </div>
               ) : (
-                <p className="text-xs text-muted-foreground/50 italic py-10 text-center">No bias data available.</p>
+                <p className="text-xs text-muted-foreground/50 italic py-10 text-center">No event region data available.</p>
               )}
             </PanelShell>
 

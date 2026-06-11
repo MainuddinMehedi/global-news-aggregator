@@ -18,7 +18,9 @@ interface ArticleFeedProps {
   category: string;
   sort: string;
   search: string;
-  perspective: string;
+  region: string;
+  origin: string;
+  type: string;
   story: string;
   activeStoryTitle?: string;
 }
@@ -29,7 +31,9 @@ export default function ArticleFeed({
   category,
   sort,
   search,
-  perspective,
+  region,
+  origin,
+  type,
   story,
   activeStoryTitle,
 }: ArticleFeedProps) {
@@ -96,7 +100,9 @@ export default function ArticleFeed({
 
     try {
       const params = new URLSearchParams({ category, sort, search, cursor });
-      if (perspective !== "all") params.set("perspective", perspective);
+      if (region !== "all") params.set("region", region);
+      if (origin !== "all") params.set("origin", origin);
+      if (type !== "all") params.set("type", type);
       if (story !== "all") params.set("story", story);
 
       const res = await fetch(`/api/articles?${params}`);
@@ -116,7 +122,7 @@ export default function ArticleFeed({
     } finally {
       setLoading(false);
     }
-  }, [cursor, isLoading, error, category, sort, search, perspective, story]);
+  }, [cursor, isLoading, error, category, sort, search, region, origin, type, story]);
 
   // Intersection observer logic
   useEffect(() => {
@@ -141,7 +147,7 @@ export default function ArticleFeed({
     }, 0);
   };
 
-  const handleClearFilter = (filterKey: "perspective" | "story") => {
+  const handleClearFilter = (filterKey: "region" | "origin" | "type" | "story") => {
     const params = new URLSearchParams(searchParams.toString());
     params.delete(filterKey);
     params.delete("cursor");

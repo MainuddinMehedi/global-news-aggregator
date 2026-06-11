@@ -1,4 +1,4 @@
-import { getClusterStats, getStoryClustersWithPerspectives } from "@/queries/analytics";
+import { getClusterStats, getStoryClustersWithOrigins } from "@/queries/analytics";
 import { cn } from "@/lib/utils";
 import EventClustersList from "./EventClustersList";
 import { Suspense } from "react";
@@ -14,7 +14,7 @@ const IMPACT_COLORS: Record<string, string> = {
 export async function EventClustersWidget() {
   const [stats, clusters] = await Promise.all([
     getClusterStats(),
-    getStoryClustersWithPerspectives(),
+    getStoryClustersWithOrigins(),
   ]);
 
   if (!stats) return null;

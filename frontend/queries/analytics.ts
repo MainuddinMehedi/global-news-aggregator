@@ -2,7 +2,7 @@ import { cacheLife, cacheTag } from "next/cache";
 import prisma from "@/lib/prisma";
 
 export interface AnalyticsData {
-  biasDistribution: {
+  eventRegionDistribution: {
     label: string;
     count: number;
     color: string;
@@ -110,7 +110,7 @@ export async function getAnalyticsData(timeRange: string = "7d"): Promise<Analyt
       prisma.processedArticle.findMany({
         where: { processedAt: { gte: startDate } },
         select: {
-          biasCategory: true,
+          eventRegion: true,
           sentimentScore: true,
           entities: true,
           rawArticle: { select: { sourceCountry: true } },
@@ -202,25 +202,25 @@ export async function getAnalyticsData(timeRange: string = "7d"): Promise<Analyt
       }))
       .sort((a, b) => b.lastFetch.getTime() - a.lastFetch.getTime());
 
-    // ── Bias Distribution ──────────────────────────────────────────────────────
-    const biasCounts: Record<string, number> = {
-      Western: 0, "Non-Western": 0, Eastern: 0, Neutral: 0, Unknown: 0,
+    // ── Event Region Distribution ──────────────────────────────────────────────
+    const regionCounts: Record<string, number> = {
+      "North America": 0, "Europe": 0, "Middle East": 0, "Asia-Pacific": 0, "Latin America": 0, "Africa": 0, "Global": 0, "Unknown": 0,
     };
     for (const a of processedArticles) {
-      const cat = a.biasCategory;
-      if (!cat) biasCounts["Unknown"]++;
-      else if (biasCounts[cat] !== undefined) biasCounts[cat]++;
-      else biasCounts["Unknown"]++;
+      const reg = a.eventRegion;
+      if (!reg) regionCounts["Unknown"]++;
+      else if (regionCounts[reg] !== undefined) regionCounts[reg]++;
+      else regionCounts["Unknown"]++;
     }
-    const biasColors: Record<string, string> = {
-      Western: "#3b82f6", "Non-Western": "#10b981", Eastern: "#ef4444", Neutral: "#f59e0b", Unknown: "#6b7280",
+    const regionColors: Record<string, string> = {
+      "North America": "#3b82f6", "Europe": "#10b981", "Middle East": "#ef4444", "Asia-Pacific": "#f59e0b", "Latin America": "#8b5cf6", "Africa": "#ec4899", "Global": "#6b7280", "Unknown": "#9ca3af",
     };
-    const biasDistribution = Object.entries(biasCounts)
+    const eventRegionDistribution = Object.entries(regionCounts)
       .filter(([, count]) => count > 0)
       .map(([label, count]) => ({
         label,
         count,
-        color: biasColors[label] ?? "#6b7280",
+        color: regionColors[label] ?? "#9ca3af",
         percentage: totalArticles > 0 ? Math.round((count / totalArticles) * 100) : 0,
       }))
       .sort((a, b) => b.count - a.count);
@@ -340,7 +340,7 @@ export async function getAnalyticsData(timeRange: string = "7d"): Promise<Analyt
     };
 
     return {
-      biasDistribution,
+      eventRegionDistribution,
       topSourceCountries,
       categoryBreakdown,
       sentimentDistribution: sentimentBuckets,
@@ -362,7 +362,7 @@ export async function getAnalyticsData(timeRange: string = "7d"): Promise<Analyt
   } catch (error) {
     console.error("getAnalyticsData error:", error);
     return {
-      biasDistribution: [], topSourceCountries: [], categoryBreakdown: [], sentimentDistribution: [],
+      eventRegionDistribution: [], topSourceCountries: [], categoryBreakdown: [], sentimentDistribution: [],
       totalArticles: 0, totalStories: 0, totalFindings: 0, totalTopics: 0, avgSentiment: null,
       topEntities: [], aiUsageChart: [], sourceHealth: [], ingestionVolumeChart: [], dedupRate: 0,
       modelUtilization: [], topicSourceDistribution: [], storyImpactDistribution: [],
@@ -464,9 +464,9 @@ export async function getContentInsights() {
   cacheLife("hours");
 
   try {
-    const [biasStats, categoryStats, sentimentStats] = await Promise.all([
+    const [regionStats, categoryStats, sentimentStats] = await Promise.all([
       prisma.processedArticle.groupBy({
-        by: ["biasCategory"],
+        by: ["eventRegion"],
         _count: { _all: true },
       }),
       prisma.category.findMany({
@@ -483,8 +483,8 @@ export async function getContentInsights() {
     ]);
 
     return {
-      biasDistribution: biasStats.map((b) => ({
-        label: b.biasCategory || "Unknown",
+      eventRegionDistribution: regionStats.map((b) => ({
+        label: b.eventRegion || "Unknown",
         count: b._count._all,
       })),
       categories: categoryStats.map((c) => ({
@@ -531,44 +531,41 @@ export async function getClusterStats() {
   }
 }
 
-export async function getPerspectiveCounts() {
+export async function getSourceOriginCounts() {
   "use cache";
   cacheTag("articles");
   cacheLife("minutes");
 
-  const wireSources = ["reuters", "ap", "associated press", "bloomberg", "afp", "press association", "upi"];
-
   try {
-    const [all, western, eastern, nonWestern, wire] = await Promise.all([
-      prisma.processedArticle.count(),
-      prisma.processedArticle.count({ where: { biasCategory: "Western" } }),
-      prisma.processedArticle.count({ where: { biasCategory: "Eastern" } }),
-      prisma.processedArticle.count({ where: { biasCategory: "Non-Western" } }),
-      prisma.processedArticle.count({
-        where: {
-          rawArticle: {
-            OR: wireSources.map((w) => ({
-              source: { contains: w, mode: "insensitive" },
-            })),
-          },
+    const rawCounts = await prisma.rawArticle.groupBy({
+      by: ["sourceOrigin"],
+      _count: { _all: true },
+      where: {
+        processedArticle: {
+          isNot: null,
         },
-      }),
-    ]);
+      },
+    });
+
+    const all = rawCounts.reduce((acc, curr) => acc + curr._count._all, 0);
+
+    const counts = rawCounts.reduce((acc, curr) => {
+      const origin = curr.sourceOrigin || "Unknown";
+      acc[origin] = curr._count._all;
+      return acc;
+    }, {} as Record<string, number>);
 
     return {
       all,
-      western,
-      eastern,
-      nonWestern,
-      wire,
+      counts,
     };
   } catch (error) {
-    console.error("getPerspectiveCounts error:", error);
-    return { all: 0, western: 0, eastern: 0, nonWestern: 0, wire: 0 };
+    console.error("getSourceOriginCounts error:", error);
+    return { all: 0, counts: {} };
   }
 }
 
-export async function getStoryClustersWithPerspectives() {
+export async function getStoryClustersWithOrigins() {
   "use cache";
   cacheTag("stories");
   cacheTag("articles");
@@ -581,18 +578,22 @@ export async function getStoryClustersWithPerspectives() {
       take: 5,
       include: {
         articles: {
-          select: {
-            biasCategory: true,
+          include: {
+            rawArticle: {
+              select: {
+                sourceOrigin: true,
+              },
+            },
           },
         },
       },
     });
 
     return clusters.map((c) => {
-      const uniquePerspectives = Array.from(
+      const uniqueOrigins = Array.from(
         new Set(
           c.articles
-            .map((a) => a.biasCategory)
+            .map((a) => a.rawArticle.sourceOrigin)
             .filter((p): p is string => !!p)
         )
       );
@@ -604,11 +605,11 @@ export async function getStoryClustersWithPerspectives() {
         articleCount: c.articleCount,
         impact: c.impact,
         topSources: c.topSources,
-        perspectives: uniquePerspectives,
+        origins: uniqueOrigins,
       };
     });
   } catch (error) {
-    console.error("getStoryClustersWithPerspectives error:", error);
+    console.error("getStoryClustersWithOrigins error:", error);
     return [];
   }
 }

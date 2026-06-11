@@ -4,7 +4,7 @@ import BookmarkButton from "@/components/ui/BookmarkButton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
-import { formatRelativeTime, getBiasBadgeVariant } from "@/lib/utils";
+import { cn, formatRelativeTime, getEventRegionBadgeVariant } from "@/lib/utils";
 import AiButton from "./AiButton";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Globe } from "@hugeicons/core-free-icons";
@@ -36,9 +36,12 @@ export default function ArticleCard({
             </CardTitle>
           </Link>
           <div className="flex items-center gap-2">
-            {article.biasCategory && (
-              <Badge variant={getBiasBadgeVariant(article.biasCategory)}>
-                {article.biasCategory}
+            {article.eventRegion && (
+              <Badge
+                variant={getEventRegionBadgeVariant(article.eventRegion)}
+                className="hidden sm:inline-flex"
+              >
+                {article.eventRegion}
               </Badge>
             )}
             <BookmarkButton type="article" targetId={article.id} />

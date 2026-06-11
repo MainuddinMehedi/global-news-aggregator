@@ -2,7 +2,7 @@ import { getArticleById } from "@/queries/articles";
 import { notFound } from "next/navigation";
 import { SentimentBadge } from "@/components/articles/SentimentBadge";
 import { Badge } from "@/components/ui/badge";
-import { getBiasBadgeVariant, formatRelativeTime } from "@/lib/utils";
+import { formatRelativeTime, getEventRegionBadgeVariant } from "@/lib/utils";
 import Link from "next/link";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -35,7 +35,7 @@ export default async function ArticleDetailsPage({
   }
 
   return (
-    <div className="mx-auto w-full max-w- px-4 py-8 sm:px-6 lg:px-8 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <Link
         href={storySlug ? `/stories/${storySlug}` : "/"}
         className="inline-flex items-center text-sm text-muted-foreground hover:text-primary transition-colors"
@@ -53,11 +53,13 @@ export default async function ArticleDetailsPage({
                   {cat.name}
                 </Badge>
               ))}
-              {article.biasCategory && (
-                <Badge variant={getBiasBadgeVariant(article.biasCategory)}>
-                  {article.biasCategory}
-                </Badge>
-              )}
+
+              <span className="text-xs text-muted-foreground/80 tracking-tighter uppercase">
+                Event Region:
+              </span>
+              <Badge variant={getEventRegionBadgeVariant(article.eventRegion)}>
+                {article.eventRegion || "Unknown"}
+              </Badge>
             </div>
 
             <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground leading-tight">

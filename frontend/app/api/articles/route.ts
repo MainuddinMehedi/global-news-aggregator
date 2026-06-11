@@ -9,7 +9,9 @@ export async function GET(req: NextRequest) {
       category:    searchParams.get("category")    ?? "all",
       sort:        searchParams.get("sort")        ?? "latest",
       search:      searchParams.get("search")      ?? "",
-      perspective: searchParams.get("perspective") ?? undefined,
+      region:      searchParams.get("region")      ?? undefined,
+      origin:      searchParams.get("origin")      ?? undefined,
+      type:        searchParams.get("type")        ?? undefined,
       story:       searchParams.get("story")       ?? undefined,
       cursor:      searchParams.get("cursor")      ?? undefined,
     });

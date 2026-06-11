@@ -52,6 +52,8 @@ model RawArticle {
   slug             String?  @unique
   source           String
   sourceCountry    String?
+  sourceOrigin     String?
+  sourceType       String?
   publishedAt      DateTime
   fetchedAt        DateTime @default(now())
   contentHash      String?  @unique
@@ -71,7 +73,7 @@ model ProcessedArticle {
   entities             String[]
   sentimentScore       Float?
   biasNote             String?
-  biasCategory         String? // "Western", "Eastern", "Non-Western", "Neutral"
+  eventRegion          String?
   perspectiveCountries String[]
   model                String?
   processedAt          DateTime   @default(now())

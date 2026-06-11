@@ -46,6 +46,8 @@ async function run() {
     for await (const item of fetchRSSStream(
       src.name,
       src.sourceCountry,
+      src.sourceOrigin,
+      src.sourceType,
       src.url,
     )) {
       totalFetched++;
@@ -86,6 +88,8 @@ async function run() {
             contentSnippet: item.contentSnippet,
             source: item.source,
             sourceCountry: item.sourceCountry,
+            sourceOrigin: item.sourceOrigin,
+            sourceType: item.sourceType,
             publishedAt: item.publishedAt,
             contentHash: item.contentHash,
             slug: generateSlug(item.title),

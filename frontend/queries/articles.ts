@@ -6,7 +6,9 @@ interface getArticlesParams {
   category: string;
   sort: string;
   search: string;
-  perspective?: string;
+  region?: string;
+  origin?: string;
+  type?: string;
   story?: string;
   cursor?: string;
 }
@@ -17,7 +19,9 @@ export async function getArticles({
   category,
   sort,
   search,
-  perspective,
+  region,
+  origin,
+  type,
   story,
   cursor,
 }: getArticlesParams): Promise<{
@@ -41,33 +45,19 @@ export async function getArticles({
         ]
       : [];
 
-  const wireSources = ["reuters", "ap", "associated press", "bloomberg", "afp", "press association", "upi"];
+  let regionFilter: any[] = [];
+  if (region && region !== "all") {
+    regionFilter = [{ eventRegion: region }];
+  }
 
-  let perspectiveFilter: any[] = [];
-  if (perspective && perspective !== "all") {
-    if (perspective.toLowerCase() === "wire") {
-      perspectiveFilter = [
-        {
-          rawArticle: {
-            OR: wireSources.map((w) => ({
-              source: { contains: w, mode: "insensitive" as const },
-            })),
-          },
-        },
-      ];
-    } else {
-      let formattedBias = perspective.trim();
-      if (formattedBias.toLowerCase() === "western") formattedBias = "Western";
-      else if (formattedBias.toLowerCase() === "eastern") formattedBias = "Eastern";
-      else if (formattedBias.toLowerCase() === "non-western") formattedBias = "Non-Western";
-      else if (formattedBias.toLowerCase() === "neutral") formattedBias = "Neutral";
+  let originFilter: any[] = [];
+  if (origin && origin !== "all") {
+    originFilter = [{ rawArticle: { sourceOrigin: origin } }];
+  }
 
-      perspectiveFilter = [
-        {
-          biasCategory: formattedBias,
-        },
-      ];
-    }
+  let typeFilter: any[] = [];
+  if (type && type !== "all") {
+    typeFilter = [{ rawArticle: { sourceType: type } }];
   }
 
   const storyFilter =
@@ -125,7 +115,7 @@ export async function getArticles({
       take: TAKE + 1,
       ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
       where: {
-        AND: [...categoryFilter, ...searchFilter, ...perspectiveFilter, ...storyFilter],
+        AND: [...categoryFilter, ...searchFilter, ...regionFilter, ...originFilter, ...typeFilter, ...storyFilter],
       },
       orderBy,
       include: {
@@ -147,13 +137,15 @@ export async function getArticles({
       contentSnippet: article.rawArticle.contentSnippet,
       extractedContent: article.rawArticle.extractedContent,
       biasNote: article.biasNote,
-      biasCategory: article.biasCategory,
+      eventRegion: article.eventRegion,
       sentimentScore: article.sentimentScore,
       perspectiveCountries: article.perspectiveCountries,
       url: article.rawArticle.url,
       categories: article.categories,
       entities: article.entities,
       sourceCountry: article.rawArticle.sourceCountry,
+      sourceOrigin: article.rawArticle.sourceOrigin,
+      sourceType: article.rawArticle.sourceType,
       slug: article.rawArticle.slug,
     }));
 
@@ -198,13 +190,15 @@ export async function getArticleById(id: string): Promise<Article | null> {
       contentSnippet: raw.rawArticle.contentSnippet,
       extractedContent: raw.rawArticle.extractedContent,
       biasNote: raw.biasNote,
-      biasCategory: raw.biasCategory,
+      eventRegion: raw.eventRegion,
       sentimentScore: raw.sentimentScore,
       perspectiveCountries: raw.perspectiveCountries,
       url: raw.rawArticle.url,
       categories: raw.categories,
       entities: raw.entities,
       sourceCountry: raw.rawArticle.sourceCountry,
+      sourceOrigin: raw.rawArticle.sourceOrigin,
+      sourceType: raw.rawArticle.sourceType,
       slug: raw.rawArticle.slug,
     };
   } catch (error) {

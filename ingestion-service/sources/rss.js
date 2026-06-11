@@ -23,6 +23,8 @@ function extractText(value) {
 export default async function* fetchRSSStream(
   sourceName,
   sourceCountry,
+  sourceOrigin,
+  sourceType,
   feedUrl,
 ) {
   try {
@@ -53,6 +55,8 @@ export default async function* fetchRSSStream(
         contentSnippet: item.contentSnippet || item.content || "",
         source: sourceName,
         sourceCountry: sourceCountry,
+        sourceOrigin: sourceOrigin,
+        sourceType: sourceType,
         category: item.categories ? item.categories.join(", ") : "",
         publishedAt: item.isoDate ? new Date(item.isoDate) : new Date(),
       };

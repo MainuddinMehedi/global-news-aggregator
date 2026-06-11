@@ -11,7 +11,7 @@ import {
 import { useRouter, useSearchParams } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { SentimentBadge } from "./SentimentBadge";
-import { formatRelativeTime, getBiasBadgeVariant } from "@/lib/utils";
+import { formatRelativeTime, getEventRegionBadgeVariant } from "@/lib/utils";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { LinkSquare02Icon, Sparkles } from "@hugeicons/core-free-icons";
 import Link from "next/link";
@@ -149,10 +149,10 @@ export function ArticleDetailsModal({ article }: { article: Article | null }) {
               </div>
               <div className="mx-auto space-y-2">
                 <span className="text-xs block text-muted-foreground/80 tracking-tighter uppercase">
-                  Bias Category:
+                  Event Region:
                 </span>
-                <Badge variant={getBiasBadgeVariant(article.biasCategory)}>
-                  {article.biasCategory || "Neutral"}
+                <Badge variant={getEventRegionBadgeVariant(article.eventRegion)}>
+                  {article.eventRegion || "Unknown"}
                 </Badge>
               </div>
             </div>
