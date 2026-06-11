@@ -12,12 +12,12 @@ interface ActiveFiltersProps {
 }
 
 const ORIGIN_LABELS: Record<string, string> = {
-  "North America": "North American",
-  "Middle East": "Middle Eastern",
+  "North America": "North America",
+  "Middle East": "Middle East",
   "Asia-Pacific": "Asia-Pacific",
-  "Europe": "European",
-  "Latin America": "Latin American",
-  "Africa": "African",
+  "Europe": "Europe",
+  "Latin America": "Latin America",
+  "Africa": "Africa",
   "Global": "Global",
   "Unknown": "Unknown",
 };
@@ -75,7 +75,7 @@ export default function ActiveFilters({
       {region !== "all" && (
         <div className="inline-flex items-center space-x-1 bg-card text-foreground border border-border px-2 py-0.5 rounded-lg">
           <span className="capitalize font-medium text-[11px]">
-            Region: {region}
+            Event Region: {region}
           </span>
           <button
             onClick={() => handleClearFilter("region")}
@@ -89,7 +89,7 @@ export default function ActiveFilters({
       {origin !== "all" && (
         <div className="inline-flex items-center space-x-1 bg-card text-foreground border border-border px-2 py-0.5 rounded-lg">
           <span className="capitalize font-medium text-[11px]">
-            Origin: {ORIGIN_LABELS[origin] || origin}
+            Region: {ORIGIN_LABELS[origin] || origin}
           </span>
           <button
             onClick={() => handleClearFilter("origin")}

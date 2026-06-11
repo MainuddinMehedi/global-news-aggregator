@@ -33,7 +33,7 @@ export default function FilterPopover() {
                 <TooltipTrigger asChild>
                   <div className="flex items-center gap-1.5 cursor-help w-fit">
                     <h4 className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">
-                      Source Origin
+                      Event Region
                     </h4>
                     <HugeiconsIcon
                       icon={InformationCircleIcon}
@@ -47,19 +47,20 @@ export default function FilterPopover() {
                   className="max-w-[220px]"
                 >
                   <p className="text-xs">
-                    The geopolitical base where the publisher is headquartered
-                    (e.g., North American, European).
+                    The geographic focus or subject of the article (extracted by AI).
                   </p>
                 </TooltipContent>
               </Tooltip>
               <FilterDropdown
-                label="Origin"
-                paramKey="origin"
+                label="Region"
+                paramKey="region"
                 options={[
-                  { label: "North American", value: "North America" },
-                  { label: "European", value: "Europe" },
-                  { label: "Middle Eastern", value: "Middle East" },
+                  { label: "North America", value: "North America" },
+                  { label: "Europe", value: "Europe" },
+                  { label: "Middle East", value: "Middle East" },
                   { label: "Asia-Pacific", value: "Asia-Pacific" },
+                  { label: "Latin America", value: "Latin America" },
+                  { label: "Africa", value: "Africa" },
                   { label: "Global", value: "Global" },
                 ]}
               />

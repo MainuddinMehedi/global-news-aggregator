@@ -21,34 +21,31 @@ const ORIGIN_COLORS: Record<string, string> = {
   "Unknown": "bg-slate-400 dark:bg-slate-500",
 };
 
-const ORIGIN_LABELS: Record<string, string> = {
-  "North America": "North American",
-  "Middle East": "Middle Eastern",
-  "Asia-Pacific": "Asia-Pacific",
-  "Europe": "European",
-  "Latin America": "Latin American",
-  "Africa": "African",
-  "Global": "Global",
-  "Unknown": "Unknown",
-};
+const CANONICAL_REGIONS = [
+  "North America",
+  "Europe",
+  "Middle East",
+  "Asia-Pacific",
+  "Latin America",
+  "Africa",
+  "Global",
+];
 
 export default function SourceOriginList({ countsData }: SourceOriginListProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const activeOrigin = searchParams.get("origin") ?? "all";
 
-  // Create items list, sorted by count
-  const originItems = Object.entries(countsData.counts)
-    .sort((a, b) => b[1] - a[1])
-    .map(([origin, count]) => ({
-      id: origin,
-      label: ORIGIN_LABELS[origin] || origin,
-      count,
-      dotColor: ORIGIN_COLORS[origin] || "bg-slate-400 dark:bg-slate-500",
-    }));
+  // Create items list from canonical regions, sorted by count
+  const originItems = CANONICAL_REGIONS.map((origin) => ({
+    id: origin,
+    label: origin,
+    count: countsData.counts[origin] || 0,
+    dotColor: ORIGIN_COLORS[origin] || "bg-slate-400 dark:bg-slate-500",
+  })).sort((a, b) => b.count - a.count);
 
   const items = [
-    { id: "all", label: "All Origins", count: countsData.all, dotColor: "bg-slate-400 dark:bg-slate-500" },
+    { id: "all", label: "All Regions", count: countsData.all, dotColor: "bg-slate-400 dark:bg-slate-500" },
     ...originItems,
   ];
 

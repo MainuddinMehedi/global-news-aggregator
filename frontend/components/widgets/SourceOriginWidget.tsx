@@ -9,7 +9,7 @@ export async function SourceOriginWidget() {
   return (
     <div className="bg-card border border-border rounded-2xl p-4 shadow-sm">
       <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest mb-4 px-1">
-        Source Origin
+        Regions
       </h3>
       <Suspense fallback={<SourceOriginListSkeleton />}>
         <SourceOriginList countsData={countsData} />

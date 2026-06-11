@@ -1,7 +1,7 @@
 import ArticleFeed from "@/components/Feed/ArticleFeed";
 import FeedError from "@/components/Feed/FeedError";
 import Filters from "@/components/Feed/Filters";
-import { EventRegionWidget } from "@/components/widgets/EventRegionWidget";
+import { SourceOriginWidget } from "@/components/widgets/SourceOriginWidget";
 import { DiversityInsightWidget } from "@/components/widgets/DiversityInsightWidget";
 import { EventClustersWidget } from "@/components/widgets/EventClustersWidget";
 
@@ -98,7 +98,7 @@ export default async function Home({
       {/* Information Widgets — only on xl+ */}
       <div className="hidden xl:flex xl:w-72 shrink-0 p-4 pl-1">
         <aside className="sticky top-5 flex flex-col space-y-4 overflow-y-auto w-full max-h-[calc(100vh-6rem)] scrollbar-hide pb-10">
-          <EventRegionWidget />
+          <SourceOriginWidget />
           <EventClustersWidget />
           <DiversityInsightWidget />
         </aside>

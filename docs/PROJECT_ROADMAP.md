@@ -17,8 +17,8 @@ This document serves as the master checklist and brainstorming board for the rem
 ### 1.2 The 3-Axis Filter Architecture (Revamp)
 
 - **The Problem:** We are currently confusing the publisher's origin with the event's location. We need to categorize news across three distinct axes to allow deep analytical filtering:
-  1. **`Event Region` (What is the news about?):** The geographical subject of the article. _Extracted by AI._ (e.g., North America, Europe, Middle East, Asia).
-  2. **`Source Origin` (Where is the publisher based?):** The geopolitical base of the news outlet. _Hardcoded on RSS Feed._ (e.g., US/UK, China/Russia, Middle East).
+  1. **`Event Region` (What is the news about?):** The geographical subject of the article. _Extracted by AI._ Predefined values: 'North America', 'Europe', 'Middle East', 'Asia-Pacific', 'Latin America', 'Africa', 'Global'. AI instruction: "Extract the geographical subject: exactly one of 'North America', 'Europe', 'Middle East', 'Asia-Pacific', 'Latin America', 'Africa', 'Global'. Assign to 'eventRegion'."
+  2. **`Source Origin` (Where is the publisher based?):** The geopolitical base of the news outlet. _Hardcoded on RSS Feed._ Predefined values: 'North America', 'Europe', 'Middle East', 'Asia-Pacific', 'Latin America', 'Africa', 'Global'.
   3. **`Source Type` (What kind of publisher is it?):** The editorial structure of the publisher. _Hardcoded on RSS Feed._ (e.g., State Media, Independent Wire, Commercial Publisher, Amplifier/Aggregator).
 - **Why this works:** It unlocks incredibly smart filtering. A user can say: _"Show me news about the **Middle East** (Event Region) reported by **State Media** (Source Type) from **Asia** (Source Origin)."_
 
