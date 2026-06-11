@@ -39,10 +39,6 @@ export default async function Filters({
           <Sort />
           <div className="h-6 w-px bg-border hidden sm:block" />
 
-
-          <Suspense fallback={null}>
-            <FilterPopover />
-          </Suspense>
           <Suspense fallback={null}>
             <ActiveFilters
               category={category}
@@ -55,7 +51,12 @@ export default async function Filters({
           </Suspense>
         </div>
 
-        <ArticleCount />
+        <div className="flex items-center gap-3">
+          <ArticleCount />
+          <Suspense fallback={null}>
+            <FilterPopover />
+          </Suspense>
+        </div>
       </div>
     </div>
   );
