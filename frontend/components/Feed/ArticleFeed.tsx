@@ -42,7 +42,7 @@ export default function ArticleFeed({
   const [cursor, setCursor] = useState(initialCursor);
   const [isLoading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   const [currentGroupKey, setCurrentGroupKey] = useState<string | null>(null);
 
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -62,9 +62,9 @@ export default function ArticleFeed({
 
   // Grouping logic
   const groups: { key: string; articles: Article[] }[] = [];
-  articles.forEach(article => {
+  articles.forEach((article) => {
     const key = getGroupingKey(article.publishedAt, mode);
-    const existingGroup = groups.find(g => g.key === key);
+    const existingGroup = groups.find((g) => g.key === key);
     if (existingGroup) {
       existingGroup.articles.push(article);
     } else {
@@ -72,13 +72,15 @@ export default function ArticleFeed({
     }
   });
 
-  const currentIndex = groups.findIndex(g => g.key === currentGroupKey);
-  const hasOlderGroupsLoaded = currentIndex !== -1 && currentIndex < groups.length - 1;
-  const isEndOfCurrentGroup = mode !== "continuous" && (!cursor || hasOlderGroupsLoaded);
+  const currentIndex = groups.findIndex((g) => g.key === currentGroupKey);
+  const hasOlderGroupsLoaded =
+    currentIndex !== -1 && currentIndex < groups.length - 1;
+  const isEndOfCurrentGroup =
+    mode !== "continuous" && (!cursor || hasOlderGroupsLoaded);
 
   let visibleGroups = groups;
   if (mode !== "continuous" && currentGroupKey) {
-    visibleGroups = groups.filter(g => g.key === currentGroupKey);
+    visibleGroups = groups.filter((g) => g.key === currentGroupKey);
   }
 
   const handleNextGroup = () => {
@@ -96,7 +98,7 @@ export default function ArticleFeed({
       const params = new URLSearchParams({ category, sort, search, cursor });
       if (perspective !== "all") params.set("perspective", perspective);
       if (story !== "all") params.set("story", story);
-      
+
       const res = await fetch(`/api/articles?${params}`);
 
       if (!res.ok) throw new Error("Failed to fetch");
@@ -149,7 +151,7 @@ export default function ArticleFeed({
   return (
     <div className="flex flex-col gap-8">
       {visibleGroups.length === 0 && !isLoading ? (
-        <p className="text-muted-foreground text-sm py-10 text-center">
+        <p className="text-muted-foreground text-sm py-20 text-center">
           {search ? (
             <>
               No articles found for{" "}
@@ -171,7 +173,7 @@ export default function ArticleFeed({
               </h3>
               <div className="h-[1px] flex-1 bg-border/50" />
             </div>
-            
+
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
               {group.articles.map((article) => (
                 <ArticleCard key={article.id} article={article} />
@@ -187,7 +189,11 @@ export default function ArticleFeed({
           <p className="text-sm font-medium text-destructive mb-3">
             Failed to load more articles. Please check your connection.
           </p>
-          <Button onClick={handleRetry} variant="default" className="rounded-full px-6">
+          <Button
+            onClick={handleRetry}
+            variant="default"
+            className="rounded-full px-6"
+          >
             <HugeiconsIcon icon={RefreshIcon} className="mr-2 h-4 w-4" />
             Retry
           </Button>
@@ -195,19 +201,31 @@ export default function ArticleFeed({
       )}
 
       {/* Sentinel / Daily View Continue Button */}
-      {!error && (
+      {!error && visibleGroups.length > 0 && (
         <div>
           {isEndOfCurrentGroup ? (
             <div className="flex flex-col items-center justify-center py-10 bg-muted/30 rounded-2xl border border-border/50">
               <p className="text-muted-foreground font-medium mb-4 text-lg">
-                You've reached the end of {formatGroupingKey(currentGroupKey || "", mode).toLowerCase()}.
+                You've reached the end of{" "}
+                {formatGroupingKey(currentGroupKey || "", mode).toLowerCase()}.
               </p>
               {hasOlderGroupsLoaded ? (
-                <Button onClick={handleNextGroup} variant="outline" className="rounded-full">
-                  Go to {formatGroupingKey(groups[currentIndex + 1].key, mode).toLowerCase()}?
+                <Button
+                  onClick={handleNextGroup}
+                  variant="outline"
+                  className="rounded-full"
+                >
+                  Go to{" "}
+                  {formatGroupingKey(
+                    groups[currentIndex + 1].key,
+                    mode,
+                  ).toLowerCase()}
+                  ?
                 </Button>
               ) : (
-                <p className="text-xs text-muted-foreground">No older news available.</p>
+                <p className="text-xs text-muted-foreground">
+                  No older news available.
+                </p>
               )}
             </div>
           ) : (

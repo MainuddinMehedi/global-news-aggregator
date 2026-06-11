@@ -4,12 +4,14 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 interface ActiveFiltersProps {
+  category: string;
   perspective: string;
   story: string;
   activeStoryTitle?: string;
 }
 
 export default function ActiveFilters({
+  category,
   perspective,
   story,
   activeStoryTitle,
@@ -17,9 +19,9 @@ export default function ActiveFilters({
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  if (perspective === "all" && story === "all") return null;
+  if (category === "all" && perspective === "all" && story === "all") return null;
 
-  const handleClearFilter = (filterKey: "perspective" | "story") => {
+  const handleClearFilter = (filterKey: "category" | "perspective" | "story") => {
     const params = new URLSearchParams(searchParams.toString());
     params.delete(filterKey);
     params.delete("cursor");
@@ -28,6 +30,7 @@ export default function ActiveFilters({
 
   const handleClearAll = () => {
     const params = new URLSearchParams(searchParams.toString());
+    params.delete("category");
     params.delete("perspective");
     params.delete("story");
     params.delete("cursor");
@@ -39,6 +42,20 @@ export default function ActiveFilters({
       <span className="font-semibold text-foreground text-[11px]">
         Active Filters:
       </span>
+      {category !== "all" && (
+        <div className="inline-flex items-center space-x-1 bg-card text-foreground border border-border px-2 py-0.5 rounded-lg">
+          <span className="capitalize font-medium text-[11px]">
+            {category}
+          </span>
+          <button
+            onClick={() => handleClearFilter("category")}
+            className="hover:text-destructive transition-colors ml-1 font-bold text-[10px] cursor-pointer"
+            title="Clear filter"
+          >
+            ✕
+          </button>
+        </div>
+      )}
       {perspective !== "all" && (
         <div className="inline-flex items-center space-x-1 bg-card text-foreground border border-border px-2 py-0.5 rounded-lg">
           <span

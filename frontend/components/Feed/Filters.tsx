@@ -34,6 +34,7 @@ export default async function Filters({
         
         <Suspense fallback={null}>
           <ActiveFilters
+            category={category}
             perspective={perspective}
             story={story}
             activeStoryTitle={activeStoryTitle}
