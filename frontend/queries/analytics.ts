@@ -29,7 +29,7 @@ export interface AnalyticsData {
   totalTopics: number;
   avgSentiment: number | null;
   topEntities: { entity: string; count: number }[];
-  aiUsageLast7Days: {
+  aiUsageChart: {
     date: string;
     tokensUsed: number;
     estimatedCost: number;
@@ -40,22 +40,50 @@ export interface AnalyticsData {
     lastFetch: Date;
     isStale: boolean;
   }[];
-  ingestionVolumeLast7Days: {
+  ingestionVolumeChart: {
     date: string;
     raw: number;
     processed: number;
   }[];
   dedupRate: number;
+  
+  // New Analytics
+  modelUtilization: { model: string; count: number; percentage: number }[];
+  topicSourceDistribution: { source: string; count: number; percentage: number }[];
+  storyImpactDistribution: { status: string; count: number }[];
+  chatTelemetry: {
+    totalSessions: number;
+    totalMessages: number;
+    totalToolRuns: number;
+    activeModels: { model: string; count: number }[];
+  };
 }
 
-export async function getAnalyticsData(): Promise<AnalyticsData> {
+export async function getAnalyticsData(timeRange: string = "7d"): Promise<AnalyticsData> {
   "use cache";
-  cacheTag("analytics");
+  cacheTag(`analytics-${timeRange}`);
   cacheTag("articles");
   cacheTag("stories");
   cacheLife("minutes");
 
-  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  let startDate = new Date(0);
+  let daysToChart = 7;
+  
+  if (timeRange === "24h") {
+    startDate = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    daysToChart = 1;
+  } else if (timeRange === "7d") {
+    startDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    daysToChart = 7;
+  } else if (timeRange === "30d") {
+    startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    daysToChart = 30;
+  } else if (timeRange === "all") {
+    startDate = new Date(0);
+    daysToChart = 30; // Limit charts to max 30 days
+  }
+
+  const chartStartDate = new Date(Date.now() - daysToChart * 24 * 60 * 60 * 1000);
   const staleThreshold = 1000 * 60 * 60 * 6; // 6 hours
 
   try {
@@ -66,107 +94,117 @@ export async function getAnalyticsData(): Promise<AnalyticsData> {
       lockedTopics,
       categories,
       aiUsage,
-      rawArticlesLast7Days,
-      processedArticlesLast7Days,
+      rawArticlesRange,
+      processedArticlesRange,
       sourcesSummary,
+      
+      // New telemetry
+      chatSessions,
+      chatMessagesCount,
+      chatToolRunsCount,
+      topicSources,
+      storyImpacts,
+      modelUtil,
     ] = await Promise.all([
+      // Existing
       prisma.processedArticle.findMany({
+        where: { processedAt: { gte: startDate } },
         select: {
           biasCategory: true,
           sentimentScore: true,
           entities: true,
-          rawArticle: {
-            select: { sourceCountry: true },
-          },
+          rawArticle: { select: { sourceCountry: true } },
         },
-        take: 2000,
-        orderBy: { processedAt: "desc" },
       }),
-      prisma.storyCluster.count({ where: { isActive: true } }),
-      prisma.topicFinding.count(),
-      prisma.lockedTopic.count(),
+      prisma.storyCluster.count({ where: { isActive: true, createdAt: { gte: startDate } } }),
+      prisma.topicFinding.count({ where: { foundAt: { gte: startDate } } }),
+      prisma.lockedTopic.count({ where: { createdAt: { gte: startDate } } }),
       prisma.category.findMany({
         include: {
-          _count: { select: { articles: true } },
+          _count: { select: { articles: { where: { processedAt: { gte: startDate } } } } },
         },
-        orderBy: {
-          articles: { _count: "desc" },
-        },
-        take: 11,
       }),
       prisma.aiUsage.findMany({
-        where: {
-          createdAt: {
-            gte: sevenDaysAgo,
-          },
-        },
+        where: { createdAt: { gte: chartStartDate } },
         orderBy: { date: "asc" },
       }),
       prisma.rawArticle.findMany({
-        where: { fetchedAt: { gte: sevenDaysAgo } },
+        where: { fetchedAt: { gte: chartStartDate } },
         select: { fetchedAt: true },
       }),
       prisma.processedArticle.findMany({
-        where: { processedAt: { gte: sevenDaysAgo } },
+        where: { processedAt: { gte: chartStartDate } },
         select: { processedAt: true },
       }),
       prisma.rawArticle.groupBy({
         by: ["source"],
         _count: { _all: true },
         _max: { fetchedAt: true },
-        where: { fetchedAt: { gte: sevenDaysAgo } },
+        where: { fetchedAt: { gte: startDate } },
       }),
+      
+      // New
+      prisma.chatSession.findMany({
+        where: { createdAt: { gte: startDate } },
+        select: { model: true }
+      }),
+      prisma.chatMessage.count({ where: { createdAt: { gte: startDate } } }),
+      prisma.chatToolRun.count({ where: { createdAt: { gte: startDate } } }),
+      prisma.topicFinding.groupBy({
+        by: ["sourceType"],
+        _count: { _all: true },
+        where: { foundAt: { gte: startDate } }
+      }),
+      prisma.storyCluster.groupBy({
+        by: ["status"],
+        _count: { _all: true },
+        where: { isActive: true, createdAt: { gte: startDate } }
+      }),
+      prisma.processedArticle.groupBy({
+        by: ["model"],
+        _count: { _all: true },
+        where: { processedAt: { gte: startDate } }
+      })
     ]);
 
     const totalArticles = processedArticles.length;
 
-    // ── Ingestion Volume & Source Health ──────────────────────────────────────
+    // ── Ingestion Volume ──────────────────────────────────────
     const volumeByDate: Record<string, { raw: number; processed: number }> = {};
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date(Date.now() - i * 24 * 60 * 60 * 1000)
-        .toISOString()
-        .split("T")[0];
+    for (let i = daysToChart - 1; i >= 0; i--) {
+      const d = new Date(Date.now() - i * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
       volumeByDate[d] = { raw: 0, processed: 0 };
     }
 
-    rawArticlesLast7Days.forEach((a) => {
+    rawArticlesRange.forEach((a) => {
       const d = a.fetchedAt.toISOString().split("T")[0];
       if (volumeByDate[d]) volumeByDate[d].raw++;
     });
-    processedArticlesLast7Days.forEach((a) => {
+    processedArticlesRange.forEach((a) => {
       const d = a.processedAt.toISOString().split("T")[0];
       if (volumeByDate[d]) volumeByDate[d].processed++;
     });
 
-    const ingestionVolumeLast7Days = Object.entries(volumeByDate)
+    const ingestionVolumeChart = Object.entries(volumeByDate)
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([date, counts]) => ({ date, ...counts }));
 
-    const totalRawCount = rawArticlesLast7Days.length;
-    const totalProcessedCount = processedArticlesLast7Days.length;
-    const dedupRate =
-      totalRawCount > 0
-        ? Math.round((1 - totalProcessedCount / totalRawCount) * 100)
-        : 0;
+    const totalRawCount = rawArticlesRange.length;
+    const totalProcessedCount = processedArticlesRange.length;
+    const dedupRate = totalRawCount > 0 ? Math.round((1 - totalProcessedCount / totalRawCount) * 100) : 0;
 
     const sourceHealth = sourcesSummary
       .map((s) => ({
         name: s.source,
         count: s._count._all,
         lastFetch: s._max.fetchedAt ?? new Date(),
-        isStale: s._max.fetchedAt
-          ? Date.now() - s._max.fetchedAt.getTime() > staleThreshold
-          : true,
+        isStale: s._max.fetchedAt ? Date.now() - s._max.fetchedAt.getTime() > staleThreshold : true,
       }))
       .sort((a, b) => b.lastFetch.getTime() - a.lastFetch.getTime());
 
     // ── Bias Distribution ──────────────────────────────────────────────────────
     const biasCounts: Record<string, number> = {
-      Western: 0,
-      "Non-Western": 0,
-      Eastern: 0,
-      Neutral: 0,
-      Unknown: 0,
+      Western: 0, "Non-Western": 0, Eastern: 0, Neutral: 0, Unknown: 0,
     };
     for (const a of processedArticles) {
       const cat = a.biasCategory;
@@ -175,11 +213,7 @@ export async function getAnalyticsData(): Promise<AnalyticsData> {
       else biasCounts["Unknown"]++;
     }
     const biasColors: Record<string, string> = {
-      Western: "#3b82f6",
-      "Non-Western": "#10b981",
-      Eastern: "#ef4444",
-      Neutral: "#f59e0b",
-      Unknown: "#6b7280",
+      Western: "#3b82f6", "Non-Western": "#10b981", Eastern: "#ef4444", Neutral: "#f59e0b", Unknown: "#6b7280",
     };
     const biasDistribution = Object.entries(biasCounts)
       .filter(([, count]) => count > 0)
@@ -187,8 +221,7 @@ export async function getAnalyticsData(): Promise<AnalyticsData> {
         label,
         count,
         color: biasColors[label] ?? "#6b7280",
-        percentage:
-          totalArticles > 0 ? Math.round((count / totalArticles) * 100) : 0,
+        percentage: totalArticles > 0 ? Math.round((count / totalArticles) * 100) : 0,
       }))
       .sort((a, b) => b.count - a.count);
 
@@ -204,31 +237,22 @@ export async function getAnalyticsData(): Promise<AnalyticsData> {
       .map(([country, count]) => ({
         country,
         count,
-        percentage:
-          totalArticles > 0 ? Math.round((count / totalArticles) * 100) : 0,
+        percentage: totalArticles > 0 ? Math.round((count / totalArticles) * 100) : 0,
       }));
 
     // ── Category Breakdown ─────────────────────────────────────────────────────
-    const totalCategoryArticles = categories.reduce(
-      (s, c) => s + c._count.articles,
-      0,
-    );
-    const categoryBreakdown = categories.map((c) => ({
-      name: c.name,
-      count: c._count.articles,
-      percentage:
-        totalCategoryArticles > 0
-          ? Math.round((c._count.articles / totalCategoryArticles) * 100)
-          : 0,
-    }));
+    const totalCategoryArticles = categories.reduce((s, c) => s + c._count.articles, 0);
+    const categoryBreakdown = categories
+      .map((c) => ({
+        name: c.name,
+        count: c._count.articles,
+        percentage: totalCategoryArticles > 0 ? Math.round((c._count.articles / totalCategoryArticles) * 100) : 0,
+      }))
+      .sort((a, b) => b.count - a.count);
 
     // ── Sentiment Distribution ─────────────────────────────────────────────────
     const sentimentBuckets = [
-      {
-        label: "Very Negative",
-        range: [-1, -0.6] as [number, number],
-        count: 0,
-      },
+      { label: "Very Negative", range: [-1, -0.6] as [number, number], count: 0 },
       { label: "Negative", range: [-0.6, -0.2] as [number, number], count: 0 },
       { label: "Neutral", range: [-0.2, 0.2] as [number, number], count: 0 },
       { label: "Positive", range: [0.2, 0.6] as [number, number], count: 0 },
@@ -241,10 +265,7 @@ export async function getAnalyticsData(): Promise<AnalyticsData> {
         sentimentSum += a.sentimentScore;
         sentimentCount++;
         for (const bucket of sentimentBuckets) {
-          if (
-            a.sentimentScore >= bucket.range[0] &&
-            a.sentimentScore < bucket.range[1]
-          ) {
+          if (a.sentimentScore >= bucket.range[0] && a.sentimentScore < bucket.range[1]) {
             bucket.count++;
             break;
           }
@@ -266,20 +287,57 @@ export async function getAnalyticsData(): Promise<AnalyticsData> {
       .slice(0, 12)
       .map(([entity, count]) => ({ entity, count }));
 
-    // ── AI Usage Last 7 Days ──────────────────────────────────────────────────
-    const usageByDate: Record<
-      string,
-      { tokensUsed: number; estimatedCost: number }
-    > = {};
+    // ── AI Usage ──────────────────────────────────────────────────
+    const usageByDate: Record<string, { tokensUsed: number; estimatedCost: number }> = {};
     for (const u of aiUsage) {
-      if (!usageByDate[u.date])
-        usageByDate[u.date] = { tokensUsed: 0, estimatedCost: 0 };
+      if (!usageByDate[u.date]) usageByDate[u.date] = { tokensUsed: 0, estimatedCost: 0 };
       usageByDate[u.date].tokensUsed += u.tokensUsed;
       usageByDate[u.date].estimatedCost += u.estimatedCost;
     }
-    const aiUsageLast7Days = Object.entries(usageByDate)
+    const aiUsageChart = Object.entries(usageByDate)
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([date, data]) => ({ date, ...data }));
+
+    // ── New Telemetry ──────────────────────────────────────────────────
+    const totalModelUses = modelUtil.reduce((s, m) => s + m._count._all, 0);
+    const modelUtilization = modelUtil
+      .filter(m => m.model)
+      .map(m => ({
+        model: m.model || "Unknown",
+        count: m._count._all,
+        percentage: totalModelUses > 0 ? Math.round((m._count._all / totalModelUses) * 100) : 0,
+      }))
+      .sort((a, b) => b.count - a.count);
+
+    const totalTopicSources = topicSources.reduce((s, t) => s + t._count._all, 0);
+    const topicSourceDistribution = topicSources
+      .map(t => ({
+        source: t.sourceType,
+        count: t._count._all,
+        percentage: totalTopicSources > 0 ? Math.round((t._count._all / totalTopicSources) * 100) : 0,
+      }))
+      .sort((a, b) => b.count - a.count);
+
+    const storyImpactDistribution = storyImpacts
+      .map(s => ({
+        status: s.status || "UNKNOWN",
+        count: s._count._all,
+      }))
+      .sort((a, b) => b.count - a.count);
+
+    const activeChatModels: Record<string, number> = {};
+    chatSessions.forEach(s => {
+      if (s.model) activeChatModels[s.model] = (activeChatModels[s.model] || 0) + 1;
+    });
+
+    const chatTelemetry = {
+      totalSessions: chatSessions.length,
+      totalMessages: chatMessagesCount,
+      totalToolRuns: chatToolRunsCount,
+      activeModels: Object.entries(activeChatModels)
+        .map(([model, count]) => ({ model, count }))
+        .sort((a, b) => b.count - a.count)
+    };
 
     return {
       biasDistribution,
@@ -292,28 +350,23 @@ export async function getAnalyticsData(): Promise<AnalyticsData> {
       totalTopics: lockedTopics,
       avgSentiment: sentimentCount > 0 ? sentimentSum / sentimentCount : null,
       topEntities,
-      aiUsageLast7Days,
+      aiUsageChart,
       sourceHealth,
-      ingestionVolumeLast7Days,
+      ingestionVolumeChart,
       dedupRate,
+      modelUtilization,
+      topicSourceDistribution,
+      storyImpactDistribution,
+      chatTelemetry,
     };
   } catch (error) {
     console.error("getAnalyticsData error:", error);
     return {
-      biasDistribution: [],
-      topSourceCountries: [],
-      categoryBreakdown: [],
-      sentimentDistribution: [],
-      totalArticles: 0,
-      totalStories: 0,
-      totalFindings: 0,
-      totalTopics: 0,
-      avgSentiment: null,
-      topEntities: [],
-      aiUsageLast7Days: [],
-      sourceHealth: [],
-      ingestionVolumeLast7Days: [],
-      dedupRate: 0,
+      biasDistribution: [], topSourceCountries: [], categoryBreakdown: [], sentimentDistribution: [],
+      totalArticles: 0, totalStories: 0, totalFindings: 0, totalTopics: 0, avgSentiment: null,
+      topEntities: [], aiUsageChart: [], sourceHealth: [], ingestionVolumeChart: [], dedupRate: 0,
+      modelUtilization: [], topicSourceDistribution: [], storyImpactDistribution: [],
+      chatTelemetry: { totalSessions: 0, totalMessages: 0, totalToolRuns: 0, activeModels: [] }
     };
   }
 }

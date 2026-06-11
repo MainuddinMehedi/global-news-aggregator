@@ -9,6 +9,7 @@ import {
   Sector,
 } from "recharts";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 interface BiasDonutChartProps {
   data: {
@@ -80,6 +81,7 @@ const renderActiveShape = (props: any) => {
 
 export function BiasDonutChart({ data }: BiasDonutChartProps) {
   const [mounted, setMounted] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -108,6 +110,8 @@ export function BiasDonutChart({ data }: BiasDonutChartProps) {
             outerRadius={85}
             dataKey="count"
             stroke="none"
+            onClick={(data: any) => router.push(`/?perspective=${data.payload?.label || data.label || ''}`)}
+            className="cursor-pointer"
           >
             {data.map((entry, index) => (
               <Cell
