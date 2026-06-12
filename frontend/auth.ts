@@ -73,6 +73,21 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     strategy: "database",
   },
   callbacks: {
+    async signIn({ user, account, profile }) {
+      // Sync Google profile picture to the database if the user doesn't have an image
+      if (account?.provider === "google" && profile?.picture && !user.image) {
+        try {
+          await prisma.user.update({
+            where: { id: user.id },
+            data: { image: profile.picture },
+          });
+          user.image = profile.picture; // update the object in memory for the current session
+        } catch (error) {
+          console.error("Failed to update user image:", error);
+        }
+      }
+      return true;
+    },
     async session({ session, user }) {
       if (session.user) {
         session.user.id = user.id;
