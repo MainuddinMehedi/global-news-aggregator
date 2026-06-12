@@ -1,10 +1,38 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getArticles } from "@/queries/articles";
+import { auth } from "@/auth";
+import prisma from "@/lib/prisma";
+import { BUILTIN_SOURCES } from "@/lib/constants";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;
 
   try {
+    let enabledSources: string[] | undefined = undefined;
+
+    const session = await auth();
+    if (session?.user?.email) {
+      const user = await prisma.user.findUnique({
+        where: { email: session.user.email },
+        select: { settings: true },
+      });
+      if (user) {
+        const settings = (user.settings || {}) as any;
+        const customSources = settings.customSources || [];
+        const disabledBuiltins = settings.disabledBuiltinSources || [];
+
+        const enabledCustomNames = customSources
+          .filter((s: any) => s.enabled)
+          .map((s: any) => s.name);
+
+        const enabledBuiltinNames = BUILTIN_SOURCES
+          .filter((s) => !disabledBuiltins.includes(s.url))
+          .map((s) => s.name);
+
+        enabledSources = [...enabledCustomNames, ...enabledBuiltinNames];
+      }
+    }
+
     const data = await getArticles({
       category:    searchParams.get("category")    ?? "all",
       sort:        searchParams.get("sort")        ?? "latest",
@@ -14,6 +42,7 @@ export async function GET(req: NextRequest) {
       type:        searchParams.get("type")        ?? undefined,
       story:       searchParams.get("story")       ?? undefined,
       cursor:      searchParams.get("cursor")      ?? undefined,
+      enabledSources,
     });
 
     return NextResponse.json(data);
@@ -25,3 +54,4 @@ export async function GET(req: NextRequest) {
     );
   }
 }
+

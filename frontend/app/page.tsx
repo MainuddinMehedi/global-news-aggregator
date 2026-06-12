@@ -8,6 +8,8 @@ import { EventClustersWidget } from "@/components/widgets/EventClustersWidget";
 import { getArticles, getArticleById } from "@/queries/articles";
 import { Article } from "@/types/article";
 import prisma from "@/lib/prisma";
+import { auth } from "@/auth";
+import { BUILTIN_SOURCES } from "@/lib/constants";
 
 export default async function Home({
   searchParams,
@@ -32,10 +34,35 @@ export default async function Home({
   let error: string | null = null;
   let activeStoryTitle: string | undefined = undefined;
 
+  let enabledSources: string[] | undefined = undefined;
+
   try {
+    const session = await auth();
+    if (session?.user?.email) {
+      const user = await prisma.user.findUnique({
+        where: { email: session.user.email },
+        select: { settings: true },
+      });
+      if (user) {
+        const settings = (user.settings || {}) as any;
+        const customSources = settings.customSources || [];
+        const disabledBuiltins = settings.disabledBuiltinSources || [];
+
+        const enabledCustomNames = customSources
+          .filter((s: any) => s.enabled)
+          .map((s: any) => s.name);
+
+        const enabledBuiltinNames = BUILTIN_SOURCES
+          .filter((s) => !disabledBuiltins.includes(s.url))
+          .map((s) => s.name);
+
+        enabledSources = [...enabledCustomNames, ...enabledBuiltinNames];
+      }
+    }
+
     // Fetch articles, selected article, and story cluster title if active, in parallel
     const [result, selected, storyCluster] = await Promise.all([
-      getArticles({ category, sort, search, region, origin, type, story }),
+      getArticles({ category, sort, search, region, origin, type, story, enabledSources }),
       articleId ? getArticleById(articleId) : Promise.resolve(null),
       story !== "all"
         ? prisma.storyCluster.findUnique({
@@ -44,6 +71,7 @@ export default async function Home({
           })
         : Promise.resolve(null),
     ]);
+
 
     articles = result.articles;
     nextCursor = result.nextCursor;

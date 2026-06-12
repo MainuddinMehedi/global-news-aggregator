@@ -59,7 +59,7 @@ export interface CustomSource {
   name: string;
   url: string;
   country: string;
-  priority: "high" | "medium" | "low";
+  sourceOrigin: string;
   enabled: boolean;
 }
 
@@ -86,7 +86,6 @@ interface SettingsState {
   extraCategories: string[];
   homePageMode: HomePageMode;
   notificationChannels: NotificationChannels;
-  customSources: CustomSource[];
   hasOnboardedSources: boolean;
 }
 
@@ -160,7 +159,6 @@ export const useAppStore = create<AppStore>()(
       extraCategories: [],
       homePageMode: "continuous",
       notificationChannels: { discord: "", telegram: "", mode: "none" },
-      customSources: [],
       hasOnboardedSources: false,
       setSetting: (key, value) => set((state) => ({ ...state, [key]: value })),
     }),
@@ -185,7 +183,6 @@ export const useAppStore = create<AppStore>()(
         extraCategories: state.extraCategories,
         homePageMode: state.homePageMode,
         notificationChannels: state.notificationChannels,
-        customSources: state.customSources,
         hasOnboardedSources: state.hasOnboardedSources,
       }),
     },
@@ -218,7 +215,27 @@ export const useSetLockedTopicCount = () =>
 
 // Settings selectors
 export const useSettings = () => {
-  const { setSetting, ...settings } = useAppStore();
+  const store = useAppStore();
+  const settings = {
+    theme: store.theme,
+    colorTheme: store.colorTheme,
+    isSidebarCollapsed: store.isSidebarCollapsed,
+    feedDefaultCategory: store.feedDefaultCategory,
+    feedDefaultSort: store.feedDefaultSort,
+    articlesPerPage: store.articlesPerPage,
+    compactMode: store.compactMode,
+    showBiasBadges: store.showBiasBadges,
+    showSentiment: store.showSentiment,
+    defaultAiModel: store.defaultAiModel,
+    responseStyle: store.responseStyle,
+    favoriteCategories: store.favoriteCategories,
+    hiddenCategories: store.hiddenCategories,
+    extraCategories: store.extraCategories,
+    homePageMode: store.homePageMode,
+    notificationChannels: store.notificationChannels,
+    hasOnboardedSources: store.hasOnboardedSources,
+  };
+  const setSetting = store.setSetting;
   return { settings, setSetting };
 };
 

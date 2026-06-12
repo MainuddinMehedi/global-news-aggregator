@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
+import { revalidateTag } from "next/cache";
 
 export async function GET(req: NextRequest) {
   try {
@@ -42,9 +43,13 @@ export async function POST(req: NextRequest) {
       select: { settings: true },
     });
 
+    // Revalidate articles feed query cache
+    revalidateTag("articles", "max");
+
     return NextResponse.json({ success: true, settings: user.settings });
   } catch (error) {
     console.error("Error updating settings:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
+

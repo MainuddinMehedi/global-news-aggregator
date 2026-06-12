@@ -2,6 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { CANONICAL_REGIONS } from "@/lib/constants";
 
 interface SourceOriginListProps {
   countsData: {
@@ -21,17 +22,8 @@ const ORIGIN_COLORS: Record<string, string> = {
   "Unknown": "bg-slate-400 dark:bg-slate-500",
 };
 
-const CANONICAL_REGIONS = [
-  "North America",
-  "Europe",
-  "Middle East",
-  "Asia-Pacific",
-  "Latin America",
-  "Africa",
-  "Global",
-];
-
 export default function SourceOriginList({ countsData }: SourceOriginListProps) {
+
   const router = useRouter();
   const searchParams = useSearchParams();
   const activeOrigin = searchParams.get("origin") ?? "all";

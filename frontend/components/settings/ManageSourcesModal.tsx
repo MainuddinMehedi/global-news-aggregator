@@ -1,81 +1,200 @@
 "use client";
 
-import { useSettings, type CustomSource } from "@/store";
+import { useTransition, useOptimistic } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Delete01Icon } from "@hugeicons/core-free-icons";
+import { Delete01Icon, Globe02Icon, LinkSquare01Icon } from "@hugeicons/core-free-icons";
+import { BUILTIN_SOURCES } from "@/lib/constants";
+import { 
+  toggleCustomSourceAction, 
+  removeCustomSourceAction, 
+  toggleBuiltinSourceAction 
+} from "@/app/actions/settings";
+import { toast } from "sonner";
 
 interface ManageSourcesModalProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
+  dbCustomSources: any[];
+  dbDisabledBuiltinSources: string[];
 }
 
-export default function ManageSourcesModal({ isOpen, onOpenChange }: ManageSourcesModalProps) {
-  const { settings, setSetting } = useSettings();
-  const sources = settings.customSources || [];
+export default function ManageSourcesModal({ isOpen, onOpenChange, dbCustomSources = [], dbDisabledBuiltinSources = [] }: ManageSourcesModalProps) {
+  const [isPending, startTransition] = useTransition();
 
-  const toggleSource = (id: string, enabled: boolean) => {
-    const updated = sources.map(s => s.id === id ? { ...s, enabled } : s);
-    setSetting("customSources", updated);
+  const [optimisticCustomSources, dispatchCustom] = useOptimistic(
+    dbCustomSources,
+    (state, action: { type: string, payload: any }) => {
+      switch (action.type) {
+        case "TOGGLE":
+          return state.map(s => s.id === action.payload.id ? { ...s, enabled: action.payload.enabled } : s);
+        case "REMOVE":
+          return state.filter(s => s.id !== action.payload);
+        default:
+          return state;
+      }
+    }
+  );
+
+  const [optimisticDisabledBuiltins, dispatchBuiltin] = useOptimistic(
+    dbDisabledBuiltinSources,
+    (state, action: { type: string, payload: any }) => {
+      switch (action.type) {
+        case "TOGGLE":
+          if (action.payload.enabled) {
+            return state.filter(url => url !== action.payload.url);
+          } else {
+            return [...state, action.payload.url];
+          }
+        default:
+          return state;
+      }
+    }
+  );
+
+  const toggleCustomSource = (id: string, enabled: boolean) => {
+    startTransition(async () => {
+      dispatchCustom({ type: "TOGGLE", payload: { id, enabled } });
+      try {
+        await toggleCustomSourceAction(id, enabled);
+      } catch (err) {
+        toast.error("Failed to update source.");
+        console.error(err);
+      }
+    });
   };
 
-  const removeSource = (id: string) => {
-    const updated = sources.filter(s => s.id !== id);
-    setSetting("customSources", updated);
+  const removeCustomSource = (id: string) => {
+    startTransition(async () => {
+      dispatchCustom({ type: "REMOVE", payload: id });
+      try {
+        await removeCustomSourceAction(id);
+        toast.success("Source removed.");
+      } catch (err) {
+        toast.error("Failed to remove source.");
+        console.error(err);
+      }
+    });
+  };
+
+  const toggleBuiltinSource = (url: string, enabled: boolean) => {
+    startTransition(async () => {
+      dispatchBuiltin({ type: "TOGGLE", payload: { url, enabled } });
+      try {
+        await toggleBuiltinSourceAction(url, enabled);
+      } catch (err) {
+        toast.error("Failed to update built-in source.");
+        console.error(err);
+      }
+    });
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
+      <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Manage Sources</DialogTitle>
           <DialogDescription>
-            Enable, disable, or remove your customized RSS feeds.
+            Enable, disable, or remove custom sources, or toggle built-in news sources.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto pr-2 space-y-4 py-4 scrollbar-sleek">
-          {sources.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              No custom sources added yet.
-            </div>
-          ) : (
-            sources.map(source => (
-              <div key={source.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border rounded-xl gap-4">
-                <div className="flex-1 min-w-0">
-                  <h4 className="font-semibold text-sm truncate">{source.name}</h4>
-                  <p className="text-xs text-muted-foreground truncate">{source.url}</p>
-                  <div className="flex gap-2 mt-2">
-                    <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground">
-                      {source.country}
-                    </span>
-                    <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground uppercase">
-                      {source.priority} priority
-                    </span>
-                  </div>
-                </div>
-                
-                <div className="flex items-center gap-4 shrink-0">
-                  <Switch 
-                    checked={source.enabled} 
-                    onCheckedChange={(checked) => toggleSource(source.id, checked)}
-                  />
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                    onClick={() => removeSource(source.id)}
-                  >
-                    <HugeiconsIcon icon={Delete01Icon} className="w-5 h-5" />
-                  </Button>
-                </div>
+        <div className="flex-1 overflow-y-auto pr-2 space-y-6 py-4 scrollbar-sleek">
+          {/* Custom Feeds Section */}
+          <div className="space-y-3">
+            <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+              Your Custom Feeds ({optimisticCustomSources.length})
+            </h3>
+            
+            {optimisticCustomSources.length === 0 ? (
+              <div className="text-center py-6 border border-dashed rounded-xl text-sm text-muted-foreground bg-muted/10">
+                No custom sources added yet.
               </div>
-            ))
-          )}
+            ) : (
+              <div className="space-y-3">
+                {optimisticCustomSources.map((source: any) => (
+                  <div key={source.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border rounded-xl gap-4 bg-card">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <HugeiconsIcon icon={LinkSquare01Icon} className="w-4 h-4 text-primary shrink-0" />
+                        <h4 className="font-semibold text-sm truncate">{source.name}</h4>
+                      </div>
+                      <p className="text-xs text-muted-foreground truncate pl-6">{source.url}</p>
+                      <div className="flex gap-2 mt-2 pl-6">
+                        <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground">
+                          {source.country}
+                        </span>
+                        <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                          {source.sourceOrigin}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-4 shrink-0 pl-6 sm:pl-0">
+                      <Switch 
+                        checked={source.enabled} 
+                        onCheckedChange={(checked) => toggleCustomSource(source.id, checked)}
+                        disabled={isPending}
+                      />
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => removeCustomSource(source.id)}
+                        disabled={isPending}
+                      >
+                        <HugeiconsIcon icon={Delete01Icon} className="w-5 h-5" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Built-in Feeds Section */}
+          <div className="space-y-3 pt-4 border-t border-border/50">
+            <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+              Built-in System Feeds ({BUILTIN_SOURCES.length})
+            </h3>
+            
+            <div className="grid grid-cols-1 gap-3">
+              {BUILTIN_SOURCES.map(source => {
+                const isEnabled = !optimisticDisabledBuiltins.includes(source.url);
+                return (
+                  <div key={source.url} className="flex items-center justify-between p-4 border rounded-xl gap-4 bg-muted/10">
+                    <div className="flex-1 min-w-0 flex items-center gap-3">
+                      <HugeiconsIcon icon={Globe02Icon} className="w-5 h-5 text-muted-foreground shrink-0" />
+                      <div className="min-w-0">
+                        <h4 className="font-semibold text-sm truncate">{source.name}</h4>
+                        <div className="flex gap-2 mt-1">
+                          <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground">
+                            {source.country}
+                          </span>
+                          <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                            {source.sourceOrigin}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-4 shrink-0">
+                      <Switch 
+                        checked={isEnabled} 
+                        onCheckedChange={(checked) => toggleBuiltinSource(source.url, checked)}
+                        disabled={isPending}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
   );
 }
+

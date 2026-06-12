@@ -5,8 +5,9 @@ import { useSession } from "next-auth/react";
 import { useSettings } from "@/store";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { DEFAULT_CUSTOM_SOURCES } from "@/lib/constants";
+import { BUILTIN_SOURCES } from "@/lib/constants";
 import { HugeiconsIcon } from "@hugeicons/react";
+import { saveUserSettingsAction } from "@/app/actions/settings";
 import { CheckListIcon, Settings02Icon } from "@hugeicons/core-free-icons";
 import { toast } from "sonner";
 
@@ -23,16 +24,26 @@ export default function OnboardingModal() {
   }, [status, settings.hasOnboardedSources]);
 
   const handleChoice = (useDefaults: boolean) => {
+    const newSettings = { ...settings, hasOnboardedSources: true } as any;
     if (useDefaults) {
-      setSetting("customSources", DEFAULT_CUSTOM_SOURCES as any[]); // Use default sources
-      toast.success("Global news sources added to your pipeline.");
+      newSettings.hasOnboardedSources = true;
+      setSetting("hasOnboardedSources", true);
+      toast.success("Global news sources active in your pipeline.");
     } else {
-      setSetting("customSources", []); // Use empty array
+      const allBuiltinUrls = BUILTIN_SOURCES.map((s) => s.url);
+      newSettings.disabledBuiltinSources = allBuiltinUrls;
+      setSetting("hasOnboardedSources", true);
       toast.success("Ready for you to add your own sources.");
     }
-    setSetting("hasOnboardedSources", true);
+
+    // Sync onboarding settings to the database immediately
+    saveUserSettingsAction(newSettings)
+      .catch((err) => console.error("Failed to sync onboarding settings:", err));
+
     setIsOpen(false);
   };
+
+
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>

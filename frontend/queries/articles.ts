@@ -11,6 +11,7 @@ interface getArticlesParams {
   type?: string;
   story?: string;
   cursor?: string;
+  enabledSources?: string[];
 }
 
 const TAKE = 20;
@@ -24,6 +25,7 @@ export async function getArticles({
   type,
   story,
   cursor,
+  enabledSources,
 }: getArticlesParams): Promise<{
   articles: Article[];
   nextCursor: string | null;
@@ -58,6 +60,11 @@ export async function getArticles({
   let typeFilter: any[] = [];
   if (type && type !== "all") {
     typeFilter = [{ rawArticle: { sourceType: type } }];
+  }
+
+  let sourcesFilter: any[] = [];
+  if (enabledSources) {
+    sourcesFilter = [{ rawArticle: { source: { in: enabledSources } } }];
   }
 
   const storyFilter =
@@ -115,7 +122,7 @@ export async function getArticles({
       take: TAKE + 1,
       ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
       where: {
-        AND: [...categoryFilter, ...searchFilter, ...regionFilter, ...originFilter, ...typeFilter, ...storyFilter],
+        AND: [...categoryFilter, ...searchFilter, ...regionFilter, ...originFilter, ...typeFilter, ...storyFilter, ...sourcesFilter],
       },
       orderBy,
       include: {

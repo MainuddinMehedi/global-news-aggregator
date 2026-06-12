@@ -21,6 +21,8 @@ import NotificationsSection from "./NotificationsSection";
 import SourcesSection from "./SourcesSection";
 import type { HomePageMode } from "@/store";
 import { useSession, signOut } from "next-auth/react";
+import { updateSingleSettingAction } from "@/app/actions/settings";
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -46,7 +48,7 @@ const SETTINGS_SECTIONS = [
 
 const ALLOWED_AI_MODELS = ["groq/compound", "gemini-3.1-flash-lite", "gemma-4-26b-a4b-it"];
 
-export default function SettingsInterface() {
+export default function SettingsInterface({ dbCustomSources = [], dbDisabledBuiltinSources = [] }: { dbCustomSources?: any[], dbDisabledBuiltinSources?: string[] }) {
   const [mounted, setMounted] = useState(false);
   const { settings, setSetting } = useSettings();
   const { theme, setTheme } = useTheme();
@@ -57,17 +59,14 @@ export default function SettingsInterface() {
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
 
-  useEffect(() => {
-    // Sync settings to server after a debounce
-    const timeout = setTimeout(() => {
-      fetch("/api/user/settings", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(settings),
-      }).catch(err => console.error("Failed to sync settings:", err));
-    }, 1000);
-    return () => clearTimeout(timeout);
-  }, [settings]);
+  const handleSettingChange = (key: string, value: any) => {
+    setSetting(key as any, value);
+    // Persist to DB immediately
+    updateSingleSettingAction(key, value).catch(err => {
+      console.error(`Failed to sync setting ${key}:`, err);
+      toast.error("Failed to save setting");
+    });
+  };
 
   useEffect(() => {
     setMounted(true);
@@ -158,29 +157,28 @@ export default function SettingsInterface() {
 
   const toggleCategoryFavorite = (cat: string) => {
     const isFav = settings.favoriteCategories.includes(cat);
-    if (isFav) {
-      setSetting("favoriteCategories", settings.favoriteCategories.filter(c => c !== cat));
-    } else {
-      setSetting("favoriteCategories", [...settings.favoriteCategories, cat]);
-    }
+    const updated = isFav 
+      ? settings.favoriteCategories.filter(c => c !== cat)
+      : [...settings.favoriteCategories, cat];
+    handleSettingChange("favoriteCategories", updated);
   };
 
   const disableCategory = (cat: string) => {
     if (EXTRA_CATEGORIES.includes(cat)) {
-      setSetting("extraCategories", (settings.extraCategories || []).filter(c => c !== cat));
+      handleSettingChange("extraCategories", (settings.extraCategories || []).filter(c => c !== cat));
     } else {
-      setSetting("hiddenCategories", [...settings.hiddenCategories, cat]);
+      handleSettingChange("hiddenCategories", [...settings.hiddenCategories, cat]);
     }
     if (settings.favoriteCategories.includes(cat)) {
-      setSetting("favoriteCategories", settings.favoriteCategories.filter(c => c !== cat));
+      handleSettingChange("favoriteCategories", settings.favoriteCategories.filter(c => c !== cat));
     }
   };
 
   const enableCategory = (cat: string) => {
     if (EXTRA_CATEGORIES.includes(cat)) {
-      setSetting("extraCategories", [...(settings.extraCategories || []), cat]);
+      handleSettingChange("extraCategories", [...(settings.extraCategories || []), cat]);
     } else {
-      setSetting("hiddenCategories", settings.hiddenCategories.filter(c => c !== cat));
+      handleSettingChange("hiddenCategories", settings.hiddenCategories.filter(c => c !== cat));
     }
   };
 
@@ -274,7 +272,7 @@ export default function SettingsInterface() {
                     Choose how the home page presents news to you.
                   </p>
                 </div>
-                <Select value={settings.homePageMode} onValueChange={(v: HomePageMode) => setSetting("homePageMode", v)}>
+                <Select value={settings.homePageMode} onValueChange={(v: HomePageMode) => handleSettingChange("homePageMode", v)}>
                   <SelectTrigger className="w-[180px]">
                     <SelectValue placeholder="Select view mode" />
                   </SelectTrigger>
@@ -299,7 +297,7 @@ export default function SettingsInterface() {
                   {COLOR_THEMES.map(({ id, label, swatch }) => (
                     <button
                       key={id}
-                      onClick={() => setSetting("colorTheme", id)}
+                      onClick={() => handleSettingChange("colorTheme", id)}
                       className="group flex flex-col items-center gap-1.5"
                     >
                       <div className={`relative w-10 h-10 rounded-full border-2 transition-all duration-200 hover:scale-110 ${
@@ -349,7 +347,7 @@ export default function SettingsInterface() {
                 </div>
                 <Select
                   value={settings.feedDefaultCategory}
-                  onValueChange={(v) => setSetting("feedDefaultCategory", v)}
+                  onValueChange={(v) => handleSettingChange("feedDefaultCategory", v)}
                 >
                   <SelectTrigger className="w-[180px]">
                     <SelectValue placeholder="Select category" />
@@ -376,7 +374,7 @@ export default function SettingsInterface() {
                 </div>
                 <Select
                   value={settings.feedDefaultSort}
-                  onValueChange={(v) => setSetting("feedDefaultSort", v)}
+                  onValueChange={(v) => handleSettingChange("feedDefaultSort", v)}
                 >
                   <SelectTrigger className="w-[180px]">
                     <SelectValue placeholder="Select sort" />
@@ -401,7 +399,7 @@ export default function SettingsInterface() {
                 <Select
                   value={settings.articlesPerPage.toString()}
                   onValueChange={(v) =>
-                    setSetting("articlesPerPage", parseInt(v))
+                    handleSettingChange("articlesPerPage", parseInt(v))
                   }
                 >
                   <SelectTrigger className="w-[180px]">
@@ -438,7 +436,7 @@ export default function SettingsInterface() {
                 </div>
                 <Select
                   value={ALLOWED_AI_MODELS.includes(settings.defaultAiModel) ? settings.defaultAiModel : "groq/compound"}
-                  onValueChange={(v) => setSetting("defaultAiModel", v)}
+                  onValueChange={(v) => handleSettingChange("defaultAiModel", v)}
                 >
                   <SelectTrigger className="w-[180px]">
                     <SelectValue placeholder="Select model" />
@@ -463,7 +461,7 @@ export default function SettingsInterface() {
                 <Select
                   value={settings.responseStyle}
                   onValueChange={(v: ResponseStyle) =>
-                    setSetting("responseStyle", v)
+                    handleSettingChange("responseStyle", v)
                   }
                 >
                   <SelectTrigger className="w-[180px]">
@@ -490,7 +488,7 @@ export default function SettingsInterface() {
                 <Switch
                   checked={settings.showBiasBadges}
                   onCheckedChange={(checked) =>
-                    setSetting("showBiasBadges", checked)
+                    handleSettingChange("showBiasBadges", checked)
                   }
                 />
               </div>
@@ -507,7 +505,7 @@ export default function SettingsInterface() {
                 <Switch
                   checked={settings.showSentiment}
                   onCheckedChange={(checked) =>
-                    setSetting("showSentiment", checked)
+                    handleSettingChange("showSentiment", checked)
                   }
                 />
               </div>
@@ -599,7 +597,10 @@ export default function SettingsInterface() {
               </CardContent>
             </Card>
 
-            <SourcesSection />
+            <SourcesSection 
+              dbCustomSources={dbCustomSources} 
+              dbDisabledBuiltinSources={dbDisabledBuiltinSources} 
+            />
 
             <Card className="border-destructive/30">
               <CardContent className="p-6">
