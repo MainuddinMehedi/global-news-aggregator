@@ -14,7 +14,7 @@ This document serves as the master checklist and brainstorming board for the rem
   - **Automation Decision:** Choose between **GitHub Actions** (simple cron, code-centric, free) vs **n8n** (visual workflow, robust error handling, self-hosted/cloud).
   - Activate the scheduled ingestion pipeline.
 
-### 1.2 The 3-Axis Filter Architecture (Revamp)
+### 1.2 The 3-Axis Filter Architecture (Revamp) ✅ [COMPLETED]
 
 - **The Problem:** We are currently confusing the publisher's origin with the event's location. We need to categorize news across three distinct axes to allow deep analytical filtering:
   1. **`Event Region` (What is the news about?):** The geographical subject of the article. _Extracted by AI._ Predefined values: 'North America', 'Europe', 'Middle East', 'Asia-Pacific', 'Latin America', 'Africa', 'Global'. AI instruction: "Extract the geographical subject: exactly one of 'North America', 'Europe', 'Middle East', 'Asia-Pacific', 'Latin America', 'Africa', 'Global'. Assign to 'eventRegion'."
@@ -28,7 +28,7 @@ Changing the rss feed structure changes how we take input(feed) from user and ho
 
 ## 2. User Experience & Scopes (High Priority)
 
-### 2.1 UI/UX Design Consistency
+### 2.1 UI/UX Design Consistency ✅ [COMPLETED]
 
 - **Current State:** There are minor layout and visual differences between the "Story" views and "Locked Topics" views.
 - **Action Item:** Audit both pages and unify the design language (typography, spacing, card layouts, header styles).
@@ -80,3 +80,15 @@ _Goal: Provide full observability and control over the system. Build mandatory f
   - Implement a notification engine for authenticated users.
   - Define triggers: "New finding in your Locked Topic", "A major story cluster just formed", etc.
   - **Delivery Channels:** Decide between an in-app bell icon/drawer, Email digests, or integrations like Discord/Telegram.
+
+---
+
+## Completed Tasks
+
+- **2.1 UI/UX Design Consistency:** Audited and unified the design language between Story views and Locked Topics views, adjusting max-widths, header typography, and spacings for consistency.
+- **1.2 The 3-Axis Filter Architecture (Revamp):** The database schema, backend ingestion, and frontend UI components (ArticleCard, ArticleDetailsModal, Article Page, Story Page) have all been audited and updated to accurately surface the new `Event Region`, `Source Origin`, and `Source Type` fields. 
+
+## Future Notes
+
+- **Admin Feed Configuration:** As noted in 1.2 ("Changing the rss feed structure changes how we take input(feed) from user and how i as an admin add feeds"), we need to ensure the admin dashboard (when built) easily allows assigning `Source Origin` and `Source Type` to newly curated RSS feeds.
+- **Cleanup:** `perspectiveCountries` and `sourceCountry` have been replaced in the UI, but we may eventually want to clean them up from the DB schema entirely if they hold no future analytical value.
