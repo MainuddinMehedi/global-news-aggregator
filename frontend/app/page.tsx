@@ -52,9 +52,9 @@ export default async function Home({
           .filter((s: any) => s.enabled)
           .map((s: any) => s.name);
 
-        const enabledBuiltinNames = BUILTIN_SOURCES
-          .filter((s) => !disabledBuiltins.includes(s.url))
-          .map((s) => s.name);
+        const enabledBuiltinNames = BUILTIN_SOURCES.filter(
+          (s) => !disabledBuiltins.includes(s.url),
+        ).map((s) => s.name);
 
         enabledSources = [...enabledCustomNames, ...enabledBuiltinNames];
       }
@@ -62,7 +62,16 @@ export default async function Home({
 
     // Fetch articles, selected article, and story cluster title if active, in parallel
     const [result, selected, storyCluster] = await Promise.all([
-      getArticles({ category, sort, search, region, origin, type, story, enabledSources }),
+      getArticles({
+        category,
+        sort,
+        search,
+        region,
+        origin,
+        type,
+        story,
+        enabledSources,
+      }),
       articleId ? getArticleById(articleId) : Promise.resolve(null),
       story !== "all"
         ? prisma.storyCluster.findUnique({
@@ -71,7 +80,6 @@ export default async function Home({
           })
         : Promise.resolve(null),
     ]);
-
 
     articles = result.articles;
     nextCursor = result.nextCursor;
@@ -108,7 +116,7 @@ export default async function Home({
             list and cursor so the new first page doesn't append to the old one.
           */
           <ArticleFeed
-            key={`${category}|${sort}|${search}|${region}|${origin}|${type}|${story}`}
+            key={`${category}|${sort}|${search}|${region}|${origin}|${type}|${story}|${enabledSources?.join(",")}`}
             initialArticles={articles}
             initialCursor={nextCursor}
             category={category}
