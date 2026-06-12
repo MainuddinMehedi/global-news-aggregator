@@ -6,6 +6,7 @@ import { Bookmark01Icon, Bookmark02Icon } from "@hugeicons/core-free-icons";
 import { toast } from "sonner";
 import { useSession } from "next-auth/react";
 import { cn } from "@/lib/utils";
+import { useRouter } from "next/navigation";
 
 interface BookmarkButtonProps {
   type: "article" | "finding";
@@ -18,12 +19,19 @@ export default function BookmarkButton({ type, targetId, isBookmarkedInitial = f
   const [isLoading, setIsLoading] = useState(false);
   const { data: session } = useSession();
 
+  const router = useRouter();
+
   const handleToggle = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
     if (!session) {
-      toast.error("Please sign in to bookmark items.");
+      toast("Please sign in to bookmark items.", {
+        action: {
+          label: "Sign In",
+          onClick: () => router.push("/login"),
+        },
+      });
       return;
     }
 

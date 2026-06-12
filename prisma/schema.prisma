@@ -7,6 +7,11 @@ datasource db {
   provider = "postgresql"
 }
 
+enum UserRole {
+  USER
+  ADMIN
+}
+
 model Category {
   id       String             @id @default(uuid())
   name     String             @unique
@@ -23,6 +28,7 @@ model User {
   topics        UserTopic[]
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
+  role          UserRole    @default(USER)
   settings      Json?
 
   accounts      Account[]
