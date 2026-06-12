@@ -1,15 +1,7 @@
-import { auth } from "@/auth";
-import { redirect } from "next/navigation";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { UserSettings01Icon } from "@hugeicons/core-free-icons";
 
-export default async function AdminDashboard() {
-  const session = await auth();
-
-  // Middleware should catch this, but double check on the server
-  if (!session?.user || session.user.role !== "ADMIN") {
-    redirect("/");
-  }
+export default function AdminDashboard() {
 
   return (
     <div className="p-8 max-w-6xl mx-auto space-y-8">
