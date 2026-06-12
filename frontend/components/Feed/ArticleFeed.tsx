@@ -59,11 +59,6 @@ export default function ArticleFeed({
     }
   }, [mode, articles]);
 
-  // Keep the store in sync with the live article list
-  useEffect(() => {
-    setArticleCount(articles.length);
-  }, [articles.length, setArticleCount]);
-
   // Grouping logic
   const groups: { key: string; articles: Article[] }[] = [];
   articles.forEach((article) => {
@@ -86,6 +81,14 @@ export default function ArticleFeed({
   if (mode !== "continuous" && currentGroupKey) {
     visibleGroups = groups.filter((g) => g.key === currentGroupKey);
   }
+
+  const visibleArticlesCount = visibleGroups.reduce((acc, g) => acc + g.articles.length, 0);
+
+  // Keep the store in sync with the live article list
+  useEffect(() => {
+    setArticleCount(visibleArticlesCount);
+  }, [visibleArticlesCount, setArticleCount]);
+
 
   const handleNextGroup = () => {
     if (hasOlderGroupsLoaded) {
