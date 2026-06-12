@@ -11,6 +11,7 @@ const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: PrismaAdapter(prisma),
+  basePath: "/api/auth",
   providers: [
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID,

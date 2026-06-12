@@ -43,6 +43,7 @@ export async function updateSingleSettingAction(key: string, value: any) {
 
   if (["hiddenCategories", "extraCategories", "feedDefaultCategory", "feedDefaultSort", "showBiasBadges"].includes(key)) {
     updateTag("articles");
+    revalidatePath("/", "layout");
   }
 }
 
@@ -58,7 +59,7 @@ export async function addCustomSourceAction(source: any) {
   });
 
   updateTag("articles");
-  revalidatePath("/settings");
+  revalidatePath("/", "layout");
 }
 
 export async function removeCustomSourceAction(id: string) {
@@ -73,7 +74,7 @@ export async function removeCustomSourceAction(id: string) {
   });
 
   updateTag("articles");
-  revalidatePath("/settings");
+  revalidatePath("/", "layout");
 }
 
 export async function toggleCustomSourceAction(id: string, enabled: boolean) {
@@ -90,7 +91,7 @@ export async function toggleCustomSourceAction(id: string, enabled: boolean) {
   });
 
   updateTag("articles");
-  revalidatePath("/settings");
+  revalidatePath("/", "layout");
 }
 
 export async function toggleBuiltinSourceAction(url: string, enabled: boolean) {
@@ -114,5 +115,5 @@ export async function toggleBuiltinSourceAction(url: string, enabled: boolean) {
   });
 
   updateTag("articles");
-  revalidatePath("/settings");
+  revalidatePath("/", "layout");
 }
