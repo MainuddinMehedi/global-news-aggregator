@@ -74,8 +74,15 @@ export default async function ArticleDetailsPage({
                 <span className="font-medium text-foreground">
                   {article.source}
                 </span>
-                {article.sourceCountry && (
-                  <span className="text-xs">({article.sourceCountry})</span>
+                {article.sourceOrigin && (
+                  <span className="text-xs px-1.5 py-0.5 bg-secondary/50 rounded-md">
+                    {article.sourceOrigin}
+                  </span>
+                )}
+                {article.sourceType && (
+                  <span className="text-xs font-medium text-muted-foreground">
+                    {article.sourceType}
+                  </span>
                 )}
               </div>
               <div className="flex items-center gap-1.5">
@@ -156,29 +163,27 @@ export default async function ArticleDetailsPage({
                 </div>
               )}
 
-              {/* Perspective Countries */}
-              {article.perspectiveCountries &&
-                article.perspectiveCountries.length > 0 && (
-                  <div className="space-y-2">
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Geographic Focus
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {article.perspectiveCountries.map((country, i) => (
-                        <div
-                          key={i}
-                          className="flex items-center gap-1.5 text-sm text-foreground/80 bg-background/50 px-2.5 py-1.5 rounded-lg border border-border/50"
-                        >
-                          <HugeiconsIcon
-                            icon={Globe}
-                            className="w-3.5 h-3.5 text-muted-foreground"
-                          />
-                          {country}
-                        </div>
-                      ))}
-                    </div>
+              {/* Publisher Profile */}
+              {(article.sourceType || article.sourceOrigin) && (
+                <div className="space-y-2">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    Publisher Profile
+                  </p>
+                  <div className="flex flex-col gap-2 p-3 rounded-xl bg-background/50 border border-border/50">
+                    {article.sourceType && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-medium text-foreground/80">{article.sourceType}</span>
+                      </div>
+                    )}
+                    {article.sourceOrigin && (
+                      <div className="flex items-center gap-2">
+                        <HugeiconsIcon icon={Globe} className="w-3.5 h-3.5 text-muted-foreground" />
+                        <span className="text-xs text-muted-foreground/80">Based in {article.sourceOrigin}</span>
+                      </div>
+                    )}
                   </div>
-                )}
+                </div>
+              )}
             </div>
           </div>
         </div>

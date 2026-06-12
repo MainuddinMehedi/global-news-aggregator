@@ -96,18 +96,24 @@ export default function ArticleCard({
             </div>
           )}
 
-          {article.perspectiveCountries &&
-            article.perspectiveCountries.length > 0 && (
-              <div className="flex items-center space-x-1 ml-auto">
+          <div className="flex items-center space-x-3 ml-auto">
+            {article.sourceType && (
+              <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
+                {article.sourceType}
+              </span>
+            )}
+            {article.sourceOrigin && (
+              <div className="flex items-center space-x-1">
                 <HugeiconsIcon
                   icon={Globe}
                   className="w-3 h-3 text-muted-foreground"
                 />
-                <span className="text-[10px] text-muted-foreground">
-                  {article.perspectiveCountries.slice(0, 3).join(", ")}
+                <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
+                  {article.sourceOrigin}
                 </span>
               </div>
             )}
+          </div>
         </div>
       </CardContent>
     </Card>

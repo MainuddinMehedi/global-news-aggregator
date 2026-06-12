@@ -138,14 +138,24 @@ export function ArticleDetailsModal({ article }: { article: Article | null }) {
                 </p>
               </div>
               <div className="mx-auto">
-                <span className="text-xs text-muted-foreground/80 tracking-tighter uppercase">
-                  Perspective Countries
+                <span className="text-xs block text-muted-foreground/80 tracking-tighter uppercase">
+                  Publisher Profile
                 </span>
-                <p className="text-sm text-zinc-300 mt-1">
-                  {article.perspectiveCountries.length > 0
-                    ? article.perspectiveCountries.join(", ")
-                    : "Not analyzed"}
-                </p>
+                <div className="flex flex-col gap-1 mt-1">
+                  {article.sourceType && (
+                    <span className="text-xs text-zinc-300 font-medium">
+                      {article.sourceType}
+                    </span>
+                  )}
+                  {article.sourceOrigin && (
+                    <span className="text-xs text-zinc-400">
+                      Based in {article.sourceOrigin}
+                    </span>
+                  )}
+                  {!article.sourceType && !article.sourceOrigin && (
+                    <span className="text-xs text-zinc-500">Unknown Profile</span>
+                  )}
+                </div>
               </div>
               <div className="mx-auto space-y-2">
                 <span className="text-xs block text-muted-foreground/80 tracking-tighter uppercase">

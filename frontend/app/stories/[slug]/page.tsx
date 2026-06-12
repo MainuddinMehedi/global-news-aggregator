@@ -56,6 +56,14 @@ export default async function StoryDetailsPage({
     url,
   }));
 
+  const uniqueOrigins = Array.from(
+    new Set(
+      story.articles
+        .map((a) => a.rawArticle.sourceOrigin)
+        .filter((o): o is string => !!o)
+    )
+  );
+
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-8">
       <Link
@@ -66,7 +74,7 @@ export default async function StoryDetailsPage({
         Back to Stories
       </Link>
 
-      <StoryHero story={story} sources={sources} />
+      <StoryHero story={story} sources={sources} origins={uniqueOrigins} />
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         <div className="lg:col-span-8 space-y-8">
