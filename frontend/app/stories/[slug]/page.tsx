@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { getStoryDetail } from "@/queries/stories";
+import { getEventRegionBadgeVariant } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import ArticleCard from "@/components/articles/ArticleCard";
@@ -32,7 +33,6 @@ export default async function StoryDetailsPage({
     contentSnippet: processedArticle.rawArticle.contentSnippet,
     extractedContent: processedArticle.rawArticle.extractedContent,
     biasNote: processedArticle.biasNote,
-    biasCategory: processedArticle.biasCategory,
     sentimentScore: processedArticle.sentimentScore,
     perspectiveCountries: processedArticle.perspectiveCountries,
     url: processedArticle.rawArticle.url,
@@ -40,7 +40,29 @@ export default async function StoryDetailsPage({
     entities: processedArticle.entities,
     sourceCountry: processedArticle.rawArticle.sourceCountry,
     slug: processedArticle.rawArticle.slug,
+    eventRegion: processedArticle.eventRegion,
+    sourceOrigin: processedArticle.rawArticle.sourceOrigin,
+    sourceType: processedArticle.rawArticle.sourceType,
   });
+
+  const uniqueSourcesMap = new Map<string, string>();
+  story.articles.forEach((art) => {
+    if (art.rawArticle.source && !uniqueSourcesMap.has(art.rawArticle.source)) {
+      uniqueSourcesMap.set(art.rawArticle.source, art.rawArticle.url);
+    }
+  });
+  const sources = Array.from(uniqueSourcesMap.entries()).map(([name, url]) => ({
+    name,
+    url,
+  }));
+
+  const uniqueOrigins = Array.from(
+    new Set(
+      story.articles
+        .map((a) => a.rawArticle.sourceOrigin)
+        .filter((o): o is string => !!o)
+    )
+  );
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-8">
@@ -52,7 +74,7 @@ export default async function StoryDetailsPage({
         Back to Stories
       </Link>
 
-      <StoryHero story={story} />
+      <StoryHero story={story} sources={sources} origins={uniqueOrigins} />
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         <div className="lg:col-span-8 space-y-8">
@@ -102,6 +124,7 @@ export default async function StoryDetailsPage({
                   <ArticleCard
                     key={processedArticle.id}
                     article={mappedArticle}
+                    storySlug={resolvedParams.slug}
                   />
                 );
               })}

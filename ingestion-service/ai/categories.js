@@ -27,5 +27,11 @@ export const ALLOWED_CATEGORIES = [
   "politics",
   "society",
   "bangladesh",
+  "science",
+  "sports",
+  "entertainment",
+  "lifestyle",
+  "gaming",
+  "crypto",
   "other",
 ];

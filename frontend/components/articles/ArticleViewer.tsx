@@ -4,13 +4,13 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { LinkSquare01Icon } from "@hugeicons/core-free-icons";
+import { useExtractedContent } from "@/hooks/useExtractedContent";
 
 interface ArticleViewerProps {
   article: {
     url: string;
     source: string;
     contentSnippet: string;
-    // Pre-fetched content from DB (null if not yet extracted for this article)
     extractedContent: string | null;
   };
 }
@@ -19,52 +19,32 @@ export default function ArticleViewer({ article }: ArticleViewerProps) {
   const [viewMode, setViewMode] = useState<
     "snippet" | "extracted" | "original"
   >("snippet");
-  // Seed state with DB content if available — no network call needed on first click
-  const [extractedContent, setExtractedContent] = useState<string | null>(
-    article.extractedContent,
-  );
-  const [loading, setLoading] = useState(false);
-  const [extractSource, setExtractSource] = useState<string>(
-    article.extractedContent ? "database" : "",
-  );
+
+  const { content, loading, error, source, extract, isCached } =
+    useExtractedContent({
+      url: article.url,
+      enabled: false,
+      initialContent: article.extractedContent,
+    });
 
   const handleExtract = async () => {
-    // Already have content in state (from DB or a previous fetch) — just switch view
-    if (extractedContent) {
+    if (content) {
       setViewMode("extracted");
       return;
     }
-
-    setLoading(true);
     setViewMode("extracted");
-    try {
-      const res = await fetch(
-        `/api/extract?url=${encodeURIComponent(article.url)}`,
-      );
-      if (!res.ok) throw new Error("Failed to extract");
-      const data = await res.json();
-      setExtractedContent(data.content);
-      setExtractSource(data.source);
-    } catch (err) {
-      console.error(err);
-      setExtractedContent(
-        "<p class='text-destructive'>Failed to extract article content. Please read the original article.</p>",
-      );
-    } finally {
-      setLoading(false);
-    }
+    await extract();
   };
 
   const buttonLabel =
     loading && viewMode === "extracted"
       ? "Extracting..."
-      : extractedContent
+      : content
         ? "Full Article"
         : "Read Extracted Article";
 
   return (
     <div className="space-y-6">
-      {/* Buttons: Summary | Read extracted article | View original */}
       <div className="flex flex-wrap items-center gap-3 pb-4 border-b border-border/50">
         <Button
           variant={viewMode === "snippet" ? "default" : "secondary"}
@@ -81,8 +61,7 @@ export default function ArticleViewer({ article }: ArticleViewerProps) {
           className="relative"
         >
           {buttonLabel}
-          {/* Green dot indicator: content is already cached in DB */}
-          {article.extractedContent && (
+          {isCached && (
             <span
               className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-green-500"
               title="Cached — no network request needed"
@@ -99,7 +78,6 @@ export default function ArticleViewer({ article }: ArticleViewerProps) {
       </div>
 
       <div className="min-h-[200px]">
-        {/* Summary */}
         {viewMode === "snippet" && (
           <div className="article-prose max-w-none">
             <p className="text-lg leading-relaxed text-muted-foreground">
@@ -108,7 +86,6 @@ export default function ArticleViewer({ article }: ArticleViewerProps) {
           </div>
         )}
 
-        {/* Extracted article */}
         {viewMode === "extracted" && (
           <div className="article-prose max-w-none">
             {loading ? (
@@ -119,23 +96,24 @@ export default function ArticleViewer({ article }: ArticleViewerProps) {
                 <div className="h-4 bg-muted rounded w-full"></div>
                 <div className="h-4 bg-muted rounded w-2/3"></div>
               </div>
-            ) : extractedContent ? (
+            ) : error ? (
+              <div className="p-8 text-center text-muted-foreground bg-destructive/5 rounded-xl border border-destructive/10">
+                <p className="text-sm font-medium">{error}</p>
+              </div>
+            ) : content ? (
               <>
-                {extractSource && (
+                {source && (
                   <p className="text-xs text-muted-foreground mb-4 not-prose">
                     Source:{" "}
-                    <span className="font-medium capitalize">
-                      {extractSource}
-                    </span>
+                    <span className="font-medium capitalize">{source}</span>
                   </p>
                 )}
-                <div dangerouslySetInnerHTML={{ __html: extractedContent }} />
+                <div dangerouslySetInnerHTML={{ __html: content }} />
               </>
             ) : null}
           </div>
         )}
 
-        {/* Embedding */}
         {viewMode === "original" && (
           <div className="w-full h-[800px] rounded-xl overflow-hidden border border-border/50 bg-background relative">
             <iframe
@@ -148,7 +126,6 @@ export default function ArticleViewer({ article }: ArticleViewerProps) {
         )}
       </div>
 
-      {/* Link to original website */}
       {viewMode !== "original" && (
         <div className="pt-6 border-t border-border/50">
           <a

@@ -6,6 +6,8 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { RefreshIcon } from "@hugeicons/core-free-icons";
 import { Button } from "../ui/button";
 import { Skeleton } from "../ui/skeleton";
+import { FindingDetailsModal } from "./FindingDetailsModal";
+import { FindingCard } from "./FindingCard";
 
 interface FindingsListProps {
   initialFindings: TopicFinding[];
@@ -26,6 +28,8 @@ export default function FindingsList({
   const [cursor, setCursor] = useState(initialNextCursor);
   const [isLoading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedFinding, setSelectedFinding] =
+    useState<TopicFinding | null>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
   // Reset list when filters change
@@ -78,6 +82,22 @@ export default function FindingsList({
     return () => observer.disconnect();
   }, [fetchNextPage, error]);
 
+  const handleDeleteFinding = useCallback(async (findingId: string) => {
+    // Optimistic UI update: remove from state immediately
+    setFindings((prev) => prev.filter((f) => f.id !== findingId));
+
+    try {
+      const res = await fetch(`/api/locked-topics/${topicId}/findings/${findingId}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) {
+        throw new Error("Failed to delete from database");
+      }
+    } catch (err) {
+      console.error("Error deleting finding:", err);
+    }
+  }, [topicId]);
+
   const handleRetry = () => {
     setError(null);
     setTimeout(() => fetchNextPage(), 0);
@@ -97,9 +117,26 @@ export default function FindingsList({
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
         {findings.map((finding) => (
-          <FindingCard key={finding.id} finding={finding} />
+          <FindingCard
+            key={finding.id}
+            finding={finding}
+            onSelect={setSelectedFinding}
+            onDelete={handleDeleteFinding}
+          />
         ))}
       </div>
+
+      {selectedFinding && (
+        <FindingDetailsModal
+          finding={selectedFinding}
+          onClose={() => setSelectedFinding(null)}
+          onDelete={async () => {
+            const idToDelete = selectedFinding.id;
+            setSelectedFinding(null);
+            await handleDeleteFinding(idToDelete);
+          }}
+        />
+      )}
 
       {!error && (
         <div ref={sentinelRef}>
@@ -135,58 +172,6 @@ export default function FindingsList({
           </Button>
         </div>
       )}
-    </div>
-  );
-}
-
-function FindingCard({ finding }: { finding: TopicFinding }) {
-  const showNewBadge = !finding.isRead;
-
-  return (
-    <div className="p-8 rounded-2xl border border-secondary bg-secondary/10 hover:border-primary/40 transition-all duration-500 group hover:shadow-2xl hover:shadow-primary/5 hover:-translate-y-0.5 backdrop-blur-sm relative overflow-hidden">
-      <div className="flex flex-col md:flex-row items-start justify-between gap-6">
-        <div className="space-y-3 flex-1">
-          <div className="flex items-center gap-2">
-            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-primary bg-primary/10 px-2.5 py-1 rounded-full">
-              {finding.sourceType}
-            </span>
-            <span className="w-1 h-1 rounded-full bg-border" />
-            <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-muted-foreground/60">
-              {finding.sourceName}
-            </span>
-          </div>
-          <h3 className="text-2xl font-extrabold group-hover:text-primary transition-colors leading-tight tracking-tight">
-            <a href={finding.sourceUrl} target="_blank">
-              {finding.title}
-            </a>
-          </h3>
-          {finding.summary && (
-            <p className="text-[15px] text-muted-foreground/90 line-clamp-3 leading-relaxed font-medium tracking-tight">
-              {finding.summary}
-            </p>
-          )}
-        </div>
-
-        <div className="flex flex-col items-start md:items-end gap-3 shrink-0">
-          {showNewBadge && (
-            <span className="text-[9px] font-black uppercase tracking-[0.2em] bg-primary text-primary-foreground px-2.5 py-1 rounded-full shadow-[0_0_12px_rgba(var(--primary),0.4)] animate-pulse">
-              New
-            </span>
-          )}
-
-          {finding.relevanceScore && (
-            <div className="flex flex-col items-start md:items-end p-4 rounded-2xl bg-secondary/10 border border-secondary/20 md:min-w-[100px]">
-              <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/40 mb-1">
-                Signal
-              </span>
-              <div className="text-3xl font-black text-primary font-mono leading-none tracking-tighter">
-                {(finding.relevanceScore * 100).toFixed(0)}
-                <span className="text-[10px] ml-0.5 opacity-50">%</span>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
     </div>
   );
 }

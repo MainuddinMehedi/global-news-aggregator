@@ -641,6 +641,14 @@
         margin: 1.5em 0;
     }
 
+    iframe,
+    video {
+        max-width: 100%;
+        border-radius: 8px;
+        aspect-ratio: 16 / 9;
+        height: auto;
+    }
+
     table {
         width: 100%;
         border-collapse: collapse;

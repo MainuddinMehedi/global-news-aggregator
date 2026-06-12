@@ -23,23 +23,19 @@ export function formatRelativeTime(dateString: string): string {
   return `${diffInYears}y ago`;
 }
 
-export function getBiasBadgeVariant(
-  biasCategory: string | null | undefined,
+export function getEventRegionBadgeVariant(
+  eventRegion: string | null | undefined,
 ): "emerald" | "amber" | "blue" | "red" | "neutral" {
-  if (!biasCategory) return "neutral";
-  const lower = biasCategory.toLowerCase();
+  if (!eventRegion) return "neutral";
+  const lower = eventRegion.toLowerCase();
 
-  // Perspective mapping (based on PerspectiveWidget colors)
-  if (lower.includes("non-western")) return "emerald";
-  if (lower.includes("western")) return "blue";
-  if (lower.includes("eastern")) return "red";
-  if (lower.includes("wire")) return "amber";
-
-  // Standard bias mapping
-  if (lower.includes("left")) return "blue";
-  if (lower.includes("right")) return "red";
-  if (lower.includes("center") || lower.includes("least")) return "emerald";
-  if (lower.includes("mixed")) return "amber";
+  if (lower.includes("north america")) return "blue";
+  if (lower.includes("europe")) return "emerald";
+  if (lower.includes("middle east")) return "red";
+  if (lower.includes("asia-pacific")) return "amber";
+  if (lower.includes("latin america")) return "emerald";
+  if (lower.includes("africa")) return "amber";
+  if (lower.includes("global")) return "neutral";
 
   return "neutral";
 }

@@ -5,7 +5,7 @@
  */
 
 import fetchRSSStream from "../../sources/rss.js";
-import { parseQuery } from "../utils/parseQuery.js";
+import { evaluateQuery } from "../utils/parseQuery.js";
 
 const MAX_RESULTS = 100;
 
@@ -56,7 +56,10 @@ export async function scanRss(topic, sourceConfig, options = {}) {
   const sourceName =
     sourceConfig.type === "google_news"
       ? "Google News"
-      : sourceConfig.name || "Custom RSS";
+      : sourceConfig.label
+        || (sourceConfig.url
+          ? `${new URL(sourceConfig.url).hostname} RSS`
+          : "Custom RSS");
 
   const sinceDate = fullScan ? null : topic.lastScannedAt;
   let sinceStr = fullScan ? " (full scan)" : "";
@@ -87,8 +90,6 @@ export async function scanRss(topic, sourceConfig, options = {}) {
   let skipped = 0;
   let keywordFiltered = 0;
 
-  const queryGroups = sourceConfig.type === "rss" ? parseQuery(topic) : [];
-
   try {
     for await (const item of fetchRSSStream(sourceName, null, feedUrl)) {
       if (count >= limit) break;
@@ -105,12 +106,9 @@ export async function scanRss(topic, sourceConfig, options = {}) {
       }
 
       // 2. Keyword Pre-filtering for Custom RSS
-      if (sourceConfig.type === "rss" && queryGroups.length > 0) {
-        const textToSearch =
-          `${item.title} ${item.contentSnippet || ""}`.toLowerCase();
-        const matchesKeywords = queryGroups.some((group) =>
-          group.every((term) => textToSearch.includes(term.toLowerCase())),
-        );
+      if (sourceConfig.type === "rss") {
+        const textToSearch = `${item.title} ${item.contentSnippet || ""}`;
+        const matchesKeywords = evaluateQuery(topic, textToSearch);
 
         if (!matchesKeywords) {
           keywordFiltered++;
@@ -123,7 +121,6 @@ export async function scanRss(topic, sourceConfig, options = {}) {
         sourceUrl: item.url,
         sourceName: sourceName,
         summary: item.contentSnippet?.slice(0, 500) || null,
-        rawArticleId: null, // External finding
         sourceType: sourceConfig.type === "google_news" ? "GOOGLE" : "RSS",
       });
 

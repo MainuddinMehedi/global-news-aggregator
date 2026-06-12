@@ -2,44 +2,78 @@ import { NextResponse } from "next/server";
 import { extract } from "@extractus/article-extractor";
 import { marked } from "marked";
 import prisma from "@/lib/prisma";
+import ytSearch from "yt-search";
+
+function getYoutubeVideoId(url: string): string | null {
+  try {
+    const parsed = new URL(url);
+    if (parsed.hostname.includes("youtube.com")) {
+      return parsed.searchParams.get("v");
+    }
+    if (parsed.hostname.includes("youtu.be")) {
+      return parsed.pathname.slice(1);
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const url = searchParams.get("url");
+
+  const force = searchParams.get("force") === "true";
 
   if (!url) {
     return NextResponse.json({ error: "URL is required" }, { status: 400 });
   }
 
   // 1. Check if we already have the extracted content in the database
-  try {
-    const existing = await prisma.rawArticle.findUnique({
-      where: { url },
-      select: { extractedContent: true },
-    });
-
-    if (existing?.extractedContent) {
-      return NextResponse.json({
-        content: existing.extractedContent,
-        source: "database",
+  if (!force) {
+    try {
+      const existing = await prisma.rawArticle.findUnique({
+        where: { url },
+        select: { extractedContent: true },
       });
+
+      if (existing?.extractedContent) {
+        return NextResponse.json({
+          content: existing.extractedContent,
+          source: "database",
+        });
+      }
+    } catch (error) {
+      console.error("[Extract API] DB check failed, proceeding to extract:", error);
     }
-  } catch (error) {
-    console.error("[Extract API] DB check failed, proceeding to extract:", error);
   }
 
   let finalContent: string | null = null;
   let sourceUsed = "";
 
-  try {
-    // 2. Try Primary: @extractus/article-extractor
-    const article = await extract(url);
+  const ytVideoId = getYoutubeVideoId(url);
 
-    if (article && article.content) {
-      finalContent = article.content;
-      sourceUsed = "extractus";
+  try {
+    if (ytVideoId) {
+      // Handle YouTube videos perfectly
+      const video = await ytSearch({ videoId: ytVideoId });
+      if (video && video.description) {
+        // Convert plain text description to HTML paragraphs/breaks
+        finalContent = `<p>${video.description.replace(/\n/g, '<br/>')}</p>`;
+        sourceUsed = "yt-search";
+      } else {
+        throw new Error("yt-search returned empty description");
+      }
     } else {
-      throw new Error("Extractus returned empty result");
+      // 2. Try Primary: @extractus/article-extractor
+      const article = await extract(url);
+
+      if (article && article.content) {
+        finalContent = article.content;
+        sourceUsed = "extractus";
+      } else {
+        throw new Error("Extractus returned empty result");
+      }
     }
   } catch (error) {
     console.warn(`[Extract API] Primary failed for ${url}, falling back to Jina:`, error);
@@ -73,15 +107,15 @@ export async function GET(request: Request) {
     }
   }
 
-  // 4. Save the extracted content back to the database for future use
   if (finalContent) {
+    // If we extracted new content, update it in the database if the article exists
     try {
       await prisma.rawArticle.update({
         where: { url },
-        data: { extractedContent: finalContent },
+        data: { extractedContent: finalContent }
       });
-    } catch (error) {
-      console.error(`[Extract API] Failed to save extracted content to DB for ${url}:`, error);
+    } catch (e) {
+      // Ignores if it doesn't exist (e.g. ad-hoc TopicFinding)
     }
 
     return NextResponse.json({

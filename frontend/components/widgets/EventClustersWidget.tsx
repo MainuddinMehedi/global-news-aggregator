@@ -1,6 +1,8 @@
-import { getClusterStats } from "@/queries/analytics";
-import prisma from "@/lib/prisma";
+import { getClusterStats, getStoryClustersWithOrigins } from "@/queries/analytics";
 import { cn } from "@/lib/utils";
+import EventClustersList from "./EventClustersList";
+import { Suspense } from "react";
+import { Skeleton } from "../ui/skeleton";
 
 const IMPACT_COLORS: Record<string, string> = {
   CRITICAL: "bg-red-500",
@@ -10,19 +12,10 @@ const IMPACT_COLORS: Record<string, string> = {
 };
 
 export async function EventClustersWidget() {
-  const stats = await getClusterStats();
-
-  // Fetch top 3 active clusters
-  let topClusters = [];
-  try {
-    topClusters = await prisma.storyCluster.findMany({
-      where: { isActive: true },
-      orderBy: { articleCount: "desc" },
-      take: 3,
-    });
-  } catch (error) {
-    console.error("EventClustersWidget error:", error);
-  }
+  const [stats, clusters] = await Promise.all([
+    getClusterStats(),
+    getStoryClustersWithOrigins(),
+  ]);
 
   if (!stats) return null;
 
@@ -32,7 +25,8 @@ export async function EventClustersWidget() {
         Active Event Clusters ({stats.activeCount})
       </h3>
 
-      <div className="grid grid-cols-4 gap-1 mb-4">
+      {/* Impact distribution header - 4 square items in one line */}
+      <div className="grid grid-cols-4 gap-1 mb-5">
         {["CRITICAL", "HIGH", "MEDIUM", "LOW"].map((impact) => {
           const count =
             stats.impactDistribution.find((d) => d.label === impact)?.count ||
@@ -40,19 +34,28 @@ export async function EventClustersWidget() {
           return (
             <div
               key={impact}
-              className="flex flex-col items-center p-2 rounded-lg bg-muted/30"
+              className={cn(
+                "flex flex-col items-center justify-center p-2 rounded-xl border text-[11px] font-semibold backdrop-blur-sm transition-all",
+                impact === "CRITICAL"
+                  ? "bg-red-500/5 dark:bg-red-500/10 border-red-500/15 text-red-600 dark:text-red-400"
+                  : impact === "HIGH"
+                    ? "bg-orange-500/5 dark:bg-orange-500/10 border-orange-500/15 text-orange-600 dark:text-orange-400"
+                    : impact === "MEDIUM"
+                      ? "bg-blue-500/5 dark:bg-blue-500/10 border-blue-500/15 text-blue-600 dark:text-blue-400"
+                      : "bg-emerald-500/5 dark:bg-emerald-500/10 border-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+              )}
             >
               <div
                 className={cn(
-                  "w-1.5 h-1.5 rounded-full mb-1",
+                  "w-1.5 h-1.5 rounded-full mb-1 shrink-0",
                   IMPACT_COLORS[impact],
                 )}
               />
-              <span className="text-[10px] font-bold text-foreground">
+              <span className="text-[11px] font-mono font-bold leading-none mb-1">
                 {count}
               </span>
-              <span className="text-[8px] text-muted-foreground uppercase">
-                {impact.slice(0, 3)}
+              <span className="text-[7.5px] font-bold uppercase tracking-wider opacity-85">
+                {impact === "CRITICAL" ? "Crit" : impact.slice(0, 3).toLowerCase()}
               </span>
             </div>
           );
@@ -63,29 +66,20 @@ export async function EventClustersWidget() {
         <p className="text-[10px] font-bold text-muted-foreground uppercase px-1 mb-1">
           Top Stories
         </p>
-        {topClusters.map((cluster) => (
-          <div
-            key={cluster.id}
-            className="p-3 rounded-xl bg-muted/30 border border-border hover:border-primary/50 transition-all group"
-          >
-            <h4 className="text-xs font-medium text-foreground group-hover:text-primary transition-colors leading-tight mb-1 line-clamp-2">
-              {cluster.title}
-            </h4>
-            <div className="flex items-center justify-between">
-              <span className="text-[9px] text-muted-foreground font-medium">
-                {cluster.articleCount} articles • {cluster.topSources.length}{" "}
-                sources
-              </span>
-              <div
-                className={cn(
-                  "w-1.5 h-1.5 rounded-full",
-                  IMPACT_COLORS[cluster.impact || "MEDIUM"],
-                )}
-              />
-            </div>
-          </div>
-        ))}
+        <Suspense fallback={<EventClustersListSkeleton />}>
+          <EventClustersList clusters={clusters} />
+        </Suspense>
       </div>
+    </div>
+  );
+}
+
+function EventClustersListSkeleton() {
+  return (
+    <div className="space-y-2">
+      {Array.from({ length: 3 }).map((_, i) => (
+        <Skeleton key={i} className="h-20 w-full rounded-xl" />
+      ))}
     </div>
   );
 }

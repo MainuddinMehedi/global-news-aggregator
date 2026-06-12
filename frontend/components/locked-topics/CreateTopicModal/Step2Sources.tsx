@@ -10,10 +10,14 @@ import {
   GoogleIcon,
   Search01Icon,
   RedditIcon,
+  Github01Icon,
+  YoutubeIcon,
   Add01Icon,
   LinkSquare01Icon,
+  ArrowUpRight01Icon,
+  InformationCircleIcon,
 } from "@hugeicons/core-free-icons";
-import { detectSourceType } from "@/lib/sourceDetection";
+import { detectSourceType, generateSourceLabel } from "@/lib/sourceDetection";
 import { toast } from "sonner";
 import { CreateTopicData, SourceConfig } from "@/types/lockedTopic";
 
@@ -31,6 +35,128 @@ export default function Step2Sources({
   onPrev,
 }: Step2Props) {
   const [customUrl, setCustomUrl] = useState("");
+
+  const existingGithub = data.sources.find((s) => s.type === "github");
+  const [githubUrl, setGithubUrl] = useState(existingGithub?.url || "");
+  const [githubUrlError, setGithubUrlError] = useState("");
+
+  const isGithubEnabled = data.sources.some(
+    (s) => s.type === "github",
+  );
+
+  const existingYoutube = data.sources.find((s) => s.type === "youtube");
+  const [youtubeUrl, setYoutubeUrl] = useState(existingYoutube?.url || "");
+  const [youtubeUrlError, setYoutubeUrlError] = useState("");
+
+  const isYoutubeEnabled = data.sources.some(
+    (s) => s.type === "youtube",
+  );
+
+  function getGithubUrlError(url: string): string | null {
+    if (!url) return null;
+    try { new URL(url); } catch { return "Enter a valid URL."; }
+
+    if (detectSourceType(url) === "rss") return "This looks like a feed URL. Paste it in the custom sources input below.";
+    if (detectSourceType(url) !== "github") return "Enter a GitHub repo URL like https://github.com/owner/repo";
+
+    const path = new URL(url).pathname.replace(/\/$/, "").split("/").filter(Boolean);
+    if (path.length < 2) return "Enter a full repo URL like https://github.com/owner/repo";
+    if (path.length > 2) return "Enter a repo URL without extra path segments.";
+
+    return null;
+  }
+
+  function getYoutubeUrlError(input: string): string | null {
+    if (!input) return null;
+    const parts = input.split(",").map((p) => p.trim()).filter(Boolean);
+
+    for (const part of parts) {
+      try {
+        new URL(part);
+        if (detectSourceType(part) !== "youtube") {
+          return `"${part}" is not a valid YouTube URL.`;
+        }
+      } catch {
+        // Not a URL, so it's a name. Names are allowed.
+      }
+    }
+    return null;
+  }
+
+
+  const toggleGithub = (enabled: boolean) => {
+    setGithubUrlError("");
+    if (enabled) {
+      setData({
+        ...data,
+        sources: [
+          ...data.sources,
+          {
+            id: "github",
+            type: "github",
+            label: "GitHub",
+            enabled: true,
+            url: githubUrl || undefined,
+          },
+        ],
+      });
+    } else {
+      setData({
+        ...data,
+        sources: data.sources.filter((s) => s.type !== "github"),
+      });
+    }
+  };
+
+  const updateGithubUrl = (url: string) => {
+    setGithubUrl(url);
+    setGithubUrlError(getGithubUrlError(url) || "");
+    if (isGithubEnabled) {
+      setData({
+        ...data,
+        sources: data.sources.map((s) =>
+          s.type === "github" ? { ...s, url: url || undefined } : s,
+        ),
+      });
+    }
+  };
+
+  const toggleYoutube = (enabled: boolean) => {
+    setYoutubeUrlError("");
+    if (enabled) {
+      setData({
+        ...data,
+        sources: [
+          ...data.sources,
+          {
+            id: "youtube",
+            type: "youtube",
+            label: "YouTube",
+            enabled: true,
+            url: youtubeUrl || undefined,
+          },
+        ],
+      });
+    } else {
+      setData({
+        ...data,
+        sources: data.sources.filter((s) => s.type !== "youtube"),
+      });
+    }
+  };
+
+  const updateYoutubeUrl = (url: string) => {
+    setYoutubeUrl(url);
+    setYoutubeUrlError(getYoutubeUrlError(url) || "");
+    if (isYoutubeEnabled) {
+      setData({
+        ...data,
+        sources: data.sources.map((s) =>
+          s.type === "youtube" ? { ...s, url: url || undefined } : s,
+        ),
+      });
+    }
+  };
 
   const toggleSource = (type: SourceConfig["type"], label: string) => {
     const exists = data.sources.find((s) => s.type === type && !s.url);
@@ -57,7 +183,7 @@ export default function Step2Sources({
   const handleAddCustomSource = () => {
     if (!customUrl) return;
     try {
-      new URL(customUrl); // Simple validation
+      new URL(customUrl);
     } catch {
       toast.error("Please enter a valid URL (including https://)");
       return;
@@ -67,7 +193,7 @@ export default function Step2Sources({
     const exists = data.sources.find((s) => s.url === customUrl);
 
     if (!exists) {
-      const label = new URL(customUrl).hostname.replace("www.", "");
+      const label = generateSourceLabel(customUrl, type);
       setData({
         ...data,
         sources: [
@@ -86,6 +212,11 @@ export default function Step2Sources({
     data.sources.some((s) => s.type === type && !s.url);
 
   const customSources = data.sources.filter((s) => s.url);
+  const suggestedSources = (data.suggestedSources || []) as {
+    type: string;
+    label: string;
+    url: string;
+  }[];
 
   return (
     <div className="space-y-8">
@@ -95,22 +226,14 @@ export default function Step2Sources({
         </h4>
 
         <div className="space-y-3">
-          {/* Internal DB is always on */}
-          <div className="flex items-center justify-between p-4 rounded-xl border border-secondary bg-secondary/10 opacity-80">
-            <div className="flex items-center gap-4">
-              <div className="p-2 rounded-lg bg-primary/10 text-primary">
-                <HugeiconsIcon icon={DatabaseIcon} size={20} />
-              </div>
-              <div>
-                <p className="text-sm font-bold">Internal Article DB</p>
-                <p className="text-[10px] text-muted-foreground uppercase tracking-tight">
-                  Scans existing aggregate
-                </p>
-              </div>
-            </div>
-            <Switch checked disabled />
-          </div>
-
+          <SourceToggle
+            label="Internal Article DB"
+            icon={DatabaseIcon}
+            enabled={isSourceEnabled("internal_db")}
+            onToggle={() =>
+              toggleSource("internal_db", "Internal Article DB")
+            }
+          />
           <SourceToggle
             label="Google News RSS"
             icon={GoogleIcon}
@@ -129,6 +252,56 @@ export default function Step2Sources({
             enabled={isSourceEnabled("reddit")}
             onToggle={() => toggleSource("reddit", "Reddit")}
           />
+          <SourceToggle
+            label="YouTube"
+            icon={YoutubeIcon}
+            enabled={isYoutubeEnabled}
+            onToggle={() => toggleYoutube(!isYoutubeEnabled)}
+          />
+          {isYoutubeEnabled && (
+            <div className="ml-4 p-3 rounded-xl border border-primary/20 bg-primary/5 space-y-2">
+              <Input
+                placeholder="Enter channel names or URLs (comma separated)"
+                value={youtubeUrl}
+                onChange={(e) => updateYoutubeUrl(e.target.value)}
+                className="bg-secondary/10 border-secondary rounded-xl"
+              />
+              <p className="text-[10px] text-muted-foreground/70 leading-relaxed">
+                Enter names like <span className="font-mono text-primary/80">Bloomberg, ColdFusion</span> or direct URLs to prioritize specific channels.{" "}
+                The system will discover videos from these channels and others related to your topic.
+              </p>
+              {youtubeUrlError && (
+                <p className="text-[10px] text-destructive/90 font-semibold">
+                  {youtubeUrlError}
+                </p>
+              )}
+            </div>
+          )}
+          <SourceToggle
+            label="GitHub"
+            icon={Github01Icon}
+            enabled={isGithubEnabled}
+            onToggle={() => toggleGithub(!isGithubEnabled)}
+          />
+          {isGithubEnabled && (
+            <div className="ml-4 p-3 rounded-xl border border-primary/20 bg-primary/5 space-y-2">
+              <Input
+                placeholder="Paste GitHub repo URL (optional)"
+                value={githubUrl}
+                onChange={(e) => updateGithubUrl(e.target.value)}
+                className="bg-secondary/10 border-secondary rounded-xl"
+              />
+              <p className="text-[10px] text-muted-foreground/70 leading-relaxed">
+                Enter a URL like <span className="font-mono text-primary/80">https://github.com/facebook/react</span> to track that repo&apos;s releases and merged PRs.{" "}
+                Leave blank to search GitHub broadly for repos and merged PRs matching your topic.
+              </p>
+              {githubUrlError && (
+                <p className="text-[10px] text-destructive/90 font-semibold">
+                  {githubUrlError}
+                </p>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -154,7 +327,7 @@ export default function Step2Sources({
         </div>
 
         {customSources.length > 0 && (
-          <div className="space-y-2 mt-4">
+          <div className="space-y-2">
             {customSources.map((source) => (
               <div
                 key={source.url}
@@ -164,7 +337,7 @@ export default function Step2Sources({
                   <HugeiconsIcon
                     icon={LinkSquare01Icon}
                     size={16}
-                    className="text-primary flex-shrink-0"
+                    className="text-primary shrink-0"
                   />
                   <div className="flex flex-col truncate">
                     <span className="text-xs font-bold truncate">
@@ -187,6 +360,85 @@ export default function Step2Sources({
             ))}
           </div>
         )}
+
+        {suggestedSources.length > 0 && (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">
+                AI-Suggested Sources
+              </span>
+              <div className="flex items-center gap-1 text-[9px] font-bold text-amber-500/80 uppercase tracking-tighter bg-amber-500/5 px-2 py-0.5 rounded-full border border-amber-500/10">
+                <HugeiconsIcon icon={InformationCircleIcon} size={10} />
+                Verify URLs before adding
+              </div>
+            </div>
+            <div className="space-y-2">
+              {suggestedSources.map((source, idx) => {
+                const alreadyAdded = data.sources.some(
+                  (s) => s.url === source.url,
+                );
+                return (
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between p-3 rounded-xl border border-secondary bg-secondary/10 group hover:border-primary/30 transition-colors"
+                  >
+                    <div className="flex flex-col gap-0.5 min-w-0 flex-1 mr-4">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold truncate">
+                          {source.label}
+                        </span>
+                        <a
+                          href={source.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-muted-foreground hover:text-primary transition-colors"
+                          title="Open URL to verify"
+                        >
+                          <HugeiconsIcon
+                            icon={ArrowUpRight01Icon}
+                            size={12}
+                          />
+                        </a>
+                      </div>
+                      <span className="text-[10px] text-muted-foreground truncate italic">
+                        {source.url}
+                      </span>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      disabled={alreadyAdded}
+                      onClick={() => {
+                        const type =
+                          source.type || detectSourceType(source.url);
+                        setData({
+                          ...data,
+                          sources: [
+                            ...data.sources,
+                            {
+                              id: source.url,
+                              type: type as SourceConfig["type"],
+                              label: source.label,
+                              url: source.url,
+                              enabled: true,
+                            },
+                          ],
+                          suggestedSources: suggestedSources.filter(
+                            (s) => s.url !== source.url,
+                          ),
+                        });
+                        toast.success(`Added ${source.label} to sources.`);
+                      }}
+                      className="h-8 px-4 text-[10px] font-black uppercase tracking-widest text-primary hover:bg-primary/10"
+                    >
+                      {alreadyAdded ? "Added" : "Add"}
+                    </Button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="flex gap-4">
@@ -201,7 +453,7 @@ export default function Step2Sources({
           onClick={onNext}
           className="flex-2 rounded-xl py-7 font-bold text-lg shadow-xl shadow-primary/20 hover:scale-[1.02] transition-transform"
         >
-          Analyze with AI
+          Review & Launch
         </Button>
       </div>
     </div>

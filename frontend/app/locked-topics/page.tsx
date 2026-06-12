@@ -1,4 +1,4 @@
-import { getLockedTopics } from "@/queries/lockedTopics";
+import { getLockedTopics, getUnreadFindingCount } from "@/queries/lockedTopics";
 import { getInitialFindings } from "@/queries/topicFindings";
 import LockedTopicGrid from "@/components/locked-topics/LockedTopicGrid";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -15,44 +15,51 @@ export default async function LockedTopicsPage({
   const search = typeof params.search === "string" ? params.search : "";
   const topics = await getLockedTopics(search || undefined);
 
-  // Fetch latest 3 findings for each topic to show on the card
-  // This is efficient because getInitialFindings is cached
+  // Fetch latest 3 findings and unread count for each topic to show on the card
+  // This is efficient because getInitialFindings and getUnreadFindingCount are cached
   const latestFindingsMap: Record<string, TopicFinding[]> = {};
+  const unreadCountsMap: Record<string, number> = {};
 
   await Promise.all(
     topics.map(async (topic) => {
-      const { findings } = await getInitialFindings(topic.id);
+      const [{ findings }, unreadCount] = await Promise.all([
+        getInitialFindings(topic.id),
+        getUnreadFindingCount(topic.id),
+      ]);
       console.log(
-        `[LockedTopicsPage] Topic: ${topic.displayName}, Findings: ${findings.length}`,
+        `[LockedTopicsPage] Topic: ${topic.displayName}, Findings: ${findings.length}, Unread: ${unreadCount}`,
       );
       latestFindingsMap[topic.id] = findings.slice(0, 3);
+      unreadCountsMap[topic.id] = unreadCount;
     }),
   );
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-10 space-y-10">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div className="space-y-4">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-bold uppercase tracking-widest shadow-sm">
-            <HugeiconsIcon icon={RssLockedIcon} size={14} />
+    <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="space-y-3">
+          <p className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-bold uppercase tracking-widest shadow-sm">
+            <HugeiconsIcon icon={RssLockedIcon} className="h-4 w-4" />
             Active Surveillance
-          </div>
-          <div className="space-y-2">
-            <h1 className="text-4xl md:text-5xl font-black tracking-tight">
-              Locked <span className="text-primary">Topics</span>
-            </h1>
-            <p className="text-muted-foreground max-w-2xl text-base leading-snug tracking-wide">
-              Pin specific themes to ensure they are persistently tracked. The
-              system acts as your personal researcher, monitoring all sources
-              every 2 hours.
-            </p>
-          </div>
+          </p>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl lg:text-5xl">
+            Locked Topics
+          </h1>
+          <p className="max-w-2xl text-base leading-relaxed text-muted-foreground">
+            Pin specific themes to ensure they are persistently tracked. The
+            system acts as your personal researcher, monitoring all sources
+            every 2 hours.
+          </p>
         </div>
 
         <CreateTopicModal />
       </div>
 
-      <LockedTopicGrid topics={topics} latestFindingsMap={latestFindingsMap} />
+      <LockedTopicGrid
+        topics={topics}
+        latestFindingsMap={latestFindingsMap}
+        unreadCountsMap={unreadCountsMap}
+      />
     </div>
   );
 }

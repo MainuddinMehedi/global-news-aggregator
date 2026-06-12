@@ -22,7 +22,6 @@ const aiLimitArg = args.find((a) => a.startsWith("--ai-limit="));
 const aiLimit = aiLimitArg ? parseInt(aiLimitArg.split("=")[1]) : Infinity;
 
 const aiProcessor = skipAI ? null : createArticleProcessor();
-const sources = getActiveFeeds();
 
 const startTime = Date.now();
 
@@ -34,6 +33,8 @@ async function run() {
     console.log(`🚀 Running with AI limit: ${aiLimit} articles max\n`);
   }
 
+  const sources = await getActiveFeeds();
+  
   let totalFetched = 0;
   let totalInserted = 0;
   let totalDupes = 0;
@@ -45,6 +46,8 @@ async function run() {
     for await (const item of fetchRSSStream(
       src.name,
       src.sourceCountry,
+      src.sourceOrigin,
+      src.sourceType,
       src.url,
     )) {
       totalFetched++;
@@ -85,6 +88,8 @@ async function run() {
             contentSnippet: item.contentSnippet,
             source: item.source,
             sourceCountry: item.sourceCountry,
+            sourceOrigin: item.sourceOrigin,
+            sourceType: item.sourceType,
             publishedAt: item.publishedAt,
             contentHash: item.contentHash,
             slug: generateSlug(item.title),

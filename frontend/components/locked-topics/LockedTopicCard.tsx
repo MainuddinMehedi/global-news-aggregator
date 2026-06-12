@@ -3,20 +3,22 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { RssLockedIcon } from "@hugeicons/core-free-icons";
-import LockedTopicCardClient from "./LockedTopicCardClient";
+import TopicActiveToggle from "./TopicActiveToggle";
+import { NotificationsPopover } from "./NotificationsPopover";
 import { RelativeTime } from "@/components/ui/RelativeTime";
 
 interface LockedTopicCardProps {
   topic: LockedTopic;
   latestFindings: TopicFinding[];
+  unreadCount: number;
 }
 
 export default function LockedTopicCard({
   topic,
   latestFindings,
+  unreadCount,
 }: LockedTopicCardProps) {
   const isScanning = !topic.lastScannedAt;
-  const unreadCount = 0; // Dynamic in Phase 7
 
   return (
     <Card
@@ -46,7 +48,14 @@ export default function LockedTopicCard({
               </p>
             </div>
           </div>
-          <LockedTopicCardClient topic={topic} unreadCount={unreadCount} />
+          <div className="flex items-center gap-2">
+            <NotificationsPopover
+              topicId={topic.id}
+              unreadCount={unreadCount}
+              isActive={topic.isActive}
+            />
+            <TopicActiveToggle topic={topic} />
+          </div>
         </div>
       </CardHeader>
 

@@ -20,10 +20,12 @@ export default function FindingsFilter({
   currentSource,
   currentSort,
   sources,
+  counts = {},
 }: {
   currentSource: string;
   currentSort: string;
   sources: SourceConfig[];
+  counts?: Record<string, number>;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -34,46 +36,70 @@ export default function FindingsFilter({
     router.push(`?${params.toString()}`, { scroll: false });
   };
 
-  // Generate dynamic source tabs based on tracker sources
+  // Maps each source config type to its corresponding FindingSource and display label
+  const sourceTypeToTab: Record<string, { value: string; label: string }> = {
+    internal_db: { value: "ARTICLE", label: "Internal DB" },
+    google_news: { value: "GOOGLE", label: "Google News" },
+    brave: { value: "BRAVE", label: "Brave Search" },
+    reddit: { value: "REDDIT", label: "Reddit" },
+    github: { value: "GITHUB", label: "GitHub" },
+    youtube: { value: "RSS", label: "YouTube" },
+    webpage: { value: "WEBPAGE", label: "Webpage" },
+    scrape: { value: "SCRAPE", label: "Scrape" },
+    bd_gov_jobs: { value: "BD_GOV_JOBS", label: "BD Gov Jobs" },
+    company_careers: { value: "COMPANY_CAREERS", label: "Company Careers" },
+    search: { value: "SEARCH", label: "Web Search" },
+  };
+
+  // Generate tabs dynamically from enabled sources
   const sourceTabs = [{ value: "ALL", label: "All Sources" }];
+  const addedTabs = new Set<string>();
 
-  const hasInternal = sources.some((s) => s.type === "internal_db");
-  const hasGoogle = sources.some((s) => s.type === "google_news");
-  const hasBrave = sources.some((s) => s.type === "brave");
-  const hasReddit = sources.some((s) => s.type === "reddit");
+  for (const source of sources) {
+    const tab = sourceTypeToTab[source.type];
+    if (tab && !addedTabs.has(tab.value)) {
+      sourceTabs.push(tab);
+      addedTabs.add(tab.value);
+    }
+  }
 
-  if (hasInternal) sourceTabs.push({ value: "ARTICLE", label: "Internal DB" });
-  if (hasGoogle) sourceTabs.push({ value: "GOOGLE", label: "Google News" });
-  if (hasBrave) sourceTabs.push({ value: "BRAVE", label: "Brave Search" });
-  if (hasReddit) sourceTabs.push({ value: "REDDIT", label: "Reddit" });
-
-  const hasOtherSources = sources.some(
-    (s) => !["internal_db", "google_news", "brave", "reddit"].includes(s.type),
-  );
-
-  if (hasOtherSources) {
+  // Any source type not in the mapping falls under "Others"
+  const hasUnmappedSource = sources.some((s) => !sourceTypeToTab[s.type]);
+  if (hasUnmappedSource) {
     sourceTabs.push({ value: "OTHER", label: "Others" });
   }
 
   return (
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-6 border-y border-secondary/50">
-      <div className="flex flex-wrap gap-2">
-        {sourceTabs.map((s) => (
-          <button
-            key={s.value}
-            onClick={() => updateParam("source", s.value)}
-            className={`px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all duration-200 ${
-              currentSource === s.value
-                ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20 scale-105"
-                : "bg-secondary/40 text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
-            }`}
-          >
-            {s.label}
-          </button>
-        ))}
+      <div className="flex flex-wrap gap-2 flex-1">
+        {sourceTabs.map((s) => {
+          const count = counts[s.value] || 0;
+          return (
+            <button
+              key={s.value}
+              onClick={() => updateParam("source", s.value)}
+              className={`shrink-0 px-3 sm:px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all duration-200 flex items-center gap-1.5 sm:gap-2 ${
+                currentSource === s.value
+                  ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20 scale-105"
+                  : "bg-secondary/40 text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
+              }`}
+            >
+              <span className="whitespace-nowrap">{s.label}</span>
+              <span
+                className={`inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[9px] font-bold min-w-[16px] ${
+                  currentSource === s.value
+                    ? "bg-primary-foreground/20 text-primary-foreground"
+                    : "bg-foreground/10 text-muted-foreground"
+                }`}
+              >
+                {count}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3 sm:gap-4 shrink-0 self-end sm:self-auto">
         <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">
           Sequence
         </span>

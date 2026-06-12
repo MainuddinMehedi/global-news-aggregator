@@ -11,7 +11,7 @@ import {
 import { useRouter, useSearchParams } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { SentimentBadge } from "./SentimentBadge";
-import { formatRelativeTime, getBiasBadgeVariant } from "@/lib/utils";
+import { formatRelativeTime, getEventRegionBadgeVariant } from "@/lib/utils";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { LinkSquare02Icon, Sparkles } from "@hugeicons/core-free-icons";
 import Link from "next/link";
@@ -37,7 +37,7 @@ export function ArticleDetailsModal({ article }: { article: Article | null }) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-190 max-h-[85vh] flex-col overflow-y-auto p-0 rounded-lg border border-border/50 shadow-2xl no-scrollbar">
+      <DialogContent className="sm:max-w-[52rem] max-h-[85vh] flex-col overflow-y-auto p-0 rounded-lg border border-border/50 shadow-2xl no-scrollbar">
         <DialogHeader className="px-5 py-4 border-b border-border/50 shrink-0">
           <div className="flex flex-wrap items-center gap-2 mb-2">
             <span className="w-6 h-6 rounded bg-secondary flex items-center justify-center text-[9px] font-bold text-secondary-foreground">
@@ -138,21 +138,31 @@ export function ArticleDetailsModal({ article }: { article: Article | null }) {
                 </p>
               </div>
               <div className="mx-auto">
-                <span className="text-xs text-muted-foreground/80 tracking-tighter uppercase">
-                  Perspective Countries
+                <span className="text-xs block text-muted-foreground/80 tracking-tighter uppercase">
+                  Publisher Profile
                 </span>
-                <p className="text-sm text-zinc-300 mt-1">
-                  {article.perspectiveCountries.length > 0
-                    ? article.perspectiveCountries.join(", ")
-                    : "Not analyzed"}
-                </p>
+                <div className="flex flex-col gap-1 mt-1">
+                  {article.sourceType && (
+                    <span className="text-xs text-zinc-300 font-medium">
+                      {article.sourceType}
+                    </span>
+                  )}
+                  {article.sourceOrigin && (
+                    <span className="text-xs text-zinc-400">
+                      Based in {article.sourceOrigin}
+                    </span>
+                  )}
+                  {!article.sourceType && !article.sourceOrigin && (
+                    <span className="text-xs text-zinc-500">Unknown Profile</span>
+                  )}
+                </div>
               </div>
               <div className="mx-auto space-y-2">
                 <span className="text-xs block text-muted-foreground/80 tracking-tighter uppercase">
-                  Bias Category:
+                  Event Region:
                 </span>
-                <Badge variant={getBiasBadgeVariant(article.biasCategory)}>
-                  {article.biasCategory || "Neutral"}
+                <Badge variant={getEventRegionBadgeVariant(article.eventRegion)}>
+                  {article.eventRegion || "Unknown"}
                 </Badge>
               </div>
             </div>

@@ -1,21 +1,33 @@
 import { SentimentBadge } from "./SentimentBadge";
 import { Article } from "@/types/article";
+import BookmarkButton from "@/components/ui/BookmarkButton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
-import { formatRelativeTime, getBiasBadgeVariant } from "@/lib/utils";
+import { cn, formatRelativeTime, getEventRegionBadgeVariant } from "@/lib/utils";
 import AiButton from "./AiButton";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Globe } from "@hugeicons/core-free-icons";
 import { RelativeTime } from "@/components/ui/RelativeTime";
+import { SourceAvatar } from "@/components/ui/SourceAvatar";
 
-export default function ArticleCard({ article }: { article: Article }) {
+export default function ArticleCard({
+  article,
+  storySlug,
+}: {
+  article: Article;
+  storySlug?: string;
+}) {
+  const articleHref = storySlug
+    ? `/article/${article.slug || article.id}?story=${storySlug}`
+    : `/article/${article.slug || article.id}`;
+
   return (
     <Card className="h-full flex flex-col gap-3 group hover:border-primary/50 transition-colors duration-200">
       <CardHeader className="">
         <div className="flex items-start justify-between gap-2">
           <Link
-            href={`/article/${article.slug || article.id}`}
+            href={articleHref}
             scroll={false}
             className="flex-1"
           >
@@ -24,12 +36,15 @@ export default function ArticleCard({ article }: { article: Article }) {
             </CardTitle>
           </Link>
           <div className="flex items-center gap-2">
-            {article.biasCategory && (
-              <Badge variant={getBiasBadgeVariant(article.biasCategory)}>
-                {article.biasCategory}
+            {article.eventRegion && (
+              <Badge
+                variant={getEventRegionBadgeVariant(article.eventRegion)}
+                className="hidden sm:inline-flex"
+              >
+                {article.eventRegion}
               </Badge>
             )}
-
+            <BookmarkButton type="article" targetId={article.id} />
             <AiButton article={article} />
           </div>
         </div>
@@ -38,9 +53,11 @@ export default function ArticleCard({ article }: { article: Article }) {
       <CardContent className="flex-1 flex flex-col space-y-3">
         {/* Source · Time · Sentiment */}
         <div className="flex items-center space-x-2 text-xs">
-          <div className="w-5 h-5 rounded bg-secondary flex items-center justify-center text-[9px] font-bold text-secondary-foreground border border-border/50">
-            {article.source.substring(0, 2).toUpperCase()}
-          </div>
+          <SourceAvatar
+            name={article.source}
+            url={article.url}
+            className="w-5 h-5 rounded"
+          />
           <span className="font-semibold text-foreground/80">
             {article.source}
           </span>
@@ -54,7 +71,7 @@ export default function ArticleCard({ article }: { article: Article }) {
 
         {/* Snippet */}
         <Link
-          href={`/article/${article.slug || article.id}`}
+          href={articleHref}
           scroll={false}
           className="flex-1 block"
         >
@@ -79,18 +96,24 @@ export default function ArticleCard({ article }: { article: Article }) {
             </div>
           )}
 
-          {article.perspectiveCountries &&
-            article.perspectiveCountries.length > 0 && (
-              <div className="flex items-center space-x-1 ml-auto">
+          <div className="flex items-center space-x-3 ml-auto">
+            {article.sourceType && (
+              <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
+                {article.sourceType}
+              </span>
+            )}
+            {article.sourceOrigin && (
+              <div className="flex items-center space-x-1">
                 <HugeiconsIcon
                   icon={Globe}
                   className="w-3 h-3 text-muted-foreground"
                 />
-                <span className="text-[10px] text-muted-foreground">
-                  {article.perspectiveCountries.slice(0, 3).join(", ")}
+                <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
+                  {article.sourceOrigin}
                 </span>
               </div>
             )}
+          </div>
         </div>
       </CardContent>
     </Card>

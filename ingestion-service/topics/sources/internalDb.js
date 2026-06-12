@@ -10,46 +10,11 @@
  */
 
 import { prisma } from "../../db/prisma.js";
-import { parseQuery } from "../utils/parseQuery.js";
+import { getPrismaWhere } from "../utils/parseQuery.js";
 
 const MAX_RESULTS = 200;
 
-/**
- * Build a Prisma WHERE clause from parsed query groups.
- *
- * Each group produces an AND condition (all terms in the group must appear
- * in either title or contentSnippet). Groups are OR'd together.
- */
-function buildWhereClause(groups, sinceDate) {
-  if (groups.length === 0) return null;
-
-  const groupConditions = groups.map((terms) => ({
-    AND: terms.map((term) => ({
-      OR: [
-        { rawArticle: { title: { contains: term, mode: "insensitive" } } },
-        {
-          rawArticle: {
-            contentSnippet: { contains: term, mode: "insensitive" },
-          },
-        },
-      ],
-    })),
-  }));
-
-  const where = {
-    OR: groupConditions,
-  };
-
-  // If sinceDate is set, only scan articles newer than that
-  // If null (initial scan), search the entire DB
-  if (sinceDate) {
-    where.rawArticle = {
-      publishedAt: { gt: sinceDate },
-    };
-  }
-
-  return where;
-}
+// Removed buildWhereClause
 
 /**
  * Scan the internal ProcessedArticle table for a single locked topic.
@@ -64,9 +29,8 @@ function buildWhereClause(groups, sinceDate) {
 export async function scanInternalDb(topic, options = {}) {
   const { fullScan = false, limit = MAX_RESULTS } = options;
 
-  const groups = parseQuery(topic);
-
-  if (groups.length === 0) {
+  const where = getPrismaWhere(topic);
+  if (Object.keys(where).length === 0 && (!topic.aiRefinedQuery && !topic.displayName)) {
     console.warn(
       `⚠️ [internalDb] No valid search terms for topic "${topic.displayName}"`,
     );
@@ -75,8 +39,17 @@ export async function scanInternalDb(topic, options = {}) {
 
   const sinceDate = fullScan ? null : topic.lastScannedAt;
 
-  const where = buildWhereClause(groups, sinceDate);
-  if (!where) return [];
+  // If sinceDate is set, only scan articles newer than that
+  if (sinceDate) {
+    if (!where.AND) {
+       where.AND = [];
+    }
+    where.AND.push({
+      rawArticle: {
+        publishedAt: { gt: sinceDate },
+      }
+    });
+  }
 
   let sinceStr = " (full scan)";
   if (sinceDate) {
@@ -98,7 +71,7 @@ export async function scanInternalDb(topic, options = {}) {
   }
 
   console.log(
-    `🔍 [internalDb] Scanning for "${topic.displayName}" — ${groups.length} term group(s)${sinceStr}`,
+    `🔍 [internalDb] Scanning for "${topic.displayName}"${sinceStr}`,
   );
 
   const matches = await prisma.processedArticle.findMany({
@@ -134,4 +107,4 @@ export async function scanInternalDb(topic, options = {}) {
 }
 
 // Export for unit testing / direct usage
-export { buildWhereClause };
+export { getPrismaWhere };

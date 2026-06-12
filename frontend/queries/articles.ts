@@ -6,7 +6,12 @@ interface getArticlesParams {
   category: string;
   sort: string;
   search: string;
+  region?: string;
+  origin?: string;
+  type?: string;
+  story?: string;
   cursor?: string;
+  enabledSources?: string[];
 }
 
 const TAKE = 20;
@@ -15,7 +20,12 @@ export async function getArticles({
   category,
   sort,
   search,
+  region,
+  origin,
+  type,
+  story,
   cursor,
+  enabledSources,
 }: getArticlesParams): Promise<{
   articles: Article[];
   nextCursor: string | null;
@@ -31,6 +41,39 @@ export async function getArticles({
             categories: {
               some: {
                 name: category,
+              },
+            },
+          },
+        ]
+      : [];
+
+  let regionFilter: any[] = [];
+  if (region && region !== "all") {
+    regionFilter = [{ eventRegion: region }];
+  }
+
+  let originFilter: any[] = [];
+  if (origin && origin !== "all") {
+    originFilter = [{ rawArticle: { sourceOrigin: origin } }];
+  }
+
+  let typeFilter: any[] = [];
+  if (type && type !== "all") {
+    typeFilter = [{ rawArticle: { sourceType: type } }];
+  }
+
+  let sourcesFilter: any[] = [];
+  if (enabledSources) {
+    sourcesFilter = [{ rawArticle: { source: { in: enabledSources } } }];
+  }
+
+  const storyFilter =
+    story && story !== "all"
+      ? [
+          {
+            storyClusters: {
+              some: {
+                slug: story,
               },
             },
           },
@@ -79,7 +122,7 @@ export async function getArticles({
       take: TAKE + 1,
       ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
       where: {
-        AND: [...categoryFilter, ...searchFilter],
+        AND: [...categoryFilter, ...searchFilter, ...regionFilter, ...originFilter, ...typeFilter, ...storyFilter, ...sourcesFilter],
       },
       orderBy,
       include: {
@@ -101,13 +144,15 @@ export async function getArticles({
       contentSnippet: article.rawArticle.contentSnippet,
       extractedContent: article.rawArticle.extractedContent,
       biasNote: article.biasNote,
-      biasCategory: article.biasCategory,
+      eventRegion: article.eventRegion,
       sentimentScore: article.sentimentScore,
       perspectiveCountries: article.perspectiveCountries,
       url: article.rawArticle.url,
       categories: article.categories,
       entities: article.entities,
       sourceCountry: article.rawArticle.sourceCountry,
+      sourceOrigin: article.rawArticle.sourceOrigin,
+      sourceType: article.rawArticle.sourceType,
       slug: article.rawArticle.slug,
     }));
 
@@ -152,13 +197,15 @@ export async function getArticleById(id: string): Promise<Article | null> {
       contentSnippet: raw.rawArticle.contentSnippet,
       extractedContent: raw.rawArticle.extractedContent,
       biasNote: raw.biasNote,
-      biasCategory: raw.biasCategory,
+      eventRegion: raw.eventRegion,
       sentimentScore: raw.sentimentScore,
       perspectiveCountries: raw.perspectiveCountries,
       url: raw.rawArticle.url,
       categories: raw.categories,
       entities: raw.entities,
       sourceCountry: raw.rawArticle.sourceCountry,
+      sourceOrigin: raw.rawArticle.sourceOrigin,
+      sourceType: raw.rawArticle.sourceType,
       slug: raw.rawArticle.slug,
     };
   } catch (error) {

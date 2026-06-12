@@ -14,7 +14,7 @@
 
 import * as cheerio from "cheerio";
 import hashSnippet from "../../utils/hashSnippet.js";
-import { parseQuery } from "../utils/parseQuery.js";
+import { evaluateQuery } from "../utils/parseQuery.js";
 
 const USER_AGENT = "global-news-aggregator/1.0 (LockedTopics Webpage Monitor)";
 
@@ -72,12 +72,8 @@ export async function scanWebpage(topic, sourceConfig, options = {}) {
     );
 
     // 2. Simple Keyword Relevance Check
-    const contentLower = cleanText.toLowerCase();
-    const groups = parseQuery(topic);
-
-    const matches = groups.some((group) =>
-      group.every((term) => contentLower.includes(term.toLowerCase())),
-    );
+    const contentLower = cleanText;
+    const matches = evaluateQuery(topic, contentLower);
 
     if (!matches) {
       console.log(

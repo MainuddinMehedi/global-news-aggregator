@@ -7,6 +7,10 @@ import { AiUsageLineChart } from "@/components/widgets/charts/AiUsageLineChart";
 import { IngestionVolumeChart } from "@/components/widgets/charts/IngestionVolumeChart";
 import { SourceStatusIndicator } from "@/components/widgets/SourceStatusIndicator";
 import { RelativeTime } from "@/components/ui/RelativeTime";
+import { AnalyticsTimeFilter } from "@/components/widgets/AnalyticsTimeFilter";
+import { ModelUtilizationChart } from "@/components/widgets/charts/ModelUtilizationChart";
+import { TopicSourceDistributionChart } from "@/components/widgets/charts/TopicSourceDistributionChart";
+import { ChatTelemetryWidget } from "@/components/widgets/ChatTelemetryWidget";
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -110,8 +114,13 @@ function PanelShell({
 
 // ── Page ───────────────────────────────────────────────────────────────────
 
-export default async function AnalyticsPage() {
-  const data = await getAnalyticsData();
+export default async function AnalyticsPage(props: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  const searchParams = await props.searchParams;
+  const timeRange = typeof searchParams.range === "string" ? searchParams.range : "7d";
+  
+  const data = await getAnalyticsData(timeRange);
 
   const sentimentLabel =
     data.avgSentiment == null
@@ -134,17 +143,17 @@ export default async function AnalyticsPage() {
   const maxEntityCount = data.topEntities[0]?.count ?? 1;
   const maxCountryCount = data.topSourceCountries[0]?.count ?? 1;
 
-  const totalAiTokens = data.aiUsageLast7Days.reduce(
+  const totalAiTokens = data.aiUsageChart.reduce(
     (s, d) => s + d.tokensUsed,
     0,
   );
-  const totalAiCost = data.aiUsageLast7Days.reduce(
+  const totalAiCost = data.aiUsageChart.reduce(
     (s, d) => s + d.estimatedCost,
     0,
   );
 
   return (
-    <div className="relative min-h-full bg-background">
+    <div className="relative min-h-full bg-background pb-20">
       <ScanlineOverlay />
 
       {/* Ambient glow */}
@@ -152,7 +161,7 @@ export default async function AnalyticsPage() {
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 py-10 space-y-12">
         {/* ── Page header ─────────────────────────────────────────────── */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
             <div className="flex items-center gap-3 mb-3">
               <div className="flex gap-1">
@@ -161,19 +170,16 @@ export default async function AnalyticsPage() {
                 <div className="w-1.5 h-1.5 rounded-full bg-primary/30 animate-pulse delay-150" />
               </div>
               <span className="text-[9px] font-black uppercase tracking-[0.4em] text-primary/60">
-                Live Intelligence
+                Command Center Intelligence
               </span>
             </div>
-            <h1 className="text-4xl md:text-5xl font-black tracking-tighter text-foreground">
+            <h1 className="text-4xl md:text-5xl font-black tracking-tighter text-foreground mb-4">
               Analytics
               <span className="text-primary">.</span>
             </h1>
-            <p className="text-sm text-muted-foreground mt-2 max-w-md leading-relaxed">
-              Bias telemetry, source intelligence, and coverage signals from the
-              live ingestion pipeline.
-            </p>
+            <AnalyticsTimeFilter />
           </div>
-          <div className="text-right">
+          <div className="text-left md:text-right">
             <div className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground/50 mb-1">
               Corpus Size
             </div>
@@ -229,7 +235,7 @@ export default async function AnalyticsPage() {
             {/* Source Health Table */}
             <PanelShell className="lg:col-span-1 flex flex-col">
               <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-6 px-1">
-                Source Health (7 Days)
+                Source Health
               </h3>
 
               <div className="flex items-center justify-between mb-5 px-1">
@@ -254,7 +260,7 @@ export default async function AnalyticsPage() {
               <div className="h-px w-full bg-border/20 mb-8" />
 
               <div className="flex-1 space-y-4">
-                {data.sourceHealth.slice(0, 6).map((source) => (
+                {data.sourceHealth.length > 0 ? data.sourceHealth.slice(0, 6).map((source) => (
                   <div
                     key={source.name}
                     className="flex items-center justify-between group px-1"
@@ -275,12 +281,10 @@ export default async function AnalyticsPage() {
                       />
                     </div>
                   </div>
-                ))}
+                )) : (
+                  <p className="text-xs text-muted-foreground/50 italic text-center">No active sources in this timeframe.</p>
+                )}
               </div>
-
-              <button className="mt-8 w-full py-2.5 rounded-xl border border-border/40 bg-card/40 text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground hover:bg-primary/5 hover:border-primary/30 hover:text-primary transition-all duration-300">
-                View All Sources
-              </button>
             </PanelShell>
 
             {/* Ingestion Volume Chart */}
@@ -294,10 +298,23 @@ export default async function AnalyticsPage() {
                 </p>
               </div>
               <div className="flex-1 w-full min-h-[320px]">
-                <IngestionVolumeChart data={data.ingestionVolumeLast7Days} />
+                {data.ingestionVolumeChart.length > 0 ? (
+                  <IngestionVolumeChart data={data.ingestionVolumeChart} />
+                ) : (
+                  <p className="text-xs text-muted-foreground/50 italic text-center mt-20">No ingestion data available.</p>
+                )}
               </div>
             </PanelShell>
           </div>
+        </section>
+
+        {/* ── Section: Command Telemetry ───────────────────────────────── */}
+        <section className="space-y-6">
+          <SectionHeader
+            title="Command Telemetry"
+            sub="Agent Chat & Interactions"
+          />
+          <ChatTelemetryWidget data={data.chatTelemetry} />
         </section>
 
         {/* ── Section: News Intelligence ───────────────────────────────── */}
@@ -308,36 +325,40 @@ export default async function AnalyticsPage() {
           />
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Bias Distribution */}
+            {/* Event Region Distribution */}
             <PanelShell>
               <SectionHeader
-                title="Bias Distribution"
+                title="Event Region Distribution"
                 sub="Interactive Donut Analysis"
               />
-              <div className="flex flex-col md:flex-row items-center gap-6">
-                <BiasDonutChart data={data.biasDistribution} />
-                <div className="w-full md:w-48 space-y-2">
-                  {data.biasDistribution.map((item) => (
-                    <div
-                      key={item.label}
-                      className="flex items-center justify-between group"
-                    >
-                      <div className="flex items-center gap-2">
-                        <div
-                          className="w-2 h-2 rounded-full"
-                          style={{ backgroundColor: item.color }}
-                        />
-                        <span className="text-[10px] font-bold text-muted-foreground group-hover:text-foreground transition-colors uppercase tracking-wider">
-                          {item.label}
+              {data.eventRegionDistribution.length > 0 ? (
+                <div className="flex flex-col md:flex-row items-center gap-6">
+                  <BiasDonutChart data={data.eventRegionDistribution} />
+                  <div className="w-full md:w-48 space-y-2">
+                    {data.eventRegionDistribution.map((item) => (
+                      <div
+                        key={item.label}
+                        className="flex items-center justify-between group"
+                      >
+                        <div className="flex items-center gap-2">
+                          <div
+                            className="w-2 h-2 rounded-full"
+                            style={{ backgroundColor: item.color }}
+                          />
+                          <span className="text-[10px] font-bold text-muted-foreground group-hover:text-foreground transition-colors uppercase tracking-wider">
+                            {item.label}
+                          </span>
+                        </div>
+                        <span className="text-[10px] font-black font-mono text-foreground/80">
+                          {item.percentage}%
                         </span>
                       </div>
-                      <span className="text-[10px] font-black font-mono text-foreground/80">
-                        {item.percentage}%
-                      </span>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <p className="text-xs text-muted-foreground/50 italic py-10 text-center">No event region data available.</p>
+              )}
             </PanelShell>
 
             {/* Sentiment Distribution */}
@@ -354,36 +375,40 @@ export default async function AnalyticsPage() {
             {/* Source Countries */}
             <PanelShell>
               <SectionHeader title="Source Geography" />
-              <div className="space-y-2.5">
-                {data.topSourceCountries.map((item, i) => (
-                  <div key={item.country} className="flex items-center gap-3">
-                    <span className="text-[9px] font-black font-mono text-muted-foreground/40 w-4 text-right">
-                      {String(i + 1).padStart(2, "0")}
-                    </span>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs font-bold text-foreground/80">
-                          {item.country}
-                        </span>
-                        <span className="text-[10px] font-mono text-muted-foreground">
-                          {item.count.toLocaleString()}
-                        </span>
+              {data.topSourceCountries.length > 0 ? (
+                <div className="space-y-2.5">
+                  {data.topSourceCountries.map((item, i) => (
+                    <div key={item.country} className="flex items-center gap-3">
+                      <span className="text-[9px] font-black font-mono text-muted-foreground/40 w-4 text-right">
+                        {String(i + 1).padStart(2, "0")}
+                      </span>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs font-bold text-foreground/80">
+                            {item.country}
+                          </span>
+                          <span className="text-[10px] font-mono text-muted-foreground">
+                            {item.count.toLocaleString()}
+                          </span>
+                        </div>
+                        <div className="h-1 w-full bg-border/20 rounded-full overflow-hidden">
+                          <div
+                            className="h-full rounded-full bg-primary/60 transition-all duration-1000"
+                            style={{
+                              width: `${(item.count / maxCountryCount) * 100}%`,
+                            }}
+                          />
+                        </div>
                       </div>
-                      <div className="h-1 w-full bg-border/20 rounded-full overflow-hidden">
-                        <div
-                          className="h-full rounded-full bg-primary/60 transition-all duration-1000"
-                          style={{
-                            width: `${(item.count / maxCountryCount) * 100}%`,
-                          }}
-                        />
-                      </div>
+                      <span className="text-[10px] font-black font-mono text-primary/60 w-8 text-right">
+                        {item.percentage}%
+                      </span>
                     </div>
-                    <span className="text-[10px] font-black font-mono text-primary/60 w-8 text-right">
-                      {item.percentage}%
-                    </span>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground/50 italic py-10 text-center">No geography data available.</p>
+              )}
             </PanelShell>
 
             {/* Category Breakdown */}
@@ -392,113 +417,139 @@ export default async function AnalyticsPage() {
                 title="Coverage by Category"
                 sub="Top 8 Categories"
               />
-              <CategoryBarChart data={data.categoryBreakdown} />
+              {data.categoryBreakdown.length > 0 ? (
+                <CategoryBarChart data={data.categoryBreakdown} />
+              ) : (
+                <p className="text-xs text-muted-foreground/50 italic py-10 text-center">No category data available.</p>
+              )}
             </PanelShell>
           </div>
         </section>
 
-        {/* ── Section: Knowledge Graph & Pipeline ───────────────────────── */}
+        {/* ── Section: Topics & Narratives ───────────────────────────────── */}
         <section className="space-y-6">
           <SectionHeader
-            title="Pipeline Architecture"
-            sub="Entity Cloud & AI Usage"
+            title="Topics & Narratives"
+            sub="Entities, Sources & Impact"
           />
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <PanelShell className="lg:col-span-1">
+              <SectionHeader title="Topic Sources" />
+              <TopicSourceDistributionChart data={data.topicSourceDistribution} />
+            </PanelShell>
 
-          {/* Top Entities */}
-          <PanelShell>
-            <SectionHeader
-              title="High-Signal Entities"
-              sub="Most referenced across corpus"
-            />
-            {data.topEntities.length > 0 ? (
-              <div className="flex flex-wrap gap-2">
-                {data.topEntities.map((item) => {
-                  const intensity = Math.round(
-                    (item.count / maxEntityCount) * 100,
-                  );
-                  return (
-                    <div
-                      key={item.entity}
-                      className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-border/30 bg-card/30 hover:border-primary/40 transition-colors group"
-                    >
-                      <span className="text-xs font-bold text-foreground/80 group-hover:text-foreground transition-colors">
-                        {item.entity}
-                      </span>
-                      <span
-                        className="text-[9px] font-black font-mono px-1.5 py-0.5 rounded-full"
-                        style={{
-                          backgroundColor: `oklch(from var(--primary) l c h / ${(intensity / 100) * 0.25})`,
-                          color: `oklch(from var(--primary) l c h / 0.8)`,
-                        }}
+            <PanelShell className="lg:col-span-2">
+              <SectionHeader title="Top Entities" />
+              {data.topEntities.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {data.topEntities.map((item) => {
+                    const intensity = Math.round(
+                      (item.count / maxEntityCount) * 100,
+                    );
+                    return (
+                      <div
+                        key={item.entity}
+                        className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-border/30 bg-card/30 hover:border-primary/40 transition-colors group"
                       >
-                        {item.count}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <p className="text-xs text-muted-foreground/50 italic py-4 text-center">
-                No entity data yet. Articles need AI processing.
-              </p>
-            )}
-          </PanelShell>
+                        <span className="text-xs font-bold text-foreground/80 group-hover:text-foreground transition-colors">
+                          {item.entity}
+                        </span>
+                        <span
+                          className="text-[9px] font-black font-mono px-1.5 py-0.5 rounded-full"
+                          style={{
+                            backgroundColor: `oklch(from var(--primary) l c h / ${(intensity / 100) * 0.25})`,
+                            color: `oklch(from var(--primary) l c h / 0.8)`,
+                          }}
+                        >
+                          {item.count}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground/50 italic py-4 text-center">
+                  No entity data yet. Articles need AI processing.
+                </p>
+              )}
+            </PanelShell>
+          </div>
+        </section>
 
-          {/* AI Usage */}
-          <PanelShell>
-            <SectionHeader
-              title="AI Pipeline — Last 7 Days"
-              sub="Token & Cost Area Analysis"
-            />
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-              <div>
-                <div className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground/60 mb-1">
-                  Total Tokens
-                </div>
-                <div className="text-2xl font-black font-mono text-foreground">
-                  {formatNumber(totalAiTokens)}
-                </div>
-              </div>
-              <div>
-                <div className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground/60 mb-1">
-                  Est. Cost
-                </div>
-                <div className="text-2xl font-black font-mono text-foreground">
-                  {formatCost(totalAiCost)}
-                </div>
-              </div>
-              <div>
-                <div className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground/60 mb-1">
-                  Runs
-                </div>
-                <div className="text-2xl font-black font-mono text-foreground">
-                  {data.aiUsageLast7Days.length}
-                </div>
-              </div>
-              <div>
-                <div className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground/60 mb-1">
-                  Avg / Day
-                </div>
-                <div className="text-2xl font-black font-mono text-foreground">
-                  {data.aiUsageLast7Days.length > 0
-                    ? formatNumber(
-                        Math.round(
-                          totalAiTokens / data.aiUsageLast7Days.length,
-                        ),
-                      )
-                    : "—"}
-                </div>
-              </div>
-            </div>
+        {/* ── Section: AI Intelligence ──────────────────────────────────── */}
+        <section className="space-y-6">
+          <SectionHeader
+            title="AI Architecture"
+            sub="Pipeline Cost & Utilization"
+          />
+          
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <PanelShell className="lg:col-span-1">
+              <SectionHeader title="Model Utilization" />
+              {data.modelUtilization.length > 0 ? (
+                <ModelUtilizationChart data={data.modelUtilization} />
+              ) : (
+                <p className="text-xs text-muted-foreground/50 italic py-10 text-center">No AI model utilization logged.</p>
+              )}
+            </PanelShell>
 
-            {data.aiUsageLast7Days.length > 0 ? (
-              <AiUsageLineChart data={data.aiUsageLast7Days} />
-            ) : (
-              <p className="text-xs text-muted-foreground/50 italic py-4 text-center">
-                No AI usage data in the last 7 days.
-              </p>
-            )}
-          </PanelShell>
+            <PanelShell className="lg:col-span-2">
+              <SectionHeader
+                title="AI Usage Pipeline"
+                sub="Token & Cost Area Analysis"
+              />
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <div>
+                  <div className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground/60 mb-1">
+                    Total Tokens
+                  </div>
+                  <div className="text-2xl font-black font-mono text-foreground">
+                    {formatNumber(totalAiTokens)}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground/60 mb-1">
+                    Est. Cost
+                  </div>
+                  <div className="text-2xl font-black font-mono text-foreground">
+                    {formatCost(totalAiCost)}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground/60 mb-1">
+                    Runs
+                  </div>
+                  <div className="text-2xl font-black font-mono text-foreground">
+                    {data.aiUsageChart.length}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground/60 mb-1">
+                    Avg / Day
+                  </div>
+                  <div className="text-2xl font-black font-mono text-foreground">
+                    {data.aiUsageChart.length > 0
+                      ? formatNumber(
+                          Math.round(
+                            totalAiTokens / data.aiUsageChart.length,
+                          ),
+                        )
+                      : "—"}
+                  </div>
+                </div>
+              </div>
+
+              {data.aiUsageChart.length > 0 ? (
+                <div className="h-64">
+                  <AiUsageLineChart data={data.aiUsageChart} />
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground/50 italic py-4 text-center">
+                  No AI usage data in this timeframe.
+                </p>
+              )}
+            </PanelShell>
+          </div>
         </section>
 
         {/* ── Footer ───────────────────────────────────────────────────── */}

@@ -13,8 +13,7 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { Add01Icon } from "@hugeicons/core-free-icons";
 import Step1Intent from "./Step1Intent";
 import Step2Sources from "./Step2Sources";
-import Step3AIReview from "./Step3AIReview";
-import Step4Confirm from "./Step4Confirm";
+import Step3Launch from "./Step3Launch";
 import { SourceConfig, CreateTopicData } from "@/types/lockedTopic";
 
 export default function CreateTopicModal({
@@ -28,6 +27,12 @@ export default function CreateTopicModal({
 }) {
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(1);
+  const [notifyEnabled, setNotifyEnabled] = useState(true);
+  const [notifyMode, setNotifyMode] = useState<"DIGEST" | "ALERT">("DIGEST");
+  const [notifyChannels, setNotifyChannels] = useState({
+    discord: false,
+    telegram: false,
+  });
   const [data, setData] = useState<CreateTopicData>(
     initialData || {
       displayName: "",
@@ -42,12 +47,14 @@ export default function CreateTopicModal({
 
   const nextStep = () => setStep((s) => s + 1);
   const prevStep = () => setStep((s) => s - 1);
-
   const reset = () => {
     setOpen(false);
     // Use a small timeout to let the modal finish closing animation before resetting state
     setTimeout(() => {
       setStep(1);
+      setNotifyEnabled(true);
+      setNotifyMode("DIGEST");
+      setNotifyChannels({ discord: false, telegram: false });
       if (!initialData) {
         setData({
           displayName: "",
@@ -89,14 +96,14 @@ export default function CreateTopicModal({
                 <span className="text-primary">Topic</span>
               </DialogTitle>
               <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground mt-2">
-                Step {step} of 4: {getStepTitle(step)}
+                Step {step} of 3: {getStepTitle(step)}
               </p>
             </div>
           </div>
           <div className="w-full bg-secondary h-1.5 mt-8 rounded-full overflow-hidden">
             <div
               className="bg-primary h-full transition-all duration-700 ease-in-out shadow-[0_0_8px_rgba(var(--primary),0.5)]"
-              style={{ width: `${(step / 4) * 100}%` }}
+              style={{ width: `${(step / 3) * 100}%` }}
             />
           </div>
         </DialogHeader>
@@ -114,16 +121,14 @@ export default function CreateTopicModal({
             />
           )}
           {step === 3 && (
-            <Step3AIReview
+            <Step3Launch
               data={data}
-              setData={setData}
-              onNext={nextStep}
-              onPrev={prevStep}
-            />
-          )}
-          {step === 4 && (
-            <Step4Confirm
-              data={data}
+              notifyEnabled={notifyEnabled}
+              notifyMode={notifyMode}
+              notifyChannels={notifyChannels}
+              setNotifyEnabled={setNotifyEnabled}
+              setNotifyMode={setNotifyMode}
+              setNotifyChannels={setNotifyChannels}
               onPrev={prevStep}
               onComplete={reset}
               topicId={topicId}
@@ -142,9 +147,7 @@ function getStepTitle(step: number) {
     case 2:
       return "Select Sources";
     case 3:
-      return "AI Review";
-    case 4:
-      return "Surveillance Ready";
+      return "Review & Launch";
     default:
       return "";
   }

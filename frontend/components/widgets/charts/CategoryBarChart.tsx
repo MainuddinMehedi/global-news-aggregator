@@ -11,6 +11,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 interface CategoryBarChartProps {
   data: {
@@ -22,6 +23,7 @@ interface CategoryBarChartProps {
 
 export function CategoryBarChart({ data }: CategoryBarChartProps) {
   const [mounted, setMounted] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -87,7 +89,13 @@ export function CategoryBarChart({ data }: CategoryBarChartProps) {
               return null;
             }}
           />
-          <Bar dataKey="count" radius={[0, 4, 4, 0]} barSize={16}>
+          <Bar 
+            dataKey="count" 
+            radius={[0, 4, 4, 0]} 
+            barSize={16}
+            onClick={(data) => router.push(`/?category=${data.name}`)}
+            className="cursor-pointer"
+          >
             {chartData.map((entry, index) => (
               <Cell
                 key={`cell-${index}`}

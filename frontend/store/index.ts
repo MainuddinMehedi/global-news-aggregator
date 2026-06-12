@@ -26,6 +26,13 @@ interface UserSlice {
   setUser: (user: null) => void;
 }
 
+// ─── Auth slice ───────────────────────────────────────────────────────────────
+interface AuthSlice {
+  isLoginModalOpen: boolean;
+  setLoginModalOpen: (isOpen: boolean) => void;
+}
+
+
 // ─── Topic slice ──────────────────────────────────────────────────────────────
 interface TopicSlice {
   totalMatchCount: number;
@@ -51,6 +58,24 @@ export type Theme = "light" | "dark" | "system";
 export type ColorTheme = "maia" | "ember" | "iris" | "pine" | "slate";
 export type ResponseStyle = "concise" | "detailed";
 
+export type HomePageMode = "continuous" | "daily" | "hourly";
+export type NotificationMode = "alert" | "digest" | "none";
+
+export interface CustomSource {
+  id: string;
+  name: string;
+  url: string;
+  country: string;
+  sourceOrigin: string;
+  enabled: boolean;
+}
+
+export interface NotificationChannels {
+  discord: string;
+  telegram: string;
+  mode: NotificationMode;
+}
+
 interface SettingsState {
   theme: Theme;
   colorTheme: ColorTheme;
@@ -65,6 +90,10 @@ interface SettingsState {
   responseStyle: ResponseStyle;
   favoriteCategories: string[];
   hiddenCategories: string[];
+  extraCategories: string[];
+  homePageMode: HomePageMode;
+  notificationChannels: NotificationChannels;
+  hasOnboardedSources: boolean;
 }
 
 interface SettingsActions {
@@ -84,6 +113,7 @@ type AppStore = FeedSlice &
   UserSlice &
   ChatSidebarSlice &
   TopicSlice &
+  AuthSlice &
   SettingsSlice;
 
 export const useAppStore = create<AppStore>()(
@@ -104,6 +134,10 @@ export const useAppStore = create<AppStore>()(
       // ── User (Volatile) ──
       user: null,
       setUser: (user) => set({ user }),
+
+      // ── Auth (Volatile) ──
+      isLoginModalOpen: false,
+      setLoginModalOpen: (isOpen) => set({ isLoginModalOpen: isOpen }),
 
       // ── Topic (Volatile) ──
       totalMatchCount: 0,
@@ -130,10 +164,14 @@ export const useAppStore = create<AppStore>()(
       compactMode: false,
       showBiasBadges: true,
       showSentiment: true,
-      defaultAiModel: "groq-llama-3",
+      defaultAiModel: "groq/compound",
       responseStyle: "concise",
       favoriteCategories: [],
       hiddenCategories: [],
+      extraCategories: [],
+      homePageMode: "continuous",
+      notificationChannels: { discord: "", telegram: "", mode: "none" },
+      hasOnboardedSources: false,
       setSetting: (key, value) => set((state) => ({ ...state, [key]: value })),
     }),
     {
@@ -154,6 +192,10 @@ export const useAppStore = create<AppStore>()(
         responseStyle: state.responseStyle,
         favoriteCategories: state.favoriteCategories,
         hiddenCategories: state.hiddenCategories,
+        extraCategories: state.extraCategories,
+        homePageMode: state.homePageMode,
+        notificationChannels: state.notificationChannels,
+        hasOnboardedSources: state.hasOnboardedSources,
       }),
     },
   ),
@@ -167,6 +209,9 @@ export const useStoryCount = () => useAppStore((s) => s.storyCount);
 export const useSetStoryCount = () => useAppStore((s) => s.setStoryCount);
 export const useUnreadCount = () => useAppStore((s) => s.unreadCount);
 export const useSetUnreadCount = () => useAppStore((s) => s.setUnreadCount);
+
+export const useIsLoginModalOpen = () => useAppStore((s) => s.isLoginModalOpen);
+export const useSetLoginModalOpen = () => useAppStore((s) => s.setLoginModalOpen);
 
 export const useIsChatOpen = () => useAppStore((s) => s.isChatOpen);
 export const useOpenChat = () => useAppStore((s) => s.openChat);
@@ -185,7 +230,27 @@ export const useSetLockedTopicCount = () =>
 
 // Settings selectors
 export const useSettings = () => {
-  const { setSetting, ...settings } = useAppStore();
+  const store = useAppStore();
+  const settings = {
+    theme: store.theme,
+    colorTheme: store.colorTheme,
+    isSidebarCollapsed: store.isSidebarCollapsed,
+    feedDefaultCategory: store.feedDefaultCategory,
+    feedDefaultSort: store.feedDefaultSort,
+    articlesPerPage: store.articlesPerPage,
+    compactMode: store.compactMode,
+    showBiasBadges: store.showBiasBadges,
+    showSentiment: store.showSentiment,
+    defaultAiModel: store.defaultAiModel,
+    responseStyle: store.responseStyle,
+    favoriteCategories: store.favoriteCategories,
+    hiddenCategories: store.hiddenCategories,
+    extraCategories: store.extraCategories,
+    homePageMode: store.homePageMode,
+    notificationChannels: store.notificationChannels,
+    hasOnboardedSources: store.hasOnboardedSources,
+  };
+  const setSetting = store.setSetting;
   return { settings, setSetting };
 };
 

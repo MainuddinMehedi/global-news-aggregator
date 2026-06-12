@@ -3,11 +3,12 @@
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { SidebarLeftIcon, UserCircle02Icon } from "@hugeicons/core-free-icons";
+import { SidebarLeftIcon } from "@hugeicons/core-free-icons";
 import { Suspense } from "react";
 import NavLinks from "./NavLinks";
 import GlobalStatsFetcher from "./GlobalStatsFetcher";
 import { useIsSidebarCollapsed, useSetSidebarCollapsed } from "@/store";
+import UserMenu from "./UserMenu";
 
 interface SidebarContentProps {
   matchCount: number;
@@ -75,22 +76,7 @@ export default function SidebarContent({
           {!effectiveCollapsed && <span>Collapse</span>}
         </button>
 
-        {/* User Profile Stub */}
-        <div
-          className={cn(
-            "flex items-center gap-3 px-3 py-2 rounded-lg text-sidebar-foreground/70",
-            effectiveCollapsed && "justify-center px-0",
-          )}
-        >
-          <HugeiconsIcon icon={UserCircle02Icon} className="shrink-0 w-6 h-6" />
-          {!effectiveCollapsed && (
-            <div className="flex flex-col min-w-0">
-              <span className="text-sm font-medium truncate text-sidebar-foreground">
-                MainuddinMehedi
-              </span>
-            </div>
-          )}
-        </div>
+        <UserMenu effectiveCollapsed={effectiveCollapsed} />
       </div>
     </aside>
   );

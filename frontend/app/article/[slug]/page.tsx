@@ -2,7 +2,7 @@ import { getArticleById } from "@/queries/articles";
 import { notFound } from "next/navigation";
 import { SentimentBadge } from "@/components/articles/SentimentBadge";
 import { Badge } from "@/components/ui/badge";
-import { getBiasBadgeVariant, formatRelativeTime } from "@/lib/utils";
+import { formatRelativeTime, getEventRegionBadgeVariant } from "@/lib/utils";
 import Link from "next/link";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -17,10 +17,17 @@ import { RelativeTime } from "@/components/ui/RelativeTime";
 
 export default async function ArticleDetailsPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const { slug } = await params;
+  const resolvedSearchParams = await searchParams;
+  const storySlug =
+    typeof resolvedSearchParams.story === "string"
+      ? resolvedSearchParams.story
+      : undefined;
   const article = await getArticleById(slug);
 
   if (!article) {
@@ -28,13 +35,13 @@ export default async function ArticleDetailsPage({
   }
 
   return (
-    <div className="mx-auto w-full max-w- px-4 py-8 sm:px-6 lg:px-8 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <Link
-        href="/"
+        href={storySlug ? `/stories/${storySlug}` : "/"}
         className="inline-flex items-center text-sm text-muted-foreground hover:text-primary transition-colors"
       >
         <HugeiconsIcon icon={ArrowLeft} className="w-4 h-4 mr-1" />
-        Back to Feed
+        {storySlug ? "Go Back" : "Back to Feed"}
       </Link>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -46,11 +53,13 @@ export default async function ArticleDetailsPage({
                   {cat.name}
                 </Badge>
               ))}
-              {article.biasCategory && (
-                <Badge variant={getBiasBadgeVariant(article.biasCategory)}>
-                  {article.biasCategory}
-                </Badge>
-              )}
+
+              <span className="text-xs text-muted-foreground/80 tracking-tighter uppercase">
+                Event Region:
+              </span>
+              <Badge variant={getEventRegionBadgeVariant(article.eventRegion)}>
+                {article.eventRegion || "Unknown"}
+              </Badge>
             </div>
 
             <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground leading-tight">
@@ -65,8 +74,15 @@ export default async function ArticleDetailsPage({
                 <span className="font-medium text-foreground">
                   {article.source}
                 </span>
-                {article.sourceCountry && (
-                  <span className="text-xs">({article.sourceCountry})</span>
+                {article.sourceOrigin && (
+                  <span className="text-xs px-1.5 py-0.5 bg-secondary/50 rounded-md">
+                    {article.sourceOrigin}
+                  </span>
+                )}
+                {article.sourceType && (
+                  <span className="text-xs font-medium text-muted-foreground">
+                    {article.sourceType}
+                  </span>
                 )}
               </div>
               <div className="flex items-center gap-1.5">
@@ -147,29 +163,27 @@ export default async function ArticleDetailsPage({
                 </div>
               )}
 
-              {/* Perspective Countries */}
-              {article.perspectiveCountries &&
-                article.perspectiveCountries.length > 0 && (
-                  <div className="space-y-2">
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Geographic Focus
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {article.perspectiveCountries.map((country, i) => (
-                        <div
-                          key={i}
-                          className="flex items-center gap-1.5 text-sm text-foreground/80 bg-background/50 px-2.5 py-1.5 rounded-lg border border-border/50"
-                        >
-                          <HugeiconsIcon
-                            icon={Globe}
-                            className="w-3.5 h-3.5 text-muted-foreground"
-                          />
-                          {country}
-                        </div>
-                      ))}
-                    </div>
+              {/* Publisher Profile */}
+              {(article.sourceType || article.sourceOrigin) && (
+                <div className="space-y-2">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    Publisher Profile
+                  </p>
+                  <div className="flex flex-col gap-2 p-3 rounded-xl bg-background/50 border border-border/50">
+                    {article.sourceType && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-medium text-foreground/80">{article.sourceType}</span>
+                      </div>
+                    )}
+                    {article.sourceOrigin && (
+                      <div className="flex items-center gap-2">
+                        <HugeiconsIcon icon={Globe} className="w-3.5 h-3.5 text-muted-foreground" />
+                        <span className="text-xs text-muted-foreground/80">Based in {article.sourceOrigin}</span>
+                      </div>
+                    )}
                   </div>
-                )}
+                </div>
+              )}
             </div>
           </div>
         </div>

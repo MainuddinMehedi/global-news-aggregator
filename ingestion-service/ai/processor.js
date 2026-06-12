@@ -535,7 +535,7 @@ export function createArticleProcessor(
                     entities: articleParsed.entities || [],
                     sentimentScore: articleParsed.sentimentScore || null,
                     biasNote: articleParsed.biasNote || null,
-                    biasCategory: articleParsed.biasCategory || null,
+                    eventRegion: articleParsed.eventRegion || null,
                     perspectiveCountries:
                       articleParsed.perspectiveCountries || [],
                     model: aiResponse.model,
@@ -555,7 +555,7 @@ export function createArticleProcessor(
                 ? articleParsed.entities
                 : [],
               sentimentScore: articleParsed.sentimentScore ?? null,
-              biasCategory: articleParsed.biasCategory || null,
+              eventRegion: articleParsed.eventRegion || null,
               perspectiveCountries: Array.isArray(
                 articleParsed.perspectiveCountries,
               )

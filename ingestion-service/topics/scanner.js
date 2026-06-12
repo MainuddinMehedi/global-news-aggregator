@@ -8,8 +8,10 @@ import { scanGithub } from "./sources/githubScanner.js";
 import { scanYoutube } from "./sources/youtubeScanner.js";
 import { scanBdGovJobs } from "./sources/bdGovJobsScraper.js";
 import { scanCompanyCareers } from "./sources/companyCareersScraper.js";
+import { scanInternetSearch } from "./sources/internetSearchScanner.js";
 import { scoreFindings } from "./scorer.js";
 import { processNotifications } from "./notifier.js";
+import { generateOverview } from "./overviewGenerator.js";
 
 /**
  * Master orchestrator for Locked Topic scanning.
@@ -76,6 +78,9 @@ export async function runScannersForTopic(topic, options = {}) {
           break;
         case "company_careers":
           result = await scanCompanyCareers(topic, sourceConfig, options);
+          break;
+        case "search":
+          result = await scanInternetSearch(topic, sourceConfig, options);
           break;
         case "internal_db":
           // Handled above
@@ -267,5 +272,18 @@ export async function runScannersForTopic(topic, options = {}) {
   console.log(
     `✅ [orchestrator] Inserted ${insertedCount} new findings out of ${allFindings.length} total raw matches.`,
   );
+
+  // 10. Generate AI Findings Overview (if enough findings have accumulated)
+  if (insertedCount > 0) {
+    try {
+      await generateOverview(topic);
+    } catch (err) {
+      console.error(
+        `⚠️ [orchestrator] Overview generation failed:`,
+        err.message,
+      );
+    }
+  }
+
   return insertedCount;
 }
