@@ -38,13 +38,13 @@ Changing the rss feed structure changes how we take input(feed) from user and ho
 - **Concept:** Since multiple sources cover the same event (Story Clusters), allow users to select an event and view how different `Source Types` or `Source Origins` covered it side-by-side.
 - **Example:** Compare NYT (Commercial, US) coverage of an event vs. Xinhua (State Media, China) coverage of the exact same event.
 
-### 2.3 User Scopes & Authentication
+### 2.3 User Scopes & Authentication ✅ [COMPLETED]
 
-- **Current State:** No strict differentiation between public visitors, authenticated users, and admins.
+- **Current State:** Implemented database-backed sessions differentiating between public visitors, authenticated users, and admins.
 - **Action Items (Defining Scopes):**
-  - **Public User:** Can view the feed, read stories, search, and view public "News Insights" (Perspective Donut, Bias Distribution, Event Clusters, Topic Radar).
-  - **Authenticated User:** Can bookmark articles, customize feed preferences, and subscribe to notifications for specific Topics/Stories.
-  - **Admin:** Has exclusive access to the Admin Dashboard (system telemetry, controls, user management).
+  - **Public User:** Can view the feed, read stories, search, and view public "News Insights". Protected actions trigger a global login modal.
+  - **Authenticated User:** Can bookmark articles. Session is checked via server actions.
+  - **Admin:** Has exclusive access to the Admin Dashboard. Protected via layout-level server session checks.
 
 ---
 
@@ -86,7 +86,8 @@ _Goal: Provide full observability and control over the system. Build mandatory f
 ## Completed Tasks
 
 - **2.1 UI/UX Design Consistency:** Audited and unified the design language between Story views and Locked Topics views, adjusting max-widths, header typography, and spacings for consistency.
-- **1.2 The 3-Axis Filter Architecture (Revamp):** The database schema, backend ingestion, and frontend UI components (ArticleCard, ArticleDetailsModal, Article Page, Story Page) have all been audited and updated to accurately surface the new `Event Region`, `Source Origin`, and `Source Type` fields. 
+- **1.2 The 3-Axis Filter Architecture (Revamp):** The database schema, backend ingestion, and frontend UI components (ArticleCard, ArticleDetailsModal, Article Page, Story Page) have all been audited and updated to accurately surface the new `Event Region`, `Source Origin`, and `Source Type` fields.
+- **2.3 User Scopes & Authentication:** Implemented database-backed sessions with Prisma and NextAuth. Added `UserRole` enum (`USER`, `ADMIN`) to the database schema. Created a global login modal for Google OAuth and Magic Link authentication. Protected the admin dashboard (`/system-supar-admin`) using server-side layout verification. Implemented role-based sidebar navigation and user profile popover.
 
 ## Future Notes
 
