@@ -112,7 +112,7 @@ export default function UserMenu({ effectiveCollapsed }: UserMenuProps) {
           
           <div className="flex flex-col gap-1.5 pt-3 border-t border-border/50">
             {session.user.role === "ADMIN" && (
-              <Link href="/admin" className="w-full" onClick={() => setIsPopoverOpen(false)}>
+              <Link href="/system-supar-admin" className="w-full" onClick={() => setIsPopoverOpen(false)}>
                 <Button variant="ghost" size="sm" className="w-full justify-start text-xs font-medium rounded-lg text-primary hover:text-primary hover:bg-primary/10">
                   <HugeiconsIcon icon={UserSettings01Icon} className="w-4 h-4 mr-2" />
                   Admin Dashboard
