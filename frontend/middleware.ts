@@ -8,10 +8,8 @@ export async function middleware(req: NextRequest) {
   // Protect /admin routes
   if (req.nextUrl.pathname.startsWith("/admin")) {
     if (!session?.user) {
-      // Redirect to login if not authenticated
-      const url = new URL("/login", req.url);
-      url.searchParams.set("callbackUrl", req.nextUrl.pathname);
-      return NextResponse.redirect(url);
+      // Redirect to home if not authenticated
+      return NextResponse.redirect(new URL("/", req.url));
     }
     
     if (session.user.role !== "ADMIN") {

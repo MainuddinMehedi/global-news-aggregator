@@ -14,6 +14,7 @@ import FeedSkeleton from "@/components/Feed/FeedSkeleton";
 import ChatFAB from "@/components/chat/ChatFAB";
 import ChatSidebar from "@/components/chat/ChatSidebar";
 import OnboardingModal from "@/components/auth/OnboardingModal";
+import LoginModal from "@/components/auth/LoginModal";
 
 import { Toaster } from "@/components/ui/sonner";
 
@@ -90,6 +91,7 @@ export default function RootLayout({
               <ChatSidebar />
             </Suspense>
 
+            <LoginModal />
             <OnboardingModal />
 
             <Toaster />

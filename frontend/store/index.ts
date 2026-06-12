@@ -26,6 +26,13 @@ interface UserSlice {
   setUser: (user: null) => void;
 }
 
+// ─── Auth slice ───────────────────────────────────────────────────────────────
+interface AuthSlice {
+  isLoginModalOpen: boolean;
+  setLoginModalOpen: (isOpen: boolean) => void;
+}
+
+
 // ─── Topic slice ──────────────────────────────────────────────────────────────
 interface TopicSlice {
   totalMatchCount: number;
@@ -106,6 +113,7 @@ type AppStore = FeedSlice &
   UserSlice &
   ChatSidebarSlice &
   TopicSlice &
+  AuthSlice &
   SettingsSlice;
 
 export const useAppStore = create<AppStore>()(
@@ -126,6 +134,10 @@ export const useAppStore = create<AppStore>()(
       // ── User (Volatile) ──
       user: null,
       setUser: (user) => set({ user }),
+
+      // ── Auth (Volatile) ──
+      isLoginModalOpen: false,
+      setLoginModalOpen: (isOpen) => set({ isLoginModalOpen: isOpen }),
 
       // ── Topic (Volatile) ──
       totalMatchCount: 0,
@@ -197,6 +209,9 @@ export const useStoryCount = () => useAppStore((s) => s.storyCount);
 export const useSetStoryCount = () => useAppStore((s) => s.setStoryCount);
 export const useUnreadCount = () => useAppStore((s) => s.unreadCount);
 export const useSetUnreadCount = () => useAppStore((s) => s.setUnreadCount);
+
+export const useIsLoginModalOpen = () => useAppStore((s) => s.isLoginModalOpen);
+export const useSetLoginModalOpen = () => useAppStore((s) => s.setLoginModalOpen);
 
 export const useIsChatOpen = () => useAppStore((s) => s.isChatOpen);
 export const useOpenChat = () => useAppStore((s) => s.openChat);
