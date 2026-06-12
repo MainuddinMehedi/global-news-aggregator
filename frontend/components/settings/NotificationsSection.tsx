@@ -12,7 +12,14 @@ export default function NotificationsSection() {
   const channels = settings.notificationChannels;
 
   const updateChannel = (key: keyof typeof channels, value: string) => {
-    setSetting("notificationChannels", { ...channels, [key]: value });
+    const updatedChannels = { ...channels, [key]: value };
+    setSetting("notificationChannels", updatedChannels);
+    
+    // Fire and forget server action to persist
+    import("@/app/actions/settings").then((m) => {
+      m.updateSingleSettingAction("notificationChannels", updatedChannels)
+        .catch(err => console.error("Failed to save notification settings", err));
+    });
   };
 
   return (
