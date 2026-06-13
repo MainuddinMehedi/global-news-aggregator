@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { prisma } from "./db/prisma.js";
-import { processClusteringBatchWithAI } from "./ai/client.js";
+import { processClusteringBatchWithAI } from "./clustering/ai.js";
 import {
   applyClusterLifecycle,
   selectClusterCandidates,
@@ -8,7 +8,7 @@ import {
   buildClusterUpdateData,
   cleanString,
   cleanNumber,
-} from "./ai/processor.js";
+} from "./clustering/helpers.js";
 
 const CLUSTER_ASSIGNMENT_MIN_CONFIDENCE = Number.parseFloat(
   process.env.CLUSTER_ASSIGNMENT_MIN_CONFIDENCE || "0.55"
