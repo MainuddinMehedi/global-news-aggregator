@@ -12,6 +12,7 @@ export const primaryConfig = {
   apiKey: process.env.GROQ_API_KEY,
   model: process.env.AI_INGESTION_MODEL,
   provider: "groq",
+  tpmLimit: parseInt(process.env.AI_TPM_LIMIT) || 25000,
 };
 
 const fallbackConfig = {
@@ -19,12 +20,17 @@ const fallbackConfig = {
   apiKey: process.env.GROQ_API_KEY,
   model: process.env.AI_INGESTION_FALLBACK_MODEL,
   provider: "groq",
+  tpmLimit: 12000, // Hardcoded fallback limit for llama-3.3-70b-versatile
 };
 
 
 
-export async function requestAI(config, prompt, retries = 0) {
+export async function requestAI(config, prompt, estimatedTokens = null, retries = 0) {
   try {
+    // If no explicit token estimate is provided, use a generic safe estimate
+    const tokensToWait = estimatedTokens || Math.ceil((countTokens(prompt) + 1000) * TOKEN_MULTIPLIER);
+    await waitForCapacity(tokensToWait, config.tpmLimit);
+
     const controller = new AbortController();
     const timeout = setTimeout(
       () => controller.abort(),
@@ -58,7 +64,7 @@ export async function requestAI(config, prompt, retries = 0) {
       );
       await new Promise((r) => setTimeout(r, retryAfter * 1000));
       if (retries < (parseInt(process.env.AI_RETRY_ATTEMPTS) || 2)) {
-        return requestAI(config, prompt, retries + 1);
+        return requestAI(config, prompt, estimatedTokens, retries + 1);
       }
       throw new Error("Rate limit exceeded after retries");
     }
@@ -86,7 +92,7 @@ export async function requestAI(config, prompt, retries = 0) {
       console.warn(
         `⚠️ Primary (${primaryConfig.provider}/${primaryConfig.model}) failed, switching to fallback (${fallbackConfig.provider}/${fallbackConfig.model})... Error: ${err.message}`,
       );
-      return requestAI(fallbackConfig, prompt, 0);
+      return requestAI(fallbackConfig, prompt, estimatedTokens, 0);
     }
     throw err;
   }
@@ -247,7 +253,5 @@ export async function processClusteringBatchWithAI(
     (rawInputTokens + RESERVED_CLUSTERING_OUTPUT_TOKENS) * TOKEN_MULTIPLIER,
   );
 
-  await waitForCapacity(estimatedTokens);
-
-  return requestAI(primaryConfig, prompt);
+  return requestAI(primaryConfig, prompt, estimatedTokens);
 }
