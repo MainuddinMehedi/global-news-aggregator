@@ -65,38 +65,46 @@ export default function RootLayout({
         />
       </head>
       <body className="bg-background text-foreground">
-        <AuthProvider>
-          <Providers>
-            <TooltipProvider>
-              <div className="flex flex-col h-screen">
-                <Navbar />
+        <Suspense fallback={<div className="min-h-screen bg-background" />}>
+          <AuthProvider>
+            <Providers>
+              <TooltipProvider>
+                <div className="flex flex-col h-screen">
+                  <Navbar />
 
-                <main className="flex flex-1 overflow-hidden">
-                  <SidebarWrapper>
-                    <Sidebar />
-                  </SidebarWrapper>
+                  <main className="flex flex-1 overflow-hidden">
+                    <SidebarWrapper>
+                      <Suspense fallback={<div className="w-full h-full bg-card/20 animate-pulse" />}>
+                        <Sidebar />
+                      </Suspense>
+                    </SidebarWrapper>
 
-                  {/* Main Content Area */}
-                  <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-                    <div className="flex-1 min-h-0">{children}</div>
-                    {/*<Footer />*/}
-                  </div>
-                </main>
-              </div>
-            </TooltipProvider>
+                    {/* Main Content Area */}
+                    <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
+                      <div className="flex-1 min-h-0">
+                        <Suspense fallback={<FeedSkeleton />}>
+                          {children}
+                        </Suspense>
+                      </div>
+                      {/*<Footer />*/}
+                    </div>
+                  </main>
+                </div>
+              </TooltipProvider>
 
-            {/* Global chat sidebar — available on every page */}
-            <Suspense fallback={null}>
-              <ChatFAB />
-              <ChatSidebar />
-            </Suspense>
+              {/* Global chat sidebar — available on every page */}
+              <Suspense fallback={null}>
+                <ChatFAB />
+                <ChatSidebar />
+              </Suspense>
 
-            <LoginModal />
-            <OnboardingModal />
+              <LoginModal />
+              <OnboardingModal />
 
-            <Toaster />
-          </Providers>
-        </AuthProvider>
+              <Toaster />
+            </Providers>
+          </AuthProvider>
+        </Suspense>
       </body>
     </html>
   );

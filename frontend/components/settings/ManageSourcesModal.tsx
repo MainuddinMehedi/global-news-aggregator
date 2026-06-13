@@ -122,13 +122,28 @@ export default function ManageSourcesModal({ isOpen, onOpenChange, dbCustomSourc
                         <h4 className="font-semibold text-sm truncate">{source.name}</h4>
                       </div>
                       <p className="text-xs text-muted-foreground truncate pl-6">{source.url}</p>
-                      <div className="flex gap-2 mt-2 pl-6">
+                      <div className="flex flex-wrap gap-2 mt-2 pl-6">
                         <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground">
                           {source.country}
                         </span>
                         <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-primary/10 text-primary">
                           {source.sourceOrigin}
                         </span>
+                        {source.sourceType && (
+                          <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-orange-100 dark:bg-orange-950/40 text-orange-700 dark:text-orange-300">
+                            {source.sourceType}
+                          </span>
+                        )}
+                        {source.biasGroup && (
+                          <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300">
+                            {source.biasGroup}
+                          </span>
+                        )}
+                        {source.coverageScope && (
+                          <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-950/40 text-green-700 dark:text-green-300">
+                            {source.coverageScope}
+                          </span>
+                        )}
                       </div>
                     </div>
                     
@@ -169,13 +184,28 @@ export default function ManageSourcesModal({ isOpen, onOpenChange, dbCustomSourc
                       <HugeiconsIcon icon={Globe02Icon} className="w-5 h-5 text-muted-foreground shrink-0" />
                       <div className="min-w-0">
                         <h4 className="font-semibold text-sm truncate">{source.name}</h4>
-                        <div className="flex gap-2 mt-1">
+                        <div className="flex flex-wrap gap-2 mt-1">
                           <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground">
                             {source.country}
                           </span>
                           <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-primary/10 text-primary">
                             {source.sourceOrigin}
                           </span>
+                          {source.sourceType && (
+                            <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-orange-100 dark:bg-orange-950/40 text-orange-700 dark:text-orange-300">
+                              {source.sourceType}
+                            </span>
+                          )}
+                          {source.biasGroup && (
+                            <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300">
+                              {source.biasGroup}
+                            </span>
+                          )}
+                          {source.coverageScope && (
+                            <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-950/40 text-green-700 dark:text-green-300">
+                              {source.coverageScope}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>

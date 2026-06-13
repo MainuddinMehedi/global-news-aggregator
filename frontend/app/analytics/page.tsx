@@ -1,5 +1,6 @@
 import { getAnalyticsData } from "@/queries/analytics";
 import { cn } from "@/lib/utils";
+import { Suspense } from "react";
 import { BiasDonutChart } from "@/components/widgets/charts/BiasDonutChart";
 import { SentimentBarChart } from "@/components/widgets/charts/SentimentBarChart";
 import { CategoryBarChart } from "@/components/widgets/charts/CategoryBarChart";
@@ -114,9 +115,19 @@ function PanelShell({
 
 // ── Page ───────────────────────────────────────────────────────────────────
 
-export default async function AnalyticsPage(props: {
+interface AnalyticsProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
-}) {
+}
+
+export default function AnalyticsPage(props: AnalyticsProps) {
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-muted-foreground animate-pulse">Loading Command Center Intelligence...</div>}>
+      <AnalyticsPageContent searchParams={props.searchParams} />
+    </Suspense>
+  );
+}
+
+async function AnalyticsPageContent(props: AnalyticsProps) {
   const searchParams = await props.searchParams;
   const timeRange = typeof searchParams.range === "string" ? searchParams.range : "7d";
   
@@ -368,6 +379,112 @@ export default async function AnalyticsPage(props: {
                 sub="5-Bucket Distribution"
               />
               <SentimentBarChart data={data.sentimentDistribution} />
+            </PanelShell>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Bias Leaning Distribution */}
+            <PanelShell>
+              <SectionHeader
+                title="Bias Leaning Distribution"
+                sub="Publisher Ideological Lenses"
+              />
+              {data.biasGroupDistribution.length > 0 ? (
+                <div className="flex flex-col md:flex-row items-center gap-6">
+                  <BiasDonutChart
+                    data={data.biasGroupDistribution.map(item => ({
+                      label: item.label,
+                      count: item.count,
+                      percentage: item.percentage,
+                      color: item.label === "Centrist" ? "#10b981" :
+                             item.label === "Left-leaning" ? "#3b82f6" :
+                             item.label === "Right-leaning" ? "#ef4444" :
+                             item.label === "State-Aligned" ? "#f59e0b" :
+                             item.label === "State-Controlled" ? "#8b5cf6" : "#6b7280"
+                    }))}
+                  />
+                  <div className="w-full md:w-48 space-y-2">
+                    {data.biasGroupDistribution.map((item) => {
+                      const color = item.label === "Centrist" ? "#10b981" :
+                                    item.label === "Left-leaning" ? "#3b82f6" :
+                                    item.label === "Right-leaning" ? "#ef4444" :
+                                    item.label === "State-Aligned" ? "#f59e0b" :
+                                    item.label === "State-Controlled" ? "#8b5cf6" : "#6b7280";
+                      return (
+                        <div
+                          key={item.label}
+                          className="flex items-center justify-between group"
+                        >
+                          <div className="flex items-center gap-2">
+                            <div
+                              className="w-2 h-2 rounded-full"
+                              style={{ backgroundColor: color }}
+                            />
+                            <span className="text-[10px] font-bold text-muted-foreground group-hover:text-foreground transition-colors uppercase tracking-wider">
+                              {item.label}
+                            </span>
+                          </div>
+                          <span className="text-[10px] font-black font-mono text-foreground/80">
+                            {item.percentage}%
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground/50 italic py-10 text-center">No bias leaning data available.</p>
+              )}
+            </PanelShell>
+
+            {/* Coverage Scope Distribution */}
+            <PanelShell>
+              <SectionHeader
+                title="Coverage Scope Distribution"
+                sub="Publisher Reporting Reach"
+              />
+              {data.coverageScopeDistribution.length > 0 ? (
+                <div className="flex flex-col md:flex-row items-center gap-6">
+                  <BiasDonutChart
+                    data={data.coverageScopeDistribution.map(item => ({
+                      label: item.label,
+                      count: item.count,
+                      percentage: item.percentage,
+                      color: item.label === "Global" ? "#10b981" :
+                             item.label === "Regional" ? "#3b82f6" :
+                             item.label === "National" ? "#f59e0b" : "#6b7280"
+                    }))}
+                  />
+                  <div className="w-full md:w-48 space-y-2">
+                    {data.coverageScopeDistribution.map((item) => {
+                      const color = item.label === "Global" ? "#10b981" :
+                                    item.label === "Regional" ? "#3b82f6" :
+                                    item.label === "National" ? "#f59e0b" : "#6b7280";
+                      return (
+                        <div
+                          key={item.label}
+                          className="flex items-center justify-between group"
+                        >
+                          <div className="flex items-center gap-2">
+                            <div
+                              className="w-2 h-2 rounded-full"
+                              style={{ backgroundColor: color }}
+                            />
+                            <span className="text-[10px] font-bold text-muted-foreground group-hover:text-foreground transition-colors uppercase tracking-wider">
+                              {item.label}
+                            </span>
+                          </div>
+                          <span className="text-[10px] font-black font-mono text-foreground/80">
+                            {item.percentage}%
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground/50 italic py-10 text-center">No coverage scope data available.</p>
+              )}
             </PanelShell>
           </div>
 

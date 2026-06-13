@@ -12,15 +12,15 @@ import { prisma } from "../db/prisma.js";
 
 const builtinFeeds = [
   // ── Bangladesh ───────────────────────────────────────────
-  { name: "The Daily Star", sourceCountry: "Bangladesh", sourceOrigin: "Asia-Pacific", sourceType: "Commercial Publisher", url: "https://www.thedailystar.net/frontpage/rss.xml", enabled: true },
-  { name: "Dhaka Tribune", sourceCountry: "Bangladesh", sourceOrigin: "Asia-Pacific", sourceType: "Commercial Publisher", url: "https://www.dhakatribune.com/feed/", enabled: true },
-  { name: "BD24 Live", sourceCountry: "Bangladesh", sourceOrigin: "Asia-Pacific", sourceType: "Commercial Publisher", url: "https://www.bd24live.com/feed", enabled: true },
-  { name: "Jagonews24", sourceCountry: "Bangladesh", sourceOrigin: "Asia-Pacific", sourceType: "Commercial Publisher", url: "https://www.jagonews24.com/rss/rss.xml", enabled: false },
+  { name: "The Daily Star", sourceCountry: "Bangladesh", sourceOrigin: "Asia-Pacific", sourceType: "Commercial Publisher", biasGroup: "Centrist", coverageScope: "National", url: "https://www.thedailystar.net/frontpage/rss.xml", enabled: true },
+  { name: "Dhaka Tribune", sourceCountry: "Bangladesh", sourceOrigin: "Asia-Pacific", sourceType: "Commercial Publisher", biasGroup: "Centrist", coverageScope: "National", url: "https://www.dhakatribune.com/feed/", enabled: true },
+  { name: "BD24 Live", sourceCountry: "Bangladesh", sourceOrigin: "Asia-Pacific", sourceType: "Commercial Publisher", biasGroup: "Centrist", coverageScope: "National", url: "https://www.bd24live.com/feed", enabled: true },
+  { name: "Jagonews24", sourceCountry: "Bangladesh", sourceOrigin: "Asia-Pacific", sourceType: "Commercial Publisher", biasGroup: "Centrist", coverageScope: "National", url: "https://www.jagonews24.com/rss/rss.xml", enabled: false },
 
   // ── International ────────────────────────────────────────
-  { name: "Al Jazeera", sourceCountry: "Qatar", sourceOrigin: "Middle East", sourceType: "State Media", url: "https://www.aljazeera.com/xml/rss/all.xml", enabled: true },
-  { name: "UN News", sourceCountry: "Global", sourceOrigin: "Global", sourceType: "Independent Wire", url: "https://news.un.org/feed/subscribe/en/news/region/global/feed/rss.xml", enabled: true },
-  { name: "TechCrunch", sourceCountry: "USA", sourceOrigin: "North America", sourceType: "Commercial Publisher", url: "https://techcrunch.com/feed/", enabled: true },
+  { name: "Al Jazeera", sourceCountry: "Qatar", sourceOrigin: "Middle East", sourceType: "State Media", biasGroup: "State-Aligned", coverageScope: "Global", url: "https://www.aljazeera.com/xml/rss/all.xml", enabled: true },
+  { name: "UN News", sourceCountry: "Global", sourceOrigin: "Global", sourceType: "Independent Wire", biasGroup: "Centrist", coverageScope: "Global", url: "https://news.un.org/feed/subscribe/en/news/region/global/feed/rss.xml", enabled: true },
+  { name: "TechCrunch", sourceCountry: "USA", sourceOrigin: "North America", sourceType: "Commercial Publisher", biasGroup: "Centrist", coverageScope: "Global", url: "https://techcrunch.com/feed/", enabled: true },
 ];
 
 /** Returns only feeds where `enabled` is true across all users or defaults. */
@@ -55,6 +55,8 @@ export async function getAllFeeds() {
             sourceCountry: src.country,
             sourceOrigin: src.sourceOrigin || "Global",
             sourceType: src.sourceType || "Other",
+            biasGroup: src.biasGroup,
+            coverageScope: src.coverageScope,
             url: src.url,
             enabled: src.enabled === true,
           });

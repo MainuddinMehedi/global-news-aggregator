@@ -152,7 +152,17 @@ export function ArticleDetailsModal({ article }: { article: Article | null }) {
                       Based in {article.sourceOrigin}
                     </span>
                   )}
-                  {!article.sourceType && !article.sourceOrigin && (
+                  {article.biasGroup && (
+                    <span className="text-xs text-purple-300">
+                      Bias: {article.biasGroup}
+                    </span>
+                  )}
+                  {article.coverageScope && (
+                    <span className="text-xs text-emerald-400">
+                      Scope: {article.coverageScope}
+                    </span>
+                  )}
+                  {!article.sourceType && !article.sourceOrigin && !article.biasGroup && !article.coverageScope && (
                     <span className="text-xs text-zinc-500">Unknown Profile</span>
                   )}
                 </div>

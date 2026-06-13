@@ -49,6 +49,8 @@ async function run() {
       src.sourceOrigin,
       src.sourceType,
       src.url,
+      src.biasGroup,
+      src.coverageScope,
     )) {
       totalFetched++;
 
@@ -90,6 +92,8 @@ async function run() {
             sourceCountry: item.sourceCountry,
             sourceOrigin: item.sourceOrigin,
             sourceType: item.sourceType,
+            biasGroup: item.biasGroup,
+            coverageScope: item.coverageScope,
             publishedAt: item.publishedAt,
             contentHash: item.contentHash,
             slug: generateSlug(item.title),

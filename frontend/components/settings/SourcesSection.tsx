@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { CANONICAL_REGIONS } from "@/lib/constants";
+import { CANONICAL_REGIONS, CANONICAL_BIAS_GROUPS, CANONICAL_COVERAGE_SCOPES, CANONICAL_SOURCE_TYPES } from "@/lib/constants";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { InformationCircleIcon } from "@hugeicons/core-free-icons";
 import ManageSourcesModal from "./ManageSourcesModal";
@@ -32,9 +32,12 @@ export default function SourcesSection({ dbCustomSources = [], dbDisabledBuiltin
   const [newUrl, setNewUrl] = useState("");
   const [newCountry, setNewCountry] = useState("");
   const [newSourceOrigin, setNewSourceOrigin] = useState("");
+  const [newSourceType, setNewSourceType] = useState("");
+  const [newBiasGroup, setNewBiasGroup] = useState("");
+  const [newCoverageScope, setNewCoverageScope] = useState("");
 
   const handleAddSource = () => {
-    if (!newName || !newUrl || !newCountry || !newSourceOrigin) {
+    if (!newName || !newUrl || !newCountry || !newSourceOrigin || !newSourceType || !newBiasGroup || !newCoverageScope) {
       toast.error("Please fill in all fields to add a source.");
       return;
     }
@@ -63,6 +66,9 @@ export default function SourcesSection({ dbCustomSources = [], dbDisabledBuiltin
       url: newUrl,
       country: newCountry,
       sourceOrigin: matchedOrigin,
+      sourceType: newSourceType,
+      biasGroup: newBiasGroup,
+      coverageScope: newCoverageScope,
       enabled: true,
     };
 
@@ -81,6 +87,9 @@ export default function SourcesSection({ dbCustomSources = [], dbDisabledBuiltin
     setNewUrl("");
     setNewCountry("");
     setNewSourceOrigin("");
+    setNewSourceType("");
+    setNewBiasGroup("");
+    setNewCoverageScope("");
   };
 
   return (
@@ -106,7 +115,7 @@ export default function SourcesSection({ dbCustomSources = [], dbDisabledBuiltin
                 <Label className="text-xs">RSS Feed URL</Label>
                 <Input placeholder="https://..." value={newUrl} onChange={e => setNewUrl(e.target.value)} disabled={isPending} />
               </div>
-              <div className="space-y-2 md:col-span-2">
+              <div className="space-y-2">
                 <div className="flex items-center gap-1.5">
                   <Label className="text-xs">Source Origin</Label>
                   <TooltipProvider>
@@ -133,6 +142,51 @@ export default function SourcesSection({ dbCustomSources = [], dbDisabledBuiltin
                   onChange={e => setNewSourceOrigin(e.target.value)}
                   disabled={isPending}
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs">Publisher Type</Label>
+                <select 
+                  value={newSourceType} 
+                  onChange={e => setNewSourceType(e.target.value)} 
+                  disabled={isPending}
+                  className="flex h-9 w-full rounded-lg border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <option value="" disabled className="text-muted-foreground">Select Publisher Type</option>
+                  {CANONICAL_SOURCE_TYPES.map(type => (
+                    <option key={type} value={type} className="bg-popover text-popover-foreground">{type}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs">Bias Leaning</Label>
+                <select 
+                  value={newBiasGroup} 
+                  onChange={e => setNewBiasGroup(e.target.value)} 
+                  disabled={isPending}
+                  className="flex h-9 w-full rounded-lg border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <option value="" disabled className="text-muted-foreground">Select Bias Leaning</option>
+                  {CANONICAL_BIAS_GROUPS.map(bias => (
+                    <option key={bias} value={bias} className="bg-popover text-popover-foreground">{bias}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs">Coverage Scope</Label>
+                <select 
+                  value={newCoverageScope} 
+                  onChange={e => setNewCoverageScope(e.target.value)} 
+                  disabled={isPending}
+                  className="flex h-9 w-full rounded-lg border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <option value="" disabled className="text-muted-foreground">Select Coverage Scope</option>
+                  {CANONICAL_COVERAGE_SCOPES.map(scope => (
+                    <option key={scope} value={scope} className="bg-popover text-popover-foreground">{scope}</option>
+                  ))}
+                </select>
               </div>
             </div>
 

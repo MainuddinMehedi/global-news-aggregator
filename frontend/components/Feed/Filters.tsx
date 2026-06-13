@@ -15,6 +15,8 @@ interface FiltersProps {
   origin?: string;
   type?: string;
   story?: string;
+  bias?: string;
+  scope?: string;
   activeStoryTitle?: string;
 }
 
@@ -24,6 +26,8 @@ export default async function Filters({
   origin = "all",
   type = "all",
   story = "all",
+  bias = "all",
+  scope = "all",
   activeStoryTitle,
 }: FiltersProps) {
   const categories = await getCategories();
@@ -46,6 +50,8 @@ export default async function Filters({
               origin={origin}
               type={type}
               story={story}
+              bias={bias}
+              scope={scope}
               activeStoryTitle={activeStoryTitle}
             />
           </Suspense>

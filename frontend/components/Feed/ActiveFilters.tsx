@@ -8,6 +8,8 @@ interface ActiveFiltersProps {
   origin: string;
   type: string;
   story: string;
+  bias?: string;
+  scope?: string;
   activeStoryTitle?: string;
 }
 
@@ -28,14 +30,28 @@ export default function ActiveFilters({
   origin,
   type,
   story,
+  bias = "all",
+  scope = "all",
   activeStoryTitle,
 }: ActiveFiltersProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  if (category === "all" && region === "all" && origin === "all" && type === "all" && story === "all") return null;
+  if (
+    category === "all" &&
+    region === "all" &&
+    origin === "all" &&
+    type === "all" &&
+    story === "all" &&
+    bias === "all" &&
+    scope === "all"
+  ) {
+    return null;
+  }
 
-  const handleClearFilter = (filterKey: "category" | "region" | "origin" | "type" | "story") => {
+  const handleClearFilter = (
+    filterKey: "category" | "region" | "origin" | "type" | "story" | "bias" | "scope",
+  ) => {
     const params = new URLSearchParams(searchParams.toString());
     params.delete(filterKey);
     params.delete("cursor");
@@ -49,6 +65,8 @@ export default function ActiveFilters({
     params.delete("origin");
     params.delete("type");
     params.delete("story");
+    params.delete("bias");
+    params.delete("scope");
     params.delete("cursor");
     router.push(`?${params.toString()}`);
   };
@@ -124,6 +142,34 @@ export default function ActiveFilters({
           </span>
           <button
             onClick={() => handleClearFilter("story")}
+            className="hover:text-destructive transition-colors ml-1 font-bold text-[10px] cursor-pointer"
+            title="Clear filter"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+      {bias !== "all" && (
+        <div className="inline-flex items-center space-x-1 bg-card text-foreground border border-border px-2 py-0.5 rounded-lg">
+          <span className="capitalize font-medium text-[11px]">
+            Bias: {bias}
+          </span>
+          <button
+            onClick={() => handleClearFilter("bias")}
+            className="hover:text-destructive transition-colors ml-1 font-bold text-[10px] cursor-pointer"
+            title="Clear filter"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+      {scope !== "all" && (
+        <div className="inline-flex items-center space-x-1 bg-card text-foreground border border-border px-2 py-0.5 rounded-lg">
+          <span className="capitalize font-medium text-[11px]">
+            Scope: {scope}
+          </span>
+          <button
+            onClick={() => handleClearFilter("scope")}
             className="hover:text-destructive transition-colors ml-1 font-bold text-[10px] cursor-pointer"
             title="Clear filter"
           >
