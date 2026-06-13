@@ -88,3 +88,25 @@ We strictly follow the UX hierarchy outlined in [METADATA_STRATEGY_OVERVIEW.md](
 - **`getAnalyticsData` Query:** Expanded the database query to read subfields `biasGroup` and `coverageScope` dynamically, and processed `biasGroupDistribution` and `coverageScopeDistribution` array objects.
 - **`getBiasGroupCounts` API:** Added helper to aggregate processed articles grouped by their raw article's bias leaning.
 - **Analytics Visualizer:** Integrated two new interactive donut charts representing Ideological Leaning and Coverage Scope distributions on the main analytics portal.
+
+---
+
+## 5. Phase 1.5 - Step 3 UX Refinements (Interactive Charts & Perspective Visualizations)
+
+We refined the user experience of the metadata visualizers to bridge the gap between analytics and feed filtering, and introduced a linear comparison spectrum to illustrate geopolitical narrative variations.
+
+### A. Dynamic Analytics Chart Filtering
+- **`BiasDonutChart.tsx`:** Added a `filterParam` prop so each donut chart handles slice-clicks correctly.
+  - Event Regions route to `/?region=...`
+  - Bias Leaning routes to `/?bias=...`
+  - Coverage Scope routes to `/?scope=...`
+  This permits immediate interactive filtering directly from the analytics dashboard back to the home feed.
+
+### B. Story Detail Narrative Comparison (`PerspectiveWidget.tsx`)
+- Developed a dynamic **`PerspectiveWidget`** on the story details view (`/stories/[slug]`).
+- The widget aggregates reporting counts and computes average sentiment scores for each publisher origin (e.g., North America, Europe, Middle East).
+- It plots these origins along a linear spectrum representing sentiment tone (Favorable vs. Hostile) and raises a warning banner ("Perspective Delta Alert") if the difference (delta) in reporting sentiment between regions exceeds `0.25`.
+
+### C. Story Card Geopolitical Origins
+- Updated `getStoryClusters` in `frontend/queries/stories.ts` to query and map unique article origins (`sourceOrigin`) for each story.
+- Modified `StoryCard.tsx` to list the reporting origins (e.g. `/ Origins: Middle East, Europe`) directly on the feed card. This highlights the geopolitical diversity of a story cluster before the user clicks to view details.

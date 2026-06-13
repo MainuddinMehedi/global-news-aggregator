@@ -344,7 +344,7 @@ async function AnalyticsPageContent(props: AnalyticsProps) {
               />
               {data.eventRegionDistribution.length > 0 ? (
                 <div className="flex flex-col md:flex-row items-center gap-6">
-                  <BiasDonutChart data={data.eventRegionDistribution} />
+                  <BiasDonutChart data={data.eventRegionDistribution} filterParam="region" />
                   <div className="w-full md:w-48 space-y-2">
                     {data.eventRegionDistribution.map((item) => (
                       <div
@@ -392,6 +392,7 @@ async function AnalyticsPageContent(props: AnalyticsProps) {
               {data.biasGroupDistribution.length > 0 ? (
                 <div className="flex flex-col md:flex-row items-center gap-6">
                   <BiasDonutChart
+                    filterParam="bias"
                     data={data.biasGroupDistribution.map(item => ({
                       label: item.label,
                       count: item.count,
@@ -446,6 +447,7 @@ async function AnalyticsPageContent(props: AnalyticsProps) {
               {data.coverageScopeDistribution.length > 0 ? (
                 <div className="flex flex-col md:flex-row items-center gap-6">
                   <BiasDonutChart
+                    filterParam="scope"
                     data={data.coverageScopeDistribution.map(item => ({
                       label: item.label,
                       count: item.count,

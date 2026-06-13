@@ -18,6 +18,7 @@ interface BiasDonutChartProps {
     color: string;
     percentage: number;
   }[];
+  filterParam?: "bias" | "scope" | "region" | "perspective";
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -79,7 +80,7 @@ const renderActiveShape = (props: any) => {
   );
 };
 
-export function BiasDonutChart({ data }: BiasDonutChartProps) {
+export function BiasDonutChart({ data, filterParam = "perspective" }: BiasDonutChartProps) {
   const [mounted, setMounted] = useState(false);
   const router = useRouter();
 
@@ -110,7 +111,10 @@ export function BiasDonutChart({ data }: BiasDonutChartProps) {
             outerRadius={85}
             dataKey="count"
             stroke="none"
-            onClick={(data: any) => router.push(`/?perspective=${data.payload?.label || data.label || ''}`)}
+            onClick={(data: any) => {
+              const label = data.payload?.label || data.label || "";
+              router.push(`/?${filterParam}=${encodeURIComponent(label)}`);
+            }}
             className="cursor-pointer"
           >
             {data.map((entry, index) => (

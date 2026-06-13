@@ -7,7 +7,7 @@ import ArticleCard from "@/components/articles/ArticleCard";
 import { Article } from "@/types/article";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Alert01Icon, ArrowLeft01Icon } from "@hugeicons/core-free-icons";
-import { StoryHero, KeyDevelopmentsTimeline } from "@/components/stories";
+import { StoryHero, KeyDevelopmentsTimeline, PerspectiveWidget } from "@/components/stories";
 
 import { Suspense } from "react";
 import FeedSkeleton from "@/components/Feed/FeedSkeleton";
@@ -115,6 +115,8 @@ async function StoryDetailsContent({ params }: StoryPageProps) {
               </div>
             )}
           </div>
+
+          <PerspectiveWidget articles={story.articles.map(mapStoryArticleToArticle)} />
 
           <div>
             <div className="flex items-center justify-between mb-8 px-2">
