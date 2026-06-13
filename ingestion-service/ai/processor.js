@@ -1,7 +1,6 @@
 import { prisma } from "../db/prisma.js";
 import { ALLOWED_CATEGORIES } from "./categories.js";
 import { processClusteringBatchWithAI } from "./client.js";
-import { createNextBatch } from "./tokenBatcher.js";
 import { enrichWithStage1 } from "./stage1.js";
 import { enrichWithStage2Batch } from "./stage2.js";
 
@@ -406,13 +405,9 @@ export function createArticleProcessor(
       return _flush();
     }
 
-    const { batch, remainingArticles } = createNextBatch(
-      buffer,
-      800,
-    );
-    // update buffer
-    buffer.length = 0;
-    buffer.push(...remainingArticles);
+    // Fixed batch size of 30 protects the 512MB RAM microservice limit 
+    // while completely avoiding token-counting overhead.
+    const batch = buffer.splice(0, 30);
 
     if (batch.length === 0) {
       if (buffer.length > 0) {
@@ -616,15 +611,38 @@ export function createArticleProcessor(
           critical: CLUSTER_CRITICAL_IMPACT_INACTIVE_DAYS,
         };
 
-        try {
-          // Make the clustering AI request
-          const clusteringResponse = await processClusteringBatchWithAI(
-            batchWithRefs,
-            activeClustersWithRefs,
-            lifecycleConfig,
-          );
+        let clusteringResponse;
+        let retries = 3;
+        let success = false;
 
-          let clusterData;
+        while (retries > 0 && !success) {
+          try {
+            // Make the clustering AI request
+            clusteringResponse = await processClusteringBatchWithAI(
+              batchWithRefs,
+              activeClustersWithRefs,
+              lifecycleConfig,
+            );
+            success = true;
+          } catch (err) {
+            retries--;
+            console.error(
+              `❌ Clustering batch failed (Retries left: ${retries}):`,
+              err.message,
+            );
+            if (retries > 0) {
+              console.log(`⏳ Waiting 5 seconds before retrying...`);
+              await new Promise((r) => setTimeout(r, 5000));
+            } else {
+              console.error(
+                `🚨 Fatal: Clustering batch completely failed after retries. Halting ingestion.`,
+              );
+              throw err; // Halt the system so admin is notified
+            }
+          }
+        }
+
+        try {
           try {
             clusterData = JSON.parse(
               clusteringResponse.content.replace(/```json|```/g, "").trim(),
@@ -919,7 +937,8 @@ export function createArticleProcessor(
             );
           }
         } catch (err) {
-          console.error(`❌ Clustering batch failed:`, err);
+          console.error(`❌ Failed to parse or process clustering data:`, err);
+          throw err; // Also halt if we get fatal DB errors here
         }
       } // end batch loop
 
