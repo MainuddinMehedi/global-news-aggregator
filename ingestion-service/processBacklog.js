@@ -47,9 +47,8 @@ async function processBacklog() {
     queued++;
   }
 
-  console.log(`\n🤖 Flushing AI tasks for ${queued} articles...`);
+  console.log(`\n🤖 Flushing local ML tasks for ${queued} articles...`);
   await aiProcessor.flush();
-  await aiProcessor.runClustering();
 
   const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
 
