@@ -1,7 +1,9 @@
 import { prisma } from "../db/prisma.js";
 import { ALLOWED_CATEGORIES } from "./categories.js";
-import { processBatchWithAI, processClusteringBatchWithAI } from "./client.js";
+import { processClusteringBatchWithAI } from "./client.js";
 import { createNextBatch } from "./tokenBatcher.js";
+import { enrichWithStage1 } from "./stage1.js";
+import { enrichWithStage2Batch } from "./stage2.js";
 
 const ALLOWED_IMPACTS = new Set(["CRITICAL", "HIGH", "MEDIUM", "LOW"]);
 const ALLOWED_STATUSES = new Set([
@@ -404,7 +406,7 @@ export function createArticleProcessor(
       return _flush();
     }
 
-    const { batch, remainingArticles, estimatedTokens } = createNextBatch(
+    const { batch, remainingArticles } = createNextBatch(
       buffer,
       800,
     );
@@ -424,100 +426,37 @@ export function createArticleProcessor(
     }
 
     console.log(
-      `🤖 Processing batch of ${batch.length} articles (Estimated tokens: ${estimatedTokens})...`,
+      `⚙️ Processing batch of ${batch.length} articles via Local Pipeline (Stage 1 + Stage 2)...`,
     );
 
     currentBatchPromise = (async () => {
       try {
-        const batchWithRefs = batch.map((article, index) => ({
-          ...article,
-          aiRef: `article_${index + 1}`,
+        // Stage 1: Deterministic Enrichment
+        const stage1Results = batch.map(article => ({
+          article,
+          stage1: enrichWithStage1(article)
         }));
 
-        let aiResponse;
+        // Stage 2: Local ML Enrichment
+        let stage2Results = [];
         try {
-          aiResponse = await processBatchWithAI(batchWithRefs, estimatedTokens);
+          stage2Results = await enrichWithStage2Batch(batch);
         } catch (err) {
-          console.error(`⚠️ AI batch processing failed`, err.message);
-          throw err;
+          console.error(`⚠️ Stage 2 ML batch processing failed`, err.message);
+          // Fallback if the Python microservice is completely down
+          stage2Results = batch.map(article => ({ ...article, entities: [], sentimentScore: null }));
         }
-
-        let parsed;
-        try {
-          parsed = JSON.parse(
-            aiResponse.content.replace(/```json|```/g, "").trim(),
-          );
-          if (!parsed.results || !Array.isArray(parsed.results)) {
-            throw new Error("Invalid format: missing 'results' array");
-          }
-        } catch (err) {
-          console.warn(`⚠️ Invalid JSON from AI for batch`);
-          parsed = { results: [] };
-        }
-
-        const resultsMap = new Map();
-        const validBatchRefs = new Set(
-          batchWithRefs.map((article) => article.aiRef),
-        );
-        const batchRefsByArticleId = new Map(
-          batchWithRefs.map((article) => [article.id, article.aiRef]),
-        );
-        parsed.results.forEach((res, index) => {
-          if (!res) return;
-
-          const ref =
-            cleanString(res.ref) ||
-            cleanString(res.articleRef) ||
-            cleanString(res.id);
-          let mappedRef = batchRefsByArticleId.get(ref) || ref;
-
-          if (!validBatchRefs.has(mappedRef)) {
-            const fallbackRef = batchWithRefs[index]?.aiRef;
-
-            if (fallbackRef) {
-              console.warn(
-                `⚠️ Recovered AI article result with invalid ref "${ref}" using batch position ${index + 1}`,
-              );
-              mappedRef = fallbackRef;
-            }
-          }
-
-          if (validBatchRefs.has(mappedRef)) resultsMap.set(mappedRef, res);
-        });
 
         let successCount = 0;
         const successfullyProcessedArticles = [];
 
         // Save to DB sequentially to prevent 'connectOrCreate' unique constraint race conditions
-        for (const article of batchWithRefs) {
-          const rawArticle = article;
-          const articleParsed = resultsMap.get(rawArticle.aiRef) || {
-            categories: ["other"],
-            entities: [],
-            sentimentScore: 0,
-            biasNote: "",
-            perspectiveCountries: [],
-          };
+        for (let i = 0; i < batch.length; i++) {
+          const rawArticle = batch[i];
+          const s1 = stage1Results[i].stage1;
+          const s2 = stage2Results[i];
 
-          const rawCats = Array.isArray(articleParsed.categories)
-            ? articleParsed.categories
-            : [];
-          const normalizedCats = [
-            ...new Set(rawCats.map(normalizeArticleCategory).filter(Boolean)),
-          ];
-          const validCats = normalizedCats.filter((c) =>
-            ALLOWED_CATEGORIES.includes(c),
-          );
-          const finalCats = validCats.length > 0 ? validCats : ["other"];
-
-          if (normalizedCats.length !== validCats.length) {
-            const dropped = normalizedCats.filter(
-              (c) => !ALLOWED_CATEGORIES.includes(c),
-            );
-            console.warn(
-              `⚠️ Dropped unrecognized categories for "${rawArticle.title}": [${dropped.join(", ")}]`,
-            );
-          }
+          const finalCats = s1.categories && s1.categories.length > 0 ? s1.categories : ["other"];
 
           const categoryOps = finalCats.map((cat) => ({
             where: { name: cat },
@@ -532,13 +471,12 @@ export function createArticleProcessor(
                   data: {
                     rawArticleId: rawArticle.id,
                     categories: { connectOrCreate: categoryOps },
-                    entities: articleParsed.entities || [],
-                    sentimentScore: articleParsed.sentimentScore || null,
-                    biasNote: articleParsed.biasNote || null,
-                    eventRegion: articleParsed.eventRegion || null,
-                    perspectiveCountries:
-                      articleParsed.perspectiveCountries || [],
-                    model: aiResponse.model,
+                    entities: s2.entities || [],
+                    sentimentScore: s2.sentimentScore || null,
+                    biasNote: s1.biasNote || null,
+                    eventRegion: s1.eventRegion || null,
+                    perspectiveCountries: s1.perspectiveCountries || [],
+                    model: "local-pipeline-v1",
                   },
                 });
               },
@@ -551,16 +489,10 @@ export function createArticleProcessor(
             successfullyProcessedArticles.push({
               ...rawArticle,
               categories: finalCats,
-              entities: Array.isArray(articleParsed.entities)
-                ? articleParsed.entities
-                : [],
-              sentimentScore: articleParsed.sentimentScore ?? null,
-              eventRegion: articleParsed.eventRegion || null,
-              perspectiveCountries: Array.isArray(
-                articleParsed.perspectiveCountries,
-              )
-                ? articleParsed.perspectiveCountries
-                : [],
+              entities: s2.entities || [],
+              sentimentScore: s2.sentimentScore ?? null,
+              eventRegion: s1.eventRegion || null,
+              perspectiveCountries: s1.perspectiveCountries || [],
             });
           } catch (err) {
             console.error(
@@ -568,26 +500,6 @@ export function createArticleProcessor(
               err.message,
             );
           }
-        }
-
-        // Log AI Usage ONCE per batch
-        try {
-          const today = new Date().toISOString().split("T")[0];
-          const costPer1k = 0.0006;
-          const estimatedCost = (aiResponse.tokensUsed / 1000) * costPer1k;
-
-          await prisma.aiUsage.create({
-            data: {
-              date: today,
-              provider: aiResponse.provider,
-              model: aiResponse.model,
-              tokensUsed: aiResponse.tokensUsed,
-              estimatedCost: estimatedCost,
-              success: true,
-            },
-          });
-        } catch (err) {
-          console.error(`⚠️ Failed to log AI usage for batch`, err.message);
         }
 
         console.log(`✅ Batch done: ${successCount}/${batch.length} succeeded`);

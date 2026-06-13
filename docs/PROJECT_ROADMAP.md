@@ -13,7 +13,7 @@ To build a robust, scalable aggregator without overwhelming the LLM APIs, we are
    - This sets the data layer in stone so future architectural changes can read/write from these established fields.
 2. **Step 2: The Architectural Refactor (Ingestion Pipeline)**
    - Move away from 100% LLM dependency. Implement Stage 1 deterministic checks (keyword matching for Category/Region) and decide on a Stage 2 local ML solution (Python microservice or local Node.js ML) for entities and sentiment.
-3. **Step 3: Frontend Analytics Wiring & UX**
+3. **Step 3: Frontend Analytics Wiring & UX** ✅ [COMPLETED]
    - Hook up the new metadata to the frontend UI (BiasDistributionWidget, PerspectiveWidget, Article Cards, and filters) to ensure the new architecture correctly surfaces the "Perspective Gap".
 4. **Step 4: Feed Curation (Scale Up)**
    - *Only after the pipeline is cheap, robust, and tested.* Use the AI curation prompts to build and inject 50-75 global RSS feeds into the system.
@@ -101,6 +101,7 @@ _Goal: Provide full observability and control over the system. Build mandatory f
 
 ## Completed Tasks
 
+- **Step 3: Frontend Analytics Wiring & UX:** Updated the analytics page's donut charts to support dynamic query param routing redirects. Built the client-side `PerspectiveWidget` to group story articles by their reporting origin, plotting them along a linear sentiment spectrum to visualize the perspective gap, and flagged wide sentiment divergences with delta alerts. Updated the Story card layout to list the reporting origins directly in the main feed list.
 - **Step 1: The Metadata Foundation:** Added optional fields `biasGroup` and `coverageScope` to `RawArticle` in the Prisma schema and database, updated Ingestion Service sources (`feeds.js` and `rss.js`) and AI prompt tokens config, integrated Bias Leaning and Coverage Scope filters/charts on the frontend, and resolved dynamic layout PPR pre-rendering issues in Next.js 16.
 - **2.1 UI/UX Design Consistency:** Audited and unified the design language between Story views and Locked Topics views, adjusting max-widths, header typography, and spacings for consistency.
 - **1.2 The 3-Axis Filter Architecture (Revamp):** The database schema, backend ingestion, and frontend UI components (ArticleCard, ArticleDetailsModal, Article Page, Story Page) have all been audited and updated to accurately surface the new `Event Region`, `Source Origin`, and `Source Type` fields.

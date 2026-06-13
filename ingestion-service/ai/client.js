@@ -21,57 +21,7 @@ const fallbackConfig = {
   provider: "groq",
 };
 
-export function buildBatchPrompt(articles) {
-  const articlesContext = articles
-    .map(
-      (a, i) => `
-[ARTICLE ${i + 1}]
-- Ref: ${a.aiRef}
-${a.truncatedContent}
-`,
-    )
-    .join("\n");
 
-  return `You are a geopolitical news analyst. Process the following batch of articles and return ONLY valid JSON.
-
-ARTICLES:
-${articlesContext}
-
-TASK:
-For EACH article, do the following:
-1. Assign 1-3 categories from ONLY this exact list (lowercase, no variations):
-   ${ALLOWED_CATEGORIES.join(", ")}
-   Distinguish "economy" (macro: GDP, inflation, trade policy, sanctions) from "business" (micro: company earnings, M&A, startups, IPOs, corporate strategy).
-   Map culture, education, human rights, religion, and migration to "society".
-   Map crime, courts, terrorism, and military operations to "security".
-   Map climate, disasters, pollution, and public-health environment stories to "environment".
-   Map sports and entertainment stories to "other" unless they have a clear political, economic, or security angle.
-   Use "other" if nothing fits. Do NOT invent new category names.
-2. Extract named entities (countries, organizations, people) - max 10
-3. Score sentiment: -1.0 (very negative) to +1.0 (very positive)
-4. Note any detectable bias or perspective (e.g., "Western-centric", "state-media tone")
-5. Extract the geographical subject: exactly one of "North America", "Europe", "Middle East", "Asia-Pacific", "Latin America", "Africa", "Global". Assign to "eventRegion"
-6. List countries whose perspective is represented (ISO codes if possible)
-
-OUTPUT FORMAT (strict JSON, no markdown):
-You must return a JSON object with a single key "results", which is an array of objects.
-Each object MUST correspond to the article in the same order, and include the article's exact "ref".
-Use only article refs listed above. Do not invent refs.
-
-{
-  "results": [
-    {
-      "ref": "article_1",
-      "categories": ["geopolitics", "technology"],
-      "entities": ["China", "UN", "Xi Jinping"],
-      "sentimentScore": 0.3,
-      "biasNote": "Neutral reporting with slight institutional framing",
-      "eventRegion": "Asia-Pacific",
-      "perspectiveCountries": ["CN", "US"]
-    }
-  ]
-}`;
-}
 
 export async function requestAI(config, prompt, retries = 0) {
   try {
@@ -142,27 +92,6 @@ export async function requestAI(config, prompt, retries = 0) {
   }
 }
 
-/**
- * Process a batch of articles with AI.
- * Waits for rate limiter capacity before sending the request.
- * @param {Array} batch - Articles to process
- * @param {number} estimatedTokens - Estimated total tokens (from tokenBatcher, with multiplier).
- *   If provided (> 0), this external estimate is used. Otherwise, falls back to
- *   counting the prompt tokens directly (slower but always accurate).
- */
-export async function processBatchWithAI(batch, estimatedTokens = 0) {
-  const prompt = buildBatchPrompt(batch);
-
-  // Use the external estimate if available, otherwise self-calculate from the prompt
-  const tokensForCapacity =
-    estimatedTokens > 0
-      ? estimatedTokens
-      : Math.ceil(countTokens(prompt) * TOKEN_MULTIPLIER);
-
-  await waitForCapacity(tokensForCapacity);
-
-  return requestAI(primaryConfig, prompt);
-}
 
 export function buildClusteringPrompt(
   articles,
