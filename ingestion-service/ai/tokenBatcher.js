@@ -39,7 +39,10 @@ export function prepareArticle(article, config = DEFAULT_CONFIG) {
   // Combine title, source, and content to ensure we capture the most important info
   const fullText = [
     `Title: ${article.title}`,
-    `Source: ${article.source} (Country: ${article.sourceCountry || 'unknown'})`,
+    `Source: ${article.source} (Country: ${article.sourceCountry || 'unknown'}, Region/Origin: ${article.sourceOrigin || 'unknown'})`,
+    `Publisher Type: ${article.sourceType || 'unknown'}`,
+    `Publisher Bias Group: ${article.biasGroup || 'unknown'}`,
+    `Coverage Scope: ${article.coverageScope || 'unknown'}`,
     `Published: ${article.publishedAt}`,
     `Content: ${article.contentSnippet}`
   ].filter(Boolean).join("\n");

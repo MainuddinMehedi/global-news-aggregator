@@ -27,6 +27,7 @@ interface StoryCardProps {
     regions?: string[];
     themes?: string[];
     sources: Source[];
+    origins?: string[];
     keyDevelopments: KeyDevelopment[];
   };
 }
@@ -97,6 +98,16 @@ export default function StoryCard({ story }: StoryCardProps) {
                   <span className="text-foreground/40 font-black">/</span>
                   <span className="text-foreground/70">Sources:</span>
                   <SourceAvatarStack sources={story.sources} max={4} className="py-0.5" />
+                </div>
+              )}
+              {story.origins && story.origins.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <span className="text-foreground/40 font-black">/</span>
+                  <span className="text-foreground/70">Origins:</span>
+                  <span className="text-muted-foreground/60">
+                    {story.origins.slice(0, 3).join(", ")}
+                    {story.origins.length > 3 && ", ..."}
+                  </span>
                 </div>
               )}
             </div>

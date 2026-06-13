@@ -57,6 +57,16 @@ export interface AnalyticsData {
     totalToolRuns: number;
     activeModels: { model: string; count: number }[];
   };
+  biasGroupDistribution: {
+    label: string;
+    count: number;
+    percentage: number;
+  }[];
+  coverageScopeDistribution: {
+    label: string;
+    count: number;
+    percentage: number;
+  }[];
 }
 
 export async function getAnalyticsData(timeRange: string = "7d"): Promise<AnalyticsData> {
@@ -113,7 +123,13 @@ export async function getAnalyticsData(timeRange: string = "7d"): Promise<Analyt
           eventRegion: true,
           sentimentScore: true,
           entities: true,
-          rawArticle: { select: { sourceCountry: true } },
+          rawArticle: {
+            select: {
+              sourceCountry: true,
+              biasGroup: true,
+              coverageScope: true,
+            },
+          },
         },
       }),
       prisma.storyCluster.count({ where: { isActive: true, createdAt: { gte: startDate } } }),
@@ -330,6 +346,34 @@ export async function getAnalyticsData(timeRange: string = "7d"): Promise<Analyt
       if (s.model) activeChatModels[s.model] = (activeChatModels[s.model] || 0) + 1;
     });
 
+    // ── Bias Group Distribution ──────────────────────────────────────────────
+    const biasCounts: Record<string, number> = {};
+    for (const a of processedArticles) {
+      const bias = a.rawArticle?.biasGroup ?? "Unknown";
+      biasCounts[bias] = (biasCounts[bias] ?? 0) + 1;
+    }
+    const biasGroupDistribution = Object.entries(biasCounts)
+      .map(([label, count]) => ({
+        label,
+        count,
+        percentage: totalArticles > 0 ? Math.round((count / totalArticles) * 100) : 0,
+      }))
+      .sort((a, b) => b.count - a.count);
+
+    // ── Coverage Scope Distribution ──────────────────────────────────────────
+    const scopeCounts: Record<string, number> = {};
+    for (const a of processedArticles) {
+      const scope = a.rawArticle?.coverageScope ?? "Unknown";
+      scopeCounts[scope] = (scopeCounts[scope] ?? 0) + 1;
+    }
+    const coverageScopeDistribution = Object.entries(scopeCounts)
+      .map(([label, count]) => ({
+        label,
+        count,
+        percentage: totalArticles > 0 ? Math.round((count / totalArticles) * 100) : 0,
+      }))
+      .sort((a, b) => b.count - a.count);
+
     const chatTelemetry = {
       totalSessions: chatSessions.length,
       totalMessages: chatMessagesCount,
@@ -357,6 +401,8 @@ export async function getAnalyticsData(timeRange: string = "7d"): Promise<Analyt
       modelUtilization,
       topicSourceDistribution,
       storyImpactDistribution,
+      biasGroupDistribution,
+      coverageScopeDistribution,
       chatTelemetry,
     };
   } catch (error) {
@@ -366,6 +412,7 @@ export async function getAnalyticsData(timeRange: string = "7d"): Promise<Analyt
       totalArticles: 0, totalStories: 0, totalFindings: 0, totalTopics: 0, avgSentiment: null,
       topEntities: [], aiUsageChart: [], sourceHealth: [], ingestionVolumeChart: [], dedupRate: 0,
       modelUtilization: [], topicSourceDistribution: [], storyImpactDistribution: [],
+      biasGroupDistribution: [], coverageScopeDistribution: [],
       chatTelemetry: { totalSessions: 0, totalMessages: 0, totalToolRuns: 0, activeModels: [] }
     };
   }
@@ -561,6 +608,40 @@ export async function getSourceOriginCounts() {
     };
   } catch (error) {
     console.error("getSourceOriginCounts error:", error);
+    return { all: 0, counts: {} };
+  }
+}
+
+export async function getBiasGroupCounts() {
+  "use cache";
+  cacheTag("articles");
+  cacheLife("minutes");
+
+  try {
+    const rawCounts = await prisma.rawArticle.groupBy({
+      by: ["biasGroup"],
+      _count: { _all: true },
+      where: {
+        processedArticle: {
+          isNot: null,
+        },
+      },
+    });
+
+    const all = rawCounts.reduce((acc, curr) => acc + curr._count._all, 0);
+
+    const counts = rawCounts.reduce((acc, curr) => {
+      const bias = curr.biasGroup || "Unknown";
+      acc[bias] = curr._count._all;
+      return acc;
+    }, {} as Record<string, number>);
+
+    return {
+      all,
+      counts,
+    };
+  } catch (error) {
+    console.error("getBiasGroupCounts error:", error);
     return { all: 0, counts: {} };
   }
 }

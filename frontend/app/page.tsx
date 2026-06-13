@@ -11,11 +11,22 @@ import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import { BUILTIN_SOURCES } from "@/lib/constants";
 
-export default async function Home({
-  searchParams,
-}: {
+import { Suspense } from "react";
+import FeedSkeleton from "@/components/Feed/FeedSkeleton";
+
+interface HomeProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
-}) {
+}
+
+export default function Home({ searchParams }: HomeProps) {
+  return (
+    <Suspense fallback={<FeedSkeleton />}>
+      <HomeContent searchParams={searchParams} />
+    </Suspense>
+  );
+}
+
+async function HomeContent({ searchParams }: HomeProps) {
   const params = await searchParams;
   const category =
     typeof params.category === "string" ? params.category : "all";
@@ -25,6 +36,8 @@ export default async function Home({
   const origin = typeof params.origin === "string" ? params.origin : "all";
   const type = typeof params.type === "string" ? params.type : "all";
   const story = typeof params.story === "string" ? params.story : "all";
+  const bias = typeof params.bias === "string" ? params.bias : "all";
+  const scope = typeof params.scope === "string" ? params.scope : "all";
   const articleId =
     typeof params.article === "string" ? params.article : undefined;
 
@@ -70,6 +83,8 @@ export default async function Home({
         origin,
         type,
         story,
+        bias,
+        scope,
         enabledSources,
       }),
       articleId ? getArticleById(articleId) : Promise.resolve(null),
@@ -105,6 +120,8 @@ export default async function Home({
           origin={origin}
           type={type}
           story={story}
+          bias={bias}
+          scope={scope}
           activeStoryTitle={activeStoryTitle}
         />
 
@@ -116,7 +133,7 @@ export default async function Home({
             list and cursor so the new first page doesn't append to the old one.
           */
           <ArticleFeed
-            key={`${category}|${sort}|${search}|${region}|${origin}|${type}|${story}|${enabledSources?.join(",")}`}
+            key={`${category}|${sort}|${search}|${region}|${origin}|${type}|${story}|${bias}|${scope}|${enabledSources?.join(",")}`}
             initialArticles={articles}
             initialCursor={nextCursor}
             category={category}
@@ -126,6 +143,8 @@ export default async function Home({
             origin={origin}
             type={type}
             story={story}
+            bias={bias}
+            scope={scope}
             activeStoryTitle={activeStoryTitle}
           />
         )}

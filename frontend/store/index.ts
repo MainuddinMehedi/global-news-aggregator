@@ -67,6 +67,9 @@ export interface CustomSource {
   url: string;
   country: string;
   sourceOrigin: string;
+  sourceType: string;
+  biasGroup: string;
+  coverageScope: string;
   enabled: boolean;
 }
 

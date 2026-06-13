@@ -15,5 +15,7 @@ export interface Article {
   sourceCountry: string | null;
   sourceOrigin: string | null;
   sourceType: string | null;
+  biasGroup: string | null;
+  coverageScope: string | null;
   slug: string | null;
 }

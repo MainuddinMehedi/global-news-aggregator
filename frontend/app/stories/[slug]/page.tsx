@@ -7,13 +7,24 @@ import ArticleCard from "@/components/articles/ArticleCard";
 import { Article } from "@/types/article";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Alert01Icon, ArrowLeft01Icon } from "@hugeicons/core-free-icons";
-import { StoryHero, KeyDevelopmentsTimeline } from "@/components/stories";
+import { StoryHero, KeyDevelopmentsTimeline, PerspectiveWidget } from "@/components/stories";
 
-export default async function StoryDetailsPage({
-  params,
-}: {
-  params: { slug: string };
-}) {
+import { Suspense } from "react";
+import FeedSkeleton from "@/components/Feed/FeedSkeleton";
+
+interface StoryPageProps {
+  params: Promise<{ slug: string }>;
+}
+
+export default function StoryDetailsPage({ params }: StoryPageProps) {
+  return (
+    <Suspense fallback={<FeedSkeleton />}>
+      <StoryDetailsContent params={params} />
+    </Suspense>
+  );
+}
+
+async function StoryDetailsContent({ params }: StoryPageProps) {
   const resolvedParams = await params;
   const story = await getStoryDetail(resolvedParams.slug);
 
@@ -43,6 +54,8 @@ export default async function StoryDetailsPage({
     eventRegion: processedArticle.eventRegion,
     sourceOrigin: processedArticle.rawArticle.sourceOrigin,
     sourceType: processedArticle.rawArticle.sourceType,
+    biasGroup: processedArticle.rawArticle.biasGroup,
+    coverageScope: processedArticle.rawArticle.coverageScope,
   });
 
   const uniqueSourcesMap = new Map<string, string>();
@@ -102,6 +115,8 @@ export default async function StoryDetailsPage({
               </div>
             )}
           </div>
+
+          <PerspectiveWidget articles={story.articles.map(mapStoryArticleToArticle)} />
 
           <div>
             <div className="flex items-center justify-between mb-8 px-2">

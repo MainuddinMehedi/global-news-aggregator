@@ -26,8 +26,9 @@ export default function FilterPopover() {
             Filters
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-fit p-4 rounded-2xl" align="end">
-          <div className="flex justify-between items-center gap-5 py-2">
+        <PopoverContent className="w-80 p-4 rounded-2xl" align="end">
+          <div className="grid grid-cols-2 gap-4 py-2">
+            {/* Event Region */}
             <div className="space-y-2">
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -65,6 +66,8 @@ export default function FilterPopover() {
                 ]}
               />
             </div>
+
+            {/* Source Type */}
             <div className="space-y-2">
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -84,8 +87,7 @@ export default function FilterPopover() {
                   className="max-w-[220px]"
                 >
                   <p className="text-xs">
-                    The editorial/business model of the publisher (e.g., State
-                    Media, Commercial Publisher).
+                    The editorial/business model of the publisher (e.g., State Media, Commercial Publisher).
                   </p>
                 </TooltipContent>
               </Tooltip>
@@ -100,6 +102,80 @@ export default function FilterPopover() {
                     value: "Commercial Publisher",
                   },
                   { label: "Other", value: "Other" },
+                ]}
+              />
+            </div>
+
+            {/* Bias Leaning */}
+            <div className="space-y-2">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-1.5 cursor-help w-fit">
+                    <h4 className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">
+                      Bias Leaning
+                    </h4>
+                    <HugeiconsIcon
+                      icon={InformationCircleIcon}
+                      className="w-3.5 h-3.5 text-muted-foreground/60 hover:text-muted-foreground transition-colors"
+                    />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent
+                  side="top"
+                  align="start"
+                  className="max-w-[220px]"
+                >
+                  <p className="text-xs">
+                    The political leaning or affiliation of the publisher (Centrist, Left/Right-leaning, State-Controlled).
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+              <FilterDropdown
+                label="Bias"
+                paramKey="bias"
+                options={[
+                  { label: "Left-leaning", value: "Left-leaning" },
+                  { label: "Centrist", value: "Centrist" },
+                  { label: "Right-leaning", value: "Right-leaning" },
+                  { label: "State-Aligned", value: "State-Aligned" },
+                  { label: "State-Controlled", value: "State-Controlled" },
+                  { label: "Other", value: "Other" },
+                ]}
+              />
+            </div>
+
+            {/* Coverage Scope */}
+            <div className="space-y-2">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-1.5 cursor-help w-fit">
+                    <h4 className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">
+                      Coverage Scope
+                    </h4>
+                    <HugeiconsIcon
+                      icon={InformationCircleIcon}
+                      className="w-3.5 h-3.5 text-muted-foreground/60 hover:text-muted-foreground transition-colors"
+                    />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent
+                  side="top"
+                  align="start"
+                  className="max-w-[220px]"
+                >
+                  <p className="text-xs">
+                    The scope of coverage handled by the publisher (Global, Regional, National, Local).
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+              <FilterDropdown
+                label="Scope"
+                paramKey="scope"
+                options={[
+                  { label: "Global", value: "Global" },
+                  { label: "Regional", value: "Regional" },
+                  { label: "National", value: "National" },
+                  { label: "Local", value: "Local" },
                 ]}
               />
             </div>

@@ -4,6 +4,22 @@ This document serves as the master checklist and brainstorming board for the rem
 
 ---
 
+## Current Priority: Order of Operations (Architecture & Metadata)
+
+To build a robust, scalable aggregator without overwhelming the LLM APIs, we are following this strict order of operations for the ingestion pipeline:
+
+1. **Step 1: The Metadata Foundation** ✅ [COMPLETED]
+   - Update `schema.prisma`, `feeds.js`, and the Ingestion Service to support new deterministic fields (`biasGroup` and `coverageScope`). 
+   - This sets the data layer in stone so future architectural changes can read/write from these established fields.
+2. **Step 2: The Architectural Refactor (Ingestion Pipeline)**
+   - Move away from 100% LLM dependency. Implement Stage 1 deterministic checks (keyword matching for Category/Region) and decide on a Stage 2 local ML solution (Python microservice or local Node.js ML) for entities and sentiment.
+3. **Step 3: Frontend Analytics Wiring & UX**
+   - Hook up the new metadata to the frontend UI (BiasDistributionWidget, PerspectiveWidget, Article Cards, and filters) to ensure the new architecture correctly surfaces the "Perspective Gap".
+4. **Step 4: Feed Curation (Scale Up)**
+   - *Only after the pipeline is cheap, robust, and tested.* Use the AI curation prompts to build and inject 50-75 global RSS feeds into the system.
+
+---
+
 ## 1. Data Ingestion & Quality (High Priority)
 
 ### 1.1 Feed List Curation & Automation
@@ -38,13 +54,13 @@ Changing the rss feed structure changes how we take input(feed) from user and ho
 - **Concept:** Since multiple sources cover the same event (Story Clusters), allow users to select an event and view how different `Source Types` or `Source Origins` covered it side-by-side.
 - **Example:** Compare NYT (Commercial, US) coverage of an event vs. Xinhua (State Media, China) coverage of the exact same event.
 
-### 2.3 User Scopes & Authentication
+### 2.3 User Scopes & Authentication ✅ [COMPLETED]
 
-- **Current State:** No strict differentiation between public visitors, authenticated users, and admins.
+- **Current State:** Implemented database-backed sessions differentiating between public visitors, authenticated users, and admins.
 - **Action Items (Defining Scopes):**
-  - **Public User:** Can view the feed, read stories, search, and view public "News Insights" (Perspective Donut, Bias Distribution, Event Clusters, Topic Radar).
-  - **Authenticated User:** Can bookmark articles, customize feed preferences, and subscribe to notifications for specific Topics/Stories.
-  - **Admin:** Has exclusive access to the Admin Dashboard (system telemetry, controls, user management).
+  - **Public User:** Can view the feed, read stories, search, and view public "News Insights". Protected actions trigger a global login modal.
+  - **Authenticated User:** Can bookmark articles. Session is checked via server actions.
+  - **Admin:** Has exclusive access to the Admin Dashboard. Protected via layout-level server session checks.
 
 ---
 
@@ -85,8 +101,10 @@ _Goal: Provide full observability and control over the system. Build mandatory f
 
 ## Completed Tasks
 
+- **Step 1: The Metadata Foundation:** Added optional fields `biasGroup` and `coverageScope` to `RawArticle` in the Prisma schema and database, updated Ingestion Service sources (`feeds.js` and `rss.js`) and AI prompt tokens config, integrated Bias Leaning and Coverage Scope filters/charts on the frontend, and resolved dynamic layout PPR pre-rendering issues in Next.js 16.
 - **2.1 UI/UX Design Consistency:** Audited and unified the design language between Story views and Locked Topics views, adjusting max-widths, header typography, and spacings for consistency.
-- **1.2 The 3-Axis Filter Architecture (Revamp):** The database schema, backend ingestion, and frontend UI components (ArticleCard, ArticleDetailsModal, Article Page, Story Page) have all been audited and updated to accurately surface the new `Event Region`, `Source Origin`, and `Source Type` fields. 
+- **1.2 The 3-Axis Filter Architecture (Revamp):** The database schema, backend ingestion, and frontend UI components (ArticleCard, ArticleDetailsModal, Article Page, Story Page) have all been audited and updated to accurately surface the new `Event Region`, `Source Origin`, and `Source Type` fields.
+- **2.3 User Scopes & Authentication:** Implemented database-backed sessions with Prisma and NextAuth. Added `UserRole` enum (`USER`, `ADMIN`) to the database schema. Created a global login modal for Google OAuth and Magic Link authentication. Protected the admin dashboard (`/system-supar-admin`) using server-side layout verification. Implemented role-based sidebar navigation and user profile popover.
 
 ## Future Notes
 

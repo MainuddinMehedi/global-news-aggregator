@@ -35,6 +35,7 @@ export async function getStoryClusters(search?: string) {
               select: {
                 source: true,
                 url: true,
+                sourceOrigin: true,
               },
             },
           },
@@ -48,15 +49,20 @@ export async function getStoryClusters(search?: string) {
 
     return clusters.map((cluster) => {
       const sourcesMap = new Map<string, string>();
+      const originsSet = new Set<string>();
       cluster.articles.forEach((art) => {
         if (art.rawArticle.source && !sourcesMap.has(art.rawArticle.source)) {
           sourcesMap.set(art.rawArticle.source, art.rawArticle.url);
+        }
+        if (art.rawArticle.sourceOrigin) {
+          originsSet.add(art.rawArticle.sourceOrigin);
         }
       });
       const sources = Array.from(sourcesMap.entries()).map(([name, url]) => ({
         name,
         url,
       }));
+      const origins = Array.from(originsSet);
 
       return {
         id: cluster.id,
@@ -73,6 +79,7 @@ export async function getStoryClusters(search?: string) {
         sourceCount: cluster.sourceCount || 0,
         topSources: cluster.topSources || [],
         sources,
+        origins,
         whyItMatters: cluster.whyItMatters,
         keyDevelopments: (cluster.keyDevelopments || []) as unknown as Array<{
           title: string;

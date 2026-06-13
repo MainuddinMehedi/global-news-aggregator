@@ -10,6 +10,8 @@ interface getArticlesParams {
   origin?: string;
   type?: string;
   story?: string;
+  bias?: string;
+  scope?: string;
   cursor?: string;
   enabledSources?: string[];
 }
@@ -24,6 +26,8 @@ export async function getArticles({
   origin,
   type,
   story,
+  bias,
+  scope,
   cursor,
   enabledSources,
 }: getArticlesParams): Promise<{
@@ -60,6 +64,16 @@ export async function getArticles({
   let typeFilter: any[] = [];
   if (type && type !== "all") {
     typeFilter = [{ rawArticle: { sourceType: type } }];
+  }
+
+  let biasFilter: any[] = [];
+  if (bias && bias !== "all") {
+    biasFilter = [{ rawArticle: { biasGroup: bias } }];
+  }
+
+  let scopeFilter: any[] = [];
+  if (scope && scope !== "all") {
+    scopeFilter = [{ rawArticle: { coverageScope: scope } }];
   }
 
   let sourcesFilter: any[] = [];
@@ -122,7 +136,17 @@ export async function getArticles({
       take: TAKE + 1,
       ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
       where: {
-        AND: [...categoryFilter, ...searchFilter, ...regionFilter, ...originFilter, ...typeFilter, ...storyFilter, ...sourcesFilter],
+        AND: [
+          ...categoryFilter,
+          ...searchFilter,
+          ...regionFilter,
+          ...originFilter,
+          ...typeFilter,
+          ...biasFilter,
+          ...scopeFilter,
+          ...storyFilter,
+          ...sourcesFilter,
+        ],
       },
       orderBy,
       include: {
@@ -153,6 +177,8 @@ export async function getArticles({
       sourceCountry: article.rawArticle.sourceCountry,
       sourceOrigin: article.rawArticle.sourceOrigin,
       sourceType: article.rawArticle.sourceType,
+      biasGroup: article.rawArticle.biasGroup,
+      coverageScope: article.rawArticle.coverageScope,
       slug: article.rawArticle.slug,
     }));
 
@@ -206,6 +232,8 @@ export async function getArticleById(id: string): Promise<Article | null> {
       sourceCountry: raw.rawArticle.sourceCountry,
       sourceOrigin: raw.rawArticle.sourceOrigin,
       sourceType: raw.rawArticle.sourceType,
+      biasGroup: raw.rawArticle.biasGroup,
+      coverageScope: raw.rawArticle.coverageScope,
       slug: raw.rawArticle.slug,
     };
   } catch (error) {

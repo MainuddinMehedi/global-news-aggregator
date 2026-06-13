@@ -15,13 +15,23 @@ import AiButton from "@/components/articles/AiButton";
 import ArticleViewer from "@/components/articles/ArticleViewer";
 import { RelativeTime } from "@/components/ui/RelativeTime";
 
-export default async function ArticleDetailsPage({
-  params,
-  searchParams,
-}: {
+import { Suspense } from "react";
+import FeedSkeleton from "@/components/Feed/FeedSkeleton";
+
+interface PageProps {
   params: Promise<{ slug: string }>;
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
-}) {
+}
+
+export default function ArticleDetailsPage({ params, searchParams }: PageProps) {
+  return (
+    <Suspense fallback={<FeedSkeleton />}>
+      <ArticleDetailsContent params={params} searchParams={searchParams} />
+    </Suspense>
+  );
+}
+
+async function ArticleDetailsContent({ params, searchParams }: PageProps) {
   const { slug } = await params;
   const resolvedSearchParams = await searchParams;
   const storySlug =
@@ -82,6 +92,16 @@ export default async function ArticleDetailsPage({
                 {article.sourceType && (
                   <span className="text-xs font-medium text-muted-foreground">
                     {article.sourceType}
+                  </span>
+                )}
+                {article.biasGroup && (
+                  <span className="text-xs px-1.5 py-0.5 bg-purple-100 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 rounded-md font-semibold">
+                    {article.biasGroup}
+                  </span>
+                )}
+                {article.coverageScope && (
+                  <span className="text-xs px-1.5 py-0.5 bg-green-100 dark:bg-green-950/40 text-green-700 dark:text-green-300 rounded-md font-semibold">
+                    {article.coverageScope}
                   </span>
                 )}
               </div>
@@ -164,7 +184,7 @@ export default async function ArticleDetailsPage({
               )}
 
               {/* Publisher Profile */}
-              {(article.sourceType || article.sourceOrigin) && (
+              {(article.sourceType || article.sourceOrigin || article.biasGroup || article.coverageScope) && (
                 <div className="space-y-2">
                   <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     Publisher Profile
@@ -179,6 +199,16 @@ export default async function ArticleDetailsPage({
                       <div className="flex items-center gap-2">
                         <HugeiconsIcon icon={Globe} className="w-3.5 h-3.5 text-muted-foreground" />
                         <span className="text-xs text-muted-foreground/80">Based in {article.sourceOrigin}</span>
+                      </div>
+                    )}
+                    {article.biasGroup && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground/80">Bias Leaning: {article.biasGroup}</span>
+                      </div>
+                    )}
+                    {article.coverageScope && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground/80">Coverage: {article.coverageScope}</span>
                       </div>
                     )}
                   </div>

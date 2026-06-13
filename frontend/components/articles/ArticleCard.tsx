@@ -52,7 +52,7 @@ export default function ArticleCard({
 
       <CardContent className="flex-1 flex flex-col space-y-3">
         {/* Source · Time · Sentiment */}
-        <div className="flex items-center space-x-2 text-xs">
+        <div className="flex items-center space-x-2 text-xs flex-wrap gap-y-1">
           <SourceAvatar
             name={article.source}
             url={article.url}
@@ -61,6 +61,11 @@ export default function ArticleCard({
           <span className="font-semibold text-foreground/80">
             {article.source}
           </span>
+          {article.biasGroup && (
+            <span className="inline-flex items-center gap-1 bg-muted/30 px-1.5 py-0.5 rounded border border-border/40 text-[9px] text-muted-foreground font-black uppercase tracking-widest">
+              {article.biasGroup}
+            </span>
+          )}
           <span className="text-border">·</span>
           <span className="text-muted-foreground font-medium text-[10px]">
             <RelativeTime date={article.publishedAt} />
@@ -112,6 +117,11 @@ export default function ArticleCard({
                   {article.sourceOrigin}
                 </span>
               </div>
+            )}
+            {article.coverageScope && (
+              <span className="text-[9px] text-muted-foreground/80 font-bold uppercase tracking-widest border border-border/40 px-1.5 py-0.5 rounded-md bg-muted/10">
+                {article.coverageScope}
+              </span>
             )}
           </div>
         </div>

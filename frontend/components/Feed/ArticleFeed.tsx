@@ -22,6 +22,8 @@ interface ArticleFeedProps {
   origin: string;
   type: string;
   story: string;
+  bias: string;
+  scope: string;
   activeStoryTitle?: string;
 }
 
@@ -35,6 +37,8 @@ export default function ArticleFeed({
   origin,
   type,
   story,
+  bias,
+  scope,
   activeStoryTitle,
 }: ArticleFeedProps) {
   const router = useRouter();
@@ -107,6 +111,8 @@ export default function ArticleFeed({
       if (origin !== "all") params.set("origin", origin);
       if (type !== "all") params.set("type", type);
       if (story !== "all") params.set("story", story);
+      if (bias !== "all") params.set("bias", bias);
+      if (scope !== "all") params.set("scope", scope);
 
       const res = await fetch(`/api/articles?${params}`);
 
@@ -125,7 +131,7 @@ export default function ArticleFeed({
     } finally {
       setLoading(false);
     }
-  }, [cursor, isLoading, error, category, sort, search, region, origin, type, story]);
+  }, [cursor, isLoading, error, category, sort, search, region, origin, type, story, bias, scope]);
 
   // Intersection observer logic
   useEffect(() => {
