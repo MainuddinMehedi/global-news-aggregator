@@ -27,9 +27,10 @@ export function contextFromArticle(article: {
   publishedAt: string;
   contentSnippet: string;
   extractedContent?: string | null;
+  biasNote?: string | null;
   eventRegion?: string | null;
   sentimentScore?: number | null;
-  perspectiveCountries?: string[];
+  categories?: { name: string }[];
   entities?: string[];
   sourceCountry?: string | null;
 }): ContextItem & { sourceId: string; sourceType: string; snapshot: unknown } {
@@ -50,7 +51,7 @@ export function contextFromArticle(article: {
       extractedContent: article.extractedContent,
       eventRegion: article.eventRegion,
       sentimentScore: article.sentimentScore,
-      perspectiveCountries: article.perspectiveCountries,
+      categories: article.categories?.map((c) => c.name),
       entities: article.entities,
       sourceCountry: article.sourceCountry,
     },

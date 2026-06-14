@@ -42,7 +42,6 @@ export async function GET(req: NextRequest) {
         biasNote: article.biasNote,
         eventRegion: article.eventRegion,
         sentimentScore: article.sentimentScore,
-        perspectiveCountries: article.perspectiveCountries,
         url: article.rawArticle.url,
         categories: article.categories,
         entities: article.entities,

@@ -8,18 +8,19 @@ app = FastAPI(title="Global News Aggregator - Enrichment Service")
 
 # Initialize models
 try:
-    nlp = spacy.load("en_core_web_sm")
+    nlp = spacy.load("en_core_web_md")
 except OSError:
     import subprocess
     import sys
-    print("Downloading en_core_web_sm...")
-    subprocess.check_call([sys.executable, "-m", "spacy", "download", "en_core_web_sm"])
-    nlp = spacy.load("en_core_web_sm")
+    print("Downloading en_core_web_md...")
+    subprocess.check_call([sys.executable, "-m", "spacy", "download", "en_core_web_md"])
+    nlp = spacy.load("en_core_web_md")
 
 analyzer = SentimentIntensityAnalyzer()
 
 class ArticleRequest(BaseModel):
     text: str
+    category: str
 
 class ArticleBatchRequest(BaseModel):
     articles: List[ArticleRequest]
@@ -47,8 +48,12 @@ def analyze_article(req: ArticleRequest):
     
     # 1. Named Entity Recognition
     doc = nlp(text)
-    # We care about geopolitical entities: Persons, Organizations, Geopolitical Entities (GPE), Locations (LOC)
-    allowed_labels = {"PERSON", "ORG", "GPE", "LOC"}
+    
+    soft_news_cats = {"lifestyle", "entertainment", "sports", "gaming", "technology", "science"}
+    if req.category in soft_news_cats:
+        allowed_labels = {"PERSON", "ORG", "PRODUCT", "EVENT", "WORK_OF_ART", "FAC"}
+    else:
+        allowed_labels = {"PERSON", "ORG", "GPE", "LOC"}
     
     raw_entities = [ent.text for ent in doc.ents if ent.label_ in allowed_labels]
     
@@ -68,13 +73,21 @@ def analyze_article(req: ArticleRequest):
 @app.post("/analyze/batch", response_model=BatchEnrichmentResponse)
 def analyze_batch(req: ArticleBatchRequest):
     results = []
+    
+    soft_news_cats = {"lifestyle", "entertainment", "sports", "gaming", "technology", "science"}
+    
     for article in req.articles:
         if not article.text:
             results.append(EnrichmentResponse(entities=[], sentimentScore=0.0))
             continue
             
         doc = nlp(article.text)
-        allowed_labels = {"PERSON", "ORG", "GPE", "LOC"}
+        
+        if article.category in soft_news_cats:
+            allowed_labels = {"PERSON", "ORG", "PRODUCT", "EVENT", "WORK_OF_ART", "FAC"}
+        else:
+            allowed_labels = {"PERSON", "ORG", "GPE", "LOC"}
+            
         raw_entities = [ent.text for ent in doc.ents if ent.label_ in allowed_labels]
         unique_entities = list(set([e.strip() for e in raw_entities if len(e.strip()) > 2]))
         

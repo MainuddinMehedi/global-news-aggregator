@@ -1,24 +1,34 @@
 import { CATEGORY_KEYWORDS, REGION_KEYWORDS } from "./gazetteer.js";
 
-function getMatchCount(text, keywords) {
-  let count = 0;
-  for (const kw of keywords) {
-    if (text.includes(kw)) {
-      count++;
-    }
+// 1. Compile dictionaries into Regex with Word Boundaries (\b) ONCE at startup
+function compileDictionary(dict) {
+  const compiled = {};
+  for (const [key, keywords] of Object.entries(dict)) {
+    // \b ensures we match the exact word. 'gi' means global and case-insensitive.
+    // We replace spaces with \s+ to handle weird formatting in scraped text.
+    const pattern = keywords.map(kw => `\\b${kw.replace(/\s+/g, '\\s+')}\\b`).join('|');
+    compiled[key] = new RegExp(pattern, 'gi');
   }
-  return count;
+  return compiled;
+}
+
+const COMPILED_CATEGORIES = compileDictionary(CATEGORY_KEYWORDS);
+const COMPILED_REGIONS = compileDictionary(REGION_KEYWORDS);
+
+function getRegexMatchCount(text, regex) {
+  const matches = text.match(regex);
+  return matches ? matches.length : 0;
 }
 
 export function enrichWithStage1(rawArticle) {
-  const content = `${rawArticle.title || ""} ${rawArticle.contentSnippet || ""}`.toLowerCase();
+  const content = `${rawArticle.title || ""} ${rawArticle.contentSnippet || ""}`;
   
   // 1. Categories
   let bestCategory = "other";
   let maxCategoryMatches = 0;
   
-  for (const [category, keywords] of Object.entries(CATEGORY_KEYWORDS)) {
-    const matches = getMatchCount(content, keywords);
+  for (const [category, regex] of Object.entries(COMPILED_CATEGORIES)) {
+    const matches = getRegexMatchCount(content, regex);
     if (matches > maxCategoryMatches) {
       maxCategoryMatches = matches;
       bestCategory = category;
@@ -29,8 +39,8 @@ export function enrichWithStage1(rawArticle) {
   let bestRegion = null;
   let maxRegionMatches = 0;
   
-  for (const [region, keywords] of Object.entries(REGION_KEYWORDS)) {
-    const matches = getMatchCount(content, keywords);
+  for (const [region, regex] of Object.entries(COMPILED_REGIONS)) {
+    const matches = getRegexMatchCount(content, regex);
     if (matches > maxRegionMatches) {
       maxRegionMatches = matches;
       bestRegion = region;
@@ -42,12 +52,8 @@ export function enrichWithStage1(rawArticle) {
     bestRegion = rawArticle.sourceOrigin;
   }
 
-  // 3. Inherit Bias and Perspective
-  // The perspective country is generally the source's country, unless it's global.
-  const perspectiveCountries = [];
-  if (rawArticle.sourceCountry && rawArticle.sourceCountry !== "Global") {
-    perspectiveCountries.push(rawArticle.sourceCountry);
-  }
+  // 3. Inherit Bias (Removed perspectiveCountry inheritance)
+  const perspectiveCountries = []; // Leave empty unless a smarter model deduces it later
 
   const biasNote = rawArticle.biasGroup ? `Inherited from source (${rawArticle.biasGroup})` : null;
 

@@ -1,11 +1,12 @@
 const ENRICHMENT_SERVICE_URL = process.env.ENRICHMENT_SERVICE_URL || "http://localhost:8000";
 
-export async function enrichWithStage2Batch(articles) {
+export async function enrichWithStage2Batch(articles, categories) {
   if (!articles || articles.length === 0) return [];
 
   const payload = {
-    articles: articles.map(article => ({
-      text: `${article.title || ""} ${article.contentSnippet || ""}`.trim()
+    articles: articles.map((article, index) => ({
+      text: `${article.title || ""} ${article.contentSnippet || ""}`.trim(),
+      category: categories ? categories[index] : "other"
     }))
   };
 

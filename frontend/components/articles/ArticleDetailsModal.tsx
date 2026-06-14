@@ -85,15 +85,6 @@ export function ArticleDetailsModal({ article }: { article: Article | null }) {
                   {article.biasCategory || "Neutral"}
                 </Badge>
               </div>
-              {article.perspectiveCountries &&
-                article.perspectiveCountries.length > 0 && (
-                  <div>
-                    <span className="text-muted-foreground/80">Focus:</span>{" "}
-                    <span className="font-medium text-foreground">
-                      {article.perspectiveCountries.join(", ")}
-                    </span>
-                  </div>
-                )}
             </div>
 
             {article.biasNote && (
@@ -147,9 +138,9 @@ export function ArticleDetailsModal({ article }: { article: Article | null }) {
                       {article.sourceType}
                     </span>
                   )}
-                  {article.sourceOrigin && (
+                  {article.sourceCountry && (
                     <span className="text-xs text-zinc-400">
-                      Based in {article.sourceOrigin}
+                      Based in {article.sourceCountry}
                     </span>
                   )}
                   {article.biasGroup && (

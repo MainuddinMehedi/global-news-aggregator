@@ -80,6 +80,21 @@ Not all filters deserve the same real estate. The goal is to surface the most im
 - [ ] **ArticleCard:** Add visual badges or colored indicators representing the `biasGroup` (e.g., colored dots or pills). This provides immediate visual cues about "Who is talking" as the user scrolls.
 - [ ] **ArticleDetailsModal / Story Pages:** Expand the "Based in..." section to fully display the Publisher's Identity (Origin, Country, Type, Bias Group, Coverage Scope).
 
+---
+
+## Domain-Specific Entity Extraction (Soft Power vs. Hard Power)
+
+As of the latest architecture updates, the NLP pipeline (Stage 2) dynamically alters its extraction targets based on the domain (category) of the article.
+
+*   **Hard News** (`geopolitics`, `economy`, `security`, etc.): Extracts `PERSON`, `ORG`, `GPE`, and `LOC`.
+*   **Soft News** (`lifestyle`, `entertainment`, `sports`, etc.): Extracts `PERSON`, `ORG`, `PRODUCT`, `EVENT`, `WORK_OF_ART`, and `FAC`.
+
+This allows us to track "Consumerism-driven political influence" and cultural soft power. For example, catching a trending `PRODUCT` (e.g., TikTok, Tesla) within an entertainment article.
+
+### Frontend Implications & Inconsistencies
+*   **Mapping Dependencies:** Currently, frontend map widgets rely heavily on `GPE` and `LOC`. Soft news articles will rarely have these entities extracted. **If a map widget assumes every clustered story has geographic coordinates, it will crash or render blank for soft news.**
+*   **Presentation Ideas (TODO):** We should build a **"Cultural Exports / Soft Power" Widget** for the dashboard. Instead of mapping coordinates, this widget would track the velocity of specific `PRODUCT` or `EVENT` entities across global feeds to measure cultural influence.
+
 > [!NOTE] 
 > **Future Architecture Consideration:**
 > As we potentially shift the enrichment architecture (e.g., moving to a Python microservice or local NLP to reduce LLM costs), the way these metadata fields are populated might change (e.g., faster, synchronous tagging vs. async LLM tagging). We should periodically revisit this frontend UX strategy to ensure the UI gracefully handles any delays in metadata processing or changes in how Story Clusters are formed.

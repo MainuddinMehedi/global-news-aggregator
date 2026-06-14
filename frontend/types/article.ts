@@ -8,7 +8,6 @@ export interface Article {
   biasNote: string | null;
   eventRegion: string | null;
   sentimentScore: number | null;
-  perspectiveCountries: string[];
   url: string;
   categories: { id: string; name: string }[];
   entities: string[];

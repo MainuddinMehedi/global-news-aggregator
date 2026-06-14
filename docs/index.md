@@ -19,6 +19,10 @@ This index serves as a mindmap and entry point to understand the project's docum
 ## 🏷️ Metadata & Enrichment Pipeline
 - **[Metadata Strategy Overview](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/METADATA_STRATEGY_OVERVIEW.md)**
   How raw news articles are enriched with structured metadata (Entities, Categories, Sentiment, Perspective Countries).
+- **[Enrichment Pipeline Overview](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/ENRICHMENT_PIPELINE_OVERVIEW.md)**
+  Technical architectural breakdown of the two-stage pipeline: Node.js deterministic routing and Python NLP microservice parsing.
+- **[Stage 1 Gazetteer Trade-offs](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/stage1_gazetteer_tradeoffs.md)**
+  Architectural ledger documenting the decision to use a compiled Regex Gazetteer over a Local ML classifier for Stage 1 routing.
 - **[Enrichment Pipeline Alternatives](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/ENRICHMENT_PIPELINE_ALTERNATIVES.md)**
   Exploration of alternative techniques for processing pipeline architecture, specifically around Local ML vs Cloud LLM tradeoffs.
 - **[Metadata Audit & Curation](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/METADATA_AUDIT_AND_CURATION.md)**

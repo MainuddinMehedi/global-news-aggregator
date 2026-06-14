@@ -56,33 +56,48 @@ export function createArticleProcessor(
           stage1: enrichWithStage1(article),
         }));
 
+        // --- THE SIEVE ---
+        // Keep canonical categories (geopolitics, sports, etc.) but DROP 'other'
+        const validIndices = [];
+        const validBatch = [];
+        const validCategories = [];
+        for (let i = 0; i < stage1Results.length; i++) {
+          if (stage1Results[i].stage1.categories[0] !== "other") {
+            validIndices.push(i);
+            validBatch.push(batch[i]);
+            validCategories.push(stage1Results[i].stage1.categories[0]);
+          } else {
+            console.log(`🗑️ Dropped from processing: ${batch[i].title} (Category: other)`);
+          }
+        }
+
         // Stage 2: Local ML Enrichment
         let stage2Results = [];
-        try {
-          stage2Results = await enrichWithStage2Batch(batch);
-        } catch (err) {
-          console.error(`⚠️ Stage 2 ML batch processing failed`, err.message);
-          // Fallback if the Python microservice is completely down
-          stage2Results = batch.map((article) => ({
-            ...article,
-            entities: [],
-            sentimentScore: null,
-          }));
+        if (validBatch.length > 0) {
+          try {
+            stage2Results = await enrichWithStage2Batch(validBatch, validCategories);
+          } catch (err) {
+            console.error(`⚠️ Stage 2 ML batch processing failed`, err.message);
+            // Fallback if the Python microservice is completely down
+            stage2Results = validBatch.map((article) => ({
+              ...article,
+              entities: [],
+              sentimentScore: null,
+            }));
+          }
         }
 
         let successCount = 0;
         const successfullyProcessedArticles = [];
 
         // Save to DB sequentially to prevent 'connectOrCreate' unique constraint race conditions
-        for (let i = 0; i < batch.length; i++) {
-          const rawArticle = batch[i];
-          const s1 = stage1Results[i].stage1;
-          const s2 = stage2Results[i];
+        for (let j = 0; j < validBatch.length; j++) {
+          const originalIndex = validIndices[j];
+          const rawArticle = validBatch[j];
+          const s1 = stage1Results[originalIndex].stage1;
+          const s2 = stage2Results[j];
 
-          const finalCats =
-            s1.categories && s1.categories.length > 0
-              ? s1.categories
-              : ["other"];
+          const finalCats = s1.categories;
 
           const categoryOps = finalCats.map((cat) => ({
             where: { name: cat },
