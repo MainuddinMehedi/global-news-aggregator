@@ -1,0 +1,395 @@
+{
+  "categories": {
+    "geopolitics": {
+      "terms": {
+        "united nations": 3,
+        "un security council": 3,
+        "nato": 3,
+        "foreign policy": 3,
+        "treaty": 3,
+        "diplomacy": 2,
+        "sanctions": 2,
+        "ambassador": 2,
+        "embassy": 2,
+        "ceasefire": 2,
+        "peace talks": 2,
+        "geopolitics": 2,
+        "foreign minister": 2,
+        "international relations": 2,
+        "bilateral": 2,
+        "border": 1,
+        "summit": 1,
+        "war crimes": 3,
+        "icj": 3,
+        "extradition": 2,
+        "vaccine diplomacy": 3,
+        "world health organization": 3,
+        "who": 3,
+        "sportswashing": 3,
+        "diplomatic boycott": 3,
+        "olympic boycott": 3,
+        "international olympic committee": 3
+      },
+      "exclusions": [
+        "tech summit",
+        "business summit"
+      ]
+    },
+    "business": {
+      "terms": {
+        "initial public offering": 3,
+        "ipo": 3,
+        "federal reserve": 3,
+        "central bank": 3,
+        "earnings report": 3,
+        "wall street": 3,
+        "merger": 2,
+        "acquisition": 2,
+        "layoffs": 2,
+        "market share": 2,
+        "inflation": 2,
+        "recession": 2,
+        "gdp": 2,
+        "venture capital": 2,
+        "startup": 1,
+        "corporate": 1,
+        "revenue": 1,
+        "profit": 1,
+        "ceo": 1,
+        "business": 1,
+        "antitrust": 3,
+        "corporate fraud": 3,
+        "sec lawsuit": 3,
+        "bankruptcy": 2
+      },
+      "exclusions": [
+        "show business",
+        "small business tips",
+        "mind your own business"
+      ]
+    },
+    "technology": {
+      "terms": {
+        "artificial intelligence": 3,
+        "cybersecurity": 3,
+        "silicon valley": 3,
+        "semiconductor": 3,
+        "machine learning": 3,
+        "generative ai": 3,
+        "llm": 3,
+        "data breach": 3,
+        "robotics": 2,
+        "algorithm": 2,
+        "software": 1,
+        "hardware": 1,
+        "chip": 1,
+        "tech": 1,
+        "vaccine breakthrough": 3,
+        "biotechnology": 3,
+        "clinical trial": 2,
+        "fda approval": 2,
+        "space exploration": 3,
+        "nasa": 3,
+        "cern": 3,
+        "satellite launch": 3,
+        "quantum supremacy": 3,
+        "nuclear fusion": 3
+      },
+      "exclusions": [
+        "potato chip",
+        "chocolate chip",
+        "hardware store"
+      ]
+    },
+    "economy": {
+      "terms": {
+        "macroeconomics": 3,
+        "interest rate": 2,
+        "tariffs": 2,
+        "trade policy": 2,
+        "export": 1,
+        "import": 1,
+        "deficit": 1,
+        "central bank digital currency": 3,
+        "cbdc": 3,
+        "crypto regulation": 3,
+        "digital euro": 3,
+        "digital yuan": 3
+      },
+      "exclusions": [
+        "fuel economy",
+        "economy class"
+      ]
+    },
+    "environment": {
+      "terms": {
+        "climate change": 3,
+        "global warming": 3,
+        "energy transition": 3,
+        "carbon emissions": 2,
+        "renewable energy": 2,
+        "solar power": 1,
+        "wind power": 1,
+        "magnitude earthquake": 3,
+        "tsunami": 3,
+        "category 5 hurricane": 3,
+        "natural disaster": 2,
+        "flood": 1
+      },
+      "exclusions": [
+        "office environment",
+        "desktop environment"
+      ]
+    },
+    "security": {
+      "terms": {
+        "terrorism": 3,
+        "military": 2,
+        "defense": 1,
+        "troops": 2,
+        "missile": 2,
+        "drone strike": 2,
+        "war": 2,
+        "conflict": 1,
+        "cyberattack": 2,
+        "pandemic": 3,
+        "mass shooting": 3,
+        "terror attack": 3,
+        "biosecurity": 3,
+        "bio-weapon": 3,
+        "gain-of-function": 3,
+        "medical supply chain": 3,
+        "uranium enrichment": 3,
+        "nuclear deterrence": 3,
+        "aerospace defense": 3,
+        "sanctions evasion": 3,
+        "ransomware attack": 3,
+        "terrorist financing": 3,
+        "money laundering": 3
+      },
+      "exclusions": [
+        "home security",
+        "security guard",
+        "social security"
+      ]
+    },
+    "politics": {
+      "terms": {
+        "election": 2,
+        "parliament": 2,
+        "congress": 2,
+        "senate": 2,
+        "governance": 1,
+        "domestic policy": 2,
+        "vote": 1,
+        "voter": 1,
+        "political campaign": 2,
+        "president": 2,
+        "prime minister": 2,
+        "supreme court": 3,
+        "indictment": 2,
+        "constitution": 3,
+        "legislation": 2,
+        "state media": 3,
+        "censorship": 3,
+        "internet blackout": 3,
+        "film ban": 3,
+        "gaming restriction": 3,
+        "propaganda": 3
+      },
+      "exclusions": [
+        "office politics"
+      ]
+    },
+    "society": {
+      "terms": {
+        "human rights": 3,
+        "social issues": 1,
+        "protest": 2,
+        "strike": 2,
+        "activism": 2,
+        "inequality": 2,
+        "humanitarian crisis": 3,
+        "refugee": 3,
+        "famine": 3,
+        "quarantine mandate": 2,
+        "outbreak": 2,
+        "mass starvation": 3,
+        "national anthem protest": 2,
+        "stadium riot": 2,
+        "cultural boycott": 2,
+        "soft power": 2,
+        "cancel culture": 2,
+        "demographic crisis": 2,
+        "youth unemployment": 2
+      },
+      "exclusions": [
+        "high society",
+        "secret society"
+      ]
+    },
+    "bangladesh": {
+      "terms": {
+        "bangladesh": 3,
+        "dhaka": 2,
+        "hasina": 2,
+        "yunus": 2,
+        "chittagong": 2,
+        "sylhet": 2,
+        "bnp": 2,
+        "awami league": 2
+      },
+      "exclusions": []
+    },
+    "sports": {
+      "terms": {
+        "world cup": 3,
+        "olympics": 3,
+        "fifa": 3,
+        "icc": 3,
+        "championship": 2,
+        "tournament": 2
+      },
+      "exclusions": [
+        "match highlights",
+        "fantasy football",
+        "rumors",
+        "transfer gossip",
+        "league standings"
+      ]
+    }
+  },
+  "regions": {
+    "North America": {
+      "terms": {
+        "united states": 2,
+        "usa": 2,
+        "u.s.": 2,
+        "u.s.a.": 2,
+        "washington": 2,
+        "new york": 2,
+        "canada": 2,
+        "ottawa": 2,
+        "toronto": 2,
+        "mexico": 2,
+        "mexico city": 2
+      },
+      "exclusions": []
+    },
+    "South America": {
+      "terms": {
+        "brazil": 2,
+        "brasilia": 2,
+        "argentina": 2,
+        "buenos aires": 2,
+        "colombia": 2,
+        "bogota": 2,
+        "chile": 2,
+        "santiago": 2,
+        "peru": 2,
+        "lima": 2,
+        "venezuela": 2,
+        "caracas": 2,
+        "ecuador": 2
+      },
+      "exclusions": []
+    },
+    "Europe": {
+      "terms": {
+        "europe": 2,
+        "eu": 2,
+        "european union": 2,
+        "uk": 2,
+        "united kingdom": 2,
+        "london": 2,
+        "britain": 2,
+        "france": 2,
+        "paris": 2,
+        "germany": 2,
+        "berlin": 2,
+        "italy": 2,
+        "rome": 2,
+        "spain": 2,
+        "madrid": 2,
+        "russia": 2,
+        "moscow": 2,
+        "ukraine": 2,
+        "kyiv": 2,
+        "poland": 2,
+        "warsaw": 2,
+        "sweden": 2
+      },
+      "exclusions": []
+    },
+    "Asia-Pacific": {
+      "terms": {
+        "china": 2,
+        "beijing": 2,
+        "japan": 2,
+        "tokyo": 2,
+        "south korea": 2,
+        "seoul": 2,
+        "north korea": 2,
+        "pyongyang": 2,
+        "taiwan": 2,
+        "taipei": 2,
+        "australia": 2,
+        "sydney": 2,
+        "canberra": 2,
+        "india": 2,
+        "new delhi": 2,
+        "indonesia": 2,
+        "jakarta": 2,
+        "philippines": 2,
+        "manila": 2,
+        "vietnam": 2,
+        "hanoi": 2
+      },
+      "exclusions": []
+    },
+    "Middle East": {
+      "terms": {
+        "israel": 2,
+        "jerusalem": 2,
+        "tel aviv": 2,
+        "palestine": 2,
+        "gaza": 2,
+        "iran": 2,
+        "tehran": 2,
+        "saudi arabia": 2,
+        "riyadh": 2,
+        "uae": 2,
+        "dubai": 2,
+        "iraq": 2,
+        "baghdad": 2,
+        "syria": 2,
+        "damascus": 2,
+        "lebanon": 2,
+        "beirut": 2,
+        "yemen": 2,
+        "egypt": 2,
+        "cairo": 2
+      },
+      "exclusions": []
+    },
+    "Africa": {
+      "terms": {
+        "south africa": 2,
+        "pretoria": 2,
+        "cape town": 2,
+        "nigeria": 2,
+        "abuja": 2,
+        "kenya": 2,
+        "nairobi": 2,
+        "ethiopia": 2,
+        "addis ababa": 2,
+        "egypt": 2,
+        "sudan": 2,
+        "congo": 2,
+        "somalia": 2,
+        "mali": 2
+      },
+      "exclusions": []
+    }
+  }
+}

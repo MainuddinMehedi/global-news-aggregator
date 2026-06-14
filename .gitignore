@@ -20,3 +20,13 @@ build/
 
 /docs/news-automation-planning-md-files/
 shared/prisma-client
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Obsidian
+.obsidian/

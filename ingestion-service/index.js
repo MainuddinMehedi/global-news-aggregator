@@ -114,9 +114,8 @@ async function run() {
   }
 
   if (aiProcessor) {
-    console.log("\n🤖 Flushing remaining AI tasks...");
+    console.log("\n🤖 Flushing remaining local ML tasks...");
     await aiProcessor.flush();
-    await aiProcessor.runClustering();
   }
 
   const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
@@ -184,7 +183,7 @@ async function run() {
   console.log(`   🔁 Duplicates skipped: ${totalDupes}`);
   if (!skipAI) {
     console.log(
-      `   🤖 AI queued: ${aiQueued}${aiLimit < Infinity ? ` (limit: ${aiLimit})` : ""}`,
+      `   🤖 Local ML queued: ${aiQueued}${aiLimit < Infinity ? ` (limit: ${aiLimit})` : ""}`,
     );
   }
   console.log(`${"─".repeat(50)}\n`);

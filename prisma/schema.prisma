@@ -85,7 +85,8 @@ model ProcessedArticle {
   perspectiveCountries String[]
   model                String?
   processedAt          DateTime   @default(now())
-
+  clusteredAt          DateTime?
+  clusterStatus        String     @default("HOLDING")
   matchedTopics UserTopic[]
   storyClusters StoryCluster[] @relation("ArticleStoryClusters")
   bookmarkedBy  ArticleBookmark[]
@@ -178,7 +179,8 @@ model StoryCluster {
   // Intelligence
   impact       String?
   impactScore  Float?
-  status       String?
+  status       String? @default("DEVELOPING")
+  momentumScore Float @default(0)
   whyItMatters String? @db.Text
 
   regions String[]

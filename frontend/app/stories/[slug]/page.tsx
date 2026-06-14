@@ -45,7 +45,6 @@ async function StoryDetailsContent({ params }: StoryPageProps) {
     extractedContent: processedArticle.rawArticle.extractedContent,
     biasNote: processedArticle.biasNote,
     sentimentScore: processedArticle.sentimentScore,
-    perspectiveCountries: processedArticle.perspectiveCountries,
     url: processedArticle.rawArticle.url,
     categories: processedArticle.categories,
     entities: processedArticle.entities,
