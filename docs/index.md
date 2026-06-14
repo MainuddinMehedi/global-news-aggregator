@@ -3,6 +3,8 @@
 This index serves as a mindmap and entry point to understand the project's documentation. The project is split into the Next.js frontend and the Node.js ESM ingestion service. The documents below outline the architecture, data models, and features.
 
 ## 🏗️ Architecture & Core Features
+- **[Project Architecture & Conventions](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/project_architecture_and_conventions.md)**
+  Foundational architecture, development workflows, and project state for the Global News Aggregator.
 - **[Story Feature Overview](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/STORY_FEATURE.md)**
   High-level breakdown of the evolving "Story Cluster" feature, explaining how individual articles are grouped into geopolitical narratives.
 - **[Stories Architecture (Technical)](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/STORIES_ARCHITECTURE.md)**
