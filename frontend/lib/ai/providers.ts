@@ -18,8 +18,14 @@ export function createProviderClient(provider: ProviderName) {
       return createGoogleGenerativeAI({
         baseURL: process.env.GEMINI_BASE_URL
           ? process.env.GEMINI_BASE_URL.replace(/\/openai$/, "")
-          : undefined,
+          : "https://generativelanguage.googleapis.com/v1beta",
         apiKey: process.env.GEMINI_API_KEY || "",
+      });
+
+    case "mistral":
+      return createOpenAI({
+        baseURL: process.env.MISTRAL_BASE_URL || "https://api.mistral.ai/v1",
+        apiKey: process.env.MISTRAL_API_KEY || "",
       });
 
     case "github":

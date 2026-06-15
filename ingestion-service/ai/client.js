@@ -1,21 +1,6 @@
 import { waitForCapacity, recordUsage, logHeaders } from "./rateLimiter.js";
 import { countTokens, TOKEN_MULTIPLIER } from "./tokenBatcher.js";
-
-export const primaryConfig = {
-  baseUrl: process.env.GROQ_BASE_URL,
-  apiKey: process.env.GROQ_API_KEY,
-  model: process.env.AI_INGESTION_MODEL,
-  provider: "groq",
-  tpmLimit: parseInt(process.env.AI_TPM_LIMIT) || 25000,
-};
-
-const fallbackConfig = {
-  baseUrl: process.env.GROQ_BASE_URL,
-  apiKey: process.env.GROQ_API_KEY,
-  model: process.env.AI_INGESTION_FALLBACK_MODEL,
-  provider: "groq",
-  tpmLimit: 12000, // Hardcoded fallback limit for llama-3.3-70b-versatile
-};
+import { primaryConfig, fallbackConfig } from "../config/ai.js";
 
 export async function requestAI(
   config,
@@ -23,6 +8,19 @@ export async function requestAI(
   estimatedTokens = null,
   retries = 0,
 ) {
+  // Graceful redirection if primary API key is missing
+  if (config === primaryConfig && !config.apiKey) {
+    if (fallbackConfig.apiKey) {
+      console.warn(
+        `⚠️ Primary provider (${primaryConfig.provider}) API key is missing. Redirecting request directly to fallback (${fallbackConfig.provider}/${fallbackConfig.model})...`,
+      );
+      return requestAI(fallbackConfig, prompt, estimatedTokens, retries);
+    }
+    throw new Error(
+      "❌ Both primary and fallback AI API keys are missing from configuration.",
+    );
+  }
+
   try {
     // If no explicit token estimate is provided, use a generic safe estimate
     const tokensToWait =
@@ -33,7 +31,7 @@ export async function requestAI(
     const controller = new AbortController();
     const timeout = setTimeout(
       () => controller.abort(),
-      parseInt(process.env.AI_TIMEOUT_MS) || 30000,
+      parseInt(process.env.AI_TIMEOUT_MS) || 60000,
     );
 
     const res = await fetch(`${config.baseUrl}/chat/completions`, {
@@ -71,8 +69,8 @@ export async function requestAI(
     if (!res.ok)
       throw new Error(`API Error ${res.status}: ${await res.text()}`);
 
-    // Log rate limit headers from Groq
-    logHeaders(res.headers);
+    // Log rate limit headers based on provider
+    logHeaders(res.headers, config.provider);
 
     const data = await res.json();
     const actualTokens = data.usage?.total_tokens || 0;

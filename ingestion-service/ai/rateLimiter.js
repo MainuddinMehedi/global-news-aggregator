@@ -79,12 +79,12 @@ export function recordUsage(actualTokens) {
 }
 
 /**
- * Log rate limit info from Groq response headers (informational only).
+ * Log rate limit info from response headers based on provider.
  */
-export function logHeaders(headers) {
-  const remaining = headers.get('x-ratelimit-remaining-tokens');
-  const reset = headers.get('x-ratelimit-reset-tokens');
-  if (remaining !== null) {
-    console.log(`   📊 Groq TPM remaining: ${remaining}, resets in: ${reset || '?'}`);
+export function logHeaders(headers, provider = "groq") {
+  const remaining = headers.get('x-ratelimit-remaining-tokens') || headers.get('ratelimit-remaining-tokens');
+  const reset = headers.get('x-ratelimit-reset-tokens') || headers.get('ratelimit-reset-tokens');
+  if (remaining !== null && remaining !== undefined) {
+    console.log(`   📊 ${provider.toUpperCase()} TPM remaining: ${remaining}, resets in: ${reset || '?'}`);
   }
 }

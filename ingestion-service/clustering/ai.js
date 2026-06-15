@@ -1,4 +1,5 @@
-import { requestAI, primaryConfig } from "../ai/client.js";
+import { requestAI } from "../ai/client.js";
+import { primaryConfig } from "../config/ai.js";
 import { countTokens, TOKEN_MULTIPLIER } from "../ai/tokenBatcher.js";
 
 // Clustering responses are larger (assignments + cluster updates + new clusters)
@@ -25,7 +26,7 @@ export function buildClusteringPrompt(
 - Summary: ${a.contentSnippet}
 - Categories: ${(a.categories || []).join(", ") || "Unknown"}
 - Entities: ${(a.entities || []).join(", ") || "Unknown"}
-- Perspective Countries: ${(a.perspectiveCountries || []).join(", ") || "Unknown"}
+- Perspective Countries: ${a.rawArticle?.sourceCountry || "Unknown"}
 `,
     )
     .join("\n");

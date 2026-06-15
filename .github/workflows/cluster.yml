@@ -1,0 +1,66 @@
+name: Story Clustering Pipeline
+
+on:
+  schedule:
+    # Runs every hour at minute 45
+    # Staggers away from ingestion (:00, :30), backlog (3:00), and topics (:15)
+    - cron: "45 * * * *"
+  workflow_dispatch:
+    # Allows manual trigger from the Actions tab
+
+jobs:
+  cluster:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "25"
+          cache: "npm"
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Generate Prisma Client
+        run: npx prisma generate
+        env:
+          DATABASE_URL: "${{ secrets.DATABASE_URL }}"
+
+      - name: Run Story Clustering Script
+        env:
+          # 🔐 SECRETS (Sensitive)
+          DATABASE_URL: "${{ secrets.DATABASE_URL }}"
+          AI_PRIMARY_API_KEY: "${{ secrets.AI_PRIMARY_API_KEY }}"
+          AI_FALLBACK_API_KEY: "${{ secrets.AI_FALLBACK_API_KEY }}"
+          REVALIDATE_SECRET: "${{ secrets.REVALIDATE_SECRET }}"
+
+          # ⚙️ VARIABLES (Config)
+          NEXT_PUBLIC_API_URL: "${{ vars.NEXT_PUBLIC_API_URL }}"
+          AI_PRIMARY_PROVIDER: "${{ vars.AI_PRIMARY_PROVIDER }}"
+          AI_PRIMARY_MODEL: "${{ vars.AI_PRIMARY_MODEL }}"
+          AI_PRIMARY_BASE_URL: "${{ vars.AI_PRIMARY_BASE_URL }}"
+
+          AI_FALLBACK_PROVIDER: "${{ vars.AI_FALLBACK_PROVIDER }}"
+          AI_FALLBACK_MODEL: "${{ vars.AI_FALLBACK_MODEL }}"
+          AI_FALLBACK_BASE_URL: "${{ vars.AI_FALLBACK_BASE_URL }}"
+
+          AI_TPM_LIMIT: "${{ vars.AI_TPM_LIMIT }}"
+          AI_RPM_LIMIT: "${{ vars.AI_RPM_LIMIT }}"
+          AI_TOKEN_MULTIPLIER: "${{ vars.AI_TOKEN_MULTIPLIER }}"
+          AI_BATCH_SIZE: "${{ vars.AI_BATCH_SIZE }}"
+          AI_CONCURRENCY_LIMIT: "${{ vars.AI_CONCURRENCY_LIMIT }}"
+          AI_TIMEOUT_MS: "${{ vars.AI_TIMEOUT_MS }}"
+          AI_RETRY_ATTEMPTS: "${{ vars.AI_RETRY_ATTEMPTS }}"
+
+          # ⚙️ Clustering Tuning (optional overrides — all have code-level defaults)
+          CLUSTER_ASSIGNMENT_MIN_CONFIDENCE: "${{ vars.CLUSTER_ASSIGNMENT_MIN_CONFIDENCE }}"
+          CLUSTER_LOW_IMPACT_INACTIVE_DAYS: "${{ vars.CLUSTER_LOW_IMPACT_INACTIVE_DAYS }}"
+          CLUSTER_MEDIUM_IMPACT_INACTIVE_DAYS: "${{ vars.CLUSTER_MEDIUM_IMPACT_INACTIVE_DAYS }}"
+          CLUSTER_HIGH_IMPACT_INACTIVE_DAYS: "${{ vars.CLUSTER_HIGH_IMPACT_INACTIVE_DAYS }}"
+          CLUSTER_CRITICAL_IMPACT_INACTIVE_DAYS: "${{ vars.CLUSTER_CRITICAL_IMPACT_INACTIVE_DAYS }}"
+          AI_RESERVED_CLUSTERING_OUTPUT_TOKENS: "${{ vars.AI_RESERVED_CLUSTERING_OUTPUT_TOKENS }}"
+        run: npm run cluster

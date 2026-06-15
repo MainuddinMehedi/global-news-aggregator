@@ -6,7 +6,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // 1. Load Gazetteer JSON
-const gazetteerPath = path.join(__dirname, 'gazetteer.json');
+const gazetteerPath = path.join(__dirname, '../data/gazetteer.json');
 const gazetteerData = JSON.parse(fs.readFileSync(gazetteerPath, 'utf8'));
 
 // 2. Compile dictionaries into Regex with Word Boundaries (\b) ONCE at startup
@@ -88,20 +88,8 @@ export function enrichWithStage1(rawArticle) {
     }
   }
 
-  // Fallback to feed origin if no explicit region is mentioned in text
-  if (!bestRegion && rawArticle.sourceOrigin && rawArticle.sourceOrigin !== "Global") {
-    bestRegion = rawArticle.sourceOrigin;
-  }
-
-  // 3. Inherit Bias (Removed perspectiveCountry inheritance)
-  const perspectiveCountries = []; // Leave empty unless a smarter model deduces it later
-
-  const biasNote = rawArticle.biasGroup ? `Inherited from source (${rawArticle.biasGroup})` : null;
-
   return {
     categories: [bestCategory],
     eventRegion: bestRegion,
-    perspectiveCountries: perspectiveCountries,
-    biasNote: biasNote,
   };
 }

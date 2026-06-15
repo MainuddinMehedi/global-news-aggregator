@@ -1,5 +1,6 @@
 import prisma from "@/lib/prisma";
 import { cacheLife, cacheTag } from "next/cache";
+import { getPublisherRegion } from "@/lib/utils";
 
 export async function getStoryClusters(search?: string) {
   "use cache";
@@ -35,7 +36,7 @@ export async function getStoryClusters(search?: string) {
               select: {
                 source: true,
                 url: true,
-                sourceOrigin: true,
+                sourceCountry: true,
               },
             },
           },
@@ -54,8 +55,9 @@ export async function getStoryClusters(search?: string) {
         if (art.rawArticle.source && !sourcesMap.has(art.rawArticle.source)) {
           sourcesMap.set(art.rawArticle.source, art.rawArticle.url);
         }
-        if (art.rawArticle.sourceOrigin) {
-          originsSet.add(art.rawArticle.sourceOrigin);
+        const region = getPublisherRegion(art.rawArticle.sourceCountry);
+        if (region) {
+          originsSet.add(region);
         }
       });
       const sources = Array.from(sourcesMap.entries()).map(([name, url]) => ({

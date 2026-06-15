@@ -2,7 +2,8 @@
  * Relevance Scorer — Evaluates findings against the topic's intent using AI.
  */
 
-import { requestAI, primaryConfig } from "../ai/client.js";
+import { requestAI } from "../ai/client.js";
+import { primaryConfig } from "../config/ai.js";
 import { prisma } from "../db/prisma.js"; // For AiUsage logging if needed, though client.js might log it? No, client.js logs to AiUsage? Wait, let's check what client.js logs.
 // Ah, client.js doesn't write to DB for AiUsage, it just returns tokensUsed.
 // The processor.js writes to AiUsage. So scorer.js should write to AiUsage.

@@ -1,10 +1,5 @@
 /**
- * The definitive list of allowed categories in the system.
- * This is the SINGLE SOURCE OF TRUTH.
- * 
- * If you drop a category from here, the ingestion pipeline will route
- * those articles to "other" (acting as a Dead Letter Queue) unless mapped
- * to a remaining core category via the Stage 1 Gazetteer JSON.
+ * Canonical Geopolitical News Monitor Category Definitions
  * 
  * Core 10 Categories:
  *   geopolitics — International relations, treaties, cross-border issues, intl law

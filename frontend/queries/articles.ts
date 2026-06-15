@@ -1,6 +1,7 @@
 import { cacheLife, cacheTag } from "next/cache";
 import prisma from "@/lib/prisma";
 import { Article } from "@/types/article";
+import { getPublisherRegion, COUNTRY_TO_REGION } from "@/lib/utils";
 
 interface getArticlesParams {
   category: string;
@@ -58,7 +59,10 @@ export async function getArticles({
 
   let originFilter: any[] = [];
   if (origin && origin !== "all") {
-    originFilter = [{ rawArticle: { sourceOrigin: origin } }];
+    const matchingCountries = Object.entries(COUNTRY_TO_REGION)
+      .filter(([_, regionVal]) => regionVal.toLowerCase() === origin.toLowerCase())
+      .map(([country]) => country);
+    originFilter = [{ rawArticle: { sourceCountry: { in: matchingCountries } } }];
   }
 
   let typeFilter: any[] = [];
@@ -174,7 +178,7 @@ export async function getArticles({
       categories: article.categories,
       entities: article.entities,
       sourceCountry: article.rawArticle.sourceCountry,
-      sourceOrigin: article.rawArticle.sourceOrigin,
+      sourceOrigin: getPublisherRegion(article.rawArticle.sourceCountry),
       sourceType: article.rawArticle.sourceType,
       biasGroup: article.rawArticle.biasGroup,
       coverageScope: article.rawArticle.coverageScope,
@@ -228,7 +232,7 @@ export async function getArticleById(id: string): Promise<Article | null> {
       categories: raw.categories,
       entities: raw.entities,
       sourceCountry: raw.rawArticle.sourceCountry,
-      sourceOrigin: raw.rawArticle.sourceOrigin,
+      sourceOrigin: getPublisherRegion(raw.rawArticle.sourceCountry),
       sourceType: raw.rawArticle.sourceType,
       biasGroup: raw.rawArticle.biasGroup,
       coverageScope: raw.rawArticle.coverageScope,

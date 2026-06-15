@@ -1,47 +1,69 @@
-const ENRICHMENT_SERVICE_URL = process.env.ENRICHMENT_SERVICE_URL || "http://localhost:8000";
+/**
+ * Stage 2 Enrichment Module
+ * 
+ * Invokes generative LLM APIs to perform named entity extraction, tone sentiment scoring,
+ * and dynamic narrative bias analysis.
+ */
 
+import { requestAI } from "./client.js";
+import { primaryConfig } from "../config/ai.js";
+import { ENRICHMENT_SYSTEM_PROMPT, buildEnrichmentPrompt } from "./prompts/enrichment.js";
+import { countTokens, TOKEN_MULTIPLIER } from "./tokenBatcher.js";
+
+/**
+ * Enriches a batch of raw articles using generative LLM API.
+ * 
+ * @param {Array} articles - Array of raw articles (which have eventRegion attached).
+ * @param {Array} categories - Array of Stage 1 categories mapped 1-to-1 with the articles.
+ * @returns {Promise<Array>} Array of articles with dynamic entities, sentiment, bias notes, and model info.
+ */
 export async function enrichWithStage2Batch(articles, categories) {
   if (!articles || articles.length === 0) return [];
 
-  const payload = {
-    articles: articles.map((article, index) => ({
-      text: `${article.title || ""} ${article.contentSnippet || ""}`.trim(),
-      category: categories ? categories[index] : "other"
-    }))
-  };
+  // Construct the prompt using the modular prompts system
+  const prompt = `${ENRICHMENT_SYSTEM_PROMPT}\n\n${buildEnrichmentPrompt(articles, categories)}`;
+  
+  // Calculate tokens (articles.length * 400 represents output token reserve for entities + bias note per article)
+  const rawInputTokens = countTokens(prompt);
+  const estimatedTokens = Math.ceil(
+    (rawInputTokens + (articles.length * 400)) * TOKEN_MULTIPLIER
+  );
 
   try {
-    const response = await fetch(`${ENRICHMENT_SERVICE_URL}/analyze/batch`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(payload)
-    });
-
-    if (!response.ok) {
-      throw new Error(`Enrichment service responded with ${response.status}`);
+    const response = await requestAI(primaryConfig, prompt, estimatedTokens);
+    
+    let enrichments = [];
+    try {
+      // Strips any potential markdown blocks wrapper
+      const jsonText = response.content.replace(/```json|```/g, "").trim();
+      const parsed = JSON.parse(jsonText);
+      enrichments = parsed.enrichments || [];
+    } catch (parseErr) {
+      console.warn("⚠️ Stage 2 Enrichment failed to parse JSON response from LLM:", parseErr.message);
+      console.log("Raw LLM output was:", response.content);
     }
 
-    const data = await response.json();
-    
-    // Map results back to articles
     return articles.map((article, index) => {
-      const enrichment = data.results[index];
+      const enrichment = enrichments[index] || {};
+      
       return {
         ...article,
-        entities: enrichment.entities || [],
-        sentimentScore: enrichment.sentimentScore || 0.0
+        entities: Array.isArray(enrichment.entities) ? enrichment.entities : [],
+        // If LLM fails or doesn't return a field, default to null
+        sentimentScore: typeof enrichment.sentimentScore === "number" ? enrichment.sentimentScore : null,
+        biasNote: typeof enrichment.biasNote === "string" ? enrichment.biasNote : null,
+        model: response.model || "unknown-llm",
       };
     });
   } catch (err) {
-    console.warn(`⚠️ Stage 2 Enrichment failed: ${err.message}. Bypassing NLP extraction for this batch.`);
+    console.warn(`⚠️ Stage 2 Enrichment API call failed: ${err.message}. Gracefully falling back to empty fields.`);
     
-    // Gracefully fallback to empty entities/sentiment if service is down
     return articles.map(article => ({
       ...article,
       entities: [],
-      sentimentScore: null
+      sentimentScore: null,
+      biasNote: null,
+      model: "failed-api-fallback",
     }));
   }
 }

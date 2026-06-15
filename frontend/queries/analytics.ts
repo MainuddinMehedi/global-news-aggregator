@@ -1,5 +1,6 @@
 import { cacheLife, cacheTag } from "next/cache";
 import prisma from "@/lib/prisma";
+import { getPublisherRegion } from "@/lib/utils";
 
 export interface AnalyticsData {
   eventRegionDistribution: {
@@ -585,7 +586,7 @@ export async function getSourceOriginCounts() {
 
   try {
     const rawCounts = await prisma.rawArticle.groupBy({
-      by: ["sourceOrigin"],
+      by: ["sourceCountry"],
       _count: { _all: true },
       where: {
         processedArticle: {
@@ -594,11 +595,11 @@ export async function getSourceOriginCounts() {
       },
     });
 
-    const all = rawCounts.reduce((acc, curr) => acc + curr._count._all, 0);
+    const all = rawCounts.reduce((acc, curr) => acc + (curr._count?._all ?? 0), 0);
 
     const counts = rawCounts.reduce((acc, curr) => {
-      const origin = curr.sourceOrigin || "Unknown";
-      acc[origin] = curr._count._all;
+      const origin = getPublisherRegion(curr.sourceCountry);
+      acc[origin] = (acc[origin] ?? 0) + (curr._count?._all ?? 0);
       return acc;
     }, {} as Record<string, number>);
 
@@ -662,7 +663,7 @@ export async function getStoryClustersWithOrigins() {
           include: {
             rawArticle: {
               select: {
-                sourceOrigin: true,
+                sourceCountry: true,
               },
             },
           },
@@ -674,7 +675,7 @@ export async function getStoryClustersWithOrigins() {
       const uniqueOrigins = Array.from(
         new Set(
           c.articles
-            .map((a) => a.rawArticle.sourceOrigin)
+            .map((a) => getPublisherRegion(a.rawArticle.sourceCountry))
             .filter((p): p is string => !!p)
         )
       );

@@ -2,19 +2,14 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import List, Optional
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
-import spacy
+from gliner import GLiNER
 
 app = FastAPI(title="Global News Aggregator - Enrichment Service")
 
 # Initialize models
-try:
-    nlp = spacy.load("en_core_web_md")
-except OSError:
-    import subprocess
-    import sys
-    print("Downloading en_core_web_md...")
-    subprocess.check_call([sys.executable, "-m", "spacy", "download", "en_core_web_md"])
-    nlp = spacy.load("en_core_web_md")
+print("Loading GLiNER model (urchade/gliner_small-v2.1)...")
+model = GLiNER.from_pretrained("urchade/gliner_small-v2.1")
+print("GLiNER model loaded successfully!")
 
 analyzer = SentimentIntensityAnalyzer()
 
@@ -47,21 +42,23 @@ def analyze_article(req: ArticleRequest):
         return EnrichmentResponse(entities=[], sentimentScore=0.0)
     
     # 1. Named Entity Recognition
-    doc = nlp(text)
-    
     soft_news_cats = {"lifestyle", "entertainment", "sports", "gaming", "technology", "science"}
     if req.category in soft_news_cats:
-        allowed_labels = {"PERSON", "ORG", "PRODUCT", "EVENT", "WORK_OF_ART", "FAC"}
+        labels = ["Person", "Organization", "Product", "Event", "Artwork", "Facility"]
     else:
-        allowed_labels = {"PERSON", "ORG", "GPE", "LOC"}
+        labels = ["Person", "Organization", "Location", "Geopolitical Entity"]
     
-    raw_entities = [ent.text for ent in doc.ents if ent.label_ in allowed_labels]
+    try:
+        ents = model.predict_entities(text, labels, threshold=0.5)
+        raw_entities = [ent['text'] for ent in ents]
+    except Exception as e:
+        print(f"GLiNER prediction failed: {e}")
+        raw_entities = []
     
     # Deduplicate and clean entities
     unique_entities = list(set([e.strip() for e in raw_entities if len(e.strip()) > 2]))
     
     # 2. Sentiment Analysis
-    # VADER returns a compound score between -1 (most extreme negative) and +1 (most extreme positive)
     sentiment_dict = analyzer.polarity_scores(text)
     compound_score = sentiment_dict['compound']
     
@@ -81,14 +78,18 @@ def analyze_batch(req: ArticleBatchRequest):
             results.append(EnrichmentResponse(entities=[], sentimentScore=0.0))
             continue
             
-        doc = nlp(article.text)
-        
         if article.category in soft_news_cats:
-            allowed_labels = {"PERSON", "ORG", "PRODUCT", "EVENT", "WORK_OF_ART", "FAC"}
+            labels = ["Person", "Organization", "Product", "Event", "Artwork", "Facility"]
         else:
-            allowed_labels = {"PERSON", "ORG", "GPE", "LOC"}
+            labels = ["Person", "Organization", "Location", "Geopolitical Entity"]
             
-        raw_entities = [ent.text for ent in doc.ents if ent.label_ in allowed_labels]
+        try:
+            ents = model.predict_entities(article.text, labels, threshold=0.5)
+            raw_entities = [ent['text'] for ent in ents]
+        except Exception as e:
+            print(f"GLiNER prediction failed: {e}")
+            raw_entities = []
+            
         unique_entities = list(set([e.strip() for e in raw_entities if len(e.strip()) > 2]))
         
         sentiment_dict = analyzer.polarity_scores(article.text)

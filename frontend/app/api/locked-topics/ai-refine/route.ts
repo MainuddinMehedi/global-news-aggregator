@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 // applied in the topic creation modal at step 3.
 
 const PRIMARY_CONFIG = {
-  baseUrl: process.env.GROQ_BASE_URL,
+  baseUrl: process.env.GROQ_BASE_URL || "https://api.groq.com/openai/v1",
   apiKey: process.env.GROQ_API_KEY,
   model: process.env.AI_UTILITY_MODEL,
   provider: "groq",
@@ -12,7 +12,7 @@ const PRIMARY_CONFIG = {
 
 // Fallback: Gemini Flash Lite — if Groq quota is exhausted or unavailable
 const FALLBACK_CONFIG = {
-  baseUrl: process.env.GEMINI_BASE_URL,
+  baseUrl: process.env.GEMINI_BASE_URL || "https://generativelanguage.googleapis.com/v1beta/openai",
   apiKey: process.env.GEMINI_API_KEY,
   model: process.env.AI_GEMINI_FALLBACK_MODEL,
   provider: "gemini",

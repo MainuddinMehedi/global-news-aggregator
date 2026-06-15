@@ -2,14 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 
 const PRIMARY_CONFIG = {
-  baseUrl: process.env.GEMINI_BASE_URL,
+  baseUrl: process.env.GEMINI_BASE_URL || "https://generativelanguage.googleapis.com/v1beta/openai",
   apiKey: process.env.GEMINI_API_KEY,
   model: process.env.AI_SUMMARY_MODEL || "gemma-4-31b",
   provider: "gemini",
 };
 
 const FALLBACK_CONFIG = {
-  baseUrl: process.env.GEMINI_BASE_URL,
+  baseUrl: process.env.GEMINI_BASE_URL || "https://generativelanguage.googleapis.com/v1beta/openai",
   apiKey: process.env.GEMINI_API_KEY,
   model: process.env.AI_GEMINI_FALLBACK_MODEL || "gemini-3.1-flash-lite",
   provider: "gemini",

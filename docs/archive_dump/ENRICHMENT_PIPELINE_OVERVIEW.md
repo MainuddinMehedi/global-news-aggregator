@@ -12,7 +12,7 @@ This stage is fast, deterministic, and rule-based. It runs locally within the No
 - **Responsibilities**:
   - **Categorization**: Uses a gazetteer (`CATEGORY_KEYWORDS`) to match keywords and assign a primary category.
   - **Region Extraction**: Uses regional keywords (`REGION_KEYWORDS`) to assign an `eventRegion`. Falls back to the source's origin if no region is detected in the text.
-  - **Inherited Bias & Perspective**: Copies static identity metadata (`sourceCountry`, `biasGroup`) from the original feed definition to the article's `perspectiveCountries` and `biasNote`.
+  - **Inherited Bias**: Copies static identity metadata (`biasGroup`) from the original feed definition to the article's `biasNote`. (Note: `perspectiveCountries` was removed in favor of using `rawArticle.sourceCountry` directly).
 
 ### Stage 2: NLP/ML Enrichment (Python Microservice)
 This stage relies on a separate Python-based FastAPI microservice for heavier Natural Language Processing tasks. It is invoked over HTTP in batches.

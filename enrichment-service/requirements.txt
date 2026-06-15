@@ -1,5 +1,6 @@
 fastapi
 uvicorn
-spacy
+gliner
 vaderSentiment
 pydantic
+

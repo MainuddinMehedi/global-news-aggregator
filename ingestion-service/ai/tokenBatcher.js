@@ -1,4 +1,5 @@
 import { get_encoding } from "tiktoken";
+import { getPublisherRegion } from "../utils/geography.js";
 
 const DEFAULT_CONFIG = {
   maxRequestTokens: parseInt(process.env.AI_MAX_REQUEST_TOKENS) || 3500,
@@ -39,7 +40,7 @@ export function prepareArticle(article, config = DEFAULT_CONFIG) {
   // Combine title, source, and content to ensure we capture the most important info
   const fullText = [
     `Title: ${article.title}`,
-    `Source: ${article.source} (Country: ${article.sourceCountry || 'unknown'}, Region/Origin: ${article.sourceOrigin || 'unknown'})`,
+    `Source: ${article.source} (Country: ${article.sourceCountry || 'unknown'}, Geopolitical Bloc: ${getPublisherRegion(article.sourceCountry)})`,
     `Publisher Type: ${article.sourceType || 'unknown'}`,
     `Publisher Bias Group: ${article.biasGroup || 'unknown'}`,
     `Coverage Scope: ${article.coverageScope || 'unknown'}`,
