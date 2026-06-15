@@ -28,9 +28,8 @@ export function createArticleProcessor(
       return _flush();
     }
 
-    // Fixed batch size of 30 protects the 512MB RAM microservice limit
-    // while completely avoiding token-counting overhead.
-    const batch = buffer.splice(0, 30);
+    // Read configured batch size dynamically to pace requests safely
+    const batch = buffer.splice(0, batchSize);
 
     if (batch.length === 0) {
       if (buffer.length > 0) {
@@ -63,7 +62,10 @@ export function createArticleProcessor(
         for (let i = 0; i < stage1Results.length; i++) {
           if (stage1Results[i].stage1.categories[0] !== "other") {
             validIndices.push(i);
-            validBatch.push(batch[i]);
+            validBatch.push({
+              ...batch[i],
+              eventRegion: stage1Results[i].stage1.eventRegion || null,
+            });
             validCategories.push(stage1Results[i].stage1.categories[0]);
           } else {
             console.log(
@@ -117,10 +119,10 @@ export function createArticleProcessor(
                     rawArticleId: rawArticle.id,
                     categories: { connectOrCreate: categoryOps },
                     entities: s2.entities || [],
-                    sentimentScore: s2.sentimentScore || null,
-                    biasNote: s1.biasNote || null,
+                    sentimentScore: s2.sentimentScore ?? null,
+                    biasNote: s2.biasNote || null,
                     eventRegion: s1.eventRegion || null,
-                    model: "local-pipeline-v1",
+                    model: s2.model || "mistral-small-2506",
                     clusterStatus: "HOLDING",
                   },
                 });
@@ -136,6 +138,7 @@ export function createArticleProcessor(
               categories: finalCats,
               entities: s2.entities || [],
               sentimentScore: s2.sentimentScore ?? null,
+              biasNote: s2.biasNote || null,
               eventRegion: s1.eventRegion || null,
             });
           } catch (err) {

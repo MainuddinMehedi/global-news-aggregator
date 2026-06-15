@@ -88,12 +88,8 @@ export function enrichWithStage1(rawArticle) {
     }
   }
 
-  // 3. Inherit Bias
-  const biasNote = rawArticle.biasGroup ? `Inherited from source (${rawArticle.biasGroup})` : null;
-
   return {
     categories: [bestCategory],
     eventRegion: bestRegion,
-    biasNote: biasNote,
   };
 }

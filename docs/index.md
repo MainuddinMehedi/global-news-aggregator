@@ -28,7 +28,9 @@ This index serves as the entry point and mindmap for the project's documentation
 - **[Project Architecture & Conventions](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/project_architecture_and_conventions.md)**  
   Foundational directory layout, key commands, coding style rules, pagination logic, and caching structures.
 - **[AI Model Strategy Guide](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/AI_MODELS.md)**  
-  Definitive model assignments across the stack, detailing Groq vs. Google AI Studio usage for optimal speed, intelligence, and cost.
+  Definitive model assignments across the stack, detailing Mistral AI, Groq, and Google AI Studio usage for optimal speed, intelligence, and cost.
+- **[Architectural Ledger: Ingestion Stage 2 API Migration](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/enrichment_pipeline_api_migration.md)**  
+  Detailed trade-offs, options evaluated, and trajectory implications of migrating Stage 2 from Python FastAPI (GLiNER/VADER) to Mistral and Groq APIs.
 
 ---
 
