@@ -2,10 +2,10 @@ name: Locked Topics Scanner
 
 on:
   schedule:
-    # Runs every hour at minute 15 (e.g., 1:15, 2:15, etc.)
+    # Runs every 2 hours at minute 15 (e.g., 0:15, 2:15, 4:15, etc.)
     # This staggers it away from ingestion (which runs at :00 and :30)
     # and backlog (which runs at 3:00) to prevent overlap and DB locks.
-    - cron: "15 * * * *"
+    - cron: "15 */2 * * *"
   workflow_dispatch:
     # Allows manual trigger for on-demand scanning or testing
     inputs:
