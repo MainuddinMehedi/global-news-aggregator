@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { getStoryDetail } from "@/queries/stories";
-import { getEventRegionBadgeVariant } from "@/lib/utils";
+import { getEventRegionBadgeVariant, getPublisherRegion } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import ArticleCard from "@/components/articles/ArticleCard";
@@ -51,7 +51,7 @@ async function StoryDetailsContent({ params }: StoryPageProps) {
     sourceCountry: processedArticle.rawArticle.sourceCountry,
     slug: processedArticle.rawArticle.slug,
     eventRegion: processedArticle.eventRegion,
-    sourceOrigin: processedArticle.rawArticle.sourceOrigin,
+    sourceOrigin: getPublisherRegion(processedArticle.rawArticle.sourceCountry),
     sourceType: processedArticle.rawArticle.sourceType,
     biasGroup: processedArticle.rawArticle.biasGroup,
     coverageScope: processedArticle.rawArticle.coverageScope,
@@ -71,7 +71,7 @@ async function StoryDetailsContent({ params }: StoryPageProps) {
   const uniqueOrigins = Array.from(
     new Set(
       story.articles
-        .map((a) => a.rawArticle.sourceOrigin)
+        .map((a) => getPublisherRegion(a.rawArticle.sourceCountry))
         .filter((o): o is string => !!o)
     )
   );

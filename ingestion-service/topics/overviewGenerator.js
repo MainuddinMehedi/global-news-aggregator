@@ -22,7 +22,7 @@ const OVERVIEW_DEFAULT_MAX =
  */
 function getOverviewConfig() {
   return {
-    baseUrl: process.env.GEMINI_BASE_URL,
+    baseUrl: process.env.GEMINI_BASE_URL || "https://generativelanguage.googleapis.com/v1beta/openai",
     apiKey: process.env.GEMINI_API_KEY,
     model: process.env.AI_OVERVIEW_MODEL || "gemma-4-31b",
     provider: "google",

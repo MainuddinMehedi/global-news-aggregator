@@ -1,4 +1,5 @@
-import { requestAI, primaryConfig } from "../ai/client.js";
+import { requestAI } from "../ai/client.js";
+import { primaryConfig } from "../config/ai.js";
 import { countTokens, TOKEN_MULTIPLIER } from "../ai/tokenBatcher.js";
 
 // Clustering responses are larger (assignments + cluster updates + new clusters)

@@ -1,4 +1,4 @@
-export type ProviderName = "groq" | "google" | "github";
+export type ProviderName = "groq" | "google" | "github" | "mistral";
 
 export interface ModelCapabilities {
   supportsTools: boolean;
@@ -243,6 +243,26 @@ export const MODEL_REGISTRY: ModelMetadata[] = [
     },
     contextWindow: 1000000,
     defaultResponseMode: "descriptive",
+    isActive: true,
+  },
+
+  // ── MISTRAL PROVIDER ─────────────────────────────────────────────────────
+  {
+    id: "ministral-8b-2512",
+    label: "Ministral 8B",
+    provider: "mistral",
+    description: "Mistral's lightweight edge model for ultra-low latency tasks",
+    family: "Ministral",
+    tags: ["fast", "edge"],
+    capabilities: {
+      supportsTools: true,
+      supportsImages: false,
+      supportsReasoning: false,
+      supportsStreaming: true,
+      supportsVision: false,
+    },
+    contextWindow: 128000,
+    defaultResponseMode: "concise",
     isActive: true,
   },
 ];

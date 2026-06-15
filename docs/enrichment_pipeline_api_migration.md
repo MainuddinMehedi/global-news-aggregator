@@ -34,7 +34,7 @@ To mitigate the inherent political leans and RLHF training biases of models, the
 *   The final sentiment score (-1.0 to 1.0) and bias note are computed strictly from these observations.
 
 ### Modularity
-Prompt construction is fully isolated in `ingestion-service/ai/prompts.js`. This prevents logic pollution inside execution workers (`stage2.js` and `processor.js`).
+Prompt construction is fully isolated in `ingestion-service/ai/prompts/enrichment.js`. This prevents logic pollution inside execution workers (`stage2.js` and `processor.js`).
 
 ---
 

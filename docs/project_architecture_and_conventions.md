@@ -23,9 +23,16 @@ The project is a two-service monorepo:
 
 ```
 ingestion-service/
-  ai/
+  config/
+    ai.js             ← AI provider configurations (primary/fallback models, limits)
+  constants/
     categories.js     ← canonical ALLOWED_CATEGORIES list (single source of truth)
-    client.js         ← AI prompt builder + request handler
+  data/
+    gazetteer.json    ← static regex keywords database for Stage 1 sieve
+  ai/
+    prompts/
+      enrichment.js   ← Modular system prompt and message template definition
+    client.js         ← AI request handler with rate limit / fallback logic
     processor.js      ← saves AI results to DB; enforces ALLOWED_CATEGORIES server-side
     rateLimiter.js
     tokenBatcher.js
@@ -105,7 +112,7 @@ docs/                 ← Phase documentation and architecture notes
 
 Categories are a **fixed, canonical list** — not AI-generated dynamically. This prevents category drift and keeps the filter UI predictable.
 
-**Source of truth**: `ingestion-service/ai/categories.js` → `ALLOWED_CATEGORIES`
+**Source of truth**: `ingestion-service/constants/categories.js` → `ALLOWED_CATEGORIES`
 
 **Current categories** (11 total):
 | Category | Scope |
@@ -126,7 +133,7 @@ Categories are a **fixed, canonical list** — not AI-generated dynamically. Thi
 1. The AI prompt explicitly lists `ALLOWED_CATEGORIES` and instructs the model not to invent new ones.
 2. `processor.js` filters the AI response against `ALLOWED_CATEGORIES` before writing to DB — invalid categories are dropped and logged; articles with zero valid categories fall back to `["other"]`.
 
-**Adding a new category**: update `ALLOWED_CATEGORIES` in `categories.js` only. The prompt and server-side filter both read from it automatically.
+**Adding a new category**: update `ALLOWED_CATEGORIES` in `constants/categories.js` only. The prompt and server-side filter both read from it automatically.
 
 ## 📄 Pagination
 

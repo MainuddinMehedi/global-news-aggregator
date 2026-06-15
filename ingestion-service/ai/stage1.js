@@ -6,7 +6,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // 1. Load Gazetteer JSON
-const gazetteerPath = path.join(__dirname, 'gazetteer.json');
+const gazetteerPath = path.join(__dirname, '../data/gazetteer.json');
 const gazetteerData = JSON.parse(fs.readFileSync(gazetteerPath, 'utf8'));
 
 // 2. Compile dictionaries into Regex with Word Boundaries (\b) ONCE at startup

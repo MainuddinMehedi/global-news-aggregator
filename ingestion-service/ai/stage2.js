@@ -5,8 +5,9 @@
  * and dynamic narrative bias analysis.
  */
 
-import { requestAI, primaryConfig } from "./client.js";
-import { ENRICHMENT_SYSTEM_PROMPT, buildEnrichmentPrompt } from "./prompts.js";
+import { requestAI } from "./client.js";
+import { primaryConfig } from "../config/ai.js";
+import { ENRICHMENT_SYSTEM_PROMPT, buildEnrichmentPrompt } from "./prompts/enrichment.js";
 import { countTokens, TOKEN_MULTIPLIER } from "./tokenBatcher.js";
 
 /**
