@@ -25,7 +25,7 @@ export function buildClusteringPrompt(
 - Summary: ${a.contentSnippet}
 - Categories: ${(a.categories || []).join(", ") || "Unknown"}
 - Entities: ${(a.entities || []).join(", ") || "Unknown"}
-- Perspective Countries: ${(a.perspectiveCountries || []).join(", ") || "Unknown"}
+- Perspective Countries: ${a.rawArticle?.sourceCountry || "Unknown"}
 `,
     )
     .join("\n");

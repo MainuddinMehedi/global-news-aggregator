@@ -34,7 +34,6 @@ function extractText(value) {
 export default async function* fetchRSSStream(
   sourceName,
   sourceCountry,
-  sourceOrigin,
   sourceType,
   feedUrl,
   biasGroup,
@@ -42,19 +41,13 @@ export default async function* fetchRSSStream(
 ) {
   let url = feedUrl;
   let country = sourceCountry;
-  let origin = sourceOrigin;
   let type = sourceType;
   let bias = biasGroup;
   let scope = coverageScope;
 
   if (arguments.length === 3) {
     url = arguments[2];
-    origin = null;
     type = null;
-    bias = null;
-    scope = null;
-  } else if (arguments.length === 5) {
-    url = arguments[4];
     bias = null;
     scope = null;
   }
@@ -87,7 +80,6 @@ export default async function* fetchRSSStream(
         contentSnippet: item.contentSnippet || item.content || "",
         source: sourceName,
         sourceCountry: country,
-        sourceOrigin: origin,
         sourceType: type,
         biasGroup: bias,
         coverageScope: scope,

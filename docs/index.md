@@ -1,51 +1,73 @@
-# Global News Aggregator — Documentation Index
+# Global News Aggregator — Documentation Master Index
 
-This index serves as a mindmap and entry point to understand the project's documentation. The project is split into the Next.js frontend and the Node.js ESM ingestion service. The documents below outline the architecture, data models, and features.
+This index serves as the entry point and mindmap for the project's documentation. The project is split into the Next.js frontend and the Node.js ESM ingestion service.
 
-## 🏗️ Architecture & Core Features
-- **[Architectural Philosophy: The "User-Agnostic" News Engine](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/architecture-philosophy.md)**
+---
+
+### 📖 Table of Contents
+
+- [[#1. Documentation Standards]]
+- [[#2. Architecture & Conventions]]
+- [[#3. Feature Documents (Numbered)]]
+- [[#4. Project State & Ops]]
+- [[#5. Historical Drafts & Archive]]
+
+---
+
+## 1. Documentation Standards
+
+- [[docs/templates/FEATURE_TEMPLATE|Feature Document Template]]  
+  The standardized outline and lifecycle document template for all new and existing features. Contains sections for research, architecture, implementation guides, roadmap, and brainstorming.
+
+---
+
+## 2. Architecture & Conventions
+
+- **[Architectural Philosophy: The "User-Agnostic" News Engine](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/architecture-philosophy.md)**  
   The core identity of the platform, explaining the "Views, Not Silos" philosophy and the strict 10-category lock.
-- **[Project Architecture & Conventions](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/project_architecture_and_conventions.md)**
-  Foundational architecture, development workflows, and project state for the Global News Aggregator.
-- **[Story Feature Overview](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/STORY_FEATURE.md)**
-  High-level breakdown of the evolving "Story Cluster" feature, explaining how individual articles are grouped into geopolitical narratives.
-- **[Stories Architecture (Technical)](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/STORIES_ARCHITECTURE.md)**
-  Deep dive into the clustering architecture: how the worker tracks "HOLDING" articles, achieves critical mass, batches LLM requests safely, and decays cluster momentum.
-- **[Locked Topics Guide](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/locked-topics-implementation-guide.md)**
-  Documentation for the user-configurable semantic "Topics" feature that strictly filters incoming news against custom user intents using local search and AI relevance scoring.
+- **[Project Architecture & Conventions](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/project_architecture_and_conventions.md)**  
+  Foundational directory layout, key commands, coding style rules, pagination logic, and caching structures.
+- **[AI Model Strategy Guide](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/AI_MODELS.md)**  
+  Definitive model assignments across the stack, detailing Groq vs. Google AI Studio usage for optimal speed, intelligence, and cost.
 
-## 🧠 AI & Models
-- **[AI Models Strategy](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/AI_MODELS.md)**
-  The definitive guide to model assignments across the stack, detailing exactly which models (Groq Llama vs Google AI Studio) are used for which tasks to optimize speed, intelligence, and cost.
+---
 
-## 🏷️ Metadata & Enrichment Pipeline
-- **[Metadata Strategy Overview](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/METADATA_STRATEGY_OVERVIEW.md)**
-  How raw news articles are enriched with structured metadata (Entities, Categories, Sentiment, Perspective Countries).
-- **[Enrichment Pipeline Overview](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/ENRICHMENT_PIPELINE_OVERVIEW.md)**
-  Technical architectural breakdown of the two-stage pipeline: Node.js deterministic routing and Python NLP microservice parsing.
-- **[Stage 1 Gazetteer Trade-offs](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/stage1_gazetteer_tradeoffs.md)**
-  Architectural ledger documenting the decision to use a compiled Regex Gazetteer over a Local ML classifier for Stage 1 routing.
-- **[Stage 1 Gazetteer Upgrades Trade-offs](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/stage1_gazetteer_upgrades_tradeoffs.md)**
-  Architectural evaluation of upgrading the gazetteer with weights, exclusions, stemming, and database externalization.
-- **[Enrichment Pipeline Alternatives](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/ENRICHMENT_PIPELINE_ALTERNATIVES.md)**
-  Exploration of alternative techniques for processing pipeline architecture, specifically around Local ML vs Cloud LLM tradeoffs.
-- **[Metadata Audit & Curation](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/METADATA_AUDIT_AND_CURATION.md)**
-  How metadata is audited and validated before making it to the frontend.
-- **[Metadata Development Log](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/METADATA_DEVELOPMENT_LOG.md)**
-  Historical context and iterations of the metadata schema.
+## 3. Feature Documents (Numbered)
 
-## 🚀 Project State & Ops
-- **[Project State](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/project_state.md)**
-  Current state of the project, including known limitations, recent architectural migrations, and system health notes.
-- **[GitHub Actions Guide](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/GITHUB_ACTIONS_GUIDE.md)**
-  Documentation for the CI/CD pipeline and automated workflows.
-- **[Project Roadmap](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/PROJECT_ROADMAP.md)**
-  Upcoming features, scaling plans, and pending technical debt.
+These documents represent the source of truth for each major platform feature. They conform to the standardized outline format and are ordered by logic and data flow.
 
-## 📜 Historical Logs
-- **[Phase 0](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/phase-0.md)**
-  Initial MVP requirements and foundational project setup.
-- **[Chat Analysis & Implementation Guide](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/chat_analysis_and_implementation_guide.md)**
-  Notes and transcripts from core architectural decision phases.
-- **[Clustering Foundation Fixes](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/clustering_foundation_fixes.md)**
-  Dev log capturing the decoupling of clustering from ingestion and rate limiting fixes.
+1. **[1. Ingestion & Enrichment Pipeline](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/1. features/1. enrichment-pipeline.md)**  
+   The two-stage parsing flow: Stage 1 local Regex Gazetteer sieve and Stage 2 Python FastAPI NLP microservice (GLiNER + VADER).
+2. **[2. Story Clustering](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/1. features/2. story-clustering.md)**  
+   The end-to-end grouping engine that matches geopolitical entities and runs batch LLM categorization to group news articles into stories.
+3. **[3. Locked Topics](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/1. features/3. locked-topics.md)**  
+   The user-defined custom tracking feature that executes multi-source scans (Google News, Brave, Reddit, web scrapers) and rates findings via AI.
+4. **[4. Feed, Pagination, & 3-Axis Filtering](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/1. features/4. feed-filtering.md)**  
+   Cursor-based infinite scroll pagination, URL query syncer, responsive layout grid, and the 3-axis filters (Event Region, Source Origin, Source Type).
+5. **[5. Authentication & Role-Based Access Control (RBAC)](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/1. features/5. auth-rbac.md)**  
+   Session handling via NextAuth.js and Prisma, defining scopes for Public, Authenticated, and Admin users.
+6. **[6. Admin Dashboard](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/1. features/6. admin-dashboard.md)** _(Planned)_  
+   Planned UI controls, settings override tables, and crawler run-telemetry charts.
+
+---
+
+## 4. Project State & Ops
+
+- **[Project Status and ToDo's](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/PROJECT%20STATUS%20AND%20ToDo's.md)** _(User Authored)_  
+  Tracking board for the project's current conditions, focus points, and remaining issues.
+- **[Project Roadmap](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/PROJECT_ROADMAP.md)**  
+  A backlog of tasks divided by priority and scope.
+- **[GitHub Actions Guide](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/GITHUB_ACTIONS_GUIDE.md)**  
+  CI/CD deployment configurations and runner schedules.
+
+---
+
+## 5. Historical Drafts & Archive
+
+Older drafts, development logs, and research files have been archived for record-keeping:
+
+- **[Archive Dump Directory](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/archive_dump/)** — Contains raw files from early iterations of metadata strategy, gliner experimentation, and design logs.
+- **[Phase 0 Notes](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/phase-0.md)** — Initial MVP specification logs.
+- **[Chat Analysis & Implementation Guide](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/chat_analysis_and_implementation_guide.md)** — Initial architectural feedback and code mapping transcripts.
+- **[Clustering Foundation Fixes Log](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/clustering_foundation_fixes.md)** — Details regarding decoupling clustering from the core ingestion sequence.
+- **[Rate-Limit-Aware AI Processing Log](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/Rate-Limit-Aware%20AI%20Processing%20&%20Token%20Estimation%20Fix.md)** — Analysis of estimation token adjustments under Groq RPM ceilings.

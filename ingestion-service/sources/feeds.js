@@ -15,7 +15,6 @@ const builtinFeeds = [
   {
     name: "The Daily Star",
     sourceCountry: "Bangladesh",
-    sourceOrigin: "Asia-Pacific",
     sourceType: "Commercial Publisher",
     biasGroup: "Centrist",
     coverageScope: "National",
@@ -25,7 +24,6 @@ const builtinFeeds = [
   {
     name: "Dhaka Tribune",
     sourceCountry: "Bangladesh",
-    sourceOrigin: "Asia-Pacific",
     sourceType: "Commercial Publisher",
     biasGroup: "Centrist",
     coverageScope: "National",
@@ -35,7 +33,6 @@ const builtinFeeds = [
   {
     name: "BD24 Live",
     sourceCountry: "Bangladesh",
-    sourceOrigin: "Asia-Pacific",
     sourceType: "Commercial Publisher",
     biasGroup: "Centrist",
     coverageScope: "National",
@@ -45,7 +42,6 @@ const builtinFeeds = [
   {
     name: "Jagonews24",
     sourceCountry: "Bangladesh",
-    sourceOrigin: "Asia-Pacific",
     sourceType: "Commercial Publisher",
     biasGroup: "Centrist",
     coverageScope: "National",
@@ -57,7 +53,6 @@ const builtinFeeds = [
   {
     name: "Al Jazeera",
     sourceCountry: "Qatar",
-    sourceOrigin: "Middle East",
     sourceType: "State Media",
     biasGroup: "State-Aligned",
     coverageScope: "Global",
@@ -66,8 +61,7 @@ const builtinFeeds = [
   },
   {
     name: "UN News",
-    sourceCountry: "Global",
-    sourceOrigin: "Global",
+    sourceCountry: "",
     sourceType: "Independent Wire",
     biasGroup: "Centrist",
     coverageScope: "Global",
@@ -77,7 +71,6 @@ const builtinFeeds = [
   {
     name: "TechCrunch",
     sourceCountry: "USA",
-    sourceOrigin: "North America",
     sourceType: "Commercial Publisher",
     biasGroup: "Centrist",
     coverageScope: "Global",
@@ -116,7 +109,6 @@ export async function getAllFeeds() {
           feedsMap.set(src.url, {
             name: src.name,
             sourceCountry: src.country,
-            sourceOrigin: src.sourceOrigin || "Global",
             sourceType: src.sourceType || "Other",
             biasGroup: src.biasGroup,
             coverageScope: src.coverageScope,

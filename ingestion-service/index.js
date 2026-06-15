@@ -46,7 +46,6 @@ async function run() {
     for await (const item of fetchRSSStream(
       src.name,
       src.sourceCountry,
-      src.sourceOrigin,
       src.sourceType,
       src.url,
       src.biasGroup,
@@ -90,7 +89,6 @@ async function run() {
             contentSnippet: item.contentSnippet,
             source: item.source,
             sourceCountry: item.sourceCountry,
-            sourceOrigin: item.sourceOrigin,
             sourceType: item.sourceType,
             biasGroup: item.biasGroup,
             coverageScope: item.coverageScope,

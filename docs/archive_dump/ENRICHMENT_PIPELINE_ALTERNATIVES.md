@@ -19,7 +19,7 @@ To build a sustainable geopolitical monitor, we should adopt a **Multi-Stage Enr
 
 #### Stage 1: Deterministic Enrichment (Zero Cost, Instant)
 Instead of asking an AI "What region is this?", we use predefined logic.
-- **Source Injection:** The article inherits `biasGroup`, `sourceType`, and `perspectiveCountries` directly from its configuration in `feeds.js`.
+- **Source Injection:** The article inherits `biasGroup` and `sourceType` directly from its configuration in `feeds.js`.
 - **Keyword/Gazetteer Matching:** We maintain a JSON dictionary of geopolitical keywords.
   - *Example:* If text contains "Fed", "inflation", "GDP", tag `Category: Economy`.
   - *Example:* If text contains "Beijing", "Xi", "Taiwan", tag `eventRegion: Asia-Pacific`.

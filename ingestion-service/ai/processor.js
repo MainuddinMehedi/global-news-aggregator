@@ -1,15 +1,14 @@
 import { prisma } from "../db/prisma.js";
+import { enrichWithStage1 } from "./stage1.js";
 import { enrichWithStage2Batch } from "./stage2.js";
 import { scanLockedTopicsRealtime } from "../topics/realtimeMatcher.js";
+
 export function createArticleProcessor(
   batchSize = parseInt(process.env.AI_BATCH_SIZE) || 5,
 ) {
   const buffer = [];
-  const processedArticlesBuffer = [];
   let currentBatchPromise = null;
   let flushPromise = null;
-
-
 
   function scheduleFlush() {
     if (!flushPromise) {
@@ -67,7 +66,9 @@ export function createArticleProcessor(
             validBatch.push(batch[i]);
             validCategories.push(stage1Results[i].stage1.categories[0]);
           } else {
-            console.log(`🗑️ Dropped from processing: ${batch[i].title} (Category: other)`);
+            console.log(
+              `🗑️ Dropped from processing: ${batch[i].title} (Category: other)`,
+            );
           }
         }
 
@@ -75,7 +76,10 @@ export function createArticleProcessor(
         let stage2Results = [];
         if (validBatch.length > 0) {
           try {
-            stage2Results = await enrichWithStage2Batch(validBatch, validCategories);
+            stage2Results = await enrichWithStage2Batch(
+              validBatch,
+              validCategories,
+            );
           } catch (err) {
             console.error(`⚠️ Stage 2 ML batch processing failed`, err.message);
             // Fallback if the Python microservice is completely down
@@ -116,7 +120,6 @@ export function createArticleProcessor(
                     sentimentScore: s2.sentimentScore || null,
                     biasNote: s1.biasNote || null,
                     eventRegion: s1.eventRegion || null,
-                    perspectiveCountries: s1.perspectiveCountries || [],
                     model: "local-pipeline-v1",
                     clusterStatus: "HOLDING",
                   },
@@ -134,7 +137,6 @@ export function createArticleProcessor(
               entities: s2.entities || [],
               sentimentScore: s2.sentimentScore ?? null,
               eventRegion: s1.eventRegion || null,
-              perspectiveCountries: s1.perspectiveCountries || [],
             });
           } catch (err) {
             console.error(

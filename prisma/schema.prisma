@@ -58,7 +58,6 @@ model RawArticle {
   slug             String?  @unique
   source           String
   sourceCountry    String?
-  sourceOrigin     String?
   sourceType       String?
   biasGroup        String?
   coverageScope    String?
@@ -82,7 +81,6 @@ model ProcessedArticle {
   sentimentScore       Float?
   biasNote             String?
   eventRegion          String?
-  perspectiveCountries String[]
   model                String?
   processedAt          DateTime   @default(now())
   clusteredAt          DateTime?

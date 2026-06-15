@@ -16,19 +16,19 @@ _Note: **OpenRouter** is currently deprioritized. While present in env vars, its
 
 ## Model Assignment Map
 
-| Job                     | Primary Model              | Provider | Key Rationale                                          |
-| :---------------------- | :------------------------- | :------- | :----------------------------------------------------- |
-| **Article Enrichment**  | `llama-4-scout-17b`        | Groq     | 30K TPM, high quality, low latency.                    |
-| **Enrichment Fallback** | `llama-3.3-70b-versatile`  | Groq     | 12K TPM; handles batch sizes that 8B cannot.           |
-| **Story Clustering**    | `llama-4-scout-17b`        | Groq     | Shared pipeline with enrichment; handles context well. |
-| **Topic Refinement**    | `openai/gpt-oss-20b`       | Groq     | Extremely fast (~1K t/s) for interactive UI modals.    |
-| **Relevance Scoring**   | `llama-4-scout-17b`        | Groq     | Shared quota with ingestion; tiny prompts.             |
-| **On-Demand Summary**   | `gemma-4-31b`              | Google   | Unlimited TPM; fits hundreds of findings in context.   |
-| **Findings Overview**   | `gemma-4-31b`              | Google   | Post-scan topic synthesis; separate from Groq pipeline.|
-| **Summary Fallback**    | `gemini-3.1-flash-lite`    | Google   | 500 RPD backup with high context window.               |
-| **AI Chat Interface**   | `groq/compound-mini`       | Groq     | Built-in web search and tool use capability.           |
-| **Chat Guard**          | `llama-prompt-guard-2-86m` | Groq     | Specialized low-latency safety model.                  |
-| **Voice Session**       | `Gemini 3 Flash Live`      | Google   | Native multi-modal/audio streaming.                    |
+| Job                     | Primary Model              | Provider | Key Rationale                                           |
+| :---------------------- | :------------------------- | :------- | :------------------------------------------------------ |
+| **Article Enrichment**  | `llama-4-scout-17b`        | Groq     | 30K TPM, high quality, low latency.                     |
+| **Enrichment Fallback** | `llama-3.3-70b-versatile`  | Groq     | 12K TPM; handles batch sizes that 8B cannot.            |
+| **Story Clustering**    | `llama-4-scout-17b`        | Groq     | Shared pipeline with enrichment; handles context well.  |
+| **Topic Refinement**    | `openai/gpt-oss-20b`       | Groq     | Extremely fast (~1K t/s) for interactive UI modals.     |
+| **Relevance Scoring**   | `llama-4-scout-17b`        | Groq     | Shared quota with ingestion; tiny prompts.              |
+| **On-Demand Summary**   | `gemma-4-31b`              | Google   | Unlimited TPM; fits hundreds of findings in context.    |
+| **Findings Overview**   | `gemma-4-31b`              | Google   | Post-scan topic synthesis; separate from Groq pipeline. |
+| **Summary Fallback**    | `gemini-3.1-flash-lite`    | Google   | 500 RPD backup with high context window.                |
+| **AI Chat Interface**   | `groq/compound-mini`       | Groq     | Built-in web search and tool use capability.            |
+| **Chat Guard**          | `llama-prompt-guard-2-86m` | Groq     | Specialized low-latency safety model.                   |
+| **Voice Session**       | `Gemini 3 Flash Live`      | Google   | Native multi-modal/audio streaming.                     |
 
 ---
 

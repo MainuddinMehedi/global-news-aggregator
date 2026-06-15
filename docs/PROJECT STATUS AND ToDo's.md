@@ -111,4 +111,5 @@ _Goal: Provide full observability and control over the system. Build mandatory f
 ## Future Notes
 
 - **Admin Feed Configuration:** As noted in 1.2 ("Changing the rss feed structure changes how we take input(feed) from user and how i as an admin add feeds"), we need to ensure the admin dashboard (when built) easily allows assigning `Source Origin` and `Source Type` to newly curated RSS feeds.
-- **Cleanup:** `perspectiveCountries` and `sourceCountry` have been replaced in the UI, but we may eventually want to clean them up from the DB schema entirely if they hold no future analytical value.
+- **Cleanup:** `perspectiveCountries` has been successfully purged from the DB schema to rely purely on `rawArticle.sourceCountry`, reducing duplication.
+- **Clustering Architecture Upgrade (Embeddings):** Currently, story clustering relies heavily on passing all active clusters into an LLM prompt. To solve context-window scaling limits, the roadmap includes migrating to a hybrid embedding model. Articles will be converted to vectors via Gemini Embeddings (or similar) and grouped using Supabase `pgvector` (cosine similarity). The LLM will then be used exclusively to summarize and generate intelligence metadata for the resulting clusters, drastically reducing token usage and allowing infinite scale.
