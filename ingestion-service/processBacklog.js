@@ -19,6 +19,28 @@ const limit = limitArg ? parseInt(limitArg.split("=")[1]) : undefined;
 
 const startTime = Date.now();
 
+async function cleanupOldSkippedArticles() {
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+  try {
+    console.log("🧹 Running daily purge of skipped other articles older than 30 days...");
+    const result = await prisma.rawArticle.deleteMany({
+      where: {
+        fetchedAt: { lt: thirtyDaysAgo },
+        processedArticle: {
+          clusterStatus: "SKIPPED",
+        },
+      },
+    });
+    if (result.count > 0) {
+      console.log(`🗑️ Auto-purged ${result.count} skipped other articles older than 30 days.`);
+    } else {
+      console.log("✓ No expired skipped articles found.");
+    }
+  } catch (err) {
+    console.error("⚠️ Failed to execute skipped articles purge:", err.message);
+  }
+}
+
 async function processBacklog() {
   // Find RawArticles that have no ProcessedArticle
   const unprocessed = await prisma.rawArticle.findMany({
@@ -110,6 +132,9 @@ async function processBacklog() {
   console.log(`✅ Backlog processing complete in ${elapsed}s`);
   console.log(`   🤖 Processed: ${queued} articles`);
   console.log(`${"─".repeat(50)}\n`);
+
+  // --- TIMED CLEANUP ---
+  await cleanupOldSkippedArticles();
 
   await prisma.$disconnect();
 }

@@ -49,7 +49,7 @@ These documents represent the source of truth for each major platform feature. T
 5. **[5. Authentication & Role-Based Access Control (RBAC)](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/1. features/5. auth-rbac.md)**  
    Session handling via NextAuth.js and Prisma, defining scopes for Public, Authenticated, and Admin users.
 6. **[6. Admin Dashboard](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/1. features/6. admin-dashboard.md)** _(Planned)_  
-   Planned UI controls, settings override tables, and crawler run-telemetry charts.
+   Planned UI controls, settings overrides, crawler telemetry charts, and skipped articles retention/gazetteer tuning tools.
 
 ---
 

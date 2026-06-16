@@ -119,7 +119,10 @@ export async function getAnalyticsData(timeRange: string = "7d"): Promise<Analyt
     ] = await Promise.all([
       // Existing
       prisma.processedArticle.findMany({
-        where: { processedAt: { gte: startDate } },
+        where: {
+          processedAt: { gte: startDate },
+          clusterStatus: { not: "SKIPPED" },
+        },
         select: {
           eventRegion: true,
           sentimentScore: true,
@@ -138,7 +141,16 @@ export async function getAnalyticsData(timeRange: string = "7d"): Promise<Analyt
       prisma.lockedTopic.count({ where: { createdAt: { gte: startDate } } }),
       prisma.category.findMany({
         include: {
-          _count: { select: { articles: { where: { processedAt: { gte: startDate } } } } },
+          _count: {
+            select: {
+              articles: {
+                where: {
+                  processedAt: { gte: startDate },
+                  clusterStatus: { not: "SKIPPED" },
+                },
+              },
+            },
+          },
         },
       }),
       prisma.aiUsage.findMany({
@@ -150,7 +162,10 @@ export async function getAnalyticsData(timeRange: string = "7d"): Promise<Analyt
         select: { fetchedAt: true },
       }),
       prisma.processedArticle.findMany({
-        where: { processedAt: { gte: chartStartDate } },
+        where: {
+          processedAt: { gte: chartStartDate },
+          clusterStatus: { not: "SKIPPED" },
+        },
         select: { processedAt: true },
       }),
       prisma.rawArticle.groupBy({
@@ -180,7 +195,10 @@ export async function getAnalyticsData(timeRange: string = "7d"): Promise<Analyt
       prisma.processedArticle.groupBy({
         by: ["model"],
         _count: { _all: true },
-        where: { processedAt: { gte: startDate } }
+        where: {
+          processedAt: { gte: startDate },
+          clusterStatus: { not: "SKIPPED" },
+        }
       })
     ]);
 
@@ -221,7 +239,7 @@ export async function getAnalyticsData(timeRange: string = "7d"): Promise<Analyt
 
     // ── Event Region Distribution ──────────────────────────────────────────────
     const regionCounts: Record<string, number> = {
-      "North America": 0, "Europe": 0, "Middle East": 0, "Asia-Pacific": 0, "Latin America": 0, "Africa": 0, "Global": 0, "Unknown": 0,
+      "North America": 0, "Europe": 0, "Middle East": 0, "Asia-Pacific": 0, "South America": 0, "Africa": 0, "Global": 0, "Unknown": 0,
     };
     for (const a of processedArticles) {
       const reg = a.eventRegion;
@@ -230,7 +248,7 @@ export async function getAnalyticsData(timeRange: string = "7d"): Promise<Analyt
       else regionCounts["Unknown"]++;
     }
     const regionColors: Record<string, string> = {
-      "North America": "#3b82f6", "Europe": "#10b981", "Middle East": "#ef4444", "Asia-Pacific": "#f59e0b", "Latin America": "#8b5cf6", "Africa": "#ec4899", "Global": "#6b7280", "Unknown": "#9ca3af",
+      "North America": "#3b82f6", "Europe": "#10b981", "Middle East": "#ef4444", "Asia-Pacific": "#f59e0b", "South America": "#8b5cf6", "Africa": "#ec4899", "Global": "#6b7280", "Unknown": "#9ca3af",
     };
     const eventRegionDistribution = Object.entries(regionCounts)
       .filter(([, count]) => count > 0)
@@ -480,7 +498,10 @@ export async function getIngestionStats() {
         where: { fetchedAt: { gte: sevenDaysAgo } },
       }),
       prisma.processedArticle.count({
-        where: { processedAt: { gte: sevenDaysAgo } },
+        where: {
+          processedAt: { gte: sevenDaysAgo },
+          clusterStatus: { not: "SKIPPED" },
+        },
       }),
       prisma.rawArticle.groupBy({
         by: ["source"],
@@ -516,17 +537,23 @@ export async function getContentInsights() {
       prisma.processedArticle.groupBy({
         by: ["eventRegion"],
         _count: { _all: true },
+        where: { clusterStatus: { not: "SKIPPED" } },
       }),
       prisma.category.findMany({
         include: {
           _count: {
-            select: { articles: true },
+            select: {
+              articles: {
+                where: { clusterStatus: { not: "SKIPPED" } },
+              },
+            },
           },
         },
       }),
       prisma.processedArticle.aggregate({
         _avg: { sentimentScore: true },
         _count: { sentimentScore: true },
+        where: { clusterStatus: { not: "SKIPPED" } },
       }),
     ]);
 
@@ -591,6 +618,7 @@ export async function getSourceOriginCounts() {
       where: {
         processedArticle: {
           isNot: null,
+          clusterStatus: { not: "SKIPPED" },
         },
       },
     });
@@ -625,6 +653,7 @@ export async function getBiasGroupCounts() {
       where: {
         processedArticle: {
           isNot: null,
+          clusterStatus: { not: "SKIPPED" },
         },
       },
     });

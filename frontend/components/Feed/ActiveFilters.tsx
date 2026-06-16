@@ -18,7 +18,7 @@ const ORIGIN_LABELS: Record<string, string> = {
   "Middle East": "Middle East",
   "Asia-Pacific": "Asia-Pacific",
   "Europe": "Europe",
-  "Latin America": "Latin America",
+  "South America": "South America",
   "Africa": "Africa",
   "Global": "Global",
   "Unknown": "Unknown",

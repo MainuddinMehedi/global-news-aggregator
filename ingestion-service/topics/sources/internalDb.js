@@ -37,6 +37,16 @@ export async function scanInternalDb(topic, options = {}) {
     return [];
   }
 
+  // Exclude SKIPPED articles from matching topics
+  if (!where.AND) {
+    where.AND = [];
+  } else if (!Array.isArray(where.AND)) {
+    where.AND = [where.AND];
+  }
+  where.AND.push({
+    clusterStatus: { not: "SKIPPED" },
+  });
+
   const sinceDate = fullScan ? null : topic.lastScannedAt;
 
   // If sinceDate is set, only scan articles newer than that

@@ -134,6 +134,8 @@ export async function getArticles({
         }))
       : [];
 
+  const notSkippedFilter = [{ clusterStatus: { not: "SKIPPED" } }];
+
   try {
     // Fetch TAKE + 1 to detect whether a next page exists without a COUNT query
     const raw = await prisma.processedArticle.findMany({
@@ -142,6 +144,7 @@ export async function getArticles({
       where: {
         AND: [
           ...categoryFilter,
+          ...notSkippedFilter,
           ...searchFilter,
           ...regionFilter,
           ...originFilter,
