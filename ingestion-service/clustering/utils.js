@@ -1,5 +1,3 @@
-import { prisma } from "../db/prisma.js";
-
 const ALLOWED_IMPACTS = new Set(["CRITICAL", "HIGH", "MEDIUM", "LOW"]);
 const ALLOWED_STATUSES = new Set([
   "ESCALATING",
@@ -7,27 +5,6 @@ const ALLOWED_STATUSES = new Set([
   "STABLE",
   "RESOLVING",
 ]);
-const DAY_MS = 24 * 60 * 60 * 1000;
-const CLUSTER_STABLE_INACTIVE_DAYS = Number.parseInt(
-  process.env.CLUSTER_STABLE_INACTIVE_DAYS || "7",
-  10,
-);
-const CLUSTER_LOW_IMPACT_INACTIVE_DAYS = Number.parseInt(
-  process.env.CLUSTER_LOW_IMPACT_INACTIVE_DAYS || "10",
-  10,
-);
-const CLUSTER_MEDIUM_IMPACT_INACTIVE_DAYS = Number.parseInt(
-  process.env.CLUSTER_MEDIUM_IMPACT_INACTIVE_DAYS || "21",
-  10,
-);
-const CLUSTER_HIGH_IMPACT_INACTIVE_DAYS = Number.parseInt(
-  process.env.CLUSTER_HIGH_IMPACT_INACTIVE_DAYS || "35",
-  10,
-);
-const CLUSTER_CRITICAL_IMPACT_INACTIVE_DAYS = Number.parseInt(
-  process.env.CLUSTER_CRITICAL_IMPACT_INACTIVE_DAYS || "60",
-  10,
-);
 
 export function cleanString(value) {
   return typeof value === "string" && value.trim() ? value.trim() : undefined;
@@ -38,7 +15,7 @@ export function cleanNumber(value) {
   return Number.isFinite(number) ? number : undefined;
 }
 
-function cleanStringArray(value, limit = 12) {
+export function cleanStringArray(value, limit = 12) {
   if (!Array.isArray(value)) return undefined;
 
   const cleaned = [
@@ -53,7 +30,7 @@ function cleanStringArray(value, limit = 12) {
   return cleaned.slice(0, limit);
 }
 
-function cleanKeyDevelopments(value, limit = 10) {
+export function cleanKeyDevelopments(value, limit = 10) {
   if (!Array.isArray(value)) return undefined;
 
   const cleaned = value
@@ -77,13 +54,13 @@ function cleanKeyDevelopments(value, limit = 10) {
   return cleaned.slice(0, limit);
 }
 
-function mergeStringArrays(existing, incoming, limit = 12) {
+export function mergeStringArrays(existing, incoming, limit = 12) {
   return [
     ...new Set([...(existing || []), ...(incoming || [])].filter(Boolean)),
   ].slice(0, limit);
 }
 
-function mergeKeyDevelopments(existing, incoming, limit = 10) {
+export function mergeKeyDevelopments(existing, incoming, limit = 10) {
   const merged = [];
   const seen = new Set();
 
@@ -136,91 +113,6 @@ export function buildClusterUpdateData(clusterUpdate, existingCluster) {
   return data;
 }
 
-function daysAgo(days) {
-  return new Date(Date.now() - days * DAY_MS);
-}
-
-function inactiveByActivityCutoff(cutoff) {
-  return {
-    OR: [
-      { lastActivityAt: { lt: cutoff } },
-      { lastActivityAt: null, updatedAt: { lt: cutoff } },
-    ],
-  };
-}
-
-export async function applyClusterLifecycle() {
-  const stableCutoff = daysAgo(CLUSTER_STABLE_INACTIVE_DAYS);
-  const lowImpactCutoff = daysAgo(CLUSTER_LOW_IMPACT_INACTIVE_DAYS);
-  const mediumImpactCutoff = daysAgo(CLUSTER_MEDIUM_IMPACT_INACTIVE_DAYS);
-  const highImpactCutoff = daysAgo(CLUSTER_HIGH_IMPACT_INACTIVE_DAYS);
-  const criticalImpactCutoff = daysAgo(CLUSTER_CRITICAL_IMPACT_INACTIVE_DAYS);
-
-  const [stableResult, lowResult, mediumResult, highResult, criticalResult] =
-    await Promise.all([
-      // STABLE or RESOLVING — deactivate after 7 days regardless of impact
-      prisma.storyCluster.updateMany({
-        where: {
-          isActive: true,
-          status: { in: ["STABLE", "RESOLVING"] },
-          AND: [inactiveByActivityCutoff(stableCutoff)],
-        },
-        data: { isActive: false },
-      }),
-      // LOW impact
-      prisma.storyCluster.updateMany({
-        where: {
-          isActive: true,
-          impact: "LOW",
-          status: { notIn: ["STABLE", "RESOLVING"] },
-          AND: [inactiveByActivityCutoff(lowImpactCutoff)],
-        },
-        data: { isActive: false },
-      }),
-      // MEDIUM impact
-      prisma.storyCluster.updateMany({
-        where: {
-          isActive: true,
-          impact: "MEDIUM",
-          status: { notIn: ["STABLE", "RESOLVING"] },
-          AND: [inactiveByActivityCutoff(mediumImpactCutoff)],
-        },
-        data: { isActive: false },
-      }),
-      // HIGH impact
-      prisma.storyCluster.updateMany({
-        where: {
-          isActive: true,
-          impact: "HIGH",
-          status: { notIn: ["STABLE", "RESOLVING"] },
-          AND: [inactiveByActivityCutoff(highImpactCutoff)],
-        },
-        data: { isActive: false },
-      }),
-      // CRITICAL impact
-      prisma.storyCluster.updateMany({
-        where: {
-          isActive: true,
-          impact: "CRITICAL",
-          status: { notIn: ["STABLE", "RESOLVING"] },
-          AND: [inactiveByActivityCutoff(criticalImpactCutoff)],
-        },
-        data: { isActive: false },
-      }),
-    ]);
-
-  const deactivatedCount =
-    stableResult.count +
-    lowResult.count +
-    mediumResult.count +
-    highResult.count +
-    criticalResult.count;
-
-  if (deactivatedCount > 0) {
-    console.log(`🧹 Deactivated ${deactivatedCount} stale story clusters`);
-  }
-}
-
 export function clusterRankScore(cluster) {
   const impactScore =
     {
@@ -269,4 +161,45 @@ export function getArticleSignals(articles) {
     sourceCount: sourceCounts.size,
     topSources,
   };
+}
+
+export function detectEntityOverlap(holdingArticles) {
+  const groups = [];
+  const processedSet = new Set();
+
+  for (let i = 0; i < holdingArticles.length; i++) {
+    const article = holdingArticles[i];
+    if (processedSet.has(article.id)) continue;
+    if (!article.entities || article.entities.length === 0) continue;
+
+    const currentGroup = [article];
+    processedSet.add(article.id);
+
+    for (let j = i + 1; j < holdingArticles.length; j++) {
+      const otherArticle = holdingArticles[j];
+      if (processedSet.has(otherArticle.id)) continue;
+      if (!otherArticle.entities || otherArticle.entities.length === 0)
+        continue;
+
+      // Check for overlap of at least 2 identical entities
+      const overlap = article.entities.filter((e) =>
+        otherArticle.entities.includes(e),
+      );
+      if (overlap.length >= 2) {
+        currentGroup.push(otherArticle);
+        processedSet.add(otherArticle.id);
+      }
+    }
+
+    // Critical Mass: Only process groups with 3 or more articles
+    if (currentGroup.length >= 3) {
+      groups.push(currentGroup);
+    } else {
+      // Release from processed set so they can potentially match with something else next run
+      for (const a of currentGroup) {
+        processedSet.delete(a.id);
+      }
+    }
+  }
+  return groups;
 }

@@ -13,7 +13,7 @@ const REGION_COLORS: Record<string, string> = {
   Europe: "bg-emerald-500",
   "Middle East": "bg-red-500",
   "Asia-Pacific": "bg-fuchsia-500",
-  "Latin America": "bg-orange-500",
+  "South America": "bg-orange-500",
   Africa: "bg-yellow-500",
   Global: "bg-indigo-500",
   Unknown: "bg-muted-foreground/10",

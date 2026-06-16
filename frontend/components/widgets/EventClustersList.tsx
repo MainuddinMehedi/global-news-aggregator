@@ -29,7 +29,7 @@ const ORIGIN_DOT_COLORS: Record<string, string> = {
   Europe: "bg-emerald-500",
   "Middle East": "bg-amber-500",
   "Asia-Pacific": "bg-red-500",
-  "Latin America": "bg-purple-500",
+  "South America": "bg-purple-500",
   Africa: "bg-orange-500",
   Global: "bg-slate-400",
 };

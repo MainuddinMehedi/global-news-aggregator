@@ -28,7 +28,7 @@ export const CANONICAL_REGIONS = [
   "Europe",
   "Middle East",
   "Asia-Pacific",
-  "Latin America",
+  "South America",
   "Africa",
   "Global",
 ];

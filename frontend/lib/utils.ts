@@ -33,7 +33,7 @@ export function getEventRegionBadgeVariant(
   if (lower.includes("europe")) return "emerald";
   if (lower.includes("middle east")) return "red";
   if (lower.includes("asia-pacific")) return "amber";
-  if (lower.includes("latin america")) return "emerald";
+  if (lower.includes("south america")) return "emerald";
   if (lower.includes("africa")) return "amber";
   if (lower.includes("global")) return "neutral";
 

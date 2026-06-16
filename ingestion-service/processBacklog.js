@@ -11,7 +11,11 @@
 
 import "dotenv/config";
 import { prisma } from "./db/prisma.js";
+import { enrichWithStage1 } from "./ai/stage1.js";
 import { createArticleProcessor } from "./ai/processor.js";
+import formatDuration from "./utils/formatDuration.js";
+import cleanupOldSkippedArticles from "./utils/cleanupOldSkippedArticles.js";
+import revalidateCache from "./utils/revalidateCache.js";
 
 const args = process.argv.slice(2);
 const limitArg = args.find((a) => a.startsWith("--limit="));
@@ -35,33 +39,82 @@ async function processBacklog() {
     return;
   }
 
-  console.log(
-    `📋 Found ${unprocessed.length} unprocessed articles${limit ? ` (limit: ${limit})` : ""}\n`,
-  );
+  // Pre-filter non-relevant (category: other) articles using Stage 1 Gazetteer
+  const relevantArticles = [];
+  const skippedArticles = [];
 
-  const aiProcessor = createArticleProcessor();
-
-  let queued = 0;
   for (const article of unprocessed) {
-    await aiProcessor.add(article);
-    queued++;
+    const s1 = enrichWithStage1(article);
+    if (s1.categories[0] === "other") {
+      skippedArticles.push({ article, s1 });
+    } else {
+      relevantArticles.push(article);
+    }
   }
 
-  console.log(`\n🤖 Flushing local ML tasks for ${queued} articles...`);
-  await aiProcessor.flush();
+  console.log(
+    `📋 Found ${unprocessed.length} unprocessed articles${limit ? ` (limit: ${limit})` : ""}`
+  );
+  console.log(
+    `   🔍 Stage 1 classification: ${relevantArticles.length} relevant, ${skippedArticles.length} non-relevant ('other')\n`
+  );
 
-  const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+  let queued = 0;
+  if (relevantArticles.length > 0) {
+    const aiProcessor = createArticleProcessor();
+    for (const article of relevantArticles) {
+      await aiProcessor.add(article);
+      queued++;
+    }
+
+    console.log(`\n🤖 Flushing local ML tasks for ${queued} relevant articles...`);
+    await aiProcessor.flush();
+  } else {
+    console.log("ℹ️ No relevant articles to process via LLM/ML.");
+  }
+
+  // Save skipped 'other' articles quietly at the end of backlog processing
+  if (skippedArticles.length > 0) {
+    console.log(`\n📥 Saving ${skippedArticles.length} skipped 'other' articles to database...`);
+    
+    // Ensure "other" category exists first to prevent unique constraint race conditions
+    await prisma.category.upsert({
+      where: { name: "other" },
+      update: {},
+      create: { name: "other" },
+    });
+
+    const chunkSize = 50;
+    for (let i = 0; i < skippedArticles.length; i += chunkSize) {
+      const chunk = skippedArticles.slice(i, i + chunkSize);
+      await prisma.$transaction(
+        chunk.map(({ article, s1 }) =>
+          prisma.processedArticle.create({
+            data: {
+              rawArticleId: article.id,
+              categories: {
+                connect: { name: "other" },
+              },
+              entities: [],
+              sentimentScore: null,
+              biasNote: null,
+              eventRegion: s1.eventRegion || null,
+              model: "stage1-only",
+              clusterStatus: "SKIPPED",
+            },
+          })
+        ),
+        { timeout: 15000 }
+      );
+    }
+    console.log(`✓ Marked ${skippedArticles.length} articles as skipped.`);
+  }
+
+  const elapsed = formatDuration(Date.now() - startTime);
 
   // --- REVALIDATION LOGIC ---
+  const tagsToRevalidate = ["articles", "stories", "locked-topics"];
   try {
-    const nextApiUrl =
-      process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api";
-    const revalidateSecret = process.env.REVALIDATE_SECRET || "";
-
-    console.log(`\n🔄 Revalidating cache...`);
-
-    const tagsToRevalidate = ["articles", "stories", "locked-topics"];
-
     // Find clusters updated during this run to revalidate their specific pages
     const updatedClusters = await prisma.storyCluster.findMany({
       where: {
@@ -91,25 +144,22 @@ async function processBacklog() {
     updatedTopics.forEach((topic) => {
       tagsToRevalidate.push(`locked-topic-${topic.id}`);
     });
-
-    for (const tag of tagsToRevalidate) {
-      const res = await fetch(
-        `${nextApiUrl}/revalidate?tag=${tag}&secret=${revalidateSecret}`,
-      );
-      if (!res.ok) {
-        console.warn(`⚠️ Failed to revalidate tag: ${tag} (${res.status})`);
-      } else {
-        console.log(`✓ Revalidated: ${tag}`);
-      }
-    }
   } catch (err) {
-    console.error("⚠️ Cache revalidation failed:", err.message);
+    console.error("⚠️ Failed to retrieve updated entities for revalidation:", err.message);
   }
 
+  await revalidateCache(tagsToRevalidate);
+
   console.log(`\n${"─".repeat(50)}`);
-  console.log(`✅ Backlog processing complete in ${elapsed}s`);
+  console.log(`✅ Backlog processing complete in ${elapsed}`);
   console.log(`   🤖 Processed: ${queued} articles`);
+  if (skippedArticles.length > 0) {
+    console.log(`   🗑️ Skipped:   ${skippedArticles.length} other articles`);
+  }
   console.log(`${"─".repeat(50)}\n`);
+
+  // --- TIMED CLEANUP ---
+  await cleanupOldSkippedArticles();
 
   await prisma.$disconnect();
 }

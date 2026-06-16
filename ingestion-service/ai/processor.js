@@ -57,22 +57,55 @@ export function createArticleProcessor(
         }));
 
         // --- THE SIEVE ---
-        // Keep canonical categories (geopolitics, sports, etc.) but DROP 'other'
+        // Keep canonical categories (geopolitics, sports, etc.) but process 'other' as SKIPPED
         const validIndices = [];
         const validBatch = [];
         const validCategories = [];
         for (let i = 0; i < stage1Results.length; i++) {
-          if (stage1Results[i].stage1.categories[0] !== "other") {
+          const rawArticle = batch[i];
+          const s1 = stage1Results[i].stage1;
+
+          if (s1.categories[0] !== "other") {
             validIndices.push(i);
             validBatch.push({
-              ...batch[i],
-              eventRegion: stage1Results[i].stage1.eventRegion || null,
+              ...rawArticle,
+              eventRegion: s1.eventRegion || null,
             });
-            validCategories.push(stage1Results[i].stage1.categories[0]);
+            validCategories.push(s1.categories[0]);
           } else {
-            console.log(
-              `🗑️ Dropped from processing: ${batch[i].title} (Category: other)`,
-            );
+            // Save immediately as SKIPPED to prevent backlog re-processing
+            try {
+              await prisma.$transaction(
+                async (tx) => {
+                  await tx.processedArticle.create({
+                    data: {
+                      rawArticleId: rawArticle.id,
+                      categories: {
+                        connectOrCreate: {
+                          where: { name: "other" },
+                          create: { name: "other" },
+                        },
+                      },
+                      entities: [],
+                      sentimentScore: null,
+                      biasNote: null,
+                      eventRegion: s1.eventRegion || null,
+                      model: "stage1-only",
+                      clusterStatus: "SKIPPED",
+                    },
+                  });
+                },
+                { timeout: 15000 }
+              );
+              console.log(
+                `🗑️ Skipped ML processing (Category: other) | Title: "${rawArticle.title}" (Saved to DB to prevent backlog re-processing)`
+              );
+            } catch (err) {
+              console.error(
+                `⚠️ Failed to save skipped article: ${rawArticle.title}`,
+                err.message,
+              );
+            }
           }
         }
 

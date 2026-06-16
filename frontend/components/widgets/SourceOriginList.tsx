@@ -16,7 +16,7 @@ const ORIGIN_COLORS: Record<string, string> = {
   "Middle East": "bg-amber-500",
   "Asia-Pacific": "bg-emerald-500",
   "Europe": "bg-indigo-500",
-  "Latin America": "bg-orange-500",
+  "South America": "bg-orange-500",
   "Africa": "bg-yellow-500",
   "Global": "bg-purple-500",
   "Unknown": "bg-slate-400 dark:bg-slate-500",

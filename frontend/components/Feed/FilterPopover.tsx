@@ -60,7 +60,7 @@ export default function FilterPopover() {
                   { label: "Europe", value: "Europe" },
                   { label: "Middle East", value: "Middle East" },
                   { label: "Asia-Pacific", value: "Asia-Pacific" },
-                  { label: "Latin America", value: "Latin America" },
+                  { label: "South America", value: "South America" },
                   { label: "Africa", value: "Africa" },
                   { label: "Global", value: "Global" },
                 ]}

@@ -35,7 +35,7 @@ const REGION_COLORS: Record<string, string> = {
   "Europe": "bg-emerald-500 shadow-emerald-500/30",
   "Middle East": "bg-red-500 shadow-red-500/30",
   "Asia-Pacific": "bg-amber-500 shadow-amber-500/30",
-  "Latin America": "bg-purple-500 shadow-purple-500/30",
+  "South America": "bg-purple-500 shadow-purple-500/30",
   "Africa": "bg-pink-500 shadow-pink-500/30",
   "Global": "bg-slate-400 shadow-slate-400/30",
   "Unknown": "bg-gray-400 shadow-gray-400/30",
