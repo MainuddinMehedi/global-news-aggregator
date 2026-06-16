@@ -42,25 +42,30 @@ jobs:
 
           # 🔐 SECRETS (Sensitive)
           DATABASE_URL: "${{ secrets.DATABASE_URL }}"
-          AI_PRIMARY_API_KEY: "${{ secrets.AI_PRIMARY_API_KEY }}"
-          AI_FALLBACK_API_KEY: "${{ secrets.AI_FALLBACK_API_KEY }}"
+          MISTRAL_API_KEY: "${{ secrets.MISTRAL_API_KEY }}"
+          GROQ_API_KEY: "${{ secrets.GROQ_API_KEY }}"
           REVALIDATE_SECRET: "${{ secrets.REVALIDATE_SECRET }}"
 
           # ⚙️ VARIABLES (Config)
           NEXT_PUBLIC_API_URL: "${{ vars.NEXT_PUBLIC_API_URL }}"
-          AI_PRIMARY_PROVIDER: "${{ vars.AI_PRIMARY_PROVIDER }}"
-          AI_PRIMARY_MODEL: "${{ vars.AI_PRIMARY_MODEL }}"
-          AI_PRIMARY_BASE_URL: "${{ vars.AI_PRIMARY_BASE_URL }}"
+          
+          MISTRAL_BASE_URL: "${{ vars.MISTRAL_BASE_URL }}"
+          GROQ_BASE_URL: "${{ vars.GROQ_BASE_URL }}"
 
-          AI_FALLBACK_PROVIDER: "${{ vars.AI_FALLBACK_PROVIDER }}"
-          AI_FALLBACK_MODEL: "${{ vars.AI_FALLBACK_MODEL }}"
-          AI_FALLBACK_BASE_URL: "${{ vars.AI_FALLBACK_BASE_URL }}"
+          AI_PIPELINE_MODEL: "${{ vars.AI_PIPELINE_MODEL }}"
+          AI_PIPELINE_FALLBACK_MODEL: "${{ vars.AI_PIPELINE_FALLBACK_MODEL }}"
 
-          AI_TPM_LIMIT: "${{ vars.AI_TPM_LIMIT }}"
-          AI_RPM_LIMIT: "${{ vars.AI_RPM_LIMIT }}"
+          AI_MISTRAL_TPM_LIMIT: "${{ vars.AI_MISTRAL_TPM_LIMIT }}"
+          AI_MISTRAL_RPM_LIMIT: "${{ vars.AI_MISTRAL_RPM_LIMIT }}"
+          AI_MISTRAL_CONCURRENCY: "${{ vars.AI_MISTRAL_CONCURRENCY }}"
+          AI_MISTRAL_BATCH_SIZE: "${{ vars.AI_MISTRAL_BATCH_SIZE }}"
+
+          AI_GROQ_TPM_LIMIT: "${{ vars.AI_GROQ_TPM_LIMIT }}"
+          AI_GROQ_RPM_LIMIT: "${{ vars.AI_GROQ_RPM_LIMIT }}"
+          AI_GROQ_CONCURRENCY: "${{ vars.AI_GROQ_CONCURRENCY }}"
+          AI_GROQ_BATCH_SIZE: "${{ vars.AI_GROQ_BATCH_SIZE }}"
+
           AI_TOKEN_MULTIPLIER: "${{ vars.AI_TOKEN_MULTIPLIER }}"
-          AI_BATCH_SIZE: "${{ vars.AI_BATCH_SIZE }}"
-          AI_CONCURRENCY_LIMIT: "${{ vars.AI_CONCURRENCY_LIMIT }}"
           AI_TIMEOUT_MS: "${{ vars.AI_TIMEOUT_MS }}"
           AI_RETRY_ATTEMPTS: "${{ vars.AI_RETRY_ATTEMPTS }}"
         run: |

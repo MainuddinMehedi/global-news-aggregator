@@ -47,8 +47,9 @@ jobs:
           REVALIDATE_SECRET: "${{ secrets.REVALIDATE_SECRET }}"
 
           # AI Keys
-          GROQ_API_KEY: "${{ secrets.AI_PRIMARY_API_KEY }}"
-          GEMINI_API_KEY: "${{ secrets.AI_FALLBACK_API_KEY }}"
+          MISTRAL_API_KEY: "${{ secrets.MISTRAL_API_KEY }}"
+          GROQ_API_KEY: "${{ secrets.GROQ_API_KEY }}"
+          GEMINI_API_KEY: "${{ secrets.GEMINI_API_KEY }}"
 
           # External Scanners & APIs
           BRAVE_API_KEY: "${{ secrets.BRAVE_API_KEY }}"
@@ -62,11 +63,12 @@ jobs:
           # ⚙️ VARIABLES (Config)
           NEXT_PUBLIC_API_URL: "${{ vars.NEXT_PUBLIC_API_URL }}"
 
-          GROQ_BASE_URL: "${{ vars.AI_PRIMARY_BASE_URL }}"
-          GEMINI_BASE_URL: "${{ vars.AI_FALLBACK_BASE_URL }}"
+          MISTRAL_BASE_URL: "${{ vars.MISTRAL_BASE_URL }}"
+          GROQ_BASE_URL: "${{ vars.GROQ_BASE_URL }}"
+          GEMINI_BASE_URL: "${{ vars.GEMINI_BASE_URL }}"
 
-          AI_INGESTION_MODEL: "${{ vars.AI_PRIMARY_MODEL }}"
-          AI_GEMINI_FALLBACK_MODEL: "${{ vars.AI_FALLBACK_MODEL }}"
+          AI_PIPELINE_MODEL: "${{ vars.AI_PIPELINE_MODEL }}"
+          AI_UTILITY_FALLBACK_MODEL: "${{ vars.AI_UTILITY_FALLBACK_MODEL }}"
 
           AI_SUMMARY_MODEL: "${{ vars.AI_SUMMARY_MODEL }}"
 

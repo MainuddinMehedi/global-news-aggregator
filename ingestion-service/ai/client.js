@@ -26,7 +26,7 @@ export async function requestAI(
     const tokensToWait =
       estimatedTokens ||
       Math.ceil((countTokens(prompt) + 1000) * TOKEN_MULTIPLIER);
-    await waitForCapacity(tokensToWait, config.tpmLimit);
+    await waitForCapacity(tokensToWait, config.tpmLimit, config.rpmLimit);
 
     const controller = new AbortController();
     const timeout = setTimeout(

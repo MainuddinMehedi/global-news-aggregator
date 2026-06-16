@@ -30,15 +30,16 @@ function getWindowUsage() {
  * Wait until there's enough capacity in the current minute window
  * to send a batch with the given estimated token count.
  */
-export async function waitForCapacity(estimatedTokens, customTpmLimit = null) {
+export async function waitForCapacity(estimatedTokens, customTpmLimit = null, customRpmLimit = null) {
   const currentTpmLimit = customTpmLimit || TPM_LIMIT;
+  const currentRpmLimit = customRpmLimit || RPM_LIMIT;
 
   while (true) {
     pruneWindow();
     const { tokens, requests } = getWindowUsage();
 
     const tokensFit = tokens + estimatedTokens <= currentTpmLimit;
-    const requestsFit = requests + 1 <= RPM_LIMIT;
+    const requestsFit = requests + 1 <= currentRpmLimit;
 
     if (tokensFit && requestsFit) {
       return; // Good to go
@@ -59,7 +60,7 @@ export async function waitForCapacity(estimatedTokens, customTpmLimit = null) {
     const waitSec = Math.ceil(waitMs / 1000);
     const reason = !tokensFit
       ? `TPM (${tokens.toLocaleString()}/${currentTpmLimit.toLocaleString()} used)`
-      : `RPM (${requests}/${RPM_LIMIT} used)`;
+      : `RPM (${requests}/${currentRpmLimit} used)`;
 
     console.log(`⏳ Rate limit: waiting ${waitSec}s for ${reason} to reset...`);
 
