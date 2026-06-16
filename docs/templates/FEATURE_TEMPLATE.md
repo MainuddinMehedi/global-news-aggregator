@@ -8,12 +8,13 @@
 ### 📖 Table of Contents
 
 - [1. Overview & Objective](#1-overview--objective)
-- [2. Related Logs & References Map](#2-related-logs--references-map)
+- [2. 📖 References Map](#2--references-map)
 - [3. Research & Decision Matrix](#3-research--decision-matrix)
 - [4. Technical Architecture & Data Model](#4-technical-architecture--data-model)
 - [5. Implementation Notes & Reference Guide](#5-implementation-notes--reference-guide)
 - [6. Future Roadmap & "Remember It" Notes](#6-future-roadmap--remember-it-notes)
 - [7. Brainstorming & Feature Ideas](#7-brainstorming--feature-ideas)
+- [8. 🔗 Related Logs](#8--related-logs)
 
 ---
 
@@ -28,9 +29,9 @@ Provide a high-level explanation of the feature from a product or user perspecti
 
 ---
 
-## 2. Related Logs & References Map
+## 2. 📖 References Map
 
-A direct index of all research, audit files, transcripts, or notes related to this feature:
+_(Items that require quick checkup, future plans, or jotting down)_
 
 - [Reference Name](file:///path/to/reference/file.md) — _Description of reference._
 
@@ -119,3 +120,11 @@ A log of uncategorized thoughts, brainstorming notes, and new feature ideas reco
 
 - **Idea 1:** _Brief description, context, and potential value._
 - **Idea 2:** _Brief description, context, and potential value._
+
+---
+
+## 8. 🔗 Related Logs
+
+_(Historical decisions, audits, and performance metrics that do not require quick checkups)_
+
+- [Log Name](file:///path/to/log/file.md) — _Description of the historical log._

@@ -29,8 +29,6 @@ This index serves as the entry point and mindmap for the project's documentation
   Foundational directory layout, key commands, coding style rules, pagination logic, and caching structures.
 - **[AI Model Strategy Guide](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/AI_MODELS.md)**  
   Definitive model assignments across the stack, detailing Mistral AI (including Ministral 8B in chat), Groq, and Google AI Studio usage for optimal speed, intelligence, and cost.
-- **[Architectural Ledger: Ingestion Stage 2 API Migration](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/enrichment_pipeline_api_migration.md)**  
-  Detailed trade-offs, options evaluated, and trajectory implications of migrating Stage 2 from Python FastAPI (GLiNER/VADER) to Mistral and Groq APIs.
 
 ---
 
@@ -72,4 +70,3 @@ Older drafts, development logs, and research files have been archived for record
 - **[Phase 0 Notes](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/phase-0.md)** — Initial MVP specification logs.
 - **[Chat Analysis & Implementation Guide](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/chat_analysis_and_implementation_guide.md)** — Initial architectural feedback and code mapping transcripts.
 - **[Clustering Foundation Fixes Log](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/clustering_foundation_fixes.md)** — Details regarding decoupling clustering from the core ingestion sequence.
-- **[Rate-Limit-Aware AI Processing Log](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/Rate-Limit-Aware%20AI%20Processing%20&%20Token%20Estimation%20Fix.md)** — Analysis of estimation token adjustments under Groq RPM ceilings.
