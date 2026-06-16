@@ -4,6 +4,7 @@ import fetchRSSStream from "./sources/rss.js";
 import { getActiveFeeds } from "./sources/feeds.js";
 import hashSnippet from "./utils/hashSnippet.js";
 import normalizeUrl from "./utils/normalizeUrl.js";
+import formatDuration from "./utils/formatDuration.js";
 import { createArticleProcessor } from "./ai/processor.js";
 
 function generateSlug(title) {
@@ -116,7 +117,7 @@ async function run() {
     await aiProcessor.flush();
   }
 
-  const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+  const elapsed = formatDuration(Date.now() - startTime);
 
   // --- REVALIDATION LOGIC ---
   try {
@@ -173,7 +174,7 @@ async function run() {
   }
 
   console.log(`\n${"─".repeat(50)}`);
-  console.log(`✅ Ingestion complete in ${elapsed}s`);
+  console.log(`✅ Ingestion complete in ${elapsed}`);
   console.log(
     `   📥 Fetched: ${totalFetched} items from ${sources.length} sources`,
   );
