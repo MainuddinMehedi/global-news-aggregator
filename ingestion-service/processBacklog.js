@@ -15,6 +15,7 @@ import { enrichWithStage1 } from "./ai/stage1.js";
 import { createArticleProcessor } from "./ai/processor.js";
 import formatDuration from "./utils/formatDuration.js";
 import cleanupOldSkippedArticles from "./utils/cleanupOldSkippedArticles.js";
+import revalidateCache from "./utils/revalidateCache.js";
 
 const args = process.argv.slice(2);
 const limitArg = args.find((a) => a.startsWith("--limit="));
@@ -112,15 +113,8 @@ async function processBacklog() {
   const elapsed = formatDuration(Date.now() - startTime);
 
   // --- REVALIDATION LOGIC ---
+  const tagsToRevalidate = ["articles", "stories", "locked-topics"];
   try {
-    const nextApiUrl =
-      process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api";
-    const revalidateSecret = process.env.REVALIDATE_SECRET || "";
-
-    console.log(`\n🔄 Revalidating cache...`);
-
-    const tagsToRevalidate = ["articles", "stories", "locked-topics"];
-
     // Find clusters updated during this run to revalidate their specific pages
     const updatedClusters = await prisma.storyCluster.findMany({
       where: {
@@ -150,20 +144,11 @@ async function processBacklog() {
     updatedTopics.forEach((topic) => {
       tagsToRevalidate.push(`locked-topic-${topic.id}`);
     });
-
-    for (const tag of tagsToRevalidate) {
-      const res = await fetch(
-        `${nextApiUrl}/revalidate?tag=${tag}&secret=${revalidateSecret}`,
-      );
-      if (!res.ok) {
-        console.warn(`⚠️ Failed to revalidate tag: ${tag} (${res.status})`);
-      } else {
-        console.log(`✓ Revalidated: ${tag}`);
-      }
-    }
   } catch (err) {
-    console.error("⚠️ Cache revalidation failed:", err.message);
+    console.error("⚠️ Failed to retrieve updated entities for revalidation:", err.message);
   }
+
+  await revalidateCache(tagsToRevalidate);
 
   console.log(`\n${"─".repeat(50)}`);
   console.log(`✅ Backlog processing complete in ${elapsed}`);
