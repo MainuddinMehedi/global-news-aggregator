@@ -14,7 +14,7 @@ const PRIMARY_CONFIG = {
 const FALLBACK_CONFIG = {
   baseUrl: process.env.GEMINI_BASE_URL || "https://generativelanguage.googleapis.com/v1beta/openai",
   apiKey: process.env.GEMINI_API_KEY,
-  model: process.env.AI_GEMINI_FALLBACK_MODEL,
+  model: process.env.AI_UTILITY_FALLBACK_MODEL,
   provider: "gemini",
 };
 

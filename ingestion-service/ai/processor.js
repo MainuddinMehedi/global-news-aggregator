@@ -3,8 +3,10 @@ import { enrichWithStage1 } from "./stage1.js";
 import { enrichWithStage2Batch } from "./stage2.js";
 import { scanLockedTopicsRealtime } from "../topics/realtimeMatcher.js";
 
+import { primaryConfig } from "../config/ai.js";
+
 export function createArticleProcessor(
-  batchSize = parseInt(process.env.AI_BATCH_SIZE) || 5,
+  batchSize = primaryConfig.batchSize,
 ) {
   const buffer = [];
   let currentBatchPromise = null;
