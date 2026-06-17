@@ -38,7 +38,7 @@ These documents represent the source of truth for each major platform feature. T
 
 1. **[1. Ingestion & Enrichment Pipeline](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/1. features/1. enrichment-pipeline.md)**  
    The two-stage parsing flow: Stage 1 local Regex Gazetteer sieve and Stage 2 Python FastAPI NLP microservice (GLiNER + VADER).
-2. **[2. Story Clustering](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/1. features/2. story-clustering.md)**  
+2. **[2. Story Clustering](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/1. features/2. story/0. story-clustering.md)**
    The end-to-end grouping engine that matches geopolitical entities and runs batch LLM categorization to group news articles into stories.
 3. **[3. Locked Topics](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/1. features/3. locked-topics.md)**  
    The user-defined custom tracking feature that executes multi-source scans (Google News, Brave, Reddit, web scrapers) and rates findings via AI.
@@ -69,4 +69,3 @@ Older drafts, development logs, and research files have been archived for record
 - **[Archive Dump Directory](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/archive_dump/)** — Contains raw files from early iterations of metadata strategy, gliner experimentation, and design logs.
 - **[Phase 0 Notes](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/phase-0.md)** — Initial MVP specification logs.
 - **[Chat Analysis & Implementation Guide](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/chat_analysis_and_implementation_guide.md)** — Initial architectural feedback and code mapping transcripts.
-- **[Clustering Foundation Fixes Log](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/clustering_foundation_fixes.md)** — Details regarding decoupling clustering from the core ingestion sequence.

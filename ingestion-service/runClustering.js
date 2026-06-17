@@ -2,8 +2,8 @@ import "dotenv/config";
 import { prisma } from "./db/prisma.js";
 import { processClusteringBatchWithAI } from "./clustering/ai.js";
 import {
-  selectClusterCandidates,
   detectEntityOverlap,
+  selectRelevantClusterCandidates,
 } from "./clustering/utils.js";
 import {
   applyClusterLifecycle,
@@ -34,6 +34,26 @@ const lifecycleConfig = {
   high: CLUSTER_HIGH_IMPACT_INACTIVE_DAYS,
   critical: CLUSTER_CRITICAL_IMPACT_INACTIVE_DAYS,
 };
+const CLUSTER_HOLDING_WINDOW_HOURS = Number.parseInt(
+  process.env.CLUSTER_HOLDING_WINDOW_HOURS || "168",
+  10,
+);
+const CLUSTER_CANDIDATE_POOL_LIMIT = Number.parseInt(
+  process.env.CLUSTER_CANDIDATE_POOL_LIMIT || "200",
+  10,
+);
+const CLUSTER_LLM_CANDIDATE_LIMIT = Number.parseInt(
+  process.env.CLUSTER_LLM_CANDIDATE_LIMIT || "30",
+  10,
+);
+const CLUSTER_MIN_ENTITY_OVERLAP = Number.parseInt(
+  process.env.CLUSTER_MIN_ENTITY_OVERLAP || "2",
+  10,
+);
+const CLUSTER_MIN_GROUP_SIZE = Number.parseInt(
+  process.env.CLUSTER_MIN_GROUP_SIZE || "3",
+  10,
+);
 
 async function run() {
   console.log("🚀 Starting Story Clustering Worker...");
@@ -41,12 +61,15 @@ async function run() {
   // Apply basic lifecycle (time-based)
   await applyClusterLifecycle();
 
-  // 1. Fetch HOLDING articles from last 48 hours
-  const fortyEightHoursAgo = new Date(Date.now() - 48 * 60 * 60 * 1000);
+  // 1. Fetch HOLDING articles from the holding window. Default is 7 days so
+  // low-volume strategic stories can accumulate enough evidence.
+  const holdingWindowStart = new Date(
+    Date.now() - CLUSTER_HOLDING_WINDOW_HOURS * 60 * 60 * 1000,
+  );
   const holdingArticles = await prisma.processedArticle.findMany({
     where: {
       clusterStatus: "HOLDING",
-      processedAt: { gte: fortyEightHoursAgo },
+      processedAt: { gte: holdingWindowStart },
     },
     include: {
       rawArticle: true,
@@ -54,22 +77,24 @@ async function run() {
     },
   });
 
-  // Archive any HOLDING articles that are older than 48 hours (they missed the critical mass window)
+  // Archive HOLDING articles that aged out of the accumulation window.
   const archivedOld = await prisma.processedArticle.updateMany({
     where: {
       clusterStatus: "HOLDING",
-      processedAt: { lt: fortyEightHoursAgo },
+      processedAt: { lt: holdingWindowStart },
     },
     data: { clusterStatus: "ARCHIVED_UNCLUSTERED", clusteredAt: new Date() },
   });
   if (archivedOld.count > 0) {
     console.log(
-      `🗄️  Archived ${archivedOld.count} holding articles older than 48 hours.`,
+      `🗄️  Archived ${archivedOld.count} holding articles older than ${CLUSTER_HOLDING_WINDOW_HOURS} hours.`,
     );
   }
 
   if (holdingArticles.length === 0) {
-    console.log("⏭️ No HOLDING articles found in the last 48 hours.");
+    console.log(
+      `⏭️ No HOLDING articles found in the last ${CLUSTER_HOLDING_WINDOW_HOURS} hours.`,
+    );
     return;
   }
 
@@ -82,7 +107,7 @@ async function run() {
 
   if (groups.length === 0) {
     console.log(
-      "⏭️ No critical mass achieved (no group of 3+ articles with >= 2 matching entities).",
+      `⏭️ No critical mass achieved (no group of ${CLUSTER_MIN_GROUP_SIZE}+ articles with >= ${CLUSTER_MIN_ENTITY_OVERLAP} matching entities).`,
     );
     return;
   }
@@ -91,20 +116,21 @@ async function run() {
     `🎯 Achieved critical mass! Found ${groups.length} groups of overlapping articles.`,
   );
 
-  // Load Active Clusters Context (Top 30)
+  // Load a broad active story pool. Each article group selects its own most
+  // relevant candidates before going to the LLM.
   const activeClusterCandidates = await prisma.storyCluster.findMany({
     where: { isActive: true },
     orderBy: [{ lastActivityAt: "desc" }, { updatedAt: "desc" }],
-    take: 60,
+    take: CLUSTER_CANDIDATE_POOL_LIMIT,
     include: {
       articles: {
-        take: 3,
+        take: 5,
         orderBy: { processedAt: "desc" },
         include: { rawArticle: true, categories: true },
       },
     },
   });
-  let activeClusters = selectClusterCandidates(activeClusterCandidates, 30);
+  let activeClusters = activeClusterCandidates;
 
   // Process each group
   for (const group of groups) {
@@ -114,6 +140,11 @@ async function run() {
     const chunk_size = 5;
     for (let i = 0; i < group.length; i += chunk_size) {
       const batch = group.slice(i, i + chunk_size);
+      const activeClustersForBatch = selectRelevantClusterCandidates(
+        batch,
+        activeClusters,
+        CLUSTER_LLM_CANDIDATE_LIMIT,
+      );
 
       const batchWithRefs = batch.map((article, index) => ({
         ...article,
@@ -121,10 +152,12 @@ async function run() {
       }));
 
       // Update the active clusters refs for this chunk
-      const activeClustersWithRefs = activeClusters.map((cluster, index) => ({
-        ...cluster,
-        aiRef: `cluster_${index + 1}`,
-      }));
+      const activeClustersWithRefs = activeClustersForBatch.map(
+        (cluster, index) => ({
+          ...cluster,
+          aiRef: `cluster_${index + 1}`,
+        }),
+      );
 
       let clusteringResponse;
       let retries = 3;
@@ -159,10 +192,18 @@ async function run() {
       // Save clustering results using helper function
       await saveClusteringResults(
         batch,
-        activeClusters,
+        activeClustersForBatch,
         activeClustersWithRefs,
         clusteringResponse,
       );
+
+      const knownClusterIds = new Set(activeClusters.map((cluster) => cluster.id));
+      for (const cluster of activeClustersForBatch) {
+        if (!knownClusterIds.has(cluster.id)) {
+          activeClusters.unshift(cluster);
+          knownClusterIds.add(cluster.id);
+        }
+      }
     }
   }
 
@@ -171,33 +212,6 @@ async function run() {
     where: { isActive: true, momentumScore: { gt: 0 } },
     data: { momentumScore: { decrement: 0.5 } }, // Decrease by 0.5 every run
   });
-
-  // Archive any stories that hit 0 momentum
-  await prisma.storyCluster.updateMany({
-    where: { isActive: true, momentumScore: { lte: 0 } },
-    data: { isActive: false, status: "ARCHIVED" },
-  });
-
-  // Cap active clusters to Top 30
-  const currentActive = await prisma.storyCluster.findMany({
-    where: { isActive: true },
-    orderBy: { momentumScore: "desc" },
-  });
-
-  if (currentActive.length > 30) {
-    const toArchiveCount = currentActive.length - 30;
-    const clustersToArchive = currentActive.slice(30); // Take the elements after the first 30
-    const archiveIds = clustersToArchive.map((c) => c.id);
-
-    console.log(
-      `🧊 Archiving ${toArchiveCount} cold clusters to maintain max 30 active.`,
-    );
-
-    await prisma.storyCluster.updateMany({
-      where: { id: { in: archiveIds } },
-      data: { isActive: false, status: "ARCHIVED" },
-    });
-  }
 
   console.log(`\n✅ Story Clustering complete.`);
 

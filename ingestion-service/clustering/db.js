@@ -205,7 +205,13 @@ export async function saveClusteringResults(
         rawArticleId: article.rawArticleId,
       }));
 
-      const baseSlug = (nc.title || "story")
+      const cleanedNewCluster = buildClusterUpdateData(nc);
+      if (!cleanedNewCluster.title || !cleanedNewCluster.summary) {
+        console.warn("⚠️ Skipping new cluster with missing title or summary");
+        continue;
+      }
+
+      const baseSlug = cleanedNewCluster.title
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/(^-|-$)+/g, "");
@@ -215,16 +221,16 @@ export async function saveClusteringResults(
       const newCluster = await prisma.storyCluster.create({
         data: {
           slug: slug,
-          title: nc.title,
-          summary: nc.summary,
-          timeWindow: nc.timeWindow || "Just Started",
-          impact: nc.impact || null,
-          status: nc.status || null,
-          momentumScore: 10, // Initialize with strong momentum
-          whyItMatters: nc.whyItMatters || null,
-          regions: nc.regions || [],
-          themes: nc.themes || [],
-          keyDevelopments: nc.keyDevelopments || [],
+          title: cleanedNewCluster.title || nc.title,
+          summary: cleanedNewCluster.summary || nc.summary,
+          timeWindow: cleanedNewCluster.timeWindow || "Just Started",
+          impact: cleanedNewCluster.impact || null,
+          status: cleanedNewCluster.status || "EMERGING",
+          momentumScore: 10,
+          whyItMatters: cleanedNewCluster.whyItMatters || null,
+          regions: cleanedNewCluster.regions || [],
+          themes: cleanedNewCluster.themes || [],
+          keyDevelopments: cleanedNewCluster.keyDevelopments || [],
           lastActivityAt: new Date(),
           articleCount: clusterSignals.articleCount,
           sourceCount: clusterSignals.sourceCount,

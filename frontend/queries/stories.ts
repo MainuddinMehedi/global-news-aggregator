@@ -2,6 +2,47 @@ import prisma from "@/lib/prisma";
 import { cacheLife, cacheTag } from "next/cache";
 import { getPublisherRegion } from "@/lib/utils";
 
+const DEFAULT_STORY_LIMIT = 30;
+const IMPACT_RANK: Record<string, number> = {
+  CRITICAL: 4,
+  HIGH: 3,
+  MEDIUM: 2,
+  LOW: 1,
+};
+
+function storyRankScore(cluster: {
+  impact?: string | null;
+  impactScore?: number | null;
+  momentumScore?: number | null;
+  articleCount?: number | null;
+  sourceCount?: number | null;
+  lastActivityAt?: Date | null;
+  updatedAt: Date;
+  createdAt: Date;
+}) {
+  const impactScore =
+    cluster.impactScore ?? (cluster.impact ? IMPACT_RANK[cluster.impact] : 0);
+  const activityAt = (
+    cluster.lastActivityAt ||
+    cluster.updatedAt ||
+    cluster.createdAt
+  ).getTime();
+  const ageHours = Math.max(0, (Date.now() - activityAt) / (60 * 60 * 1000));
+  const recencyScore = Math.max(0, 168 - ageHours) / 168;
+  const articleScore = Math.min(cluster.articleCount || 0, 30) / 30;
+  const sourceScore = Math.min(cluster.sourceCount || 0, 10) / 10;
+  const momentumScore =
+    Math.min(Math.max(cluster.momentumScore || 0, 0), 50) / 50;
+
+  return (
+    impactScore * 4 +
+    recencyScore * 3 +
+    sourceScore * 1.5 +
+    articleScore +
+    momentumScore
+  );
+}
+
 export async function getStoryClusters(search?: string) {
   "use cache";
   cacheTag("stories");
@@ -28,7 +69,7 @@ export async function getStoryClusters(search?: string) {
   try {
     const clusters = await prisma.storyCluster.findMany({
       where: searchFilter,
-      orderBy: { updatedAt: "desc" },
+      orderBy: [{ lastActivityAt: "desc" }, { updatedAt: "desc" }],
       include: {
         articles: {
           select: {
@@ -45,10 +86,14 @@ export async function getStoryClusters(search?: string) {
           select: { articles: true },
         },
       },
-      take: 50,
+      take: 200,
     });
 
-    return clusters.map((cluster) => {
+    const rankedClusters = clusters
+      .sort((a, b) => storyRankScore(b) - storyRankScore(a))
+      .slice(0, words.length > 0 ? 50 : DEFAULT_STORY_LIMIT);
+
+    return rankedClusters.map((cluster) => {
       const sourcesMap = new Map<string, string>();
       const originsSet = new Set<string>();
       cluster.articles.forEach((art) => {

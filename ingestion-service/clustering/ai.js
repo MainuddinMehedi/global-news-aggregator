@@ -1,6 +1,7 @@
 import { requestAI } from "../ai/client.js";
 import { primaryConfig } from "../config/ai.js";
 import { countTokens, TOKEN_MULTIPLIER } from "../ai/tokenBatcher.js";
+import { getCategoryNames } from "./utils.js";
 
 // Clustering responses are larger (assignments + cluster updates + new clusters)
 // vs enrichment (categories + entities + sentiment per article).
@@ -24,7 +25,7 @@ export function buildClusteringPrompt(
 - Source Country: ${a.sourceCountry || "Unknown"}
 - Published At: ${a.publishedAt ? new Date(a.publishedAt).toISOString() : "Unknown"}
 - Summary: ${a.contentSnippet}
-- Categories: ${(a.categories || []).join(", ") || "Unknown"}
+- Categories: ${getCategoryNames(a.categories).join(", ") || "Unknown"}
 - Entities: ${(a.entities || []).join(", ") || "Unknown"}
 - Perspective Countries: ${a.rawArticle?.sourceCountry || "Unknown"}
 `,
@@ -84,7 +85,7 @@ STORY VS TOPIC RUBRIC:
 
 For NEW clusters, you MUST generate the following intelligence metadata:
 - impact: One of "CRITICAL", "HIGH", "MEDIUM", "LOW"
-- status: One of "ESCALATING", "DEVELOPING", "STABLE", "RESOLVING"
+- status: One of "EMERGING", "ESCALATING", "DEVELOPING", "SLOW_BURN", "STABLE", "RESOLVING"
 - whyItMatters: A sharp, 1-line analysis of the geopolitical or economic implications of this story.
 - regions: Array of affected regions/countries (e.g. ["Middle East", "USA"])
 - themes: Array of topics (e.g. ["Trade War", "Elections"])
