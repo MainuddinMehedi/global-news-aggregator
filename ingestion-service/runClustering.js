@@ -1,32 +1,19 @@
 import "dotenv/config";
 import { prisma } from "./db/prisma.js";
-import { processClusteringBatchWithAI } from "./clustering/ai.js";
+import { processClusteringBatchWithAI } from "./clustering/clusteringEngine.js";
 import {
   detectEntityOverlap,
   selectRelevantClusterCandidates,
-} from "./clustering/utils.js";
+} from "./clustering/utils/index.js";
 import {
   applyClusterLifecycle,
   saveClusteringResults,
-} from "./clustering/db.js";
+  CLUSTER_LOW_IMPACT_INACTIVE_DAYS,
+  CLUSTER_MEDIUM_IMPACT_INACTIVE_DAYS,
+  CLUSTER_HIGH_IMPACT_INACTIVE_DAYS,
+  CLUSTER_CRITICAL_IMPACT_INACTIVE_DAYS,
+} from "./clustering/lifecycle.js";
 import revalidateCache from "./utils/revalidateCache.js";
-
-const CLUSTER_LOW_IMPACT_INACTIVE_DAYS = Number.parseInt(
-  process.env.CLUSTER_LOW_IMPACT_INACTIVE_DAYS || "10",
-  10,
-);
-const CLUSTER_MEDIUM_IMPACT_INACTIVE_DAYS = Number.parseInt(
-  process.env.CLUSTER_MEDIUM_IMPACT_INACTIVE_DAYS || "21",
-  10,
-);
-const CLUSTER_HIGH_IMPACT_INACTIVE_DAYS = Number.parseInt(
-  process.env.CLUSTER_HIGH_IMPACT_INACTIVE_DAYS || "35",
-  10,
-);
-const CLUSTER_CRITICAL_IMPACT_INACTIVE_DAYS = Number.parseInt(
-  process.env.CLUSTER_CRITICAL_IMPACT_INACTIVE_DAYS || "60",
-  10,
-);
 
 const lifecycleConfig = {
   low: CLUSTER_LOW_IMPACT_INACTIVE_DAYS,

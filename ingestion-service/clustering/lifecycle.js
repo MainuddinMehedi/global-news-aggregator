@@ -4,26 +4,26 @@ import {
   cleanNumber,
   buildClusterUpdateData,
   getArticleSignals,
-} from "./utils.js";
+} from "./utils/index.js";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
-const CLUSTER_STABLE_INACTIVE_DAYS = Number.parseInt(
+export const CLUSTER_STABLE_INACTIVE_DAYS = Number.parseInt(
   process.env.CLUSTER_STABLE_INACTIVE_DAYS || "7",
   10,
 );
-const CLUSTER_LOW_IMPACT_INACTIVE_DAYS = Number.parseInt(
+export const CLUSTER_LOW_IMPACT_INACTIVE_DAYS = Number.parseInt(
   process.env.CLUSTER_LOW_IMPACT_INACTIVE_DAYS || "10",
   10,
 );
-const CLUSTER_MEDIUM_IMPACT_INACTIVE_DAYS = Number.parseInt(
+export const CLUSTER_MEDIUM_IMPACT_INACTIVE_DAYS = Number.parseInt(
   process.env.CLUSTER_MEDIUM_IMPACT_INACTIVE_DAYS || "21",
   10,
 );
-const CLUSTER_HIGH_IMPACT_INACTIVE_DAYS = Number.parseInt(
+export const CLUSTER_HIGH_IMPACT_INACTIVE_DAYS = Number.parseInt(
   process.env.CLUSTER_HIGH_IMPACT_INACTIVE_DAYS || "35",
   10,
 );
-const CLUSTER_CRITICAL_IMPACT_INACTIVE_DAYS = Number.parseInt(
+export const CLUSTER_CRITICAL_IMPACT_INACTIVE_DAYS = Number.parseInt(
   process.env.CLUSTER_CRITICAL_IMPACT_INACTIVE_DAYS || "60",
   10,
 );

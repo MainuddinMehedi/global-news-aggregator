@@ -1,7 +1,7 @@
 import { requestAI } from "../ai/client.js";
 import { primaryConfig } from "../config/ai.js";
 import { countTokens, TOKEN_MULTIPLIER } from "../ai/tokenBatcher.js";
-import { getCategoryNames } from "./utils.js";
+import { getCategoryNames } from "./utils/index.js";
 
 // Clustering responses are larger (assignments + cluster updates + new clusters)
 // vs enrichment (categories + entities + sentiment per article).

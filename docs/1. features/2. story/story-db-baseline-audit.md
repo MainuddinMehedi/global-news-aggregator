@@ -1,7 +1,7 @@
 # Story DB Baseline Audit
 
 > **Relations:** See [0. story-clustering.md](0.%20story-clustering.md) for the feature overview, [Story clustering implementation plan - solving current problems](Story%20clustering%20implementation%20plan%20-%20solving%20current%20problems.md) for Phase 1 changes this audit measures.
-> **Status:** ⏳ Pending — DB was not accessible from the development environment (ECONNREFUSED). Run the audit script below when a DB connection is available.
+> **Status:** ✅ Completed — Baseline established.
 
 ## Purpose
 
@@ -105,17 +105,17 @@ audit();
 
 | Metric | Phase 0 (Baseline) | Phase 1 (After 2-4 weeks) |
 |--------|-------------------|--------------------------|
-| Total stories | | |
-| Active stories | | |
-| Inactive stories | | |
-| Active by impact (C/H/M/L) | | |
-| Active by status (E/DE/ES/SB/S/R) | | |
-| Active but stale (>30d no activity) | | |
-| Stories with 0 articles | | |
-| Total processed articles | | |
-| HOLDING articles | | |
-| CLUSTERED articles | | |
-| ARCHIVED_UNCLUSTERED | | |
+| Total stories | 5 | |
+| Active stories | 5 | |
+| Inactive stories | 0 | |
+| Active by impact (C/H/M/L) | H: 2, M: 3 | |
+| Active by status (E/DE/ES/SB/S/R) | DE: 4, ES: 1 | |
+| Active but stale (>30d no activity) | 0 | |
+| Stories with 0 articles | 0 | |
+| Total processed articles | 372 | |
+| HOLDING articles | 166 | |
+| CLUSTERED articles | 41 | |
+| ARCHIVED_UNCLUSTERED / SKIPPED | SKIPPED: 165 | |
 
 ## Expected Changes After Phase 1
 
