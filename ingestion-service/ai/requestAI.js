@@ -1,6 +1,6 @@
 import { waitForCapacity, recordUsage, logHeaders } from "./rateLimiter.js";
 import { countTokens, TOKEN_MULTIPLIER } from "./tokenBatcher.js";
-import { primaryConfig, fallbackConfig } from "../config/ai.js";
+import { primaryConfig, fallbackConfig } from "./aiConfig.js";
 
 export async function requestAI(
   config,
@@ -40,7 +40,7 @@ export async function requestAI(
         "Content-Type": "application/json",
         Authorization: `Bearer ${config.apiKey}`,
         "HTTP-Referer": process.env.APP_URL || "http://localhost:3000",
-        "X-Title": "Global News Aggregator",
+        "X-Title": "Global News Aggregator", // TODO: Change this when you choose a name for your app.
       },
       body: JSON.stringify({
         model: config.model,

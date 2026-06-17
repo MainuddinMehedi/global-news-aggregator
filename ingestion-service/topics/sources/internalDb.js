@@ -11,7 +11,7 @@
 
 import { prisma } from "../../db/prisma.js";
 import { getPrismaWhere } from "../utils/parseQuery.js";
-import { formatSinceDate } from "../../utils/formatSinceDate.js";
+import { formatSinceDate } from "../utils/formatSinceDate.js";
 
 const MAX_RESULTS = 200;
 

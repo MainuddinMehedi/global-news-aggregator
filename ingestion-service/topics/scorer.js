@@ -3,7 +3,7 @@
  */
 
 import { requestAI } from "../ai/requestAI.js";
-import { primaryConfig } from "../config/ai.js";
+import { primaryConfig } from "../ai/aiConfig.js";
 import { logAiUsage } from "../utils/logAiUsage.js";
 
 export async function scoreFindings(topic, findings) {

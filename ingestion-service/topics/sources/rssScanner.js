@@ -4,9 +4,9 @@
  * Used by the scanner orchestrator for Locked Topics.
  */
 
-import fetchRSSStream from "../../sources/rss.js";
+import fetchRSSStream from "../../newsPipeline/rss.js";
 import { evaluateQuery } from "../utils/parseQuery.js";
-import { formatSinceDate } from "../../utils/formatSinceDate.js";
+import { formatSinceDate } from "../utils/formatSinceDate.js";
 
 const MAX_RESULTS = 100;
 

@@ -1,13 +1,13 @@
 import "dotenv/config";
 import { prisma } from "./db/prisma.js";
-import fetchRSSStream from "./sources/rss.js";
-import { getActiveFeeds } from "./sources/feeds.js";
-import hashSnippet from "./utils/hashSnippet.js";
+import fetchRSSStream from "./newsPipeline/rss.js";
+import { getActiveFeeds } from "./data/feeds.js";
 import normalizeUrl from "./utils/normalizeUrl.js";
+import hashSnippet from "./utils/hashSnippet.js";
 import formatDuration from "./utils/formatDuration.js";
 import revalidateCache from "./utils/revalidateCache.js";
 import { generateSlug } from "./utils/generateSlug.js";
-import { createArticleProcessor } from "./ai/enrichmentPipeline.js";
+import { createArticleProcessor } from "./newsPipeline/enrichmentPipeline.js";
 
 // ── CLI Flags ────────────────────────────────────────────────
 const args = process.argv.slice(2);
@@ -71,7 +71,6 @@ async function runIngestionPipeline() {
         continue;
       }
 
-      // Save directly to DB
       item.url = normUrl;
       item.contentHash = hash;
 

@@ -3,7 +3,7 @@ import { enrichWithStage1 } from "./stage1.js";
 import { enrichWithStage2Batch } from "./stage2.js";
 import { scanLockedTopicsRealtime } from "../topics/realtimeMatcher.js";
 
-import { primaryConfig } from "../config/ai.js";
+import { primaryConfig } from "../ai/aiConfig.js";
 
 export function createArticleProcessor(
   batchSize = primaryConfig.batchSize,

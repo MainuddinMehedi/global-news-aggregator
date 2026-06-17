@@ -7,7 +7,7 @@
  * 3. Channel prioritization (using names to refine an additional yt-search).
  */
 
-import fetchRSSStream from "../../sources/rss.js";
+import fetchRSSStream from "../../newsPipeline/rss.js";
 import { evaluateQuery } from "../utils/parseQuery.js";
 import ytSearch from "yt-search";
 

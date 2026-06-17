@@ -30,6 +30,38 @@ This index serves as the entry point and mindmap for the project's documentation
 - **[AI Model Strategy Guide](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/AI_MODELS.md)**  
   Definitive model assignments across the stack, detailing Mistral AI (including Ministral 8B in chat), Groq, and Google AI Studio usage for optimal speed, intelligence, and cost.
 
+**Ingestion service folder structure**
+```
+ingestion-service/
+├── runIngest.js
+├── runClustering.js
+├── processTopics.js
+├── processBacklog.js
+├── ai/                         ← root level, shared across features
+│   ├── aiConfig.js
+│   ├── requestAI.js
+│   ├── rateLimiter.js
+│   └── tokenBatcher.js
+├── newsPipeline/               ← unified ingestion + enrichment
+│   ├── rss.js
+│   ├── stage1.js
+│   ├── stage2.js
+│   ├── enrichmentPipeline.js
+│   └── prompts/
+├── data/
+│   ├── gazetteer.json
+│   └── feeds.js
+├── clustering/
+├── topics/
+│   ├── utils/
+│   │   ├── parseQuery.js
+│   │   └── formatSinceDate.js
+│   └── ...
+├── db/
+├── utils/
+└── constants/
+```
+
 ---
 
 ## 3. Feature Documents (Numbered)

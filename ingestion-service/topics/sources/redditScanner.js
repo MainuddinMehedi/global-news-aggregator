@@ -9,7 +9,7 @@
 import Parser from "rss-parser";
 import * as cheerio from "cheerio";
 import { evaluateQuery } from "../utils/parseQuery.js";
-import { formatSinceDate } from "../../utils/formatSinceDate.js";
+import { formatSinceDate } from "../utils/formatSinceDate.js";
 
 const MAX_RESULTS = 25;
 const REDDIT_BOT_BLACKLIST = ["AutoModerator", "[deleted]", "reddit-bot"];
