@@ -6,6 +6,7 @@
 
 import fetchRSSStream from "../../sources/rss.js";
 import { evaluateQuery } from "../utils/parseQuery.js";
+import { formatSinceDate } from "../../utils/formatSinceDate.js";
 
 const MAX_RESULTS = 100;
 
@@ -62,24 +63,7 @@ export async function scanRss(topic, sourceConfig, options = {}) {
           : "Custom RSS");
 
   const sinceDate = fullScan ? null : topic.lastScannedAt;
-  let sinceStr = fullScan ? " (full scan)" : "";
-  if (sinceDate) {
-    const months = [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec",
-    ];
-    sinceStr = `, since ${sinceDate.getDate()} ${months[sinceDate.getMonth()]}, ${sinceDate.getFullYear()}`;
-  }
+  let sinceStr = formatSinceDate(sinceDate);
 
   console.log(
     `🔍 [rssScanner] Scanning ${sourceName} for "${topic.displayName}"${sinceStr}...`,

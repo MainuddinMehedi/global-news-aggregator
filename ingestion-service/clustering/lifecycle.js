@@ -5,6 +5,8 @@ import {
   buildClusterUpdateData,
   getArticleSignals,
 } from "./utils/index.js";
+import { logAiUsage } from "../utils/logAiUsage.js";
+import { generateSlug } from "../utils/generateSlug.js";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 export const CLUSTER_STABLE_INACTIVE_DAYS = Number.parseInt(
@@ -211,12 +213,7 @@ export async function saveClusteringResults(
         continue;
       }
 
-      const baseSlug = cleanedNewCluster.title
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/(^-|-$)+/g, "");
-      const randomSuffix = Math.random().toString(36).substring(2, 7);
-      let slug = `${baseSlug}-${randomSuffix}`;
+      const slug = generateSlug(cleanedNewCluster.title);
 
       const newCluster = await prisma.storyCluster.create({
         data: {
@@ -380,20 +377,10 @@ export async function saveClusteringResults(
   }
 
   // Log AI Usage
-  try {
-    const today = new Date().toISOString().split("T")[0];
-    const costPer1k = 0.0006;
-    const estimatedCost = (clusteringResponse.tokensUsed / 1000) * costPer1k;
-
-    await prisma.aiUsage.create({
-      data: {
-        date: today,
-        provider: clusteringResponse.provider,
-        model: clusteringResponse.model,
-        tokensUsed: clusteringResponse.tokensUsed,
-        estimatedCost: estimatedCost,
-        success: true,
-      },
-    });
-  } catch (err) {}
+  await logAiUsage(
+    clusteringResponse.provider,
+    clusteringResponse.model,
+    clusteringResponse.tokensUsed,
+    0.0006,
+  );
 }

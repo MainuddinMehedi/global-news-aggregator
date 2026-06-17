@@ -6,16 +6,8 @@ import hashSnippet from "./utils/hashSnippet.js";
 import normalizeUrl from "./utils/normalizeUrl.js";
 import formatDuration from "./utils/formatDuration.js";
 import revalidateCache from "./utils/revalidateCache.js";
-import { createArticleProcessor } from "./ai/processor.js";
-
-function generateSlug(title) {
-  const base = title
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)+/g, "");
-  const shortId = Math.random().toString(36).substring(2, 8);
-  return `${base.substring(0, 80)}-${shortId}`;
-}
+import { generateSlug } from "./utils/generateSlug.js";
+import { createArticleProcessor } from "./ai/enrichmentPipeline.js";
 
 // ── CLI Flags ────────────────────────────────────────────────
 const args = process.argv.slice(2);

@@ -2,11 +2,9 @@
  * Relevance Scorer — Evaluates findings against the topic's intent using AI.
  */
 
-import { requestAI } from "../ai/client.js";
+import { requestAI } from "../ai/requestAI.js";
 import { primaryConfig } from "../config/ai.js";
-import { prisma } from "../db/prisma.js"; // For AiUsage logging if needed, though client.js might log it? No, client.js logs to AiUsage? Wait, let's check what client.js logs.
-// Ah, client.js doesn't write to DB for AiUsage, it just returns tokensUsed.
-// The processor.js writes to AiUsage. So scorer.js should write to AiUsage.
+import { logAiUsage } from "../utils/logAiUsage.js";
 
 export async function scoreFindings(topic, findings) {
   if (findings.length === 0) return findings;
@@ -89,24 +87,12 @@ ${findingTitles.join("\n")}`;
       });
 
       // Log AI Usage
-      try {
-        const today = new Date().toISOString().split("T")[0];
-        const costPer1k = 0.0002;
-        const estimatedCost = (aiResponse.tokensUsed / 1000) * costPer1k;
-
-        await prisma.aiUsage.create({
-          data: {
-            date: today,
-            provider: aiResponse.provider,
-            model: aiResponse.model,
-            tokensUsed: aiResponse.tokensUsed,
-            estimatedCost: estimatedCost,
-            success: true,
-          },
-        });
-      } catch (usageErr) {
-        console.error(`⚠️ [scorer] Failed to log AI usage:`, usageErr.message);
-      }
+      await logAiUsage(
+        aiResponse.provider,
+        aiResponse.model,
+        aiResponse.tokensUsed,
+        0.0002,
+      );
     } catch (err) {
       console.error(
         `❌ [scorer] Batch ${i / BATCH_SIZE + 1} failed:`,

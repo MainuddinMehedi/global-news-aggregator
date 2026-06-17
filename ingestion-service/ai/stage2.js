@@ -5,10 +5,11 @@
  * and dynamic narrative bias analysis.
  */
 
-import { requestAI } from "./client.js";
+import { requestAI } from "./requestAI.js";
 import { primaryConfig } from "../config/ai.js";
 import { ENRICHMENT_SYSTEM_PROMPT, buildEnrichmentPrompt } from "./prompts/enrichment.js";
 import { countTokens, TOKEN_MULTIPLIER } from "./tokenBatcher.js";
+import { logAiUsage } from "../utils/logAiUsage.js";
 
 /**
  * Enriches a batch of raw articles using generative LLM API.
@@ -31,6 +32,8 @@ export async function enrichWithStage2Batch(articles, categories) {
 
   try {
     const response = await requestAI(primaryConfig, prompt, estimatedTokens);
+
+    await logAiUsage(response.provider, response.model, response.tokensUsed, 0.0006);
     
     let enrichments = [];
     try {

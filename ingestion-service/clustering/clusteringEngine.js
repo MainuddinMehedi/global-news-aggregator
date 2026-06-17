@@ -1,4 +1,4 @@
-import { requestAI } from "../ai/client.js";
+import { requestAI } from "../ai/requestAI.js";
 import { primaryConfig } from "../config/ai.js";
 import { countTokens, TOKEN_MULTIPLIER } from "../ai/tokenBatcher.js";
 import { getCategoryNames } from "./utils/index.js";

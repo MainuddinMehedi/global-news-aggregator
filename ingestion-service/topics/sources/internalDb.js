@@ -11,6 +11,7 @@
 
 import { prisma } from "../../db/prisma.js";
 import { getPrismaWhere } from "../utils/parseQuery.js";
+import { formatSinceDate } from "../../utils/formatSinceDate.js";
 
 const MAX_RESULTS = 200;
 
@@ -61,24 +62,7 @@ export async function scanInternalDb(topic, options = {}) {
     });
   }
 
-  let sinceStr = " (full scan)";
-  if (sinceDate) {
-    const months = [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec",
-    ];
-    sinceStr = `, since ${sinceDate.getDate()} ${months[sinceDate.getMonth()]}, ${sinceDate.getFullYear()}`;
-  }
+  let sinceStr = formatSinceDate(sinceDate);
 
   console.log(
     `🔍 [internalDb] Scanning for "${topic.displayName}"${sinceStr}`,

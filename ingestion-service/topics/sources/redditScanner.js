@@ -9,6 +9,7 @@
 import Parser from "rss-parser";
 import * as cheerio from "cheerio";
 import { evaluateQuery } from "../utils/parseQuery.js";
+import { formatSinceDate } from "../../utils/formatSinceDate.js";
 
 const MAX_RESULTS = 25;
 const REDDIT_BOT_BLACKLIST = ["AutoModerator", "[deleted]", "reddit-bot"];
@@ -158,12 +159,7 @@ export async function scanReddit(topic, sourceConfig, options = {}) {
   }
 
   const sinceDate = topic.lastScannedAt;
-  let sinceStr = "";
-  if (sinceDate) {
-    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-    const d = new Date(sinceDate);
-    sinceStr = `, since ${d.getDate()} ${months[d.getMonth()]}, ${d.getFullYear()}`;
-  }
+  let sinceStr = formatSinceDate(sinceDate);
 
   console.log(`🔍 [redditScanner] Scanning ${sourceName} for "${topic.displayName}"${sinceStr}...`);
 

@@ -12,7 +12,7 @@
 import "dotenv/config";
 import { prisma } from "./db/prisma.js";
 import { enrichWithStage1 } from "./ai/stage1.js";
-import { createArticleProcessor } from "./ai/processor.js";
+import { createArticleProcessor } from "./ai/enrichmentPipeline.js";
 import formatDuration from "./utils/formatDuration.js";
 import cleanupOldSkippedArticles from "./utils/cleanupOldSkippedArticles.js";
 import revalidateCache from "./utils/revalidateCache.js";
