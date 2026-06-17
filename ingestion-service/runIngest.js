@@ -19,7 +19,7 @@ const aiProcessor = skipAI ? null : createArticleProcessor();
 
 const startTime = Date.now();
 
-async function run() {
+async function runIngestionPipeline() {
   // ── Log run mode ──
   if (skipAI) {
     console.log("🚀 Running in RAW-ONLY mode (--skip-ai): no AI processing\n");
@@ -167,4 +167,4 @@ async function run() {
   await prisma.$disconnect();
 }
 
-run().catch((err) => console.error("Worker encountered an error:", err));
+runIngestionPipeline().catch((err) => console.error("Worker encountered an error:", err));
