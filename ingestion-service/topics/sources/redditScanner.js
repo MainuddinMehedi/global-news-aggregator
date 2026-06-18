@@ -11,6 +11,7 @@ import * as cheerio from "cheerio";
 import { evaluateQuery } from "../utils/parseQuery.js";
 import { formatSinceDate } from "../utils/formatSinceDate.js";
 import { SCANNER_CONFIG } from "../scannerConfig.js";
+import { fetchWithBackoff } from "../utils/fetchWithBackoff.js";
 
 const MAX_RESULTS = SCANNER_CONFIG.maxResults.reddit;
 const REDDIT_BOT_BLACKLIST = ["AutoModerator", "[deleted]", "reddit-bot"];
@@ -20,29 +21,7 @@ const parser = new Parser();
 /**
  * Helper to fetch a URL with retry and exponential backoff for HTTP 429.
  */
-async function fetchWithBackoff(url, options = {}, retries = 3, delay = 2000) {
-  for (let i = 0; i < retries; i++) {
-    try {
-      const response = await fetch(url, options);
-      
-      if (response.status === 429) {
-        const retryAfter = response.headers.get("retry-after");
-        const waitTime = retryAfter ? parseInt(retryAfter, 10) * 1000 : delay * Math.pow(2, i);
-        console.warn(`⚠️ [redditScanner] Hit HTTP 429 Rate Limit. Waiting ${waitTime}ms before retry...`);
-        await new Promise((resolve) => setTimeout(resolve, waitTime));
-        continue;
-      }
-      
-      return response;
-    } catch (err) {
-      if (i === retries - 1) throw err;
-      const waitTime = delay * Math.pow(2, i);
-      console.warn(`⚠️ [redditScanner] Fetch error: ${err.message}. Retrying in ${waitTime}ms...`);
-      await new Promise((resolve) => setTimeout(resolve, waitTime));
-    }
-  }
-  throw new Error("Max retries exceeded");
-}
+
 
 /**
  * Fetch and parse a Reddit RSS URL.

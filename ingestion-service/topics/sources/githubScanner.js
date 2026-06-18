@@ -26,9 +26,6 @@ function getHeaders() {
   return headers;
 }
 
-function isRelevant(topic, content) {
-  return evaluateQuery(topic, content);
-}
 
 export async function scanGithub(topic, sourceConfig, options = {}) {
   const { url, label } = sourceConfig;
@@ -67,7 +64,7 @@ async function scanSpecificRepo(topic, url, label, options) {
         if (pubDate <= lastScan) continue;
 
         const content = `${release.name || ""} ${release.tag_name || ""} ${release.body || ""}`;
-        if (!isRelevant(topic, content)) continue;
+        if (!evaluateQuery(topic, content)) continue;
 
         findings.push({
           title: `[Release] ${release.tag_name}${release.name ? `: ${release.name}` : ""}`,
@@ -100,7 +97,7 @@ async function scanSpecificRepo(topic, url, label, options) {
         if (mergedDate <= lastScan) continue;
 
         const content = `${pr.title || ""} ${pr.body || ""}`;
-        if (!isRelevant(topic, content)) continue;
+        if (!evaluateQuery(topic, content)) continue;
 
         findings.push({
           title: `[PR] #${pr.number}: ${pr.title}`,
@@ -142,7 +139,7 @@ async function searchGithub(topic, label, options) {
       const data = await response.json();
       for (const repo of data.items || []) {
         const content = `${repo.full_name} ${repo.description || ""} ${repo.topics?.join(" ") || ""}`;
-        if (!isRelevant(topic, content)) continue;
+        if (!evaluateQuery(topic, content)) continue;
 
         const stars = repo.stargazers_count ? `⭐ ${repo.stargazers_count}` : "";
         const lang = repo.language ? `[${repo.language}]` : "";
@@ -175,7 +172,7 @@ async function searchGithub(topic, label, options) {
       const data = await response.json();
       for (const item of data.items || []) {
         const content = `${item.title || ""} ${item.body || ""}`;
-        if (!isRelevant(topic, content)) continue;
+        if (!evaluateQuery(topic, content)) continue;
 
         const repoFullName = item.repository_url?.split("/").slice(-2).join("/") || "";
         findings.push({
