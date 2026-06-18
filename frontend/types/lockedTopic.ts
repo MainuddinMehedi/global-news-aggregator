@@ -49,7 +49,6 @@ export interface LockedTopic {
   liveWebSummary: string | null;
   liveSummary: string | null;
   sources: SourceConfig[];
-  searchBeyondSources: boolean;
   isActive: boolean;
   notifyEnabled: boolean;
   notifyMode: NotifyMode;

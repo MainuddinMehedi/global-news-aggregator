@@ -211,7 +211,6 @@ model LockedTopic {
   liveWebSummary      String?    @db.Text
   liveSummary         String?    @db.Text // AI-generated findings overview (distinct from liveWebSummary)
   sources             Json // SourceConfig[]
-  searchBeyondSources Boolean    @default(true)
   isActive            Boolean    @default(true)
   notifyEnabled       Boolean    @default(false)
   notifyMode          NotifyMode @default(DIGEST)

@@ -5,11 +5,12 @@
 import { requestAI } from "../ai/requestAI.js";
 import { primaryConfig } from "../ai/aiConfig.js";
 import { logAiUsage } from "../utils/logAiUsage.js";
+import { SCANNER_CONFIG } from "./scannerConfig.js";
 
 export async function scoreFindings(topic, findings) {
   if (findings.length === 0) return findings;
 
-  const BATCH_SIZE = 20;
+  const BATCH_SIZE = SCANNER_CONFIG.scorerBatchSize;
   const topicName = topic.displayName;
   const userIntent = topic.userContext || "None provided";
   const conceptSummary = topic.aiQuerySummary || "None provided";

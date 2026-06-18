@@ -37,7 +37,9 @@ export default function CreateTopicModal({
     initialData || {
       displayName: "",
       userContext: "",
-      sources: [] as SourceConfig[],
+      sources: [
+        { id: "internal_db", type: "internal_db", label: "Internal Article DB", enabled: true }
+      ] as SourceConfig[],
       aiRefinedQuery: "",
       aiQuerySummary: "",
       conceptualKeywords: [] as string[][],
@@ -59,7 +61,9 @@ export default function CreateTopicModal({
         setData({
           displayName: "",
           userContext: "",
-          sources: [],
+          sources: [
+            { id: "internal_db", type: "internal_db", label: "Internal Article DB", enabled: true }
+          ],
           aiRefinedQuery: "",
           aiQuerySummary: "",
           conceptualKeywords: [],

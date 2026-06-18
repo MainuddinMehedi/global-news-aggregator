@@ -289,9 +289,9 @@ export async function scanBdGovJobs(topic, sourceConfig, options = {}) {
     console.log(
       `   📊 [bdGovJobsScraper] Found ${findings.length} matching circulars.`,
     );
-    return findings;
+    return { findings, metadata: {} };
   } catch (err) {
     console.error(`❌ [bdGovJobsScraper] Failed during scan:`, err.message);
-    return [];
+    return { findings: [], metadata: {} };
   }
 }

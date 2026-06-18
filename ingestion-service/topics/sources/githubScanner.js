@@ -44,7 +44,7 @@ async function scanSpecificRepo(topic, url, label, options) {
   const repoInfo = parseGithubUrl(url);
   if (!repoInfo) {
     console.warn(`⚠️ [githubScanner] Invalid GitHub URL: ${url}`);
-    return [];
+    return { findings: [], metadata: {} };
   }
 
   const { owner, repo } = repoInfo;
@@ -119,12 +119,12 @@ async function scanSpecificRepo(topic, url, label, options) {
   }
 
   console.log(`   📊 [githubScanner] Found ${findings.length} new items from ${sourceName}.`);
-  return findings;
+  return { findings, metadata: {} };
 }
 
 async function searchGithub(topic, label, options) {
   const query = topic.aiRefinedQuery || topic.displayName;
-  if (!query) return [];
+  if (!query) return { findings: [], metadata: {} };
 
   const sourceName = label || "GitHub Search";
   console.log(`🔍 [githubScanner] Searching GitHub for "${query}"...`);
@@ -196,5 +196,5 @@ async function searchGithub(topic, label, options) {
   }
 
   console.log(`   📊 [githubScanner] Total search findings: ${findings.length}`);
-  return findings;
+  return { findings, metadata: {} };
 }

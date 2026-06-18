@@ -13,8 +13,9 @@
 
 import * as cheerio from "cheerio";
 import { evaluateQuery } from "../utils/parseQuery.js";
+import { SCANNER_CONFIG } from "../scannerConfig.js";
 
-const MAX_RESULTS = 20;
+const MAX_RESULTS = SCANNER_CONFIG.maxResults.search;
 const DDG_BASE_URL = "https://html.duckduckgo.com/html/";
 
 /**
@@ -53,7 +54,7 @@ export async function scanInternetSearch(topic, sourceConfig, options = {}) {
 
   if (rawResults.length === 0) {
     console.log(`   ⚪ [searchScanner] No results from ${driverName}.`);
-    return [];
+    return { findings: [], metadata: {} };
   }
 
   // Deduplicate by URL
@@ -95,7 +96,7 @@ export async function scanInternetSearch(topic, sourceConfig, options = {}) {
     `   📊 [searchScanner] Found ${findings.length} matches from ${driverName} (${filtered} filtered by keywords, ${deduped.length} total results)`,
   );
 
-  return findings;
+  return { findings, metadata: {} };
 }
 
 /**

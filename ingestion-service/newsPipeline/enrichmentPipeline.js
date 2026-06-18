@@ -1,8 +1,6 @@
 import { prisma } from "../db/prisma.js";
 import { enrichWithStage1 } from "./stage1.js";
 import { enrichWithStage2Batch } from "./stage2.js";
-import { scanLockedTopicsRealtime } from "../topics/realtimeMatcher.js";
-
 import { primaryConfig } from "../ai/aiConfig.js";
 
 export function createArticleProcessor(
@@ -185,10 +183,6 @@ export function createArticleProcessor(
         }
 
         console.log(`✅ Batch done: ${successCount}/${batch.length} succeeded`);
-
-        if (successfullyProcessedArticles.length > 0) {
-          await scanLockedTopicsRealtime(successfullyProcessedArticles);
-        }
       } catch (err) {
         console.error("❌ Batch processing failed:", err);
       }

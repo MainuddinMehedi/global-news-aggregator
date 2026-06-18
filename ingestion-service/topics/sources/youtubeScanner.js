@@ -10,8 +10,9 @@
 import fetchRSSStream from "../../newsPipeline/rss.js";
 import { evaluateQuery } from "../utils/parseQuery.js";
 import ytSearch from "yt-search";
+import { SCANNER_CONFIG } from "../scannerConfig.js";
 
-const MAX_RESULTS = 20;
+const MAX_RESULTS = SCANNER_CONFIG.maxResults.youtube;
 
 /**
  * Resolves a YouTube handle URL to a Channel ID by fetching the page.
@@ -210,5 +211,5 @@ export async function scanYoutube(topic, sourceConfig, options = {}) {
   console.log(
     `   📊 [youtubeScanner] Found ${uniqueFindings.length} unique videos.`,
   );
-  return uniqueFindings;
+  return { findings: uniqueFindings, metadata: {} };
 }

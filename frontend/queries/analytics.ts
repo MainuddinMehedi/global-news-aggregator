@@ -653,8 +653,9 @@ export async function getBiasGroupCounts() {
       _count: { _all: true },
       where: {
         processedArticle: {
-          isNot: null,
-          clusterStatus: { not: "SKIPPED" },
+          is: {
+            clusterStatus: { not: "SKIPPED" },
+          },
         },
       },
     });

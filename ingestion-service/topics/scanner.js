@@ -12,6 +12,7 @@ import { scanInternetSearch } from "./sources/internetSearchScanner.js";
 import { scoreFindings } from "./scorer.js";
 import { processNotifications } from "./notifier.js";
 import { generateOverview } from "./overviewGenerator.js";
+import { SCANNER_CONFIG, VALID_SOURCE_TYPES } from "./scannerConfig.js";
 
 /**
  * Master orchestrator for Locked Topic scanning.
@@ -38,25 +39,26 @@ export async function runScannersForTopic(topic, options = {}) {
       ? JSON.parse(topic.sources)
       : [];
 
-  // 1. Internal DB Scan (Always run if searchBeyondSources is true or internal_db is in sources)
-  const hasInternalDbConfig = sources.some(
-    (s) => s.type === "internal_db" && s.enabled,
-  );
-  if (topic.searchBeyondSources || hasInternalDbConfig) {
-    const internalFindings = await scanInternalDb(topic, options);
-    allFindings.push(...internalFindings);
-  }
-
-  // 2. Iterate through configured external sources
+  // 1. Iterate through configured sources
   const metadataUpdates = {};
   const sourceUpdates = [];
 
   for (const sourceConfig of sources) {
     if (!sourceConfig.enabled) continue;
 
+    if (!VALID_SOURCE_TYPES.has(sourceConfig.type)) {
+      console.warn(
+        `⚠️ [orchestrator] Unknown source type: ${sourceConfig.type}`,
+      );
+      continue;
+    }
+
     try {
-      let result;
+      let result = { findings: [], metadata: {} };
       switch (sourceConfig.type) {
+        case "internal_db":
+          result = await scanInternalDb(topic, options);
+          break;
         case "google_news":
         case "rss":
           result = await scanRss(topic, sourceConfig, options);
@@ -82,23 +84,16 @@ export async function runScannersForTopic(topic, options = {}) {
         case "search":
           result = await scanInternetSearch(topic, sourceConfig, options);
           break;
-        case "internal_db":
-          // Handled above
-          continue;
         case "scrape":
         case "webpage":
           result = await scanWebpage(topic, sourceConfig, options);
           break;
         default:
-          console.warn(
-            `⚠️ [orchestrator] Unknown source type: ${sourceConfig.type}`,
-          );
           continue;
       }
 
-      // Handle both Array and { findings, metadata } return shapes
-      const findings = Array.isArray(result) ? result : result.findings || [];
-      const metadata = !Array.isArray(result) ? result.metadata || {} : {};
+      const findings = result.findings || [];
+      const metadata = result.metadata || {};
 
       allFindings.push(...findings);
 
@@ -200,8 +195,8 @@ export async function runScannersForTopic(topic, options = {}) {
   // 4. Relevance Scoring
   const scoredFindings = await scoreFindings(topic, newFindings);
 
-  // 5. Filter by Minimum Relevance (e.g., 0.5)
-  const MIN_RELEVANCE = 0.5;
+  // 5. Filter by Minimum Relevance
+  const MIN_RELEVANCE = SCANNER_CONFIG.minRelevance;
   const highQualityFindings = scoredFindings.filter(
     (f) => f.relevanceScore === null || f.relevanceScore >= MIN_RELEVANCE,
   );
@@ -215,24 +210,28 @@ export async function runScannersForTopic(topic, options = {}) {
 
   // 6. Bulk Insert
   let insertedCount = 0;
-  for (const finding of highQualityFindings) {
+  if (highQualityFindings.length > 0) {
     try {
-      await prisma.topicFinding.create({
-        data: {
-          topicId: topic.id,
-          sourceType: finding.sourceType,
-          sourceName: finding.sourceName,
-          sourceUrl: finding.sourceUrl,
-          title: finding.title,
-          summary: finding.summary,
-          rawArticleId: finding.rawArticleId,
-          relevanceScore: finding.relevanceScore,
-          metadata: finding.metadata || null,
-        },
+      const createPayload = highQualityFindings.map((finding) => ({
+        topicId: topic.id,
+        sourceType: finding.sourceType,
+        sourceName: finding.sourceName,
+        sourceUrl: finding.sourceUrl,
+        title: finding.title,
+        summary: finding.summary,
+        rawArticleId: finding.rawArticleId,
+        relevanceScore: finding.relevanceScore,
+        metadata: finding.metadata || null,
+      }));
+
+      const createResult = await prisma.topicFinding.createMany({
+        data: createPayload,
+        skipDuplicates: true, // Safely ignore duplicate URLs
       });
-      insertedCount++;
+
+      insertedCount = createResult.count;
     } catch (err) {
-      // Ignore unique constraint race conditions
+      console.error(`❌ [orchestrator] Bulk insert failed:`, err.message);
     }
   }
 

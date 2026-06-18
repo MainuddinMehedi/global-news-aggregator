@@ -7,8 +7,7 @@
 import fetchRSSStream from "../../newsPipeline/rss.js";
 import { evaluateQuery } from "../utils/parseQuery.js";
 import { formatSinceDate } from "../utils/formatSinceDate.js";
-
-const MAX_RESULTS = 100;
+import { SCANNER_CONFIG } from "../scannerConfig.js";
 
 /**
  * Build the appropriate RSS URL based on the source config type.
@@ -41,10 +40,12 @@ function buildFeedUrl(topic, sourceConfig) {
  * @param {object} sourceConfig - The specific source to scan (from topic.sources array)
  * @param {object} options
  * @param {number} options.limit - Max results to return
- * @returns {Array<object>} Normalized finding objects
+ * @returns {{ findings: Array<object>, metadata: object }}
  */
 export async function scanRss(topic, sourceConfig, options = {}) {
-  const { limit = MAX_RESULTS, fullScan = false } = options;
+  const { fullScan = false } = options;
+  const sourceType = sourceConfig.type === "google_news" ? "googleNews" : "rss";
+  const limit = options.limit || SCANNER_CONFIG.maxResults[sourceType];
   const feedUrl = buildFeedUrl(topic, sourceConfig);
 
   if (!feedUrl) {
@@ -123,5 +124,5 @@ export async function scanRss(topic, sourceConfig, options = {}) {
     );
   }
 
-  return findings;
+  return { findings, metadata: {} };
 }

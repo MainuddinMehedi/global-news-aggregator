@@ -121,7 +121,7 @@ export async function scanCompanyCareers(topic, sourceConfig, options = {}) {
   // Clean it up to create a likely ATS slug (e.g., "Stripe Inc." -> "stripe")
   const slug = rawName.toLowerCase().replace(/[^a-z0-9]/g, '').trim();
 
-  if (!slug) return [];
+  if (!slug) return { findings: [], metadata: {} };
 
   console.log(`🔍 [companyCareersScraper] Brute-force checking ATS platforms for "${slug}"...`);
 
@@ -136,5 +136,5 @@ export async function scanCompanyCareers(topic, sourceConfig, options = {}) {
   const allFindings = [...greenhouseFindings, ...leverFindings];
 
   console.log(`   📊 [companyCareersScraper] Found ${allFindings.length} matching jobs for "${slug}".`);
-  return allFindings;
+  return { findings: allFindings, metadata: {} };
 }

@@ -10,8 +10,9 @@ import Parser from "rss-parser";
 import * as cheerio from "cheerio";
 import { evaluateQuery } from "../utils/parseQuery.js";
 import { formatSinceDate } from "../utils/formatSinceDate.js";
+import { SCANNER_CONFIG } from "../scannerConfig.js";
 
-const MAX_RESULTS = 25;
+const MAX_RESULTS = SCANNER_CONFIG.maxResults.reddit;
 const REDDIT_BOT_BLACKLIST = ["AutoModerator", "[deleted]", "reddit-bot"];
 
 const parser = new Parser();
@@ -286,5 +287,5 @@ export async function scanReddit(topic, sourceConfig, options = {}) {
 
   console.log(`   📊 [redditScanner] Found ${findings.length} new matches from ${sourceName} (${skipped} skipped as old/irrelevant/bot)`);
 
-  return findings;
+  return { findings, metadata: {} };
 }
