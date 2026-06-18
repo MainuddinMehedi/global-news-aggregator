@@ -81,7 +81,7 @@ export function buildClusteringPrompt(
           )
           .join("\n");
 
-  return `You are a geopolitical news analyst organizing articles into evolving story clusters. You are building an intelligence dossier.
+  return `You are an expert global news analyst organizing articles into evolving story clusters. You are building an intelligence dossier.
 
 ACTIVE CLUSTERS:
 ${clustersContext}
@@ -92,7 +92,7 @@ ${articlesContext}
 TASK:
 For each article, decide if it belongs to an EXISTING cluster or if it represents a major NEW developing story.
 - If it matches an active cluster, assign its clusterRef.
-- If it's a completely new, major geopolitical event, propose a new cluster. (Do not create new clusters for minor, isolated events; those can be assigned to null/unclustered).
+- If it's a completely new, major developing event, propose a new cluster. (Do not create new clusters for minor, isolated events; those can be assigned to null/unclustered).
 - For every existing cluster that receives one or more new articles, update the cluster's intelligence metadata so the dossier reflects the latest reporting.
 - Use only articleRef and clusterRef values listed above. Do not invent refs or return database IDs.
 - Return one assignment per article, in the same order as NEW ARTICLES TO CLUSTER.
@@ -111,7 +111,7 @@ STORY VS TOPIC RUBRIC:
 For NEW clusters, you MUST generate the following intelligence metadata:
 - impact: One of "CRITICAL", "HIGH", "MEDIUM", "LOW"
 - status: One of "EMERGING", "ESCALATING", "DEVELOPING", "SLOW_BURN", "STABLE", "RESOLVING"
-- whyItMatters: A sharp, 1-line analysis of the geopolitical or economic implications of this story.
+- whyItMatters: A sharp, 1-line analysis of why this story matters in its native context (e.g., sports, business, geopolitical). Derive this STRICTLY from the text. Do NOT invent geopolitical or economic angles for pure sports, entertainment, or general news.
 - regions: Array of affected regions/countries (e.g. ["Middle East", "USA"])
 - themes: Array of topics (e.g. ["Trade War", "Elections"])
 
@@ -146,7 +146,7 @@ OUTPUT FORMAT (strict JSON, no markdown):
       "timeWindow": "Updated time window if needed",
       "impact": "HIGH",
       "status": "ESCALATING",
-      "whyItMatters": "Updated 1-line geopolitical or economic implication.",
+      "whyItMatters": "Updated 1-line analysis of why this matters in its native context.",
       "regions": ["China", "USA"],
       "themes": ["Technology", "Sanctions"],
       "keyDevelopments": [] // NEW ones only — empty if nothing new
@@ -160,7 +160,7 @@ OUTPUT FORMAT (strict JSON, no markdown):
       "timeWindow": "Just Started",
       "impact": "HIGH",
       "status": "DEVELOPING",
-      "whyItMatters": "This shift could disrupt global semiconductor supply chains.",
+      "whyItMatters": "1-line implication based purely on the article content (e.g., historic sports victory, market shift, or geopolitical disruption).",
       "regions": ["China", "USA"],
       "themes": ["Technology", "Sanctions"],
       "keyDevelopments": [

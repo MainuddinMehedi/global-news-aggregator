@@ -6,11 +6,21 @@ This document provides foundational architecture, development workflows, and pro
 
 The project is a two-service monorepo:
 
-- **Ingestion Service**: Node.js ESM background worker. Fetches RSS, deduplicates, and enriches with AI (Groq/OpenRouter).
+- **Ingestion Service**: Node.js ESM modular monolith. Fetches RSS, deduplicates, and enriches with AI (Mistral/Groq).
 - **Frontend**: Next.js 16 (App Router) + React 19 + TailwindCSS 4 + Prisma + Zustand.
 
 ### Data Flow
 `RSS Source -> Ingestion (Dedup) -> PostgreSQL (RawArticle) -> AI Processor -> PostgreSQL (ProcessedArticle) -> Next.js API (/api/articles) -> Frontend UI`
+
+### Ingestion Service Architecture
+
+The ingestion service follows a **modular monolith** pattern with an **orchestrator pattern**: four thin entry-point scripts at root each wire together dependencies and run a single pipeline. Feature directories (`newsPipeline/`, `clustering/`, `topics/`) encapsulate domain logic independently. Shared infrastructure (`ai/`, `utils/`) is consumed by multiple features.
+
+**Key design principles:**
+- **Orchestrators at root** — `runIngest.js`, `runClustering.js`, `processTopics.js`, `processBacklog.js` are thin scripts that compose features
+- **Feature directories** — each owns its domain logic, prompts, and feature-specific utilities
+- **Shared infrastructure** — `ai/` (LLM client, rate limiter, token management) and `utils/` (revalidation, logging, formatting) are consumed across features
+- **Data layer** — `data/` holds static configuration (feed definitions, gazetteer dictionaries); `db/` is a thin Prisma wrapper
 
 ## 🛠️ Tech Stack
 
@@ -23,22 +33,52 @@ The project is a two-service monorepo:
 
 ```
 ingestion-service/
-  config/
-    ai.js             ← AI provider configurations (primary/fallback models, limits)
-  constants/
-    categories.js     ← canonical ALLOWED_CATEGORIES list (single source of truth)
-  data/
-    gazetteer.json    ← static regex keywords database for Stage 1 sieve
-  ai/
-    prompts/
-      enrichment.js   ← Modular system prompt and message template definition
-    client.js         ← AI request handler with rate limit / fallback logic
-    processor.js      ← saves AI results to DB; enforces ALLOWED_CATEGORIES server-side
-    rateLimiter.js
-    tokenBatcher.js
-  sources/            ← RSS feed configs and fetchers
-  db/                 ← Prisma client for the worker
+├── runIngest.js              # orchestrator: RSS fetch → dedup → AI enrich → revalidate
+├── runClustering.js          # orchestrator: story clustering
+├── processTopics.js          # orchestrator: locked topic scanning
+├── processBacklog.js         # orchestrator: unprocessed article backlog
+├── ai/                       # shared AI infrastructure (used by all features)
+│   ├── aiConfig.js           # provider config (Mistral/Groq endpoints, keys, limits)
+│   ├── requestAI.js          # LLM API client with fallback + retry logic
+│   ├── rateLimiter.js        # sliding window rate limiter (TPM/RPM)
+│   └── tokenBatcher.js       # token counting, truncation, batch composition
+├── newsPipeline/             # unified ingestion + enrichment pipeline
+│   ├── rss.js                # RSS/Atom stream fetcher
+│   ├── stage1.js             # deterministic classification (gazetteer regex)
+│   ├── stage2.js             # LLM enrichment (entities, sentiment, bias)
+│   ├── enrichmentPipeline.js # batching, stage orchestration, DB commit
+│   └── prompts/              # LLM prompt templates
+├── clustering/               # story clustering feature
+│   ├── clusteringEngine.js   # LLM-based story grouping
+│   ├── lifecycle.js          # cluster state transitions (active → stale → archived)
+│   └── utils/                # entity overlap, relevance scoring, key developments
+├── topics/                   # locked topics feature
+│   ├── scanner.js            # scanner orchestrator
+│   ├── scorer.js             # LLM-based finding scoring
+│   ├── notifier.js           # notification dispatch
+│   ├── overviewGenerator.js  # topic summary generation
+│   ├── realtimeMatcher.js    # real-time match against incoming articles
+│   ├── sources/              # scanner implementations (Brave, Reddit, RSS, GitHub, etc.)
+│   └── utils/                # parseQuery.js, formatSinceDate.js
+├── data/                     # static data + configuration
+│   ├── gazetteer.json        # category/region keyword dictionaries
+│   └── feeds.js              # RSS feed definitions (builtin + user custom)
+├── db/
+│   └── prisma.js             # self-contained Prisma client
+├── utils/                    # shared utilities
+│   ├── revalidateCache.js    # Next.js cache invalidation
+│   ├── logAiUsage.js         # AI usage tracking
+│   ├── generateSlug.js       # URL slug generation
+│   ├── formatDuration.js     # millisecond → human-readable duration
+│   ├── hashSnippet.js        # SHA-256 content hashing
+│   ├── normalizeUrl.js       # URL normalization
+│   ├── regionMapping.js      # country → geopolitical region mapping
+│   └── cleanupOldSkippedArticles.js
+└── constants/
+    └── categories.js         # category definitions
+```
 
+```
 frontend/
   app/
     api/
@@ -47,7 +87,7 @@ frontend/
       revalidate/
         route.ts      ← GET /api/revalidate?tag=&secret= (on-demand cache invalidation)
     analytics/
-      page.tsx        ← Analytics page: hosts all four insight widgets
+        page.tsx        ← Analytics page: hosts all four insight widgets
     page.tsx          ← Home feed (server component, SSR first page)
     layout.tsx        ← Root layout: Navbar + responsive Sidebar + Footer + Suspense shell
   components/
