@@ -17,7 +17,6 @@ export interface SourceConfig {
   type:
     | "internal_db"
     | "google_news"
-    | "brave"
     | "reddit"
     | "rss"
     | "scrape"

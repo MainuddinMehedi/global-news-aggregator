@@ -1,7 +1,6 @@
 import { prisma } from "../db/prisma.js";
 import { scanInternalDb } from "./sources/internalDb.js";
 import { scanRss } from "./sources/rssScanner.js";
-import { scanBrave } from "./sources/braveScanner.js";
 import { scanReddit } from "./sources/redditScanner.js";
 import { scanWebpage } from "./sources/webpageScraper.js";
 import { scanGithub } from "./sources/githubScanner.js";
@@ -62,9 +61,6 @@ export async function runScannersForTopic(topic, options = {}) {
         case "google_news":
         case "rss":
           result = await scanRss(topic, sourceConfig, options);
-          break;
-        case "brave":
-          result = await scanBrave(topic, sourceConfig, options);
           break;
         case "reddit":
           result = await scanReddit(topic, sourceConfig, options);

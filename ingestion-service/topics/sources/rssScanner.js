@@ -8,6 +8,7 @@ import fetchRSSStream from "../../newsPipeline/rss.js";
 import { evaluateQuery } from "../utils/parseQuery.js";
 import { formatSinceDate } from "../utils/formatSinceDate.js";
 import { SCANNER_CONFIG } from "../scannerConfig.js";
+import extractHostname from "../utils/extractHostname.js";
 
 /**
  * Build the appropriate RSS URL based on the source config type.
@@ -60,7 +61,7 @@ export async function scanRss(topic, sourceConfig, options = {}) {
       ? "Google News"
       : sourceConfig.label
         || (sourceConfig.url
-          ? `${new URL(sourceConfig.url).hostname} RSS`
+          ? `${extractHostname(sourceConfig.url, "Custom")} RSS`
           : "Custom RSS");
 
   const sinceDate = fullScan ? null : topic.lastScannedAt;

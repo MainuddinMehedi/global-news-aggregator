@@ -64,7 +64,7 @@ export function detectSourceType(url: string): SourceConfig["type"] {
     return "company_careers";
   }
 
-  return "webpage";
+  return "search";
 }
 
 export function generateSourceLabel(url: string, type: SourceConfig["type"]): string {
@@ -107,6 +107,9 @@ export function generateSourceLabel(url: string, type: SourceConfig["type"]): st
           return `${capitalize(pathSegment.replace(/[-_]/g, " "))} Careers`;
         }
         return `${hostname.replace(/\..+$/, "")} Careers`;
+      }
+      case "search": {
+        return `Search ${hostname}`;
       }
       default:
         return hostname;

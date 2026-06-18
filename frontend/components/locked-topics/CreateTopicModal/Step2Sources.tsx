@@ -194,11 +194,25 @@ export default function Step2Sources({
 
     if (!exists) {
       const label = generateSourceLabel(customUrl, type);
+      let siteRestriction;
+      if (type === "search") {
+        try {
+          siteRestriction = new URL(customUrl).hostname.replace("www.", "");
+        } catch {}
+      }
+
       setData({
         ...data,
         sources: [
           ...data.sources,
-          { id: customUrl, type, label, url: customUrl, enabled: true },
+          { 
+            id: customUrl, 
+            type, 
+            label, 
+            url: customUrl, 
+            ...(siteRestriction ? { siteRestriction } : {}),
+            enabled: true 
+          },
         ],
       });
       setCustomUrl("");
@@ -241,10 +255,10 @@ export default function Step2Sources({
             onToggle={() => toggleSource("google_news", "Google News")}
           />
           <SourceToggle
-            label="Brave Search API"
+            label="Internet Search"
             icon={Search01Icon}
-            enabled={isSourceEnabled("brave")}
-            onToggle={() => toggleSource("brave", "Brave Search")}
+            enabled={isSourceEnabled("search")}
+            onToggle={() => toggleSource("search", "Internet Search")}
           />
           <SourceToggle
             label="Reddit"
