@@ -617,8 +617,9 @@ export async function getSourceOriginCounts() {
       _count: { _all: true },
       where: {
         processedArticle: {
-          isNot: null,
-          clusterStatus: { not: "SKIPPED" },
+          is: {
+            clusterStatus: { not: "SKIPPED" },
+          },
         },
       },
     });
