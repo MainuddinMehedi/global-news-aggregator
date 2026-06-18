@@ -7,7 +7,7 @@ node_modules/
 .env*
 !.env.example
 
-# Build outputs 
+# Build outputs
 .next/
 dist/
 build/
@@ -16,10 +16,13 @@ build/
 .DS_Store
 
 /generated/prisma
-
-
-/docs/news-automation-planning-md-files/
 shared/prisma-client
+
+# Docs
+docs/
+
+# Obsidian
+.obsidian/
 
 # Python
 .venv/
@@ -27,6 +30,3 @@ venv/
 __pycache__/
 *.pyc
 .pytest_cache/
-
-# Obsidian
-.obsidian/

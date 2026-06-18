@@ -8,6 +8,31 @@ import { getCategoryNames } from "./utils/index.js";
 const RESERVED_CLUSTERING_OUTPUT_TOKENS =
   parseInt(process.env.AI_RESERVED_CLUSTERING_OUTPUT_TOKENS) || 1500;
 
+function getArticleTitle(article) {
+  return article.rawArticle?.title || article.title || "Untitled";
+}
+
+function getArticleSource(article) {
+  return article.rawArticle?.source || article.source || "Unknown";
+}
+
+function getArticleSourceCountry(article) {
+  return (
+    article.rawArticle?.sourceCountry ||
+    article.sourceCountry ||
+    article.eventRegion ||
+    "Unknown"
+  );
+}
+
+function getArticlePublishedAt(article) {
+  return article.rawArticle?.publishedAt || article.publishedAt;
+}
+
+function getArticleSummary(article) {
+  return article.rawArticle?.contentSnippet || article.contentSnippet || "";
+}
+
 export function buildClusteringPrompt(
   articles,
   activeClusters,
@@ -20,14 +45,14 @@ export function buildClusteringPrompt(
       (a, i) => `
 [ARTICLE ${i + 1}]
 - Ref: ${a.aiRef}
-- Title: ${a.title}
-- Source: ${a.source || "Unknown"}
-- Source Country: ${a.sourceCountry || "Unknown"}
-- Published At: ${a.publishedAt ? new Date(a.publishedAt).toISOString() : "Unknown"}
-- Summary: ${a.contentSnippet}
+- Title: ${getArticleTitle(a)}
+- Source: ${getArticleSource(a)}
+- Source Country: ${getArticleSourceCountry(a)}
+- Published At: ${getArticlePublishedAt(a) ? new Date(getArticlePublishedAt(a)).toISOString() : "Unknown"}
+- Summary: ${getArticleSummary(a)}
 - Categories: ${getCategoryNames(a.categories).join(", ") || "Unknown"}
 - Entities: ${(a.entities || []).join(", ") || "Unknown"}
-- Perspective Countries: ${a.rawArticle?.sourceCountry || "Unknown"}
+- Perspective Countries: ${getArticleSourceCountry(a)}
 `,
     )
     .join("\n");

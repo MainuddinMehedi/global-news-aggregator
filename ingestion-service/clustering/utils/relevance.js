@@ -3,6 +3,19 @@ import { getCategoryNames } from "./clean.js";
 import { normalizedEntitySet, normalizedStringSet, tokenSet, intersectionSize } from "./entity.js";
 import { clusterRankScore } from "./cluster.js";
 
+function getArticleText(article) {
+  return [
+    article.rawArticle?.title || article.title,
+    article.rawArticle?.contentSnippet || article.contentSnippet,
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+function getArticlePublishedAt(article) {
+  return article.rawArticle?.publishedAt || article.publishedAt;
+}
+
 function getArticleGroupSignals(articles) {
   const entities = new Set();
   const regions = new Set();
@@ -22,15 +35,11 @@ function getArticleGroupSignals(articles) {
       categories.add(category.toLowerCase());
     }
 
-    for (const token of tokenSet(
-      `${article.title || ""} ${article.contentSnippet || ""}`,
-    )) {
+    for (const token of tokenSet(getArticleText(article))) {
       textTokens.add(token);
     }
 
-    const publishedAt = new Date(
-      article.publishedAt || article.rawArticle?.publishedAt || 0,
-    ).getTime();
+    const publishedAt = new Date(getArticlePublishedAt(article) || 0).getTime();
     if (Number.isFinite(publishedAt)) {
       newestPublishedAt = Math.max(newestPublishedAt, publishedAt);
     }

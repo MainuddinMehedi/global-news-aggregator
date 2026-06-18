@@ -7,12 +7,12 @@ import {
 } from "./clustering/utils/index.js";
 import {
   applyClusterLifecycle,
-  saveClusteringResults,
   CLUSTER_LOW_IMPACT_INACTIVE_DAYS,
   CLUSTER_MEDIUM_IMPACT_INACTIVE_DAYS,
   CLUSTER_HIGH_IMPACT_INACTIVE_DAYS,
   CLUSTER_CRITICAL_IMPACT_INACTIVE_DAYS,
 } from "./clustering/lifecycle.js";
+import { saveClusteringResults } from "./clustering/saveClusteringResults.js";
 import revalidateCache from "./utils/revalidateCache.js";
 
 const lifecycleConfig = {
