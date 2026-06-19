@@ -2,7 +2,7 @@
  * Internal DB Scanner — scans ProcessedArticle table for locked topic matches.
  *
  * Used by:
- *   1. processTopics.js (scheduled workflow — every 2h)
+ *   1. scanTopics.js (scheduled workflow — every 2h)
  *   2. The scan route ports this same logic for on-demand scans at topic creation.
  *
  * Input:  A LockedTopic object

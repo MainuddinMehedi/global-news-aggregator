@@ -80,7 +80,7 @@ global-news-aggregator/
 │   │   ├── scanner.js            # Master orchestrator for topics
 │   │   ├── scorer.js             # AI relevance scoring module
 │   │   └── notifier.js           # Discord & Telegram alerts
-│   ├── processTopics.js          # Scheduled background scanner
+│   ├── scanTopics.js             # Scheduled background scanner
 │   └── index.js                  # Main orchestrator
 └── prisma/
     └── schema.prisma             # Unified Data Model

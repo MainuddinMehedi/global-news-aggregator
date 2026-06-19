@@ -8,12 +8,13 @@ const args = process.argv.slice(2);
 const topicIdArg = args.find((a) => a.startsWith("--topic-id="));
 const specificTopicId = topicIdArg ? topicIdArg.split("=")[1] : null;
 
-async function run() {
-  console.log("🚀 Starting Locked Topics background scanner...");
+export async function scanTopicsLogic(topicId = null) {
+  const effectiveTopicId = topicId || specificTopicId;
+  console.log(`🚀 Starting Locked Topics background scanner${effectiveTopicId ? ` for topic ${effectiveTopicId}` : ""}...`);
 
   const whereClause = { isActive: true };
-  if (specificTopicId) {
-    whereClause.id = specificTopicId;
+  if (effectiveTopicId) {
+    whereClause.id = effectiveTopicId;
   }
 
   const topics = await prisma.lockedTopic.findMany({
@@ -23,7 +24,7 @@ async function run() {
   if (topics.length === 0) {
     console.log("⚪ No active Locked Topics found.");
     await prisma.$disconnect();
-    return;
+    return 0;
   }
 
   let totalNewFindings = 0;
@@ -32,13 +33,13 @@ async function run() {
     try {
       // If scanning a specific topic, treat it as a full scan (skip date filtering)
       // Otherwise, it's the scheduled incremental scan.
-      const isFullScan = !!specificTopicId;
+      const isFullScan = !!effectiveTopicId;
       const insertedCount = await runScannersForTopic(topic, {
         fullScan: isFullScan,
       });
       totalNewFindings += insertedCount;
     } catch (err) {
-      console.error(`❌ [processTopics] Scanning failed for topic ${topic.id} ("${topic.displayName}"):`, err);
+      console.error(`❌ [scanTopics] Scanning failed for topic ${topic.id} ("${topic.displayName}"):`, err);
       // Continue to next topic
     }
   }
@@ -48,7 +49,7 @@ async function run() {
   );
 
   // --- REVALIDATION LOGIC ---
-  if (totalNewFindings > 0 || specificTopicId) {
+  if (totalNewFindings > 0 || effectiveTopicId) {
     const tags = ["locked-topics"];
     for (const topic of topics) {
       tags.push(`locked-topic-${topic.id}`);
@@ -57,9 +58,17 @@ async function run() {
   }
 
   await prisma.$disconnect();
+  return totalNewFindings;
 }
 
-run().catch((err) => {
-  console.error("❌ processTopics encountered an error:", err);
-  process.exit(1);
-});
+// Run if called directly from CLI
+if (import.meta.url === `file://${process.argv[1]}`) {
+  const args = process.argv.slice(2);
+  const topicIdArg = args.find((a) => a.startsWith("--topic-id="));
+  const cliTopicId = topicIdArg ? topicIdArg.split("=")[1] : null;
+
+  scanTopicsLogic(cliTopicId).catch((err) => {
+    console.error("❌ scanTopics encountered an error:", err);
+    process.exit(1);
+  });
+}
