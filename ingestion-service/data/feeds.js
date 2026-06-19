@@ -85,8 +85,20 @@ export async function getActiveFeeds() {
   return allFeeds.filter((f) => f.enabled);
 }
 
-/** Returns all feeds regardless of enabled status, merged from users and defaults. */
+/** Returns all feeds regardless of enabled status, merged from users and database FeedSource. */
 export async function getAllFeeds() {
+  let systemFeeds = [];
+  try {
+    systemFeeds = await prisma.feedSource.findMany();
+  } catch (err) {
+    console.warn("Could not fetch FeedSource from DB, falling back to static list:", err.message);
+  }
+
+  // Fallback to static list if database query fails or returned no records (e.g., unseeded)
+  if (!systemFeeds || systemFeeds.length === 0) {
+    systemFeeds = builtinFeeds;
+  }
+
   let users = [];
   try {
     users = await prisma.user.findMany({ select: { settings: true } });
@@ -96,12 +108,20 @@ export async function getAllFeeds() {
 
   const feedsMap = new Map();
 
-  // Load defaults
-  for (const f of builtinFeeds) {
-    feedsMap.set(f.url, { ...f });
+  // Load system feeds (from DB or fallback)
+  for (const f of systemFeeds) {
+    feedsMap.set(f.url, {
+      name: f.name,
+      sourceCountry: f.sourceCountry,
+      sourceType: f.sourceType,
+      biasGroup: f.biasGroup,
+      coverageScope: f.coverageScope,
+      url: f.url,
+      enabled: f.enabled,
+    });
   }
 
-  // Load user feeds
+  // Load user custom feeds
   for (const user of users) {
     if (user.settings && Array.isArray(user.settings.customSources)) {
       for (const src of user.settings.customSources) {
