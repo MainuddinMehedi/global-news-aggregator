@@ -11,7 +11,7 @@ import {
   ENRICHMENT_SYSTEM_PROMPT,
   buildEnrichmentPrompt,
 } from "./prompts/enrichment.js";
-import { countTokens, TOKEN_MULTIPLIER } from "../ai/tokenBatcher.js";
+import { countTokens } from "../ai/tokenBatcher.js";
 import { logAiUsage } from "../utils/logAiUsage.js";
 
 /**
@@ -19,22 +19,23 @@ import { logAiUsage } from "../utils/logAiUsage.js";
  *
  * @param {Array} articles - Array of raw articles (which have eventRegion attached).
  * @param {Array} categories - Array of Stage 1 categories mapped 1-to-1 with the articles.
+ * @param {Object} config - Active AI Configuration.
  * @returns {Promise<Array>} Array of articles with dynamic entities, sentiment, bias notes, and model info.
  */
-export async function enrichWithStage2Batch(articles, categories) {
+export async function enrichWithStage2Batch(articles, categories, config = primaryConfig) {
   if (!articles || articles.length === 0) return [];
 
   // Construct the prompt using the modular prompts system
-  const prompt = `${ENRICHMENT_SYSTEM_PROMPT}\n\n${buildEnrichmentPrompt(articles, categories)}`;
+  const prompt = `${ENRICHMENT_SYSTEM_PROMPT}\n\n${buildEnrichmentPrompt(articles, categories, config)}`;
 
-  // Calculate tokens (articles.length * 400 represents output token reserve for entities + bias note per article)
+  // Calculate tokens
   const rawInputTokens = countTokens(prompt);
   const estimatedTokens = Math.ceil(
-    (rawInputTokens + articles.length * 400) * TOKEN_MULTIPLIER,
+    (rawInputTokens + config.reservedOutputTokens) * config.tokenMultiplier,
   );
 
   try {
-    const response = await requestAI(primaryConfig, prompt, estimatedTokens);
+    const response = await requestAI(config, prompt, estimatedTokens);
 
     await logAiUsage(
       response.provider,
@@ -44,12 +45,17 @@ export async function enrichWithStage2Batch(articles, categories) {
     );
 
     let enrichments = [];
+    let parseFailed = false;
     try {
       // Strips any potential markdown blocks wrapper
       const jsonText = response.content.replace(/```json|```/g, "").trim();
       const parsed = JSON.parse(jsonText);
       enrichments = parsed.enrichments || [];
+      if (enrichments.length === 0) {
+        parseFailed = true;
+      }
     } catch (parseErr) {
+      parseFailed = true;
       console.warn(
         "⚠️ Stage 2 Enrichment failed to parse JSON response from LLM:",
         parseErr.message,
@@ -59,6 +65,7 @@ export async function enrichWithStage2Batch(articles, categories) {
 
     return articles.map((article, index) => {
       const enrichment = enrichments[index] || {};
+      const failed = parseFailed || Object.keys(enrichment).length === 0;
 
       return {
         ...article,
@@ -71,6 +78,7 @@ export async function enrichWithStage2Batch(articles, categories) {
         biasNote:
           typeof enrichment.biasNote === "string" ? enrichment.biasNote : null,
         model: response.model || "unknown-llm",
+        failedEnrichment: failed,
       };
     });
   } catch (err) {
@@ -84,6 +92,7 @@ export async function enrichWithStage2Batch(articles, categories) {
       sentimentScore: null,
       biasNote: null,
       model: "failed-api-fallback",
+      failedEnrichment: true,
     }));
   }
 }

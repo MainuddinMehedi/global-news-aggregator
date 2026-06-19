@@ -24,10 +24,13 @@ const limit = limitArg ? parseInt(limitArg.split("=")[1]) : undefined;
 const startTime = Date.now();
 
 export async function processBacklogLogic() {
-  // Find RawArticles that have no ProcessedArticle
+  // Find RawArticles that have no ProcessedArticle, or a ProcessedArticle that failed enrichment
   const unprocessed = await prisma.rawArticle.findMany({
     where: {
-      processedArticle: null,
+      OR: [
+        { processedArticle: null },
+        { processedArticle: { clusterStatus: "FAILED_ENRICHMENT" } },
+      ],
     },
     orderBy: { publishedAt: "desc" },
     ...(limit ? { take: limit } : {}),
@@ -37,6 +40,18 @@ export async function processBacklogLogic() {
     console.log("✅ No unprocessed articles found. Backlog is clear!");
     await prisma.$disconnect();
     return;
+  }
+
+  // Delete any existing FAILED_ENRICHMENT ProcessedArticle rows for the selected batch
+  const articleIds = unprocessed.map((a) => a.id);
+  const deletedFailures = await prisma.processedArticle.deleteMany({
+    where: {
+      rawArticleId: { in: articleIds },
+      clusterStatus: "FAILED_ENRICHMENT",
+    },
+  });
+  if (deletedFailures.count > 0) {
+    console.log(`🧹 Cleared ${deletedFailures.count} previously failed enrichment records to retry.`);
   }
 
   // Pre-filter non-relevant (category: other) articles using Stage 1 Gazetteer

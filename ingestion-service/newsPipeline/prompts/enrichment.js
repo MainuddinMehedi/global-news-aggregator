@@ -1,8 +1,4 @@
-/**
- * Prompts Module for Ingestion Enrichment
- * 
- * Separates prompt text and formatting concerns from Stage 2 execution logic.
- */
+import { truncateByTokens } from "../../ai/tokenBatcher.js";
 
 export const ENRICHMENT_SYSTEM_PROMPT = `You are a professional geopolitical intelligence analyst. Your job is to extract metadata and perform objective framing analysis on a batch of news articles.
 
@@ -39,17 +35,20 @@ Output JSON Schema:
  * 
  * @param {Array} articles - Array of raw articles.
  * @param {Array} categories - Array of Stage 1 categories mapped 1-to-1 with the articles.
+ * @param {Object} config - AI Configuration with token limits.
  * @returns {string} Formatted user prompt.
  */
-export function buildEnrichmentPrompt(articles, categories) {
+export function buildEnrichmentPrompt(articles, categories, config) {
+  const maxArticleTokens = config?.maxArticleTokens || 500;
   const articlesContext = articles
     .map((article, index) => {
       const category = categories && categories[index] ? categories[index] : "geopolitics";
       const region = article.eventRegion || "Global";
+      const truncatedSnippet = truncateByTokens(article.contentSnippet, maxArticleTokens);
       return `
 [ARTICLE ${index + 1}]
 Title: ${article.title}
-Content: ${article.contentSnippet}
+Content: ${truncatedSnippet}
 Authoritative Category Context: ${category}
 Authoritative Region Context: ${region}
 `;

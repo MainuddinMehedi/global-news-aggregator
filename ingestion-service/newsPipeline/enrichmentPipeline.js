@@ -4,8 +4,9 @@ import { enrichWithStage2Batch } from "./stage2.js";
 import { primaryConfig } from "../ai/aiConfig.js";
 
 export function createArticleProcessor(
-  batchSize = primaryConfig.batchSize,
+  config = primaryConfig,
 ) {
+  const batchSize = config.batchSize;
   const buffer = [];
   let currentBatchPromise = null;
   let flushPromise = null;
@@ -114,6 +115,7 @@ export function createArticleProcessor(
             stage2Results = await enrichWithStage2Batch(
               validBatch,
               validCategories,
+              config,
             );
           } catch (err) {
             console.error(`⚠️ Stage 2 ML batch processing failed`, err.message);
@@ -122,6 +124,9 @@ export function createArticleProcessor(
               ...article,
               entities: [],
               sentimentScore: null,
+              biasNote: null,
+              model: "failed-api-fallback",
+              failedEnrichment: true,
             }));
           }
         }
@@ -156,7 +161,7 @@ export function createArticleProcessor(
                     biasNote: s2.biasNote || null,
                     eventRegion: s1.eventRegion || null,
                     model: s2.model || "mistral-small-2506",
-                    clusterStatus: "HOLDING",
+                    clusterStatus: s2.failedEnrichment ? "FAILED_ENRICHMENT" : "HOLDING",
                   },
                 });
               },

@@ -74,7 +74,7 @@ export function enrichWithStage1(rawArticle) {
 
   // 1. Categories
   let bestCategory = "other";
-  let maxCategoryScore = 0;
+  let maxCategoryScore = 2;
 
   for (const [category, rules] of Object.entries(COMPILED_CATEGORIES)) {
     const score = getScore(content, rules);

@@ -102,18 +102,18 @@ ingestion-service/
 
 These documents represent the source of truth for each major platform feature. They conform to the standardized outline format and are ordered by logic and data flow.
 
-1. **[1. Ingestion & Enrichment Pipeline](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/1. features/1. enrichment-pipeline.md)**  
+1. **[1. Ingestion & Enrichment Pipeline](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/1.%20Domain%20specific/1.%20enrichment-pipeline/0.enrichment-pipeline.md)**  
    The two-stage parsing flow: Stage 1 local Regex Gazetteer sieve and Stage 2 Python FastAPI NLP microservice (GLiNER + VADER).
-2. **[2. Story Clustering](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/1. features/2. story/0. story-clustering.md)**
+2. **[2. Story Clustering](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/1.%20Domain%20specific/2.%20story/0.story-clustering.md)**
    The end-to-end grouping engine that matches geopolitical entities and runs batch LLM categorization to group news articles into stories.
-3. **[3. Locked Topics](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/1. Domain specific/3. locked-topics/0. locked-topics.md)**  
+3. **[3. Locked Topics](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/1.%20Domain%20specific/3.%20locked-topics/0.locked-topics.md)**  
    The user-defined custom tracking feature that executes multi-source scans (Google News, Brave, Reddit, web scrapers) and rates findings via AI.
-   - **[Scanner Flow Audit](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/1. Domain specific/3. locked-topics/scanner-flow-audit.md)**: Details the ingestion orchestrator, source configuration, data persistence, and relevance scoring.
-4. **[4. Feed, Pagination, & 3-Axis Filtering](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/1. features/4. feed-filtering.md)**  
+   - **[Scanner Flow Audit](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/1.%20Domain%20specific/3.%20locked-topics/scanner-flow-audit.md)**: Details the ingestion orchestrator, source configuration, data persistence, and relevance scoring.
+4. **[4. Feed, Pagination, & 3-Axis Filtering](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/1.%20Domain%20specific/5.%20feed-&-metadata-specific/0.feed-filtering.md)**  
    Cursor-based infinite scroll pagination, URL query syncer, responsive layout grid, and the 3-axis filters (Event Region, Source Origin, Source Type).
-5. **[5. Authentication & Role-Based Access Control (RBAC)](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/1. features/5. auth-rbac.md)**  
+5. **[5. Authentication & Role-Based Access Control (RBAC)](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/1.%20Domain%20specific/auth-rbac.md)**  
    Session handling via NextAuth.js and Prisma, defining scopes for Public, Authenticated, and Admin users.
-6. **[6. Admin Dashboard](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/1. features/6. admin-dashboard.md)** _(Planned)_  
+6. **[6. Admin Dashboard](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/1.%20Domain%20specific/4.%20admin-dashboard/0.admin-dashboard.md)** _(Planned)_  
    Planned UI controls, settings overrides, crawler telemetry charts, and skipped articles retention/gazetteer tuning tools.
 
 ---

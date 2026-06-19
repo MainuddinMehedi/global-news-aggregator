@@ -14,6 +14,10 @@ export const primaryConfig = {
   rpmLimit: parseInt(process.env.AI_MISTRAL_RPM_LIMIT) || 60,
   concurrencyLimit: parseInt(process.env.AI_MISTRAL_CONCURRENCY) || 5,
   batchSize: parseInt(process.env.AI_MISTRAL_BATCH_SIZE) || 10,
+  tokenMultiplier: parseFloat(process.env.AI_MISTRAL_TOKEN_MULTIPLIER) || 1.1,
+  maxArticleTokens: parseInt(process.env.AI_MISTRAL_MAX_ARTICLE_TOKENS) || 600,
+  maxRequestTokens: parseInt(process.env.AI_MISTRAL_MAX_REQUEST_TOKENS) || 8000,
+  reservedOutputTokens: parseInt(process.env.AI_MISTRAL_RESERVED_OUTPUT_TOKENS) || 1000,
 };
 
 export const fallbackConfig = {
@@ -27,4 +31,8 @@ export const fallbackConfig = {
   rpmLimit: parseInt(process.env.AI_GROQ_RPM_LIMIT) || 28,
   concurrencyLimit: parseInt(process.env.AI_GROQ_CONCURRENCY) || 1,
   batchSize: parseInt(process.env.AI_GROQ_BATCH_SIZE) || 5,
+  tokenMultiplier: parseFloat(process.env.AI_GROQ_TOKEN_MULTIPLIER) || 1.4,
+  maxArticleTokens: parseInt(process.env.AI_GROQ_MAX_ARTICLE_TOKENS) || 400,
+  maxRequestTokens: parseInt(process.env.AI_GROQ_MAX_REQUEST_TOKENS) || 3500,
+  reservedOutputTokens: parseInt(process.env.AI_GROQ_RESERVED_OUTPUT_TOKENS) || 800,
 };
