@@ -13,12 +13,15 @@
 
 import * as cheerio from "cheerio";
 import { evaluateQuery } from "../utils/parseQuery.js";
+import { SCANNER_CONFIG } from "../scannerConfig.js";
+import { scanBrave } from "./braveScanner.js";
+import extractHostname from "../utils/extractHostname.js";
 
-const MAX_RESULTS = 20;
+const MAX_RESULTS = SCANNER_CONFIG.maxResults.search;
 const DDG_BASE_URL = "https://html.duckduckgo.com/html/";
 
 /**
- * Scan the internet for a locked topic using DuckDuckGo (free) or Brave Search (premium).
+ * Scan the internet for a locked topic using DuckDuckGo (free) or Brave Search (premium fallback).
  *
  * @param {object} topic - A LockedTopic record
  * @param {object} sourceConfig - The specific source to scan (from topic.sources array)
@@ -29,7 +32,6 @@ const DDG_BASE_URL = "https://html.duckduckgo.com/html/";
  */
 export async function scanInternetSearch(topic, sourceConfig, options = {}) {
   const { limit = MAX_RESULTS } = options;
-  const apiKey = process.env.BRAVE_API_KEY;
 
   // Build the search query
   const baseQuery = topic.displayName || topic.aiRefinedQuery || "";
@@ -38,22 +40,18 @@ export async function scanInternetSearch(topic, sourceConfig, options = {}) {
     ? `site:${siteRestriction} ${baseQuery}`
     : baseQuery;
 
-  const driverName = apiKey ? "Brave Search API" : "DuckDuckGo";
   console.log(
-    `🔍 [searchScanner] Scanning ${driverName} for "${topic.displayName}"${siteRestriction ? ` (site:${siteRestriction})` : ""}...`,
+    `🔍 [searchScanner] Scanning DuckDuckGo for "${topic.displayName}"${siteRestriction ? ` (site:${siteRestriction})` : ""}...`,
   );
 
-  let rawResults = [];
+  let rawResults = await fetchDuckDuckGoResults(query, limit);
 
-  if (apiKey) {
-    rawResults = await fetchBraveResults(query, limit, apiKey);
-  } else {
-    rawResults = await fetchDuckDuckGoResults(query, limit);
-  }
-
+  // If DDG fails or returns 0 results, fallback to Brave
   if (rawResults.length === 0) {
-    console.log(`   ⚪ [searchScanner] No results from ${driverName}.`);
-    return [];
+    console.log(`   ⚪ [searchScanner] No results from DuckDuckGo. Falling back to Brave Search...`);
+    const braveResult = await scanBrave(topic, sourceConfig, options);
+    
+    return braveResult;
   }
 
   // Deduplicate by URL
@@ -71,6 +69,10 @@ export async function scanInternetSearch(topic, sourceConfig, options = {}) {
   let filtered = 0;
 
   for (const result of deduped) {
+    // Filter by sinceDate if this is an incremental scan
+    // DDG HTML results generally don't have reliable dates, so we let the deduplication 
+    // handle new vs old.
+    
     if (findings.length >= limit) break;
 
     const textToSearch = `${result.title} ${result.snippet || ""}`;
@@ -84,18 +86,27 @@ export async function scanInternetSearch(topic, sourceConfig, options = {}) {
     findings.push({
       title: result.title,
       sourceUrl: result.url,
-      sourceName: result.source || driverName,
+      sourceName: result.source || "DuckDuckGo",
       summary: result.snippet?.slice(0, 500) || null,
       rawArticleId: null,
       sourceType: "SEARCH",
+      metadata: { searchDriver: "ddg" },
     });
   }
 
   console.log(
-    `   📊 [searchScanner] Found ${findings.length} matches from ${driverName} (${filtered} filtered by keywords, ${deduped.length} total results)`,
+    `   📊 [searchScanner] Found ${findings.length} matches from DuckDuckGo (${filtered} filtered by keywords, ${deduped.length} total results)`,
   );
 
-  return findings;
+  // If after keyword filtering we have 0 findings, fallback to Brave
+  if (findings.length === 0) {
+    console.log(`   ⚪ [searchScanner] 0 matches after filtering DuckDuckGo. Falling back to Brave Search...`);
+    const braveResult = await scanBrave(topic, sourceConfig, options);
+    
+    return braveResult;
+  }
+
+  return { findings, metadata: {} };
 }
 
 /**
@@ -177,55 +188,3 @@ async function fetchDuckDuckGoResults(query, limit) {
   }
 }
 
-/**
- * Fetch search results from Brave Search API (news endpoint).
- * Requires BRAVE_API_KEY environment variable.
- */
-async function fetchBraveResults(query, limit, apiKey) {
-  try {
-    const response = await fetch(
-      `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(query)}&count=${limit}`,
-      {
-        headers: {
-          Accept: "application/json",
-          "X-Subscription-Token": apiKey,
-        },
-        signal: AbortSignal.timeout(10000),
-      },
-    );
-
-    if (!response.ok) {
-      console.error(
-        `❌ [searchScanner] Brave Search returned HTTP ${response.status}`,
-      );
-      return [];
-    }
-
-    const data = await response.json();
-    const webResults = data.web?.results || [];
-
-    return webResults.map((item) => ({
-      title: item.title || "",
-      url: item.url || "",
-      snippet: item.description || "",
-      source: item.meta_url?.hostname || extractHostname(item.url || ""),
-    }));
-  } catch (err) {
-    console.error(
-      `❌ [searchScanner] Brave Search fetch failed:`,
-      err.message,
-    );
-    return [];
-  }
-}
-
-/**
- * Extract hostname from a URL string.
- */
-function extractHostname(url) {
-  try {
-    return new URL(url).hostname;
-  } catch {
-    return "Web";
-  }
-}

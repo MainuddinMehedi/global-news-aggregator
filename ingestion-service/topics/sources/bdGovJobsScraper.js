@@ -9,6 +9,7 @@
 
 import * as cheerio from "cheerio";
 import pLimit from "p-limit";
+import { evaluateQuery } from "../utils/parseQuery.js";
 
 const TARGET_URL = "https://bdgovtjob.net/category/government-jobs-circular/";
 const USER_AGENT =
@@ -249,14 +250,7 @@ export async function scanBdGovJobs(topic, sourceConfig, options = {}) {
             (grade ? `Grade ${grade} ৯ম ১ম` : "")
           ).toLowerCase();
 
-          const queryTerms = (topic.aiRefinedQuery || topic.displayName)
-            .toLowerCase()
-            .split(/\s+/)
-            .filter((t) => t.length > 2 || !isNaN(t));
-
-          const isMatch =
-            queryTerms.length === 0 ||
-            queryTerms.every((term) => contentForMatching.includes(term));
+          const isMatch = evaluateQuery(topic, contentForMatching);
 
           if (isMatch) {
             const gradeMarker = grade ? `[Grade ${grade}]` : "";
@@ -289,9 +283,9 @@ export async function scanBdGovJobs(topic, sourceConfig, options = {}) {
     console.log(
       `   📊 [bdGovJobsScraper] Found ${findings.length} matching circulars.`,
     );
-    return findings;
+    return { findings, metadata: {} };
   } catch (err) {
     console.error(`❌ [bdGovJobsScraper] Failed during scan:`, err.message);
-    return [];
+    return { findings: [], metadata: {} };
   }
 }

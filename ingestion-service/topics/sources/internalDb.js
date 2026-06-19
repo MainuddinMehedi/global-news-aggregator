@@ -2,19 +2,17 @@
  * Internal DB Scanner — scans ProcessedArticle table for locked topic matches.
  *
  * Used by:
- *   1. processTopics.js (scheduled workflow — every 2h)
+ *   1. scanTopics.js (scheduled workflow — every 2h)
  *   2. The scan route ports this same logic for on-demand scans at topic creation.
  *
  * Input:  A LockedTopic object
- * Output: Array of normalized findings (before dedup/scoring)
+ * Output: { findings: Array, metadata: {} }
  */
 
 import { prisma } from "../../db/prisma.js";
 import { getPrismaWhere } from "../utils/parseQuery.js";
-
-const MAX_RESULTS = 200;
-
-// Removed buildWhereClause
+import { formatSinceDate } from "../utils/formatSinceDate.js";
+import { SCANNER_CONFIG } from "../scannerConfig.js";
 
 /**
  * Scan the internal ProcessedArticle table for a single locked topic.
@@ -23,62 +21,48 @@ const MAX_RESULTS = 200;
  * @param {object} options
  * @param {boolean} options.fullScan - If true, ignores lastScannedAt and scans everything.
  *                                     Used for initial scan on topic creation.
- * @param {number}  options.limit    - Max results to return (default: 200)
- * @returns {Array<object>} Normalized finding objects ready for dedup + insert
+ * @param {number}  options.limit    - Max results to return
+ * @returns {{ findings: Array<object>, metadata: object }}
  */
 export async function scanInternalDb(topic, options = {}) {
-  const { fullScan = false, limit = MAX_RESULTS } = options;
+  const { fullScan = false, limit = SCANNER_CONFIG.maxResults.internalDb } = options;
 
-  const where = getPrismaWhere(topic);
-  if (Object.keys(where).length === 0 && (!topic.aiRefinedQuery && !topic.displayName)) {
+  const baseWhere = getPrismaWhere(topic);
+  if (Object.keys(baseWhere).length === 0 && (!topic.aiRefinedQuery && !topic.displayName)) {
     console.warn(
       `⚠️ [internalDb] No valid search terms for topic "${topic.displayName}"`,
     );
-    return [];
+    return { findings: [], metadata: {} };
   }
 
-  // Exclude SKIPPED articles from matching topics
-  if (!where.AND) {
-    where.AND = [];
-  } else if (!Array.isArray(where.AND)) {
-    where.AND = [where.AND];
-  }
-  where.AND.push({
-    clusterStatus: { not: "SKIPPED" },
-  });
+  // Build AND conditions immutably instead of mutating the base where object
+  const andConditions = [
+    { clusterStatus: { not: "SKIPPED" } },
+  ];
 
   const sinceDate = fullScan ? null : topic.lastScannedAt;
 
-  // If sinceDate is set, only scan articles newer than that
   if (sinceDate) {
-    if (!where.AND) {
-       where.AND = [];
-    }
-    where.AND.push({
+    andConditions.push({
       rawArticle: {
         publishedAt: { gt: sinceDate },
-      }
+      },
     });
   }
 
-  let sinceStr = " (full scan)";
-  if (sinceDate) {
-    const months = [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec",
-    ];
-    sinceStr = `, since ${sinceDate.getDate()} ${months[sinceDate.getMonth()]}, ${sinceDate.getFullYear()}`;
-  }
+  // Compose final where clause without mutation
+  const existingAnd = Array.isArray(baseWhere.AND)
+    ? baseWhere.AND
+    : baseWhere.AND
+      ? [baseWhere.AND]
+      : [];
+
+  const where = {
+    ...baseWhere,
+    AND: [...existingAnd, ...andConditions],
+  };
+
+  let sinceStr = formatSinceDate(sinceDate);
 
   console.log(
     `🔍 [internalDb] Scanning for "${topic.displayName}"${sinceStr}`,
@@ -106,7 +90,7 @@ export async function scanInternalDb(topic, options = {}) {
   );
 
   // Normalize to the common finding shape used across all scanners
-  return matches.map((pa) => ({
+  const findings = matches.map((pa) => ({
     title: pa.rawArticle.title,
     sourceUrl: pa.rawArticle.url,
     sourceName: pa.rawArticle.source,
@@ -114,7 +98,10 @@ export async function scanInternalDb(topic, options = {}) {
     rawArticleId: pa.id,
     sourceType: "ARTICLE",
   }));
+
+  return { findings, metadata: {} };
 }
 
 // Export for unit testing / direct usage
 export { getPrismaWhere };
+

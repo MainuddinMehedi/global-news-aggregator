@@ -29,13 +29,37 @@ export function ScanNowButton({ topicId }: ScanNowButtonProps) {
         method: "POST",
       });
 
-      if (!res.ok) throw new Error("Scan failed");
+      if (!res.ok) throw new Error("Scan failed to queue");
 
       const data = await res.json();
-      const count = data.count || 0;
+      const jobId = data.jobId;
 
-      if (count > 0) {
-        toast.success(`Scan completed! Found ${count} new items.`, {
+      if (!jobId) {
+        throw new Error("No job ID returned");
+      }
+
+      // Poll for completion
+      let isDone = false;
+      let finalCount = 0;
+      
+      while (!isDone) {
+        await new Promise((resolve) => setTimeout(resolve, 3000));
+        
+        const statusRes = await fetch(`/api/locked-topics/${topicId}/scan/status?jobId=${jobId}`);
+        if (!statusRes.ok) throw new Error("Status fetch failed");
+        
+        const statusData = await statusRes.json();
+        
+        if (statusData.state === "completed") {
+          isDone = true;
+          finalCount = statusData.count || 0;
+        } else if (statusData.state === "failed" || statusData.state === "cancelled") {
+          throw new Error(`Scan ${statusData.state}`);
+        }
+      }
+
+      if (finalCount > 0) {
+        toast.success(`Scan completed! Found ${finalCount} new items.`, {
           id: toastId,
           duration: 5000,
         });

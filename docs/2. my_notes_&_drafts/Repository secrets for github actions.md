@@ -66,8 +66,4 @@ These must be added under the **Variables** tab. I have provided the default v
 These variables are pulled by the `cluster.yml` workflow. _If you do not configure them in GitHub Variables, the Node script simply falls back to its hardcoded internal defaults._
 
 - `CLUSTER_ASSIGNMENT_MIN_CONFIDENCE`
-- `CLUSTER_LOW_IMPACT_INACTIVE_DAYS`
-- `CLUSTER_MEDIUM_IMPACT_INACTIVE_DAYS`
-- `CLUSTER_HIGH_IMPACT_INACTIVE_DAYS`
-- `CLUSTER_CRITICAL_IMPACT_INACTIVE_DAYS`
 - `AI_RESERVED_CLUSTERING_OUTPUT_TOKENS`

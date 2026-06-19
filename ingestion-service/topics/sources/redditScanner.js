@@ -9,8 +9,11 @@
 import Parser from "rss-parser";
 import * as cheerio from "cheerio";
 import { evaluateQuery } from "../utils/parseQuery.js";
+import { formatSinceDate } from "../utils/formatSinceDate.js";
+import { SCANNER_CONFIG } from "../scannerConfig.js";
+import { fetchWithBackoff } from "../utils/fetchWithBackoff.js";
 
-const MAX_RESULTS = 25;
+const MAX_RESULTS = SCANNER_CONFIG.maxResults.reddit;
 const REDDIT_BOT_BLACKLIST = ["AutoModerator", "[deleted]", "reddit-bot"];
 
 const parser = new Parser();
@@ -18,29 +21,7 @@ const parser = new Parser();
 /**
  * Helper to fetch a URL with retry and exponential backoff for HTTP 429.
  */
-async function fetchWithBackoff(url, options = {}, retries = 3, delay = 2000) {
-  for (let i = 0; i < retries; i++) {
-    try {
-      const response = await fetch(url, options);
-      
-      if (response.status === 429) {
-        const retryAfter = response.headers.get("retry-after");
-        const waitTime = retryAfter ? parseInt(retryAfter, 10) * 1000 : delay * Math.pow(2, i);
-        console.warn(`⚠️ [redditScanner] Hit HTTP 429 Rate Limit. Waiting ${waitTime}ms before retry...`);
-        await new Promise((resolve) => setTimeout(resolve, waitTime));
-        continue;
-      }
-      
-      return response;
-    } catch (err) {
-      if (i === retries - 1) throw err;
-      const waitTime = delay * Math.pow(2, i);
-      console.warn(`⚠️ [redditScanner] Fetch error: ${err.message}. Retrying in ${waitTime}ms...`);
-      await new Promise((resolve) => setTimeout(resolve, waitTime));
-    }
-  }
-  throw new Error("Max retries exceeded");
-}
+
 
 /**
  * Fetch and parse a Reddit RSS URL.
@@ -64,6 +45,7 @@ async function fetchAndParseRss(url) {
     return feed.items || [];
   } catch (err) {
     console.error(`❌ [redditScanner] Error fetching/parsing ${url}:`, err.message);
+    // TODO(notification): Admin - Repeated Reddit 429s persisting across cycles → feeds into Source Health dashboard
     return [];
   }
 }
@@ -158,12 +140,7 @@ export async function scanReddit(topic, sourceConfig, options = {}) {
   }
 
   const sinceDate = topic.lastScannedAt;
-  let sinceStr = "";
-  if (sinceDate) {
-    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-    const d = new Date(sinceDate);
-    sinceStr = `, since ${d.getDate()} ${months[d.getMonth()]}, ${d.getFullYear()}`;
-  }
+  let sinceStr = formatSinceDate(sinceDate);
 
   console.log(`🔍 [redditScanner] Scanning ${sourceName} for "${topic.displayName}"${sinceStr}...`);
 
@@ -290,5 +267,5 @@ export async function scanReddit(topic, sourceConfig, options = {}) {
 
   console.log(`   📊 [redditScanner] Found ${findings.length} new matches from ${sourceName} (${skipped} skipped as old/irrelevant/bot)`);
 
-  return findings;
+  return { findings, metadata: {} };
 }

@@ -7,11 +7,12 @@
  * 3. Channel prioritization (using names to refine an additional yt-search).
  */
 
-import fetchRSSStream from "../../sources/rss.js";
+import fetchRSSStream from "../../newsPipeline/rss.js";
 import { evaluateQuery } from "../utils/parseQuery.js";
 import ytSearch from "yt-search";
+import { SCANNER_CONFIG } from "../scannerConfig.js";
 
-const MAX_RESULTS = 20;
+const MAX_RESULTS = SCANNER_CONFIG.maxResults.youtube;
 
 /**
  * Resolves a YouTube handle URL to a Channel ID by fetching the page.
@@ -85,7 +86,7 @@ async function scanChannelFeed(topic, feedUrl, sourceName, lastScan) {
           summary:
             item.contentSnippet?.slice(0, 500) || "No description provided.",
           rawArticleId: null,
-          sourceType: "RSS", // Sticking with RSS to match existing DB enum
+          sourceType: "YOUTUBE",
         });
       }
       count++;
@@ -136,7 +137,7 @@ async function discoverYoutubeContent(topic, prioritizedNames, lastScan) {
               video.description?.slice(0, 500) ||
               "Discovered via yt-search.",
             rawArticleId: null,
-            sourceType: "RSS", // Sticking with RSS to match existing DB enum
+            sourceType: "YOUTUBE",
           });
         }
       }
@@ -210,5 +211,5 @@ export async function scanYoutube(topic, sourceConfig, options = {}) {
   console.log(
     `   📊 [youtubeScanner] Found ${uniqueFindings.length} unique videos.`,
   );
-  return uniqueFindings;
+  return { findings: uniqueFindings, metadata: {} };
 }

@@ -2,16 +2,15 @@
  * Relevance Scorer — Evaluates findings against the topic's intent using AI.
  */
 
-import { requestAI } from "../ai/client.js";
-import { primaryConfig } from "../config/ai.js";
-import { prisma } from "../db/prisma.js"; // For AiUsage logging if needed, though client.js might log it? No, client.js logs to AiUsage? Wait, let's check what client.js logs.
-// Ah, client.js doesn't write to DB for AiUsage, it just returns tokensUsed.
-// The processor.js writes to AiUsage. So scorer.js should write to AiUsage.
+import { requestAI } from "../ai/requestAI.js";
+import { primaryConfig } from "../ai/aiConfig.js";
+import { logAiUsage } from "../utils/logAiUsage.js";
+import { SCANNER_CONFIG } from "./scannerConfig.js";
 
 export async function scoreFindings(topic, findings) {
   if (findings.length === 0) return findings;
 
-  const BATCH_SIZE = 20;
+  const BATCH_SIZE = SCANNER_CONFIG.scorerBatchSize;
   const topicName = topic.displayName;
   const userIntent = topic.userContext || "None provided";
   const conceptSummary = topic.aiQuerySummary || "None provided";
@@ -65,7 +64,7 @@ ${findingTitles.join("\n")}`;
         results = parsed.results || [];
       } catch (e) {
         console.warn(
-          `⚠️ [scorer] Batch ${i / BATCH_SIZE + 1} failed to parse JSON.`,
+          `⚠️ [scorer] Batch ${i / BATCH_SIZE + 1}/${Math.ceil(findings.length / BATCH_SIZE)} failed for topic "${topicName}" due to AI JSON parse failure. Findings will be inserted unscored. Error: ${e.message}`,
         );
       }
 
@@ -79,39 +78,33 @@ ${findingTitles.join("\n")}`;
         }
       }
 
-      // Assign scores to the batch, defaulting to 0.0 if the AI missed the index
+      // Assign scores to the batch, defaulting to null if the AI missed the index or failed
       batch.forEach((finding, j) => {
-        let score = scoreMap.has(j) ? scoreMap.get(j) : 0.0;
-        if (isNaN(score) || score === undefined || score === null) score = 0.0;
-        else if (score > 1) score = 1.0;
-        else if (score < 0) score = 0.0;
+        let score = scoreMap.has(j) ? scoreMap.get(j) : null;
+        if (score !== null) {
+          if (isNaN(score) || score === undefined) score = null;
+          else if (score > 1) score = 1.0;
+          else if (score < 0) score = 0.0;
+        }
         finding.relevanceScore = score;
       });
 
       // Log AI Usage
-      try {
-        const today = new Date().toISOString().split("T")[0];
-        const costPer1k = 0.0002;
-        const estimatedCost = (aiResponse.tokensUsed / 1000) * costPer1k;
-
-        await prisma.aiUsage.create({
-          data: {
-            date: today,
-            provider: aiResponse.provider,
-            model: aiResponse.model,
-            tokensUsed: aiResponse.tokensUsed,
-            estimatedCost: estimatedCost,
-            success: true,
-          },
-        });
-      } catch (usageErr) {
-        console.error(`⚠️ [scorer] Failed to log AI usage:`, usageErr.message);
-      }
+      await logAiUsage(
+        aiResponse.provider,
+        aiResponse.model,
+        aiResponse.tokensUsed,
+        0.0002,
+      );
     } catch (err) {
       console.error(
-        `❌ [scorer] Batch ${i / BATCH_SIZE + 1} failed:`,
-        err.message,
+        `⚠️ [scorer] Batch ${i / BATCH_SIZE + 1}/${Math.ceil(findings.length / BATCH_SIZE)} failed for topic "${topicName}" due to AI failure. Findings will be inserted unscored. Error: ${err.message}`,
       );
+      // Ensure the batch falls back to null scores if the whole request failed
+      batch.forEach((finding) => {
+        finding.relevanceScore = null;
+      });
+      // TODO(notification): Admin - AI scoring failures feed into the Admin Source Health system. Consecutive LLM failures trigger a direct admin alert.
     }
   }
 

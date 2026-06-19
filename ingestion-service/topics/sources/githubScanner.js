@@ -26,9 +26,6 @@ function getHeaders() {
   return headers;
 }
 
-function isRelevant(topic, content) {
-  return evaluateQuery(topic, content);
-}
 
 export async function scanGithub(topic, sourceConfig, options = {}) {
   const { url, label } = sourceConfig;
@@ -44,7 +41,7 @@ async function scanSpecificRepo(topic, url, label, options) {
   const repoInfo = parseGithubUrl(url);
   if (!repoInfo) {
     console.warn(`⚠️ [githubScanner] Invalid GitHub URL: ${url}`);
-    return [];
+    return { findings: [], metadata: {} };
   }
 
   const { owner, repo } = repoInfo;
@@ -67,7 +64,7 @@ async function scanSpecificRepo(topic, url, label, options) {
         if (pubDate <= lastScan) continue;
 
         const content = `${release.name || ""} ${release.tag_name || ""} ${release.body || ""}`;
-        if (!isRelevant(topic, content)) continue;
+        if (!evaluateQuery(topic, content)) continue;
 
         findings.push({
           title: `[Release] ${release.tag_name}${release.name ? `: ${release.name}` : ""}`,
@@ -80,7 +77,10 @@ async function scanSpecificRepo(topic, url, label, options) {
       }
     } else {
       if (response.status === 404) console.warn(`   ⚠️ [githubScanner] Repo not found: ${sourceName}`);
-      else if (response.status === 403) console.warn(`   ⚠️ [githubScanner] Rate limited`);
+      else if (response.status === 403) {
+        console.warn(`   ⚠️ [githubScanner] Rate limited`);
+        // TODO(notification): Admin - GitHub API 403 rate limit (no token or exhausted) → feeds into Source Health dashboard / admin alert
+      }
       else console.warn(`   ⚠️ [githubScanner] Releases fetch failed: ${response.status}`);
     }
   } catch (err) {
@@ -100,7 +100,7 @@ async function scanSpecificRepo(topic, url, label, options) {
         if (mergedDate <= lastScan) continue;
 
         const content = `${pr.title || ""} ${pr.body || ""}`;
-        if (!isRelevant(topic, content)) continue;
+        if (!evaluateQuery(topic, content)) continue;
 
         findings.push({
           title: `[PR] #${pr.number}: ${pr.title}`,
@@ -119,12 +119,12 @@ async function scanSpecificRepo(topic, url, label, options) {
   }
 
   console.log(`   📊 [githubScanner] Found ${findings.length} new items from ${sourceName}.`);
-  return findings;
+  return { findings, metadata: {} };
 }
 
 async function searchGithub(topic, label, options) {
   const query = topic.aiRefinedQuery || topic.displayName;
-  if (!query) return [];
+  if (!query) return { findings: [], metadata: {} };
 
   const sourceName = label || "GitHub Search";
   console.log(`🔍 [githubScanner] Searching GitHub for "${query}"...`);
@@ -142,7 +142,7 @@ async function searchGithub(topic, label, options) {
       const data = await response.json();
       for (const repo of data.items || []) {
         const content = `${repo.full_name} ${repo.description || ""} ${repo.topics?.join(" ") || ""}`;
-        if (!isRelevant(topic, content)) continue;
+        if (!evaluateQuery(topic, content)) continue;
 
         const stars = repo.stargazers_count ? `⭐ ${repo.stargazers_count}` : "";
         const lang = repo.language ? `[${repo.language}]` : "";
@@ -175,7 +175,7 @@ async function searchGithub(topic, label, options) {
       const data = await response.json();
       for (const item of data.items || []) {
         const content = `${item.title || ""} ${item.body || ""}`;
-        if (!isRelevant(topic, content)) continue;
+        if (!evaluateQuery(topic, content)) continue;
 
         const repoFullName = item.repository_url?.split("/").slice(-2).join("/") || "";
         findings.push({
@@ -196,5 +196,5 @@ async function searchGithub(topic, label, options) {
   }
 
   console.log(`   📊 [githubScanner] Total search findings: ${findings.length}`);
-  return findings;
+  return { findings, metadata: {} };
 }

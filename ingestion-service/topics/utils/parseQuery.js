@@ -100,7 +100,9 @@ export function evaluateAST(ast, textLower) {
   if (!ast) return true; // empty query matches anything
   
   if (ast.type === 'TERM') {
-    return textLower.includes(ast.value);
+    const escapedValue = ast.value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`(^|[^a-zA-Z0-9_])${escapedValue}(?=[^a-zA-Z0-9_]|$)`, 'i');
+    return regex.test(textLower);
   }
   if (ast.type === 'AND') {
     return evaluateAST(ast.left, textLower) && evaluateAST(ast.right, textLower);
@@ -143,7 +145,9 @@ export function evaluateRelaxed(topic, text) {
 
   let matches = 0;
   for (const word of uniqueWords) {
-    if (textLower.includes(word)) {
+    const escapedValue = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`(^|[^a-zA-Z0-9_])${escapedValue}(?=[^a-zA-Z0-9_]|$)`, 'i');
+    if (regex.test(textLower)) {
       matches++;
     }
   }
@@ -162,7 +166,11 @@ export function evaluateQuery(topic, text) {
   if (topic.conceptualKeywords && Array.isArray(topic.conceptualKeywords) && topic.conceptualKeywords.length > 0) {
      const textToSearch = text.toLowerCase();
      strictMatch = topic.conceptualKeywords.some((group) =>
-       group.every((term) => textToSearch.includes(term.toLowerCase())),
+       group.every((term) => {
+         const escapedValue = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+         const regex = new RegExp(`(^|[^a-zA-Z0-9_])${escapedValue}(?=[^a-zA-Z0-9_]|$)`, 'i');
+         return regex.test(textToSearch);
+       }),
      );
   } else {
     const query = topic.aiRefinedQuery || topic.displayName || "";

@@ -3,21 +3,21 @@ export type NotifyMode = "DIGEST" | "ALERT";
 export type FindingSource =
   | "ARTICLE"
   | "GOOGLE"
-  | "BRAVE"
   | "REDDIT"
   | "RSS"
   | "SCRAPE"
   | "WEBPAGE"
   | "GITHUB"
   | "COMPANY_CAREERS"
-  | "SEARCH";
+  | "SEARCH"
+  | "BD_GOV_JOBS"
+  | "YOUTUBE";
 
 export interface SourceConfig {
   id: string;
   type:
     | "internal_db"
     | "google_news"
-    | "brave"
     | "reddit"
     | "rss"
     | "scrape"
@@ -49,7 +49,6 @@ export interface LockedTopic {
   liveWebSummary: string | null;
   liveSummary: string | null;
   sources: SourceConfig[];
-  searchBeyondSources: boolean;
   isActive: boolean;
   notifyEnabled: boolean;
   notifyMode: NotifyMode;

@@ -4,7 +4,9 @@
  * Used by the scanner orchestrator for Locked Topics.
  */
 
-const MAX_RESULTS = 20;
+import { SCANNER_CONFIG } from "../scannerConfig.js";
+
+const MAX_RESULTS = SCANNER_CONFIG.maxResults.brave;
 
 /**
  * Scan Brave Search for a locked topic.
@@ -114,7 +116,8 @@ export async function scanBrave(topic, sourceConfig, options = {}) {
         sourceName: item.meta_url?.hostname || "Brave Search",
         summary: item.description?.slice(0, 500) || null,
         rawArticleId: null, // External finding
-        sourceType: "BRAVE",
+        sourceType: "SEARCH",
+        metadata: { searchDriver: "brave" },
       });
     }
 

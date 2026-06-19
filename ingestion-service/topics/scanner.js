@@ -1,7 +1,6 @@
 import { prisma } from "../db/prisma.js";
 import { scanInternalDb } from "./sources/internalDb.js";
 import { scanRss } from "./sources/rssScanner.js";
-import { scanBrave } from "./sources/braveScanner.js";
 import { scanReddit } from "./sources/redditScanner.js";
 import { scanWebpage } from "./sources/webpageScraper.js";
 import { scanGithub } from "./sources/githubScanner.js";
@@ -12,6 +11,9 @@ import { scanInternetSearch } from "./sources/internetSearchScanner.js";
 import { scoreFindings } from "./scorer.js";
 import { processNotifications } from "./notifier.js";
 import { generateOverview } from "./overviewGenerator.js";
+import { SCANNER_CONFIG, VALID_SOURCE_TYPES } from "./scannerConfig.js";
+import normalizeUrl from "../utils/normalizeUrl.js";
+import hashSnippet from "../utils/hashSnippet.js";
 
 /**
  * Master orchestrator for Locked Topic scanning.
@@ -38,31 +40,30 @@ export async function runScannersForTopic(topic, options = {}) {
       ? JSON.parse(topic.sources)
       : [];
 
-  // 1. Internal DB Scan (Always run if searchBeyondSources is true or internal_db is in sources)
-  const hasInternalDbConfig = sources.some(
-    (s) => s.type === "internal_db" && s.enabled,
-  );
-  if (topic.searchBeyondSources || hasInternalDbConfig) {
-    const internalFindings = await scanInternalDb(topic, options);
-    allFindings.push(...internalFindings);
-  }
-
-  // 2. Iterate through configured external sources
+  // 1. Iterate through configured sources
   const metadataUpdates = {};
   const sourceUpdates = [];
+  const sourceErrors = []; // Track which sources failed during this scan
 
   for (const sourceConfig of sources) {
     if (!sourceConfig.enabled) continue;
 
+    if (!VALID_SOURCE_TYPES.has(sourceConfig.type)) {
+      console.warn(
+        `⚠️ [orchestrator] Unknown source type: ${sourceConfig.type}`,
+      );
+      continue;
+    }
+
     try {
-      let result;
+      let result = { findings: [], metadata: {} };
       switch (sourceConfig.type) {
+        case "internal_db":
+          result = await scanInternalDb(topic, options);
+          break;
         case "google_news":
         case "rss":
           result = await scanRss(topic, sourceConfig, options);
-          break;
-        case "brave":
-          result = await scanBrave(topic, sourceConfig, options);
           break;
         case "reddit":
           result = await scanReddit(topic, sourceConfig, options);
@@ -82,23 +83,16 @@ export async function runScannersForTopic(topic, options = {}) {
         case "search":
           result = await scanInternetSearch(topic, sourceConfig, options);
           break;
-        case "internal_db":
-          // Handled above
-          continue;
         case "scrape":
         case "webpage":
           result = await scanWebpage(topic, sourceConfig, options);
           break;
         default:
-          console.warn(
-            `⚠️ [orchestrator] Unknown source type: ${sourceConfig.type}`,
-          );
           continue;
       }
 
-      // Handle both Array and { findings, metadata } return shapes
-      const findings = Array.isArray(result) ? result : result.findings || [];
-      const metadata = !Array.isArray(result) ? result.metadata || {} : {};
+      const findings = result.findings || [];
+      const metadata = result.metadata || {};
 
       allFindings.push(...findings);
 
@@ -114,7 +108,13 @@ export async function runScannersForTopic(topic, options = {}) {
         `❌ [orchestrator] Scanner ${sourceConfig.type} failed:`,
         err.message,
       );
+      sourceErrors.push(sourceConfig.type);
     }
+  }
+
+  if (sourceErrors.length > 0) {
+    console.warn(`⚠️ [orchestrator] ${sourceErrors.length}/${sources.filter(s => s.enabled).length} sources failed during scan for "${topic.displayName}": [${sourceErrors.join(', ')}]`);
+    // TODO(notification): Admin - Any source failure feeds into the Admin Source Health dashboard. Repeated failures across cycles trigger a direct admin alert.
   }
 
   // Apply metadata updates (summaries, hashes) to the topic record
@@ -149,30 +149,40 @@ export async function runScannersForTopic(topic, options = {}) {
   // 3. Deduplication (URL-based within this run and against DB)
   // Dedupe within current findings array
   const uniqueFindingsMap = new Map();
+  const uniqueHashesMap = new Set();
   let duplicatesInRun = 0;
+
   for (const finding of allFindings) {
     if (finding.sourceUrl) {
-      if (uniqueFindingsMap.has(finding.sourceUrl)) {
+      finding.sourceUrl = normalizeUrl(finding.sourceUrl) || finding.sourceUrl;
+      const contentHash = hashSnippet(finding.title + " " + (finding.summary || ""));
+      finding.metadata = { ...finding.metadata, contentHash };
+
+      if (uniqueFindingsMap.has(finding.sourceUrl) || uniqueHashesMap.has(contentHash)) {
         duplicatesInRun++;
       } else {
         uniqueFindingsMap.set(finding.sourceUrl, finding);
+        uniqueHashesMap.add(contentHash);
       }
     }
   }
   const uniqueFindings = Array.from(uniqueFindingsMap.values());
 
   // Dedupe against database
-  const existingUrls = new Set(
-    (
-      await prisma.topicFinding.findMany({
-        where: { topicId: topic.id },
-        select: { sourceUrl: true },
-      })
-    ).map((f) => f.sourceUrl),
+  const existingFindings = await prisma.topicFinding.findMany({
+    where: { topicId: topic.id },
+    select: { sourceUrl: true, metadata: true },
+  });
+
+  const existingUrls = new Set(existingFindings.map((f) => f.sourceUrl));
+  const existingHashes = new Set(
+    existingFindings
+      .map((f) => f.metadata?.contentHash)
+      .filter(Boolean)
   );
 
   const newFindings = uniqueFindings.filter((f) => {
-    if (existingUrls.has(f.sourceUrl)) {
+    if (existingUrls.has(f.sourceUrl) || existingHashes.has(f.metadata?.contentHash)) {
       return false;
     }
     return true;
@@ -200,8 +210,8 @@ export async function runScannersForTopic(topic, options = {}) {
   // 4. Relevance Scoring
   const scoredFindings = await scoreFindings(topic, newFindings);
 
-  // 5. Filter by Minimum Relevance (e.g., 0.5)
-  const MIN_RELEVANCE = 0.5;
+  // 5. Filter by Minimum Relevance
+  const MIN_RELEVANCE = SCANNER_CONFIG.minRelevance;
   const highQualityFindings = scoredFindings.filter(
     (f) => f.relevanceScore === null || f.relevanceScore >= MIN_RELEVANCE,
   );
@@ -215,24 +225,29 @@ export async function runScannersForTopic(topic, options = {}) {
 
   // 6. Bulk Insert
   let insertedCount = 0;
-  for (const finding of highQualityFindings) {
+  if (highQualityFindings.length > 0) {
     try {
-      await prisma.topicFinding.create({
-        data: {
-          topicId: topic.id,
-          sourceType: finding.sourceType,
-          sourceName: finding.sourceName,
-          sourceUrl: finding.sourceUrl,
-          title: finding.title,
-          summary: finding.summary,
-          rawArticleId: finding.rawArticleId,
-          relevanceScore: finding.relevanceScore,
-          metadata: finding.metadata || null,
-        },
+      const createPayload = highQualityFindings.map((finding) => ({
+        topicId: topic.id,
+        sourceType: finding.sourceType,
+        sourceName: finding.sourceName,
+        sourceUrl: finding.sourceUrl,
+        title: finding.title,
+        summary: finding.summary,
+        rawArticleId: finding.rawArticleId,
+        relevanceScore: finding.relevanceScore,
+        metadata: finding.metadata || null,
+      }));
+
+      const createResult = await prisma.topicFinding.createMany({
+        data: createPayload,
+        skipDuplicates: true, // Safely ignore duplicate URLs
       });
-      insertedCount++;
+
+      insertedCount = createResult.count;
     } catch (err) {
-      // Ignore unique constraint race conditions
+      console.error(`❌ [orchestrator] Bulk insert failed for "${topic.displayName}":`, err.message);
+      // TODO(notification): User - Topic shows stale data with no explanation → user-facing "scan partially failed" indicator
     }
   }
 
@@ -258,9 +273,10 @@ export async function runScannersForTopic(topic, options = {}) {
       );
     } catch (e) {
       console.error(
-        `⚠️ [orchestrator] Failed to trigger revalidation:`,
+        `⚠️ [orchestrator] Failed to trigger revalidation for topic ${topic.id}:`,
         e.message,
       );
+      // TODO(notification): Admin - Revalidation failure means stale configs or environment issues → direct admin message/alert.
     }
   }
 

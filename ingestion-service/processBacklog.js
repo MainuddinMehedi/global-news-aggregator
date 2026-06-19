@@ -11,8 +11,8 @@
 
 import "dotenv/config";
 import { prisma } from "./db/prisma.js";
-import { enrichWithStage1 } from "./ai/stage1.js";
-import { createArticleProcessor } from "./ai/processor.js";
+import { enrichWithStage1 } from "./newsPipeline/stage1.js";
+import { createArticleProcessor } from "./newsPipeline/enrichmentPipeline.js";
 import formatDuration from "./utils/formatDuration.js";
 import cleanupOldSkippedArticles from "./utils/cleanupOldSkippedArticles.js";
 import revalidateCache from "./utils/revalidateCache.js";
@@ -23,7 +23,7 @@ const limit = limitArg ? parseInt(limitArg.split("=")[1]) : undefined;
 
 const startTime = Date.now();
 
-async function processBacklog() {
+export async function processBacklogLogic() {
   // Find RawArticles that have no ProcessedArticle
   const unprocessed = await prisma.rawArticle.findMany({
     where: {
@@ -164,7 +164,10 @@ async function processBacklog() {
   await prisma.$disconnect();
 }
 
-processBacklog().catch((err) => {
-  console.error("Backlog processor encountered an error:", err);
-  process.exit(1);
-});
+// Run if called directly from CLI
+if (import.meta.url === `file://${process.argv[1]}`) {
+  processBacklogLogic().catch((err) => {
+    console.error("Backlog processor encountered an error:", err);
+    process.exit(1);
+  });
+}

@@ -1,0 +1,74 @@
+import "dotenv/config";
+import { prisma } from "./db/prisma.js";
+import { runScannersForTopic } from "./topics/scanner.js";
+import revalidateCache from "./utils/revalidateCache.js";
+
+// Allow triggering for a single topic via CLI args
+const args = process.argv.slice(2);
+const topicIdArg = args.find((a) => a.startsWith("--topic-id="));
+const specificTopicId = topicIdArg ? topicIdArg.split("=")[1] : null;
+
+export async function scanTopicsLogic(topicId = null) {
+  const effectiveTopicId = topicId || specificTopicId;
+  console.log(`🚀 Starting Locked Topics background scanner${effectiveTopicId ? ` for topic ${effectiveTopicId}` : ""}...`);
+
+  const whereClause = { isActive: true };
+  if (effectiveTopicId) {
+    whereClause.id = effectiveTopicId;
+  }
+
+  const topics = await prisma.lockedTopic.findMany({
+    where: whereClause,
+  });
+
+  if (topics.length === 0) {
+    console.log("⚪ No active Locked Topics found.");
+    await prisma.$disconnect();
+    return 0;
+  }
+
+  let totalNewFindings = 0;
+
+  for (const topic of topics) {
+    try {
+      // If scanning a specific topic, treat it as a full scan (skip date filtering)
+      // Otherwise, it's the scheduled incremental scan.
+      const isFullScan = !!effectiveTopicId;
+      const insertedCount = await runScannersForTopic(topic, {
+        fullScan: isFullScan,
+      });
+      totalNewFindings += insertedCount;
+    } catch (err) {
+      console.error(`❌ [scanTopics] Scanning failed for topic ${topic.id} ("${topic.displayName}"):`, err);
+      // Continue to next topic
+    }
+  }
+
+  console.log(
+    `\n✅ Finished scanning ${topics.length} topics. Found ${totalNewFindings} new findings total.`,
+  );
+
+  // --- REVALIDATION LOGIC ---
+  if (totalNewFindings > 0 || effectiveTopicId) {
+    const tags = ["locked-topics"];
+    for (const topic of topics) {
+      tags.push(`locked-topic-${topic.id}`);
+    }
+    await revalidateCache(tags);
+  }
+
+  await prisma.$disconnect();
+  return totalNewFindings;
+}
+
+// Run if called directly from CLI
+if (import.meta.url === `file://${process.argv[1]}`) {
+  const args = process.argv.slice(2);
+  const topicIdArg = args.find((a) => a.startsWith("--topic-id="));
+  const cliTopicId = topicIdArg ? topicIdArg.split("=")[1] : null;
+
+  scanTopicsLogic(cliTopicId).catch((err) => {
+    console.error("❌ scanTopics encountered an error:", err);
+    process.exit(1);
+  });
+}

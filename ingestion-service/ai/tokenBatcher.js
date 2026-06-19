@@ -1,5 +1,5 @@
 import { get_encoding } from "tiktoken";
-import { getPublisherRegion } from "../utils/geography.js";
+import { getPublisherRegion } from "../utils/regionMapping.js";
 
 const DEFAULT_CONFIG = {
   maxRequestTokens: parseInt(process.env.AI_MAX_REQUEST_TOKENS) || 3500,
@@ -11,7 +11,8 @@ const DEFAULT_CONFIG = {
 // and Llama's native tokenizer (used by Groq). Llama's tokenizer is less efficient,
 // producing ~30-50% more tokens for the same text. This multiplier inflates estimates
 // so the rate limiter can pace API calls accurately.
-export const TOKEN_MULTIPLIER = parseFloat(process.env.AI_TOKEN_MULTIPLIER) || 1.4;
+export const TOKEN_MULTIPLIER =
+  parseFloat(process.env.AI_TOKEN_MULTIPLIER) || 1.4;
 
 // cl100k_base is an OpenAI tokenizer — it does NOT match Llama's tokenizer exactly,
 // but it's close enough for batch composition. The TOKEN_MULTIPLIER above compensates
@@ -31,7 +32,7 @@ export function truncateByTokens(text = "", maxTokens = 500) {
   if (!text) return "";
   const tokens = enc.encode(text);
   if (tokens.length <= maxTokens) return text;
-  
+
   const truncated = tokens.slice(0, maxTokens);
   return new TextDecoder().decode(enc.decode(truncated));
 }
@@ -40,18 +41,17 @@ export function prepareArticle(article, config = DEFAULT_CONFIG) {
   // Combine title, source, and content to ensure we capture the most important info
   const fullText = [
     `Title: ${article.title}`,
-    `Source: ${article.source} (Country: ${article.sourceCountry || 'unknown'}, Geopolitical Bloc: ${getPublisherRegion(article.sourceCountry)})`,
-    `Publisher Type: ${article.sourceType || 'unknown'}`,
-    `Publisher Bias Group: ${article.biasGroup || 'unknown'}`,
-    `Coverage Scope: ${article.coverageScope || 'unknown'}`,
+    `Source: ${article.source} (Country: ${article.sourceCountry || "unknown"}, Geopolitical Bloc: ${getPublisherRegion(article.sourceCountry)})`,
+    `Publisher Type: ${article.sourceType || "unknown"}`,
+    `Publisher Bias Group: ${article.biasGroup || "unknown"}`,
+    `Coverage Scope: ${article.coverageScope || "unknown"}`,
     `Published: ${article.publishedAt}`,
-    `Content: ${article.contentSnippet}`
-  ].filter(Boolean).join("\n");
+    `Content: ${article.contentSnippet}`,
+  ]
+    .filter(Boolean)
+    .join("\n");
 
-  const truncatedContent = truncateByTokens(
-    fullText,
-    config.maxArticleTokens
-  );
+  const truncatedContent = truncateByTokens(fullText, config.maxArticleTokens);
 
   return {
     ...article,
@@ -60,7 +60,11 @@ export function prepareArticle(article, config = DEFAULT_CONFIG) {
   };
 }
 
-export function createNextBatch(articles, systemPromptTokens = 0, config = DEFAULT_CONFIG) {
+export function createNextBatch(
+  articles,
+  systemPromptTokens = 0,
+  config = DEFAULT_CONFIG,
+) {
   const batch = [];
   let currentTokens = systemPromptTokens + config.reservedOutputTokens;
   const remainingArticles = [...articles];
@@ -70,15 +74,20 @@ export function createNextBatch(articles, systemPromptTokens = 0, config = DEFAU
     const article = prepareArticle(rawArticle, config);
 
     // If single article itself is too large (shouldn't happen with truncation, but safe check)
-    if (article.tokenCount + systemPromptTokens + config.reservedOutputTokens > config.maxRequestTokens) {
-        console.warn(`⚠️ Article too large even after truncation, skipping: ${article.title}`);
-        remainingArticles.shift();
-        continue;
+    if (
+      article.tokenCount + systemPromptTokens + config.reservedOutputTokens >
+      config.maxRequestTokens
+    ) {
+      console.warn(
+        `⚠️ Article too large even after truncation, skipping: ${article.title}`,
+      );
+      remainingArticles.shift();
+      continue;
     }
 
     if (currentTokens + article.tokenCount > config.maxRequestTokens) {
-        // We've hit the limit, stop adding to this batch
-        break;
+      // We've hit the limit, stop adding to this batch
+      break;
     }
 
     batch.push(article);
@@ -95,4 +104,3 @@ export function createNextBatch(articles, systemPromptTokens = 0, config = DEFAU
     estimatedTokens: Math.ceil(currentTokens * TOKEN_MULTIPLIER),
   };
 }
-

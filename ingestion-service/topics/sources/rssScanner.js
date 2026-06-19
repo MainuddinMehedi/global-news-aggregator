@@ -4,10 +4,11 @@
  * Used by the scanner orchestrator for Locked Topics.
  */
 
-import fetchRSSStream from "../../sources/rss.js";
+import fetchRSSStream from "../../newsPipeline/rss.js";
 import { evaluateQuery } from "../utils/parseQuery.js";
-
-const MAX_RESULTS = 100;
+import { formatSinceDate } from "../utils/formatSinceDate.js";
+import { SCANNER_CONFIG } from "../scannerConfig.js";
+import extractHostname from "../utils/extractHostname.js";
 
 /**
  * Build the appropriate RSS URL based on the source config type.
@@ -40,17 +41,19 @@ function buildFeedUrl(topic, sourceConfig) {
  * @param {object} sourceConfig - The specific source to scan (from topic.sources array)
  * @param {object} options
  * @param {number} options.limit - Max results to return
- * @returns {Array<object>} Normalized finding objects
+ * @returns {{ findings: Array<object>, metadata: object }}
  */
 export async function scanRss(topic, sourceConfig, options = {}) {
-  const { limit = MAX_RESULTS, fullScan = false } = options;
+  const { fullScan = false } = options;
+  const sourceType = sourceConfig.type === "google_news" ? "googleNews" : "rss";
+  const limit = options.limit || SCANNER_CONFIG.maxResults[sourceType];
   const feedUrl = buildFeedUrl(topic, sourceConfig);
 
   if (!feedUrl) {
     console.warn(
       `⚠️ [rssScanner] Invalid source type for RSS scanner: ${sourceConfig.type}`,
     );
-    return [];
+    return { findings: [], metadata: {} };
   }
 
   const sourceName =
@@ -58,28 +61,11 @@ export async function scanRss(topic, sourceConfig, options = {}) {
       ? "Google News"
       : sourceConfig.label
         || (sourceConfig.url
-          ? `${new URL(sourceConfig.url).hostname} RSS`
+          ? `${extractHostname(sourceConfig.url, "Custom")} RSS`
           : "Custom RSS");
 
   const sinceDate = fullScan ? null : topic.lastScannedAt;
-  let sinceStr = fullScan ? " (full scan)" : "";
-  if (sinceDate) {
-    const months = [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec",
-    ];
-    sinceStr = `, since ${sinceDate.getDate()} ${months[sinceDate.getMonth()]}, ${sinceDate.getFullYear()}`;
-  }
+  let sinceStr = formatSinceDate(sinceDate);
 
   console.log(
     `🔍 [rssScanner] Scanning ${sourceName} for "${topic.displayName}"${sinceStr}...`,
@@ -137,7 +123,8 @@ export async function scanRss(topic, sourceConfig, options = {}) {
       `❌ [rssScanner] Failed to fetch feed for ${sourceName}:`,
       err.message,
     );
+    // TODO(notification): User/Admin - Custom RSS URL unreachable: If it's a malformed URL provided by the user, surface on the topic detail page. If it's a system fetch issue, feed to Admin Source Health.
   }
 
-  return findings;
+  return { findings, metadata: {} };
 }

@@ -211,7 +211,6 @@ model LockedTopic {
   liveWebSummary      String?    @db.Text
   liveSummary         String?    @db.Text // AI-generated findings overview (distinct from liveWebSummary)
   sources             Json // SourceConfig[]
-  searchBeyondSources Boolean    @default(true)
   isActive            Boolean    @default(true)
   notifyEnabled       Boolean    @default(false)
   notifyMode          NotifyMode @default(DIGEST)
@@ -257,7 +256,6 @@ enum NotifyMode {
 enum FindingSource {
   ARTICLE // from internal ProcessedArticle DB
   GOOGLE // Google News RSS
-  BRAVE // Brave Search API
   REDDIT // Reddit search
   RSS // user-added RSS feed
   SCRAPE // pre-built Tier 2 scraper
@@ -266,6 +264,7 @@ enum FindingSource {
   BD_GOV_JOBS // Bangladesh Government Job Circulars
   COMPANY_CAREERS // Brute-force ATS checks (Greenhouse, Lever, etc)
   SEARCH // DuckDuckGo/Brave internet search results
+  YOUTUBE // YouTube channels and search discovery
 }
 
 // --- NextAuth Models ---

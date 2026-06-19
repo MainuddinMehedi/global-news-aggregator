@@ -617,8 +617,9 @@ export async function getSourceOriginCounts() {
       _count: { _all: true },
       where: {
         processedArticle: {
-          isNot: null,
-          clusterStatus: { not: "SKIPPED" },
+          is: {
+            clusterStatus: { not: "SKIPPED" },
+          },
         },
       },
     });
@@ -652,8 +653,9 @@ export async function getBiasGroupCounts() {
       _count: { _all: true },
       where: {
         processedArticle: {
-          isNot: null,
-          clusterStatus: { not: "SKIPPED" },
+          is: {
+            clusterStatus: { not: "SKIPPED" },
+          },
         },
       },
     });

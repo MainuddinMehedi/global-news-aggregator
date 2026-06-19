@@ -10,6 +10,7 @@
  */
 
 import { prisma } from "../db/prisma.js";
+import { logAiUsage } from "../utils/logAiUsage.js";
 
 const OVERVIEW_THRESHOLD =
   parseInt(process.env.AI_OVERVIEW_THRESHOLD) || 10;
@@ -160,27 +161,8 @@ Return ONLY the overview text, no JSON, no markdown, no labels. Just the plain t
     });
 
     // Log AI usage
-    try {
-      const tokensUsed = data.usage?.total_tokens || 0;
-      const today = new Date().toISOString().split("T")[0];
-      const costPer1k = 0.0; // Free tier
-
-      await prisma.aiUsage.create({
-        data: {
-          date: today,
-          provider: config.provider,
-          model: config.model,
-          tokensUsed,
-          estimatedCost: (tokensUsed / 1000) * costPer1k,
-          success: true,
-        },
-      });
-    } catch (usageErr) {
-      console.error(
-        `⚠️ [overview] Failed to log AI usage:`,
-        usageErr.message,
-      );
-    }
+    const tokensUsed = data.usage?.total_tokens || 0;
+    await logAiUsage(config.provider, config.model, tokensUsed, 0.0);
 
     console.log(
       `   ✨ [overview] Generated overview: "${overview.substring(0, 80)}..."`,

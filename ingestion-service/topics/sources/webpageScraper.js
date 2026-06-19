@@ -13,25 +13,16 @@
  */
 
 import * as cheerio from "cheerio";
-import hashSnippet from "../../utils/hashSnippet.js";
+import crypto from "crypto";
 import { evaluateQuery } from "../utils/parseQuery.js";
+import { extractCleanText } from "../utils/extractCleanText.js";
+import hashSnippet from "../../utils/hashSnippet.js";
 
 const USER_AGENT = "global-news-aggregator/1.0 (LockedTopics Webpage Monitor)";
 
 /**
  * Extracts the "meaningful" text from a webpage, ignoring common boilerplate.
  */
-function extractCleanText(html) {
-  const $ = cheerio.load(html);
-
-  // Remove common boilerplate elements
-  $(
-    "script, style, nav, footer, header, noscript, iframe, .ads, .sidebar, #comments",
-  ).remove();
-
-  // Get text, collapse whitespace
-  return $("body").text().replace(/\s+/g, " ").trim();
-}
 
 /**
  * Scan a specific webpage for changes and topic relevance.
@@ -102,6 +93,7 @@ export async function scanWebpage(topic, sourceConfig, options = {}) {
     };
   } catch (err) {
     console.error(`❌ [webpageScanner] Failed to fetch ${url}:`, err.message);
+    // TODO(notification): User - Monitored page repeatedly unreachable → topic detail stale source indicator
     return { findings: [], metadata: {} };
   }
 }
