@@ -12,6 +12,8 @@ import { scoreFindings } from "./scorer.js";
 import { processNotifications } from "./notifier.js";
 import { generateOverview } from "./overviewGenerator.js";
 import { SCANNER_CONFIG, VALID_SOURCE_TYPES } from "./scannerConfig.js";
+import normalizeUrl from "../utils/normalizeUrl.js";
+import hashSnippet from "../utils/hashSnippet.js";
 
 /**
  * Master orchestrator for Locked Topic scanning.
@@ -147,30 +149,40 @@ export async function runScannersForTopic(topic, options = {}) {
   // 3. Deduplication (URL-based within this run and against DB)
   // Dedupe within current findings array
   const uniqueFindingsMap = new Map();
+  const uniqueHashesMap = new Set();
   let duplicatesInRun = 0;
+
   for (const finding of allFindings) {
     if (finding.sourceUrl) {
-      if (uniqueFindingsMap.has(finding.sourceUrl)) {
+      finding.sourceUrl = normalizeUrl(finding.sourceUrl) || finding.sourceUrl;
+      const contentHash = hashSnippet(finding.title + " " + (finding.summary || ""));
+      finding.metadata = { ...finding.metadata, contentHash };
+
+      if (uniqueFindingsMap.has(finding.sourceUrl) || uniqueHashesMap.has(contentHash)) {
         duplicatesInRun++;
       } else {
         uniqueFindingsMap.set(finding.sourceUrl, finding);
+        uniqueHashesMap.add(contentHash);
       }
     }
   }
   const uniqueFindings = Array.from(uniqueFindingsMap.values());
 
   // Dedupe against database
-  const existingUrls = new Set(
-    (
-      await prisma.topicFinding.findMany({
-        where: { topicId: topic.id },
-        select: { sourceUrl: true },
-      })
-    ).map((f) => f.sourceUrl),
+  const existingFindings = await prisma.topicFinding.findMany({
+    where: { topicId: topic.id },
+    select: { sourceUrl: true, metadata: true },
+  });
+
+  const existingUrls = new Set(existingFindings.map((f) => f.sourceUrl));
+  const existingHashes = new Set(
+    existingFindings
+      .map((f) => f.metadata?.contentHash)
+      .filter(Boolean)
   );
 
   const newFindings = uniqueFindings.filter((f) => {
-    if (existingUrls.has(f.sourceUrl)) {
+    if (existingUrls.has(f.sourceUrl) || existingHashes.has(f.metadata?.contentHash)) {
       return false;
     }
     return true;
