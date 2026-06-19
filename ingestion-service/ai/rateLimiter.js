@@ -9,34 +9,36 @@
 const TPM_LIMIT = parseInt(process.env.AI_TPM_LIMIT) || 25000;
 const RPM_LIMIT = parseInt(process.env.AI_RPM_LIMIT) || 28;
 
-// Rolling window entries: { timestamp: number, tokens: number }
-const window = [];
+// Rolling window entries per provider: { [provider]: [{ timestamp: number, tokens: number }] }
+const windows = {};
 
-function pruneWindow() {
+function pruneWindow(provider) {
+  if (!windows[provider]) windows[provider] = [];
+  const window = windows[provider];
   const cutoff = Date.now() - 60_000;
   while (window.length > 0 && window[0].timestamp < cutoff) {
     window.shift();
   }
 }
 
-function getWindowUsage() {
-  pruneWindow();
+function getWindowUsage(provider) {
+  pruneWindow(provider);
+  const window = windows[provider];
   const tokens = window.reduce((sum, entry) => sum + entry.tokens, 0);
   const requests = window.length;
-  return { tokens, requests };
+  return { tokens, requests, window };
 }
 
 /**
  * Wait until there's enough capacity in the current minute window
  * to send a batch with the given estimated token count.
  */
-export async function waitForCapacity(estimatedTokens, customTpmLimit = null, customRpmLimit = null) {
+export async function waitForCapacity(provider, estimatedTokens, customTpmLimit = null, customRpmLimit = null) {
   const currentTpmLimit = customTpmLimit || TPM_LIMIT;
   const currentRpmLimit = customRpmLimit || RPM_LIMIT;
 
   while (true) {
-    pruneWindow();
-    const { tokens, requests } = getWindowUsage();
+    const { tokens, requests, window } = getWindowUsage(provider);
 
     const tokensFit = tokens + estimatedTokens <= currentTpmLimit;
     const requestsFit = requests + 1 <= currentRpmLimit;
@@ -62,7 +64,7 @@ export async function waitForCapacity(estimatedTokens, customTpmLimit = null, cu
       ? `TPM (${tokens.toLocaleString()}/${currentTpmLimit.toLocaleString()} used)`
       : `RPM (${requests}/${currentRpmLimit} used)`;
 
-    console.log(`⏳ Rate limit: waiting ${waitSec}s for ${reason} to reset...`);
+    console.log(`⏳ Rate limit (${provider}): waiting ${waitSec}s for ${reason} to reset...`);
 
     await new Promise(resolve => setTimeout(resolve, waitMs));
   }
@@ -72,8 +74,9 @@ export async function waitForCapacity(estimatedTokens, customTpmLimit = null, cu
  * Record actual token usage after an API call completes.
  * Uses the real token count from the API response, not estimates.
  */
-export function recordUsage(actualTokens) {
-  window.push({
+export function recordUsage(provider, actualTokens) {
+  if (!windows[provider]) windows[provider] = [];
+  windows[provider].push({
     timestamp: Date.now(),
     tokens: actualTokens,
   });

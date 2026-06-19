@@ -26,7 +26,7 @@ export async function requestAI(
     const tokensToWait =
       estimatedTokens ||
       Math.ceil((countTokens(prompt) + 1000) * TOKEN_MULTIPLIER);
-    await waitForCapacity(tokensToWait, config.tpmLimit, config.rpmLimit);
+    await waitForCapacity(config.provider, tokensToWait, config.tpmLimit, config.rpmLimit);
 
     const controller = new AbortController();
     const timeout = setTimeout(
@@ -76,7 +76,7 @@ export async function requestAI(
     const actualTokens = data.usage?.total_tokens || 0;
 
     // Record actual usage in the rate limiter window
-    recordUsage(actualTokens);
+    recordUsage(config.provider, actualTokens);
 
     return {
       content: data.choices[0].message.content,
