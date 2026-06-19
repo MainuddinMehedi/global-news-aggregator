@@ -12,7 +12,7 @@ export async function POST(
     console.log(`[Scan Route] Queueing scan for topic ${id}...`);
 
     // Enqueue the job. We don't await completion.
-    const jobId = await boss.send("scan-queue", { topicId: id });
+    const jobId = await boss.send("topics-queue", { topicId: id });
 
     return NextResponse.json({ id, status: "queued", jobId });
   } catch (error) {

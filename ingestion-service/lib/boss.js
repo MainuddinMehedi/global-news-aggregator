@@ -8,7 +8,7 @@ boss.on("error", (error) => console.error("❌ [pg-boss] Error:", error));
 export async function startBoss() {
   if (!boss.isStarted) {
     await boss.start();
-    await boss.createQueue("scan-queue");
+    await boss.createQueue("topics-queue");
   }
   return boss;
 }

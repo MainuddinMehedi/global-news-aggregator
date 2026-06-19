@@ -18,7 +18,7 @@
     "backlog": "node ingestion-service/processBacklog.js",
     "scan-topics": "node ingestion-service/scanTopics.js",
     "cluster": "node ingestion-service/runClustering.js",
-    "scan-topics:worker": "node ingestion-service/scanTopicsWorker.js"
+    "worker": "node ingestion-service/masterWorker.js"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.8.0",

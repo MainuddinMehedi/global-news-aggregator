@@ -18,7 +18,7 @@ export async function GET(
     }
 
     const boss = await startBoss();
-    const job = await boss.getJobById("scan-queue", jobId);
+    const job = await boss.getJobById("topics-queue", jobId);
 
     if (!job) {
       return NextResponse.json(

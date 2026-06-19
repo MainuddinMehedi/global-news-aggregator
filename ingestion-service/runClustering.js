@@ -42,7 +42,7 @@ const CLUSTER_MIN_GROUP_SIZE = Number.parseInt(
   10,
 );
 
-async function run() {
+export async function runClusteringLogic() {
   console.log("🚀 Starting Story Clustering Worker...");
 
   // Apply basic lifecycle (time-based)
@@ -206,12 +206,15 @@ async function run() {
   await revalidateCache(["articles", "stories"]);
 }
 
-run()
-  .then(async () => {
-    await prisma.$disconnect();
-  })
-  .catch(async (e) => {
-    console.error(e);
-    await prisma.$disconnect();
-    process.exit(1);
-  });
+// Run if called directly from CLI
+if (import.meta.url === `file://${process.argv[1]}`) {
+  runClusteringLogic()
+    .then(async () => {
+      await prisma.$disconnect();
+    })
+    .catch(async (e) => {
+      console.error(e);
+      await prisma.$disconnect();
+      process.exit(1);
+    });
+}

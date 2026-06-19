@@ -19,7 +19,7 @@ const aiProcessor = skipAI ? null : createArticleProcessor();
 
 const startTime = Date.now();
 
-async function runIngestionPipeline() {
+export async function runIngestionPipeline() {
   // ── Log run mode ──
   if (skipAI) {
     console.log("🚀 Running in RAW-ONLY mode (--skip-ai): no AI processing\n");
@@ -166,4 +166,10 @@ async function runIngestionPipeline() {
   await prisma.$disconnect();
 }
 
-runIngestionPipeline().catch((err) => console.error("Worker encountered an error:", err));
+// Run if called directly from CLI
+if (import.meta.url === `file://${process.argv[1]}`) {
+  runIngestionPipeline().catch((err) => {
+    console.error("Worker encountered an error:", err);
+    process.exit(1);
+  });
+}
