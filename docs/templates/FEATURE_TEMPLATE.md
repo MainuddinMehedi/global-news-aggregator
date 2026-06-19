@@ -1,130 +1,59 @@
+<!-- 
+  DOCS ARCHITECTURE RULE: 
+  When creating completely new architectural changes or domains, create a NEW FOLDER.
+  Inside that folder, create an index doc (e.g., `0. feature-name.md`) and wire up everything related to it there. 
+  Do not wipe out anything that is relevant. Only remove stale or unimportant notes.
+-->
+
 # [FEATURE_NAME]
 
-> **Feature Status:** `[Brainstorming | Researching | Implementation Planned | In Progress | Implemented | Deprecated]`  
-> **Feature ID:** `[UNIQUE_FEATURE_ID]` (e.g., `STORY_CLUSTERING`, `LOCKED_TOPICS`)
+> **Feature Status:** `[Brainstorming | Implementation Planned | In Progress | Implemented | Deprecated]`  
+> **Feature ID:** `[UNIQUE_FEATURE_ID]`
 
 ---
 
-### 📖 Table of Contents
-
-- [1. Overview & Objective](#1-overview--objective)
-- [2. 📖 References Map](#2--references-map)
-- [3. Research & Decision Matrix](#3-research--decision-matrix)
-- [4. Technical Architecture & Data Model](#4-technical-architecture--data-model)
-- [5. Implementation Notes & Reference Guide](#5-implementation-notes--reference-guide)
-- [6. Future Roadmap & "Remember It" Notes](#6-future-roadmap--remember-it-notes)
-- [7. Brainstorming & Feature Ideas](#7-brainstorming--feature-ideas)
-- [8. 🔗 Related Logs](#8--related-logs)
-
----
-
-## 1. Overview & Objective
-
-Provide a high-level explanation of the feature from a product or user perspective:
-
-- What is this feature?
-- Why does it exist? (Problem solved)
-- User persona, core flows, and key interactions.
-- Scope boundaries (What is _not_ included or out-of-scope).
-
----
-
-## 2. 📖 References Map
-
+## 📖 References Map
 _(Items that require quick checkup, future plans, or jotting down)_
-
-- [Reference Name](file:///path/to/reference/file.md) — _Description of reference._
-
----
-
-## 3. Research & Decision Matrix
-
-This section documents the research, candidate solutions, and falsification matrix that led to the chosen implementation path.
-
-### Dimensional Falsification Matrix
-
-| Candidate Solution | Efficacy & Determinism     | Operational Cost / Latency | Complexity / Debt       | Outcome / Verdict      |
-| :----------------- | :------------------------- | :------------------------- | :---------------------- | :--------------------- |
-| **Option A**       | _Pros/Cons of correctness_ | _API cost/Compute cost_    | _Maintenance footprint_ | _Accepted / Disproven_ |
-| **Option B**       | _Pros/Cons of correctness_ | _API cost/Compute cost_    | _Maintenance footprint_ | _Accepted / Disproven_ |
-
-> [!NOTE]
-> Add background notes, external links to API documentations, research papers, or tools assessed during discovery.
+- [Link Name](path/to/doc.md) - Brief description of what this note is.
+- [Link Name](path/to/doc.md) - Brief description of what this note is.
 
 ---
 
-## 4. Technical Architecture & Data Model
+## 🎯 Current Direction
+_(Always keep this section up-to-date. This outlines the current intentions and what we are actively trying to achieve with this feature. Before doing any tasks, we align with this intention.)_
 
-Explain the underlying technical architecture, data structures, and service flow.
+- What is the immediate goal right now?
+- Who is getting impacted?
+- What is coming next?
 
-### Data Model (Prisma / DB Schema)
+👉 **[Immediate Action Board](action-board.md)**
 
-Describe the database models, fields, and relations specific to this feature.
+---
 
+## ⏳ Explicitly Deferred (v2 / Future Notes)
+_(Items that are good ideas but not required right now. When the Immediate Action Board is empty, these items move up into the Current Direction.)_
+
+- Idea or task deferred to later.
+- Idea or task deferred to later.
+
+---
+---
+
+## 📚 Technical Overview & Deep Dive
+_(This section contains heavy schemas, architecture notes, and deep technical overviews. It is pushed to the bottom so it doesn't clutter the immediate action workflow. Update this occasionally when breaking changes or major architectural shifts occur.)_
+
+### Table of Contents
+- [1. Overview & Objective](#1-overview--objective)
+- [2. Technical Architecture & Data Model](#2-technical-architecture--data-model)
+- [3. Research & Decision Matrix](#3-research--decision-matrix)
+
+### 1. Overview & Objective
+What is this feature and why does it exist? 
+
+### 2. Technical Architecture & Data Model
 ```prisma
-// Relevant Prisma models
+// Relevant schemas
 ```
 
-### Process Flow & Codebase Pathways
-
-A description of how the data flows or how code is triggered (e.g., RSS -> Worker -> DB -> API -> Frontend).
-If helpful, include a Mermaid diagram:
-
-```mermaid
-graph TD
-    A[Trigger / Ingestion] --> B[Processing / Worker]
-    B --> C[Database]
-    C --> D[Next.js API]
-    D --> E[Frontend Client UI]
-```
-
----
-
-## 5. Implementation Notes & Reference Guide
-
-This serves as a developer guide containing specific module configurations, file paths, and integration details.
-
-### Key Code Artifacts
-
-List the critical files and folders involved in this feature (use links for clickable paths):
-
-- [Module Name](file:///path/to/file.js) — _Brief description of its role._
-
-### API Endpoints (If Applicable)
-
-Detail the REST/GraphQL endpoints associated with this feature:
-
-- `POST /api/endpoint` — _Brief explanation of request/response payload._
-
-### Key Execution Commands
-
-How to run, test, or seed this feature:
-
-- `npm run command` — _What this command does._
-
----
-
-## 6. Future Roadmap & "Remember It" Notes
-
-Document pending improvements, architectural upgrades, known limitations, or technical debt notes.
-
-- **Known Limitations:** _What currently limits this feature?_
-- **Planned Upgrades:** _What architectural changes are planned next? (e.g., transition to vector embeddings)_
-- **Optimization Points:** _Performance bottlenecks to watch out for._
-
----
-
-## 7. Brainstorming & Feature Ideas
-
-A log of uncategorized thoughts, brainstorming notes, and new feature ideas recorded while working on the codebase.
-
-- **Idea 1:** _Brief description, context, and potential value._
-- **Idea 2:** _Brief description, context, and potential value._
-
----
-
-## 8. 🔗 Related Logs
-
-_(Historical decisions, audits, and performance metrics that do not require quick checkups)_
-
-- [Log Name](file:///path/to/log/file.md) — _Description of the historical log._
+### 3. Research & Decision Matrix
+Historical context on why certain libraries, tools, or patterns were chosen over others.

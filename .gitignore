@@ -18,8 +18,9 @@ build/
 /generated/prisma
 shared/prisma-client
 
-# Docs
-docs/
+# Ignore messy personal drafts and AI backups
+docs/2. my_notes_&_drafts/
+docs/archive_dump/
 
 # Obsidian
 .obsidian/
