@@ -53,7 +53,7 @@ export async function scanRss(topic, sourceConfig, options = {}) {
     console.warn(
       `⚠️ [rssScanner] Invalid source type for RSS scanner: ${sourceConfig.type}`,
     );
-    return [];
+    return { findings: [], metadata: {} };
   }
 
   const sourceName =
@@ -123,6 +123,7 @@ export async function scanRss(topic, sourceConfig, options = {}) {
       `❌ [rssScanner] Failed to fetch feed for ${sourceName}:`,
       err.message,
     );
+    // TODO(notification): User/Admin - Custom RSS URL unreachable: If it's a malformed URL provided by the user, surface on the topic detail page. If it's a system fetch issue, feed to Admin Source Health.
   }
 
   return { findings, metadata: {} };

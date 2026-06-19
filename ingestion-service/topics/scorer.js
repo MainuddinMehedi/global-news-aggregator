@@ -64,7 +64,7 @@ ${findingTitles.join("\n")}`;
         results = parsed.results || [];
       } catch (e) {
         console.warn(
-          `⚠️ [scorer] Batch ${i / BATCH_SIZE + 1} failed to parse JSON.`,
+          `⚠️ [scorer] Batch ${i / BATCH_SIZE + 1}/${Math.ceil(findings.length / BATCH_SIZE)} failed for topic "${topicName}" due to AI JSON parse failure. Findings will be inserted unscored. Error: ${e.message}`,
         );
       }
 
@@ -78,12 +78,14 @@ ${findingTitles.join("\n")}`;
         }
       }
 
-      // Assign scores to the batch, defaulting to 0.0 if the AI missed the index
+      // Assign scores to the batch, defaulting to null if the AI missed the index or failed
       batch.forEach((finding, j) => {
-        let score = scoreMap.has(j) ? scoreMap.get(j) : 0.0;
-        if (isNaN(score) || score === undefined || score === null) score = 0.0;
-        else if (score > 1) score = 1.0;
-        else if (score < 0) score = 0.0;
+        let score = scoreMap.has(j) ? scoreMap.get(j) : null;
+        if (score !== null) {
+          if (isNaN(score) || score === undefined) score = null;
+          else if (score > 1) score = 1.0;
+          else if (score < 0) score = 0.0;
+        }
         finding.relevanceScore = score;
       });
 
@@ -96,9 +98,13 @@ ${findingTitles.join("\n")}`;
       );
     } catch (err) {
       console.error(
-        `❌ [scorer] Batch ${i / BATCH_SIZE + 1} failed:`,
-        err.message,
+        `⚠️ [scorer] Batch ${i / BATCH_SIZE + 1}/${Math.ceil(findings.length / BATCH_SIZE)} failed for topic "${topicName}" due to AI failure. Findings will be inserted unscored. Error: ${err.message}`,
       );
+      // Ensure the batch falls back to null scores if the whole request failed
+      batch.forEach((finding) => {
+        finding.relevanceScore = null;
+      });
+      // TODO(notification): Admin - AI scoring failures feed into the Admin Source Health system. Consecutive LLM failures trigger a direct admin alert.
     }
   }
 

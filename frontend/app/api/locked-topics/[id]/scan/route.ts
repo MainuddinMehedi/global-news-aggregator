@@ -51,6 +51,7 @@ export async function POST(
     return NextResponse.json({ id, status: "completed", count });
   } catch (error) {
     console.error("Scan failed:", error);
+    // TODO(notification): User - Manual scan returns 0 + source errors → response includes `warnings` array to be shown in UI
     return NextResponse.json(
       { error: "Failed to perform scan" },
       { status: 500 },

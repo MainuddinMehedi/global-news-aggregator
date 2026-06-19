@@ -77,7 +77,10 @@ async function scanSpecificRepo(topic, url, label, options) {
       }
     } else {
       if (response.status === 404) console.warn(`   ⚠️ [githubScanner] Repo not found: ${sourceName}`);
-      else if (response.status === 403) console.warn(`   ⚠️ [githubScanner] Rate limited`);
+      else if (response.status === 403) {
+        console.warn(`   ⚠️ [githubScanner] Rate limited`);
+        // TODO(notification): Admin - GitHub API 403 rate limit (no token or exhausted) → feeds into Source Health dashboard / admin alert
+      }
       else console.warn(`   ⚠️ [githubScanner] Releases fetch failed: ${response.status}`);
     }
   } catch (err) {

@@ -93,6 +93,7 @@ export async function scanWebpage(topic, sourceConfig, options = {}) {
     };
   } catch (err) {
     console.error(`❌ [webpageScanner] Failed to fetch ${url}:`, err.message);
+    // TODO(notification): User - Monitored page repeatedly unreachable → topic detail stale source indicator
     return { findings: [], metadata: {} };
   }
 }

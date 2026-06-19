@@ -29,13 +29,18 @@ async function run() {
   let totalNewFindings = 0;
 
   for (const topic of topics) {
-    // If scanning a specific topic, treat it as a full scan (skip date filtering)
-    // Otherwise, it's the scheduled incremental scan.
-    const isFullScan = !!specificTopicId;
-    const insertedCount = await runScannersForTopic(topic, {
-      fullScan: isFullScan,
-    });
-    totalNewFindings += insertedCount;
+    try {
+      // If scanning a specific topic, treat it as a full scan (skip date filtering)
+      // Otherwise, it's the scheduled incremental scan.
+      const isFullScan = !!specificTopicId;
+      const insertedCount = await runScannersForTopic(topic, {
+        fullScan: isFullScan,
+      });
+      totalNewFindings += insertedCount;
+    } catch (err) {
+      console.error(`❌ [processTopics] Scanning failed for topic ${topic.id} ("${topic.displayName}"):`, err);
+      // Continue to next topic
+    }
   }
 
   console.log(

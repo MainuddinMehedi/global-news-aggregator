@@ -45,6 +45,7 @@ async function fetchAndParseRss(url) {
     return feed.items || [];
   } catch (err) {
     console.error(`❌ [redditScanner] Error fetching/parsing ${url}:`, err.message);
+    // TODO(notification): Admin - Repeated Reddit 429s persisting across cycles → feeds into Source Health dashboard
     return [];
   }
 }

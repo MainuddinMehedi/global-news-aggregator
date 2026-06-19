@@ -22,6 +22,7 @@ async function sendDiscord(topic, finding) {
     });
   } catch (err) {
     console.error("⚠️ [notifier] Discord delivery failed:", err.message);
+    // TODO(notification): Admin - Persistent webhook failures (4xx/5xx) → admin health alert
   }
 }
 
@@ -48,6 +49,7 @@ async function sendTelegram(topic, finding) {
     );
   } catch (err) {
     console.error("⚠️ [notifier] Telegram delivery failed:", err.message);
+    // TODO(notification): Admin - Persistent webhook failures (4xx/5xx) → admin health alert
   }
 }
 
@@ -82,7 +84,8 @@ export async function processNotifications(topic, findings) {
       channels = topic.notifyChannels;
     }
   } catch (e) {
-    // defaults
+    console.warn(`⚠️ [notifier] Failed to parse notifyChannels for topic "${topic.displayName}" (raw: ${topic.notifyChannels}). Defaulting to none.`);
+    // TODO(notification): User - Corrupted notifyChannels → topic detail page warning that notification config is invalid
   }
 
   for (const finding of highRelevanceFindings) {

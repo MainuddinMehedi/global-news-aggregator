@@ -49,7 +49,8 @@ async function checkGreenhouse(companySlug, topic, lastScan) {
       }
     }
   } catch (err) {
-    // Ignore fetch errors (timeouts, DNS, etc.)
+    console.warn(`⚠️ [companyCareersScraper] Greenhouse check failed for "${companySlug}":`, err.message);
+    // TODO(notification): User - ATS platform consistently erroring (non-404) → topic page warning
   }
   return findings;
 }
@@ -101,7 +102,8 @@ async function checkLever(companySlug, topic, lastScan) {
       }
     }
   } catch (err) {
-    // Ignore fetch errors
+    console.warn(`⚠️ [companyCareersScraper] Lever check failed for "${companySlug}":`, err.message);
+    // TODO(notification): User - ATS platform consistently erroring (non-404) → topic page warning
   }
   return findings;
 }

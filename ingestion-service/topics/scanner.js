@@ -41,6 +41,7 @@ export async function runScannersForTopic(topic, options = {}) {
   // 1. Iterate through configured sources
   const metadataUpdates = {};
   const sourceUpdates = [];
+  const sourceErrors = []; // Track which sources failed during this scan
 
   for (const sourceConfig of sources) {
     if (!sourceConfig.enabled) continue;
@@ -105,7 +106,13 @@ export async function runScannersForTopic(topic, options = {}) {
         `❌ [orchestrator] Scanner ${sourceConfig.type} failed:`,
         err.message,
       );
+      sourceErrors.push(sourceConfig.type);
     }
+  }
+
+  if (sourceErrors.length > 0) {
+    console.warn(`⚠️ [orchestrator] ${sourceErrors.length}/${sources.filter(s => s.enabled).length} sources failed during scan for "${topic.displayName}": [${sourceErrors.join(', ')}]`);
+    // TODO(notification): Admin - Any source failure feeds into the Admin Source Health dashboard. Repeated failures across cycles trigger a direct admin alert.
   }
 
   // Apply metadata updates (summaries, hashes) to the topic record
@@ -227,7 +234,8 @@ export async function runScannersForTopic(topic, options = {}) {
 
       insertedCount = createResult.count;
     } catch (err) {
-      console.error(`❌ [orchestrator] Bulk insert failed:`, err.message);
+      console.error(`❌ [orchestrator] Bulk insert failed for "${topic.displayName}":`, err.message);
+      // TODO(notification): User - Topic shows stale data with no explanation → user-facing "scan partially failed" indicator
     }
   }
 
@@ -253,9 +261,10 @@ export async function runScannersForTopic(topic, options = {}) {
       );
     } catch (e) {
       console.error(
-        `⚠️ [orchestrator] Failed to trigger revalidation:`,
+        `⚠️ [orchestrator] Failed to trigger revalidation for topic ${topic.id}:`,
         e.message,
       );
+      // TODO(notification): Admin - Revalidation failure means stale configs or environment issues → direct admin message/alert.
     }
   }
 
