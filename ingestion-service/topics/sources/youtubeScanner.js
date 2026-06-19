@@ -86,7 +86,7 @@ async function scanChannelFeed(topic, feedUrl, sourceName, lastScan) {
           summary:
             item.contentSnippet?.slice(0, 500) || "No description provided.",
           rawArticleId: null,
-          sourceType: "RSS", // Sticking with RSS to match existing DB enum
+          sourceType: "YOUTUBE",
         });
       }
       count++;
@@ -137,7 +137,7 @@ async function discoverYoutubeContent(topic, prioritizedNames, lastScan) {
               video.description?.slice(0, 500) ||
               "Discovered via yt-search.",
             rawArticleId: null,
-            sourceType: "RSS", // Sticking with RSS to match existing DB enum
+            sourceType: "YOUTUBE",
           });
         }
       }

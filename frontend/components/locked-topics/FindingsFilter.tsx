@@ -40,10 +40,9 @@ export default function FindingsFilter({
   const sourceTypeToTab: Record<string, { value: string; label: string }> = {
     internal_db: { value: "ARTICLE", label: "Internal DB" },
     google_news: { value: "GOOGLE", label: "Google News" },
-    brave: { value: "BRAVE", label: "Brave Search" },
     reddit: { value: "REDDIT", label: "Reddit" },
     github: { value: "GITHUB", label: "GitHub" },
-    youtube: { value: "RSS", label: "YouTube" },
+    youtube: { value: "YOUTUBE", label: "YouTube" },
     webpage: { value: "WEBPAGE", label: "Webpage" },
     scrape: { value: "SCRAPE", label: "Scrape" },
     bd_gov_jobs: { value: "BD_GOV_JOBS", label: "BD Gov Jobs" },

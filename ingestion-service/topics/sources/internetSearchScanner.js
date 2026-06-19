@@ -51,10 +51,6 @@ export async function scanInternetSearch(topic, sourceConfig, options = {}) {
     console.log(`   ⚪ [searchScanner] No results from DuckDuckGo. Falling back to Brave Search...`);
     const braveResult = await scanBrave(topic, sourceConfig, options);
     
-    // Normalize source type to SEARCH
-    if (braveResult && braveResult.findings) {
-      braveResult.findings.forEach(f => f.sourceType = "SEARCH");
-    }
     return braveResult;
   }
 
@@ -94,6 +90,7 @@ export async function scanInternetSearch(topic, sourceConfig, options = {}) {
       summary: result.snippet?.slice(0, 500) || null,
       rawArticleId: null,
       sourceType: "SEARCH",
+      metadata: { searchDriver: "ddg" },
     });
   }
 
@@ -106,9 +103,6 @@ export async function scanInternetSearch(topic, sourceConfig, options = {}) {
     console.log(`   ⚪ [searchScanner] 0 matches after filtering DuckDuckGo. Falling back to Brave Search...`);
     const braveResult = await scanBrave(topic, sourceConfig, options);
     
-    if (braveResult && braveResult.findings) {
-      braveResult.findings.forEach(f => f.sourceType = "SEARCH");
-    }
     return braveResult;
   }
 

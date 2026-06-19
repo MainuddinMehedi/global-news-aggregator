@@ -36,7 +36,7 @@ export async function getFindings({
   } = { topicId };
 
   if (sourceType === "OTHER") {
-    where.sourceType = { notIn: ["ARTICLE", "GOOGLE", "BRAVE", "REDDIT"] };
+    where.sourceType = { notIn: ["ARTICLE", "GOOGLE", "REDDIT", "SEARCH", "YOUTUBE"] };
   } else if (sourceType !== "ALL") {
     where.sourceType = sourceType as FindingSource;
   }
@@ -112,7 +112,7 @@ export async function getFindingCounts(topicId: string): Promise<Record<string, 
       counts[type] = count;
       total += count;
 
-      if (type !== "ARTICLE" && type !== "GOOGLE" && type !== "BRAVE" && type !== "REDDIT") {
+      if (type !== "ARTICLE" && type !== "GOOGLE" && type !== "REDDIT" && type !== "SEARCH" && type !== "YOUTUBE") {
         otherCount += count;
       }
     }

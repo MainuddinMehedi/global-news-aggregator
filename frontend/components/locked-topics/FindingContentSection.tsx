@@ -7,12 +7,13 @@ import { useExtractedContent } from "@/hooks/useExtractedContent";
 const loadingMessages: Record<string, string> = {
   ARTICLE: "Extracting article content...",
   RSS: "Extracting article content...",
-  BRAVE: "Extracting article content...",
   SCRAPE: "Extracting content...",
   WEBPAGE: "Extracting content...",
   COMPANY_CAREERS: "Extracting content...",
   REDDIT: "Loading Reddit post...",
   GITHUB: "Loading page...",
+  SEARCH: "Extracting search result content...",
+  YOUTUBE: "Loading YouTube video...",
 };
 
 const defaultMessage = "Loading content...";
@@ -154,7 +155,7 @@ function RedditContent({ finding }: { finding: TopicFinding }) {
 export default function FindingContentSection({
   finding,
 }: FindingContentSectionProps) {
-  if (isYouTubeUrl(finding.sourceUrl)) {
+  if (finding.sourceType === "YOUTUBE" || isYouTubeUrl(finding.sourceUrl)) {
     return <YouTubeContent finding={finding} />;
   }
 

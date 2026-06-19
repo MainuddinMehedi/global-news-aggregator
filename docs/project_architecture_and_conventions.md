@@ -57,7 +57,6 @@ ingestion-service/
 │   ├── scorer.js             # LLM-based finding scoring
 │   ├── notifier.js           # notification dispatch
 │   ├── overviewGenerator.js  # topic summary generation
-│   ├── realtimeMatcher.js    # real-time match against incoming articles
 │   ├── sources/              # scanner implementations (Brave, Reddit, RSS, GitHub, etc.)
 │   └── utils/                # parseQuery.js, formatSinceDate.js
 ├── data/                     # static data + configuration

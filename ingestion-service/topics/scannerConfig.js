@@ -41,7 +41,6 @@ export const SCANNER_CONFIG = {
 export const VALID_SOURCE_TYPES = new Set([
   "google_news",
   "rss",
-  "brave",
   "reddit",
   "github",
   "youtube",
