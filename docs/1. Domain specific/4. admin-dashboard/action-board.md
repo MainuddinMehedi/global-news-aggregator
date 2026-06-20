@@ -23,10 +23,10 @@ This action board lists the step-by-step phases required to implement the comple
 
 ## Phase 3: Tab 1 — System Health & Task Analytics
 
-- [ ] Implement query methods in `frontend/queries/analytics.ts` to retrieve running tasks, task log stats, and historical ingestion/clustering volumes.
-- [ ] Integrate background workers (Ingest pipeline, story clustering, locked topic scanners) to write heartbeats and status logs to `SystemTask` at start, during, and end of execution.
-- [ ] Build the telemetry charts (fetched vs. processed vs. clustered) using Recharts in Tab 1.
-- [ ] Implement the collapsible Collated System Errors console component to show recent errors from `SystemTask`.
+- [x] Implement query methods in `frontend/queries/analytics.ts` to retrieve running tasks, task log stats, and historical ingestion/clustering volumes.
+- [x] Integrate background workers (Ingest pipeline, story clustering, locked topic scanners) to write heartbeats and status logs to `SystemTask` at start, during, and end of execution.
+- [x] Build the telemetry charts (fetched vs. processed vs. clustered) using Recharts in Tab 1.
+- [x] Implement the collapsible Collated System Errors console component to show recent errors from `SystemTask`.
 
 ## Phase 4: Tab 2 — Source Control Center
 

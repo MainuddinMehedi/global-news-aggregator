@@ -30,34 +30,7 @@ export interface AnalyticsData {
   totalTopics: number;
   avgSentiment: number | null;
   topEntities: { entity: string; count: number }[];
-  aiUsageChart: {
-    date: string;
-    tokensUsed: number;
-    estimatedCost: number;
-  }[];
-  sourceHealth: {
-    name: string;
-    count: number;
-    lastFetch: Date;
-    isStale: boolean;
-  }[];
-  ingestionVolumeChart: {
-    date: string;
-    raw: number;
-    processed: number;
-  }[];
-  dedupRate: number;
-  
-  // New Analytics
-  modelUtilization: { model: string; count: number; percentage: number }[];
   topicSourceDistribution: { source: string; count: number; percentage: number }[];
-  storyImpactDistribution: { status: string; count: number }[];
-  chatTelemetry: {
-    totalSessions: number;
-    totalMessages: number;
-    totalToolRuns: number;
-    activeModels: { model: string; count: number }[];
-  };
   biasGroupDistribution: {
     label: string;
     count: number;
@@ -78,24 +51,16 @@ export async function getAnalyticsData(timeRange: string = "7d"): Promise<Analyt
   cacheLife("minutes");
 
   let startDate = new Date(0);
-  let daysToChart = 7;
   
   if (timeRange === "24h") {
     startDate = new Date(Date.now() - 24 * 60 * 60 * 1000);
-    daysToChart = 1;
   } else if (timeRange === "7d") {
     startDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-    daysToChart = 7;
   } else if (timeRange === "30d") {
     startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-    daysToChart = 30;
   } else if (timeRange === "all") {
     startDate = new Date(0);
-    daysToChart = 30; // Limit charts to max 30 days
   }
-
-  const chartStartDate = new Date(Date.now() - daysToChart * 24 * 60 * 60 * 1000);
-  const staleThreshold = 1000 * 60 * 60 * 6; // 6 hours
 
   try {
     const [
@@ -104,20 +69,8 @@ export async function getAnalyticsData(timeRange: string = "7d"): Promise<Analyt
       topicFindings,
       lockedTopics,
       categories,
-      aiUsage,
-      rawArticlesRange,
-      processedArticlesRange,
-      sourcesSummary,
-      
-      // New telemetry
-      chatSessions,
-      chatMessagesCount,
-      chatToolRunsCount,
       topicSources,
-      storyImpacts,
-      modelUtil,
     ] = await Promise.all([
-      // Existing
       prisma.processedArticle.findMany({
         where: {
           processedAt: { gte: startDate },
@@ -153,89 +106,14 @@ export async function getAnalyticsData(timeRange: string = "7d"): Promise<Analyt
           },
         },
       }),
-      prisma.aiUsage.findMany({
-        where: { createdAt: { gte: chartStartDate } },
-        orderBy: { date: "asc" },
-      }),
-      prisma.rawArticle.findMany({
-        where: { fetchedAt: { gte: chartStartDate } },
-        select: { fetchedAt: true },
-      }),
-      prisma.processedArticle.findMany({
-        where: {
-          processedAt: { gte: chartStartDate },
-          clusterStatus: { not: "SKIPPED" },
-        },
-        select: { processedAt: true },
-      }),
-      prisma.rawArticle.groupBy({
-        by: ["source"],
-        _count: { _all: true },
-        _max: { fetchedAt: true },
-        where: { fetchedAt: { gte: startDate } },
-      }),
-      
-      // New
-      prisma.chatSession.findMany({
-        where: { createdAt: { gte: startDate } },
-        select: { model: true }
-      }),
-      prisma.chatMessage.count({ where: { createdAt: { gte: startDate } } }),
-      prisma.chatToolRun.count({ where: { createdAt: { gte: startDate } } }),
       prisma.topicFinding.groupBy({
         by: ["sourceType"],
         _count: { _all: true },
         where: { foundAt: { gte: startDate } }
       }),
-      prisma.storyCluster.groupBy({
-        by: ["status"],
-        _count: { _all: true },
-        where: { isActive: true, createdAt: { gte: startDate } }
-      }),
-      prisma.processedArticle.groupBy({
-        by: ["model"],
-        _count: { _all: true },
-        where: {
-          processedAt: { gte: startDate },
-          clusterStatus: { not: "SKIPPED" },
-        }
-      })
     ]);
 
     const totalArticles = processedArticles.length;
-
-    // ── Ingestion Volume ──────────────────────────────────────
-    const volumeByDate: Record<string, { raw: number; processed: number }> = {};
-    for (let i = daysToChart - 1; i >= 0; i--) {
-      const d = new Date(Date.now() - i * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
-      volumeByDate[d] = { raw: 0, processed: 0 };
-    }
-
-    rawArticlesRange.forEach((a) => {
-      const d = a.fetchedAt.toISOString().split("T")[0];
-      if (volumeByDate[d]) volumeByDate[d].raw++;
-    });
-    processedArticlesRange.forEach((a) => {
-      const d = a.processedAt.toISOString().split("T")[0];
-      if (volumeByDate[d]) volumeByDate[d].processed++;
-    });
-
-    const ingestionVolumeChart = Object.entries(volumeByDate)
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([date, counts]) => ({ date, ...counts }));
-
-    const totalRawCount = rawArticlesRange.length;
-    const totalProcessedCount = processedArticlesRange.length;
-    const dedupRate = totalRawCount > 0 ? Math.round((1 - totalProcessedCount / totalRawCount) * 100) : 0;
-
-    const sourceHealth = sourcesSummary
-      .map((s) => ({
-        name: s.source,
-        count: s._count._all,
-        lastFetch: s._max.fetchedAt ?? new Date(),
-        isStale: s._max.fetchedAt ? Date.now() - s._max.fetchedAt.getTime() > staleThreshold : true,
-      }))
-      .sort((a, b) => b.lastFetch.getTime() - a.lastFetch.getTime());
 
     // ── Event Region Distribution ──────────────────────────────────────────────
     const regionCounts: Record<string, number> = {
@@ -322,28 +200,7 @@ export async function getAnalyticsData(timeRange: string = "7d"): Promise<Analyt
       .slice(0, 12)
       .map(([entity, count]) => ({ entity, count }));
 
-    // ── AI Usage ──────────────────────────────────────────────────
-    const usageByDate: Record<string, { tokensUsed: number; estimatedCost: number }> = {};
-    for (const u of aiUsage) {
-      if (!usageByDate[u.date]) usageByDate[u.date] = { tokensUsed: 0, estimatedCost: 0 };
-      usageByDate[u.date].tokensUsed += u.tokensUsed;
-      usageByDate[u.date].estimatedCost += u.estimatedCost;
-    }
-    const aiUsageChart = Object.entries(usageByDate)
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([date, data]) => ({ date, ...data }));
-
-    // ── New Telemetry ──────────────────────────────────────────────────
-    const totalModelUses = modelUtil.reduce((s, m) => s + m._count._all, 0);
-    const modelUtilization = modelUtil
-      .filter(m => m.model)
-      .map(m => ({
-        model: m.model || "Unknown",
-        count: m._count._all,
-        percentage: totalModelUses > 0 ? Math.round((m._count._all / totalModelUses) * 100) : 0,
-      }))
-      .sort((a, b) => b.count - a.count);
-
+    // ── Topic Source Distribution ─────────────────────────────────────────────
     const totalTopicSources = topicSources.reduce((s, t) => s + t._count._all, 0);
     const topicSourceDistribution = topicSources
       .map(t => ({
@@ -352,18 +209,6 @@ export async function getAnalyticsData(timeRange: string = "7d"): Promise<Analyt
         percentage: totalTopicSources > 0 ? Math.round((t._count._all / totalTopicSources) * 100) : 0,
       }))
       .sort((a, b) => b.count - a.count);
-
-    const storyImpactDistribution = storyImpacts
-      .map(s => ({
-        status: s.status || "UNKNOWN",
-        count: s._count._all,
-      }))
-      .sort((a, b) => b.count - a.count);
-
-    const activeChatModels: Record<string, number> = {};
-    chatSessions.forEach(s => {
-      if (s.model) activeChatModels[s.model] = (activeChatModels[s.model] || 0) + 1;
-    });
 
     // ── Bias Group Distribution ──────────────────────────────────────────────
     const biasCounts: Record<string, number> = {};
@@ -393,15 +238,6 @@ export async function getAnalyticsData(timeRange: string = "7d"): Promise<Analyt
       }))
       .sort((a, b) => b.count - a.count);
 
-    const chatTelemetry = {
-      totalSessions: chatSessions.length,
-      totalMessages: chatMessagesCount,
-      totalToolRuns: chatToolRunsCount,
-      activeModels: Object.entries(activeChatModels)
-        .map(([model, count]) => ({ model, count }))
-        .sort((a, b) => b.count - a.count)
-    };
-
     return {
       eventRegionDistribution,
       topSourceCountries,
@@ -413,26 +249,17 @@ export async function getAnalyticsData(timeRange: string = "7d"): Promise<Analyt
       totalTopics: lockedTopics,
       avgSentiment: sentimentCount > 0 ? sentimentSum / sentimentCount : null,
       topEntities,
-      aiUsageChart,
-      sourceHealth,
-      ingestionVolumeChart,
-      dedupRate,
-      modelUtilization,
       topicSourceDistribution,
-      storyImpactDistribution,
       biasGroupDistribution,
       coverageScopeDistribution,
-      chatTelemetry,
     };
   } catch (error) {
     console.error("getAnalyticsData error:", error);
     return {
       eventRegionDistribution: [], topSourceCountries: [], categoryBreakdown: [], sentimentDistribution: [],
       totalArticles: 0, totalStories: 0, totalFindings: 0, totalTopics: 0, avgSentiment: null,
-      topEntities: [], aiUsageChart: [], sourceHealth: [], ingestionVolumeChart: [], dedupRate: 0,
-      modelUtilization: [], topicSourceDistribution: [], storyImpactDistribution: [],
+      topEntities: [], topicSourceDistribution: [],
       biasGroupDistribution: [], coverageScopeDistribution: [],
-      chatTelemetry: { totalSessions: 0, totalMessages: 0, totalToolRuns: 0, activeModels: [] }
     };
   }
 }

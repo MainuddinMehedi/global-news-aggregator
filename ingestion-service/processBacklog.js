@@ -16,6 +16,7 @@ import { createArticleProcessor } from "./newsPipeline/enrichmentPipeline.js";
 import formatDuration from "./utils/formatDuration.js";
 import cleanupOldSkippedArticles from "./utils/cleanupOldSkippedArticles.js";
 import revalidateCache from "./utils/revalidateCache.js";
+import { startTaskLogging, updateTaskHeartbeat, completeTaskLogging } from "./utils/taskLogger.js";
 
 const args = process.argv.slice(2);
 const limitArg = args.find((a) => a.startsWith("--limit="));
@@ -24,23 +25,26 @@ const limit = limitArg ? parseInt(limitArg.split("=")[1]) : undefined;
 const startTime = Date.now();
 
 export async function processBacklogLogic() {
-  // Find RawArticles that have no ProcessedArticle, or a ProcessedArticle that failed enrichment
-  const unprocessed = await prisma.rawArticle.findMany({
-    where: {
-      OR: [
-        { processedArticle: null },
-        { processedArticle: { clusterStatus: "FAILED_ENRICHMENT" } },
-      ],
-    },
-    orderBy: { publishedAt: "desc" },
-    ...(limit ? { take: limit } : {}),
-  });
+  const taskId = await startTaskLogging("backlog-processing");
+  try {
+    // Find RawArticles that have no ProcessedArticle, or a ProcessedArticle that failed enrichment
+    const unprocessed = await prisma.rawArticle.findMany({
+      where: {
+        OR: [
+          { processedArticle: null },
+          { processedArticle: { clusterStatus: "FAILED_ENRICHMENT" } },
+        ],
+      },
+      orderBy: { publishedAt: "desc" },
+      ...(limit ? { take: limit } : {}),
+    });
 
-  if (unprocessed.length === 0) {
-    console.log("✅ No unprocessed articles found. Backlog is clear!");
-    await prisma.$disconnect();
-    return;
-  }
+    if (unprocessed.length === 0) {
+      console.log("✅ No unprocessed articles found. Backlog is clear!");
+      await completeTaskLogging(taskId, "SUCCESS", { processedCount: 0, skippedCount: 0 });
+      await prisma.$disconnect();
+      return;
+    }
 
   // Delete any existing FAILED_ENRICHMENT ProcessedArticle rows for the selected batch
   const articleIds = unprocessed.map((a) => a.id);
@@ -59,6 +63,7 @@ export async function processBacklogLogic() {
   const skippedArticles = [];
 
   for (const article of unprocessed) {
+    await updateTaskHeartbeat(taskId);
     const s1 = enrichWithStage1(article);
     if (s1.categories[0] === "other") {
       skippedArticles.push({ article, s1 });
@@ -78,6 +83,7 @@ export async function processBacklogLogic() {
   if (relevantArticles.length > 0) {
     const aiProcessor = createArticleProcessor();
     for (const article of relevantArticles) {
+      await updateTaskHeartbeat(taskId);
       await aiProcessor.add(article);
       queued++;
     }
@@ -176,6 +182,15 @@ export async function processBacklogLogic() {
   // --- TIMED CLEANUP ---
   await cleanupOldSkippedArticles();
 
+  await completeTaskLogging(taskId, "SUCCESS", {
+    processedCount: queued,
+    skippedCount: skippedArticles.length,
+  });
+} catch (err) {
+  console.error("Backlog processing failed:", err);
+  await completeTaskLogging(taskId, "FAILED", null, err.message);
+  throw err;
+} finally {
   await prisma.$disconnect();
 }
 

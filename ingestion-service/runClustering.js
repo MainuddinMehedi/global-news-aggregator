@@ -14,6 +14,7 @@ import {
 } from "./clustering/lifecycle.js";
 import { saveClusteringResults } from "./clustering/saveClusteringResults.js";
 import revalidateCache from "./utils/revalidateCache.js";
+import { startTaskLogging, updateTaskHeartbeat, completeTaskLogging } from "./utils/taskLogger.js";
 
 const lifecycleConfig = {
   low: CLUSTER_LOW_IMPACT_INACTIVE_DAYS,
@@ -43,10 +44,15 @@ const CLUSTER_MIN_GROUP_SIZE = Number.parseInt(
 );
 
 export async function runClusteringLogic() {
-  console.log("🚀 Starting Story Clustering Worker...");
+  const taskId = await startTaskLogging("story-clustering");
+  let archivedCount = 0;
+  let groupsFound = 0;
 
-  // Apply basic lifecycle (time-based)
-  await applyClusterLifecycle();
+  try {
+    console.log("🚀 Starting Story Clustering Worker...");
+
+    // Apply basic lifecycle (time-based)
+    await applyClusterLifecycle();
 
   // 1. Fetch HOLDING articles from the holding window. Default is 7 days so
   // low-volume strategic stories can accumulate enough evidence.
@@ -72,6 +78,7 @@ export async function runClusteringLogic() {
     },
     data: { clusterStatus: "ARCHIVED_UNCLUSTERED", clusteredAt: new Date() },
   });
+  archivedCount = archivedOld.count;
   if (archivedOld.count > 0) {
     console.log(
       `🗄️  Archived ${archivedOld.count} holding articles older than ${CLUSTER_HOLDING_WINDOW_HOURS} hours.`,
@@ -102,6 +109,7 @@ export async function runClusteringLogic() {
   console.log(
     `🎯 Achieved critical mass! Found ${groups.length} groups of overlapping articles.`,
   );
+  groupsFound = groups.length;
 
   // Load a broad active story pool. Each article group selects its own most
   // relevant candidates before going to the LLM.
@@ -121,6 +129,7 @@ export async function runClusteringLogic() {
 
   // Process each group
   for (const group of groups) {
+    await updateTaskHeartbeat(taskId);
     console.log(`\n🤖 Processing group of ${group.length} articles...`);
 
     // Chunk batched articles into safe groups of 5 to respect LLM tokens
@@ -204,6 +213,17 @@ export async function runClusteringLogic() {
 
   // Revalidate Cache
   await revalidateCache(["articles", "stories"]);
+
+  await completeTaskLogging(taskId, "SUCCESS", {
+    holdingCount: holdingArticles.length,
+    archivedCount,
+    groupsFound,
+  });
+} catch (err) {
+  console.error("Clustering failed:", err);
+  await completeTaskLogging(taskId, "FAILED", null, err.message);
+  throw err;
+}
 }
 
 // Run if called directly from CLI

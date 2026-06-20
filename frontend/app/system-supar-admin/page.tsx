@@ -9,6 +9,13 @@ import {
   UserSettings01Icon,
   Bookmark02Icon,
 } from "@hugeicons/core-free-icons";
+import {
+  getRunningTasks,
+  getTaskLogs,
+  getSystemHealthOverview,
+  getIngestionVolumeChartData,
+} from "@/queries/admin";
+import SystemHealthTab from "@/components/admin/SystemHealthTab";
 
 interface PageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -23,6 +30,26 @@ export default async function AdminDashboard({ searchParams }: PageProps) {
 
   const params = await searchParams;
   const activeTab = typeof params.tab === "string" ? params.tab : "health";
+
+  let runningTasks: any[] = [];
+  let taskLogs: any[] = [];
+  let healthOverview: any = {
+    activeWorkersCount: 0,
+    ingestionRatePerHour: 0,
+    dedupEfficiency: 0,
+    totalFailures24h: 0,
+    recentErrors: [],
+  };
+  let chartData: any[] = [];
+
+  if (activeTab === "health") {
+    [runningTasks, taskLogs, healthOverview, chartData] = await Promise.all([
+      getRunningTasks(),
+      getTaskLogs(50),
+      getSystemHealthOverview(),
+      getIngestionVolumeChartData(7),
+    ]);
+  }
 
   const tabs = [
     { id: "health", label: "System Health & Tasks", icon: PresentationBarChart02FreeIcons },
@@ -78,15 +105,12 @@ export default async function AdminDashboard({ searchParams }: PageProps) {
         {/* Dynamic Tab Content Area */}
         <div className="flex-1 w-full space-y-6">
           {activeTab === "health" && (
-            <div className="bg-card border border-border/50 rounded-2xl p-8 shadow-sm space-y-4">
-              <h2 className="text-xl font-bold tracking-tight">System Health & Task Observability</h2>
-              <p className="text-muted-foreground text-sm">
-                View background worker health, cron task logs, heartbeats, and database telemetry.
-              </p>
-              <div className="h-64 border border-dashed rounded-xl border-border bg-muted/10 animate-pulse flex items-center justify-center text-sm text-muted-foreground">
-                Task Telemetry and Errors Panel (Phase 3)
-              </div>
-            </div>
+            <SystemHealthTab
+              runningTasks={runningTasks}
+              taskLogs={taskLogs}
+              healthOverview={healthOverview}
+              chartData={chartData}
+            />
           )}
 
           {activeTab === "sources" && (
