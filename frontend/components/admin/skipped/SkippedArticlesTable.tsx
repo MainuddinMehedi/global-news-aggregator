@@ -46,11 +46,16 @@ export default function SkippedArticlesTable({
 
   return (
     <div className="relative flex flex-col h-full bg-card/45 backdrop-blur-md border border-border/50 rounded-2xl overflow-hidden shadow-sm">
-      <div className="p-4 border-b border-border/50 bg-muted/20">
-        <h3 className="text-sm font-bold text-foreground">Skipped Articles (Gazetteer &apos;other&apos;)</h3>
-        <p className="text-xs text-muted-foreground mt-0.5">
-          These articles did not meet the weight thresholds and were auto-classified as non-relevant.
-        </p>
+      <div className="p-4 border-b border-border/50 bg-muted/20 flex justify-between items-center">
+        <div>
+          <h3 className="text-sm font-bold text-foreground">Skipped Articles (Gazetteer &apos;other&apos;)</h3>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            These articles did not meet the weight thresholds and were auto-classified as non-relevant.
+          </p>
+        </div>
+        <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-full bg-primary/10 text-primary whitespace-nowrap shrink-0 ml-4">
+          {articles.length} Articles
+        </span>
       </div>
 
       <div className="flex-1 overflow-y-auto max-h-[600px]">
