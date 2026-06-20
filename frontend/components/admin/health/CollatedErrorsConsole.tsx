@@ -30,7 +30,7 @@ export default function CollatedErrorsConsole({ recentErrors }: CollatedErrorsCo
       </div>
       {isErrorsExpanded && (
         <CardContent className="p-0">
-          <div className="bg-black/95 font-mono text-[11px] p-5 text-red-400 overflow-y-auto max-h-60 leading-relaxed">
+          <div className="bg-black/95 font-mono text-[11px] p-5 text-red-400 overflow-auto max-h-60 leading-relaxed">
             {recentErrors.length === 0 ? (
               <div className="text-emerald-400 flex flex-col space-y-1">
                 <span>$ system-diagnostics --check</span>

@@ -50,11 +50,11 @@ This action board lists the step-by-step phases required to implement the comple
 
 ## Phase 7: Tab 5 — Skipped Articles & Gazetteer Sandbox
 
-- [ ] Build Skipped Articles Diagnostic Table showing raw articles where `clusterStatus === "SKIPPED"` (Category is `"other"`).
-- [ ] Implement the Interactive selection sandbox: clicking snippet words adds them to an edit box.
-- [ ] Hook the "Add to Gazetteer" form to a server action that writes back to `gazetteer.json`.
-- [ ] Implement "Force Re-categorize" server action to clear skipped status, update category, and queue the raw article for Stage 2 processing.
-- [ ] Build Failed Enrichments table for articles stuck in `FAILED_ENRICHMENT`, with "Retry Selected" and "Discard Failure" controls.
+- [x] Build Skipped Articles Diagnostic Table showing raw articles where `clusterStatus === "SKIPPED"` (Category is `"other"`).
+- [x] Implement the Interactive selection sandbox: copy context from analyzed articles to define new rules.
+- [x] Hook the "Add to Gazetteer" form to a server action that writes back to `gazetteer.json`.
+- [x] Implement "Force Re-categorize" server action to clear skipped status, update category, and queue the raw article for Stage 2 processing.
+- [x] Build Failed Enrichments table for articles stuck in `FAILED_ENRICHMENT`, with "Retry Selected" and "Discard Failure" controls.
 
 ## Phase 8: Verification & Polish
 

@@ -4,6 +4,8 @@ import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
 import { revalidateTag } from "next/cache";
 import { startBoss } from "@/lib/boss";
+import fs from "fs/promises";
+import path from "path";
 
 async function verifyAdmin() {
   const session = await auth();
@@ -133,7 +135,11 @@ export async function saveAiConfig(data: {
   await verifyAdmin();
 
   const validateModel = (cfg: typeof data.primary, name: string) => {
-    if (!cfg.model || typeof cfg.model !== "string" || cfg.model.trim() === "") {
+    if (
+      !cfg.model ||
+      typeof cfg.model !== "string" ||
+      cfg.model.trim() === ""
+    ) {
       throw new Error(`${name} model name is required.`);
     }
     if (cfg.batchSize < 1 || cfg.batchSize > 50) {
@@ -159,7 +165,10 @@ export async function saveAiConfig(data: {
     });
 
     const existingValue = existing ? (existing.value as any) : {};
-    const pauseAI = typeof existingValue.pauseAI === "boolean" ? existingValue.pauseAI : false;
+    const pauseAI =
+      typeof existingValue.pauseAI === "boolean"
+        ? existingValue.pauseAI
+        : false;
 
     const newValue = {
       pauseAI,
@@ -217,14 +226,22 @@ export async function toggleAiPause(paused: boolean) {
           model: process.env.AI_PIPELINE_MODEL || "mistral-small-2506",
           tpmLimit: parseInt(process.env.AI_MISTRAL_TPM_LIMIT || "2250000", 10),
           rpmLimit: parseInt(process.env.AI_MISTRAL_RPM_LIMIT || "60", 10),
-          concurrencyLimit: parseInt(process.env.AI_MISTRAL_CONCURRENCY || "5", 10),
+          concurrencyLimit: parseInt(
+            process.env.AI_MISTRAL_CONCURRENCY || "5",
+            10,
+          ),
           batchSize: parseInt(process.env.AI_MISTRAL_BATCH_SIZE || "10", 10),
         },
         fallback: {
-          model: process.env.AI_PIPELINE_FALLBACK_MODEL || "meta-llama/llama-4-scout-17b-16e-instruct",
+          model:
+            process.env.AI_PIPELINE_FALLBACK_MODEL ||
+            "meta-llama/llama-4-scout-17b-16e-instruct",
           tpmLimit: parseInt(process.env.AI_GROQ_TPM_LIMIT || "30000", 10),
           rpmLimit: parseInt(process.env.AI_GROQ_RPM_LIMIT || "28", 10),
-          concurrencyLimit: parseInt(process.env.AI_GROQ_CONCURRENCY || "1", 10),
+          concurrencyLimit: parseInt(
+            process.env.AI_GROQ_CONCURRENCY || "1",
+            10,
+          ),
           batchSize: parseInt(process.env.AI_GROQ_BATCH_SIZE || "5", 10),
         },
       };
@@ -248,12 +265,18 @@ export async function toggleAiPause(paused: boolean) {
   }
 }
 
-export async function updateUserRole(targetUserId: string, role: "USER" | "ADMIN") {
+export async function updateUserRole(
+  targetUserId: string,
+  role: "USER" | "ADMIN",
+) {
   await verifyAdmin();
 
   const session = await auth();
   if (session?.user?.id === targetUserId) {
-    return { success: false, error: "Self-demotion is blocked to prevent administrator lockout." };
+    return {
+      success: false,
+      error: "Self-demotion is blocked to prevent administrator lockout.",
+    };
   }
 
   try {
@@ -274,12 +297,18 @@ export async function updateUserRole(targetUserId: string, role: "USER" | "ADMIN
   }
 }
 
-export async function toggleUserSuspension(targetUserId: string, suspended: boolean) {
+export async function toggleUserSuspension(
+  targetUserId: string,
+  suspended: boolean,
+) {
   await verifyAdmin();
 
   const session = await auth();
   if (session?.user?.id === targetUserId) {
-    return { success: false, error: "Self-suspension is blocked to prevent administrator lockout." };
+    return {
+      success: false,
+      error: "Self-suspension is blocked to prevent administrator lockout.",
+    };
   }
 
   try {
@@ -303,3 +332,90 @@ export async function toggleUserSuspension(targetUserId: string, suspended: bool
 }
 
 
+export async function forceRecategorizeArticle(
+  processedArticleId: string,
+  targetCategory: string,
+) {
+  await verifyAdmin();
+
+  try {
+    const category = await prisma.category.upsert({
+      where: { name: targetCategory },
+      update: {},
+      create: { name: targetCategory },
+    });
+
+    await prisma.processedArticle.update({
+      where: { id: processedArticleId },
+      data: {
+        clusterStatus: "FAILED_ENRICHMENT",
+        categories: {
+          set: [{ id: category.id }],
+        },
+      },
+    });
+
+    revalidateTag("articles", "max");
+    return { success: true };
+  } catch (error: any) {
+    console.error("forceRecategorizeArticle error:", error);
+    return { success: false, error: error.message };
+  }
+}
+
+export async function retryFailedEnrichments(articleIds: string[]) {
+  await verifyAdmin();
+
+  try {
+    if (!articleIds || articleIds.length === 0) {
+      throw new Error("No article IDs provided.");
+    }
+
+    await prisma.processedArticle.updateMany({
+      where: { id: { in: articleIds } },
+      data: { clusterStatus: "FAILED_ENRICHMENT" },
+    });
+
+    revalidateTag("articles", "max");
+    return { success: true };
+  } catch (error: any) {
+    console.error("retryFailedEnrichments error:", error);
+    return { success: false, error: error.message };
+  }
+}
+
+export async function discardFailedEnrichments(articleIds: string[]) {
+  await verifyAdmin();
+
+  try {
+    if (!articleIds || articleIds.length === 0) {
+      throw new Error("No article IDs provided.");
+    }
+
+    const otherCategory = await prisma.category.upsert({
+      where: { name: "other" },
+      update: {},
+      create: { name: "other" },
+    });
+
+    await prisma.$transaction(
+      articleIds.map((id) =>
+        prisma.processedArticle.update({
+          where: { id },
+          data: {
+            clusterStatus: "SKIPPED",
+            categories: {
+              set: [{ id: otherCategory.id }],
+            },
+          },
+        }),
+      ),
+    );
+
+    revalidateTag("articles", "max");
+    return { success: true };
+  } catch (error: any) {
+    console.error("discardFailedEnrichments error:", error);
+    return { success: false, error: error.message };
+  }
+}

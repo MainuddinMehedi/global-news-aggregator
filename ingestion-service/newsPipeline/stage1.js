@@ -70,6 +70,13 @@ function getScore(text, compiledRules) {
 }
 
 export function enrichWithStage1(rawArticle) {
+  if (rawArticle && rawArticle._forcedCategory) {
+    return {
+      categories: [rawArticle._forcedCategory],
+      eventRegion: rawArticle._forcedRegion || null,
+    };
+  }
+
   const content = `${rawArticle.title || ""} ${rawArticle.contentSnippet || ""}`;
 
   // 1. Categories

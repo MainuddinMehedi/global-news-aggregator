@@ -50,6 +50,28 @@ export async function processBacklogLogic() {
 
   // Delete any existing FAILED_ENRICHMENT ProcessedArticle rows for the selected batch
   const articleIds = unprocessed.map((a) => a.id);
+  
+  const existingFailures = await prisma.processedArticle.findMany({
+    where: {
+      rawArticleId: { in: articleIds },
+      clusterStatus: "FAILED_ENRICHMENT",
+    },
+    include: {
+      categories: true,
+    },
+  });
+
+  const forceMap = new Map();
+  for (const pa of existingFailures) {
+    const nonOtherCat = pa.categories.find((c) => c.name !== "other");
+    if (nonOtherCat) {
+      forceMap.set(pa.rawArticleId, {
+        category: nonOtherCat.name,
+        region: pa.eventRegion,
+      });
+    }
+  }
+
   const deletedFailures = await prisma.processedArticle.deleteMany({
     where: {
       rawArticleId: { in: articleIds },
@@ -58,6 +80,15 @@ export async function processBacklogLogic() {
   });
   if (deletedFailures.count > 0) {
     console.log(`🧹 Cleared ${deletedFailures.count} previously failed enrichment records to retry.`);
+  }
+
+  // Apply manual overrides in memory so that Stage 1 preserves the forced category
+  for (const article of unprocessed) {
+    if (forceMap.has(article.id)) {
+      const override = forceMap.get(article.id);
+      article._forcedCategory = override.category;
+      article._forcedRegion = override.region;
+    }
   }
 
   // Pre-filter non-relevant (category: other) articles using Stage 1 Gazetteer

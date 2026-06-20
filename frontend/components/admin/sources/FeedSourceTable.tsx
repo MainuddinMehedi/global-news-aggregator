@@ -64,7 +64,7 @@ export default function FeedSourceTable({ feedSources, onEditClick }: FeedSource
           <h3 className="font-bold text-sm text-foreground">Registered RSS Feeds</h3>
           <p className="text-xs text-muted-foreground">List of active geopolitical feeds crawled by background tasks.</p>
         </div>
-        <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+        <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-full bg-primary/10 text-primary whitespace-nowrap shrink-0">
           {feedSources.length} Feeds
         </span>
       </div>

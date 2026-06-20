@@ -18,10 +18,16 @@ import {
 import { getFeedSources } from "@/queries/admin/sources";
 import { getAiConfigSettings, getAiUsageTimeline } from "@/queries/admin/ai";
 import { getUsers } from "@/queries/admin/users";
+import {
+  getSkippedArticles,
+  getFailedEnrichments,
+  getGazetteerCategoriesAndRegions,
+} from "@/queries/admin/skipped";
 import SystemHealthTab from "@/components/admin/SystemHealthTab";
 import SourceControlTab from "@/components/admin/SourceControlTab";
 import AiEngineTab from "@/components/admin/ai/AiEngineTab";
 import UserAdminTab from "@/components/admin/UserAdminTab";
+import SkippedBacklogTab from "@/components/admin/SkippedBacklogTab";
 
 interface PageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -52,6 +58,9 @@ export default async function AdminDashboard({ searchParams }: PageProps) {
   let usageTimeline: any[] = [];
   let users: any[] = [];
   let searchQuery = "";
+  let skippedArticles: any[] = [];
+  let failedEnrichments: any[] = [];
+  let gazetteerConfig: any = { categories: [], regions: [], rawConfig: {} };
 
   if (activeTab === "health") {
     [runningTasks, taskLogs, healthOverview, chartData] = await Promise.all([
@@ -70,25 +79,31 @@ export default async function AdminDashboard({ searchParams }: PageProps) {
   } else if (activeTab === "users") {
     searchQuery = typeof params.q === "string" ? params.q : "";
     users = await getUsers(searchQuery);
+  } else if (activeTab === "skipped") {
+    [skippedArticles, failedEnrichments, gazetteerConfig] = await Promise.all([
+      getSkippedArticles(50),
+      getFailedEnrichments(50),
+      getGazetteerCategoriesAndRegions(),
+    ]);
   }
 
   const tabs = [
-    { id: "health", label: "System Health & Tasks", icon: PresentationBarChart02FreeIcons },
-    { id: "sources", label: "Source Control Center", icon: Newspaper },
-    { id: "ai", label: "AI Engine Settings", icon: Sparkles },
-    { id: "users", label: "User Administration", icon: UserSettings01Icon },
-    { id: "skipped", label: "Caching & Skipped Backlog", icon: Bookmark02Icon },
+    { id: "health", label: "System Health & Tasks", shortLabel: "Health", icon: PresentationBarChart02FreeIcons },
+    { id: "sources", label: "Source Control Center", shortLabel: "Feeds", icon: Newspaper },
+    { id: "ai", label: "AI Engine Settings", shortLabel: "AI Config", icon: Sparkles },
+    { id: "users", label: "User Administration", shortLabel: "Users", icon: UserSettings01Icon },
+    { id: "skipped", label: "Caching & Skipped Backlog", shortLabel: "Backlog", icon: Bookmark02Icon },
   ];
 
   return (
     <div className="container max-w-6xl mx-auto py-8 px-4 space-y-8">
       {/* Header */}
-      <div className="flex items-center gap-4 border-b border-border pb-6">
-        <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary shadow-sm">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 border-b border-border pb-6">
+        <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary shadow-sm shrink-0">
           <HugeiconsIcon icon={UserSettings01Icon} className="w-6 h-6" />
         </div>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">Admin Control Center</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">Admin Control Center</h1>
           <p className="text-muted-foreground mt-1 text-sm">
             System health, news feeds control, AI models settings, and user permissions.
           </p>
@@ -97,11 +112,11 @@ export default async function AdminDashboard({ searchParams }: PageProps) {
 
       <div className="flex flex-col md:flex-row gap-8 items-start">
         {/* Sidebar Vertical Tabs Navigation */}
-        <nav className="w-full md:w-64 shrink-0 bg-card/45 backdrop-blur-md border border-border/50 rounded-2xl p-4 shadow-sm space-y-2 md:sticky md:top-24">
-          <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground px-3 mb-2 block">
+        <nav className="w-full md:w-64 shrink-0 bg-card/45 backdrop-blur-md border border-border/50 rounded-2xl p-1.5 md:p-4 shadow-sm md:sticky md:top-24">
+          <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground px-3 mb-2 hidden md:block">
             Navigation
           </span>
-          <div className="flex flex-col space-y-1">
+          <div className="flex flex-row md:flex-col justify-between md:justify-start w-full gap-1 md:gap-0 md:space-y-1">
             {tabs.map((tab) => {
               const isActive = activeTab === tab.id;
               return (
@@ -109,14 +124,16 @@ export default async function AdminDashboard({ searchParams }: PageProps) {
                   key={tab.id}
                   href={`?tab=${tab.id}`}
                   scroll={false}
-                  className={`flex items-center gap-3 text-sm text-left px-3 py-2.5 rounded-xl transition-all duration-300 ${
+                  title={tab.label}
+                  className={`flex flex-col md:flex-row items-center justify-center md:justify-start gap-0.5 md:gap-3 text-center md:text-left px-2 py-1.5 md:px-3 md:py-2.5 rounded-xl transition-all duration-300 flex-1 md:flex-none ${
                     isActive
                       ? "bg-primary text-primary-foreground font-semibold shadow-md"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted/60 hover:translate-x-1"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/60 md:hover:translate-x-1"
                   }`}
                 >
                   <HugeiconsIcon icon={tab.icon} className="w-4.5 h-4.5 shrink-0" />
-                  <span>{tab.label}</span>
+                  <span className="hidden md:block text-sm">{tab.label}</span>
+                  <span className="block md:hidden text-[9px] font-bold mt-0.5 tracking-tight leading-none">{tab.shortLabel}</span>
                 </Link>
               );
             })}
@@ -147,15 +164,11 @@ export default async function AdminDashboard({ searchParams }: PageProps) {
           )}
 
           {activeTab === "skipped" && (
-            <div className="bg-card border border-border/50 rounded-2xl p-8 shadow-sm space-y-4">
-              <h2 className="text-xl font-bold tracking-tight">Caching & Skipped Backlog</h2>
-              <p className="text-muted-foreground text-sm">
-                Audit skipped backlog articles, view failed enrichments, query caching tags, and access the Gazetteer sandbox.
-              </p>
-              <div className="h-64 border border-dashed rounded-xl border-border bg-muted/10 animate-pulse flex items-center justify-center text-sm text-muted-foreground">
-                Skipped Diagnostics and Gazetteer Sandbox (Phase 7)
-              </div>
-            </div>
+            <SkippedBacklogTab
+              skippedArticles={skippedArticles}
+              failedEnrichments={failedEnrichments}
+              gazetteerConfig={gazetteerConfig}
+            />
           )}
         </div>
       </div>
