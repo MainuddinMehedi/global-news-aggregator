@@ -17,9 +17,11 @@ import {
 } from "@/queries/admin/health";
 import { getFeedSources } from "@/queries/admin/sources";
 import { getAiConfigSettings, getAiUsageTimeline } from "@/queries/admin/ai";
+import { getUsers } from "@/queries/admin/users";
 import SystemHealthTab from "@/components/admin/SystemHealthTab";
 import SourceControlTab from "@/components/admin/SourceControlTab";
 import AiEngineTab from "@/components/admin/ai/AiEngineTab";
+import UserAdminTab from "@/components/admin/UserAdminTab";
 
 interface PageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -48,6 +50,8 @@ export default async function AdminDashboard({ searchParams }: PageProps) {
   let feedSources: any[] = [];
   let aiSettings: any = null;
   let usageTimeline: any[] = [];
+  let users: any[] = [];
+  let searchQuery = "";
 
   if (activeTab === "health") {
     [runningTasks, taskLogs, healthOverview, chartData] = await Promise.all([
@@ -63,6 +67,9 @@ export default async function AdminDashboard({ searchParams }: PageProps) {
       getAiConfigSettings(),
       getAiUsageTimeline(30),
     ]);
+  } else if (activeTab === "users") {
+    searchQuery = typeof params.q === "string" ? params.q : "";
+    users = await getUsers(searchQuery);
   }
 
   const tabs = [
@@ -136,15 +143,7 @@ export default async function AdminDashboard({ searchParams }: PageProps) {
           )}
 
           {activeTab === "users" && (
-            <div className="bg-card border border-border/50 rounded-2xl p-8 shadow-sm space-y-4">
-              <h2 className="text-xl font-bold tracking-tight">User Administration</h2>
-              <p className="text-muted-foreground text-sm">
-                View users list, manage roles (promotions/demotions), and suspend or unsuspend user accounts.
-              </p>
-              <div className="h-64 border border-dashed rounded-xl border-border bg-muted/10 animate-pulse flex items-center justify-center text-sm text-muted-foreground">
-                Users Grid and Access Controls (Phase 6)
-              </div>
-            </div>
+            <UserAdminTab users={users} searchQuery={searchQuery} />
           )}
 
           {activeTab === "skipped" && (

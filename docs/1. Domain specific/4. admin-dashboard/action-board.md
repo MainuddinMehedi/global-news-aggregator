@@ -44,9 +44,9 @@ This action board lists the step-by-step phases required to implement the comple
 
 ## Phase 6: Tab 4 — User Administration
 
-- [ ] Build the User list table querying registered users with details: name, email, role, suspended state.
-- [ ] Implement role promotion/demotion action button (`promoteToAdmin` / `demoteToUser`).
-- [ ] Implement account suspension toggle action button (`suspendUser` / `unsuspendUser`), instantly invalidating dynamic sessions for the user.
+- [x] Build the User list table querying registered users with details: name, email, role, suspended state.
+- [x] Implement role promotion/demotion action button (`promoteToAdmin` / `demoteToUser`).
+- [x] Implement account suspension toggle action button (`suspendUser` / `unsuspendUser`), instantly invalidating dynamic sessions for the user.
 
 ## Phase 7: Tab 5 — Skipped Articles & Gazetteer Sandbox
 
