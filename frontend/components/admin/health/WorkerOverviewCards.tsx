@@ -1,5 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
-import type { SystemHealthOverview } from "@/queries/admin";
+import type { SystemHealthOverview } from "@/queries/admin/health";
 
 interface WorkerOverviewCardsProps {
   healthOverview: SystemHealthOverview;

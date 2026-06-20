@@ -61,3 +61,8 @@ This action board lists the step-by-step phases required to implement the comple
 - [ ] Write integration checks ensuring `/system-supar-admin` rejects non-admin users with appropriate HTTP 403 / redirect.
 - [ ] Verify database schema constraints under concurrent operations (e.g. run multiple ingestion tasks).
 - [ ] Verify Next.js 16 caching and tags revalidation function correctly for the new dashboard telemetry.
+
+## Deferred / Optional Tasks
+
+- [ ] Add inline progress spinner/status indicator in Source Control Center during manual ingestion runs.
+

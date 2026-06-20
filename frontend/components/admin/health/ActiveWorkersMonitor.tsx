@@ -2,7 +2,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { InformationCircleIcon, Clock01Icon } from "@hugeicons/core-free-icons";
 import { formatDistanceToNow } from "date-fns";
-import type { SystemTaskData } from "@/queries/admin";
+import type { SystemTaskData } from "@/queries/admin/health";
 import { getStatusBadge, formatTaskName } from "./utils";
 
 interface ActiveWorkersMonitorProps {

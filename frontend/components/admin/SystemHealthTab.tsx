@@ -1,4 +1,4 @@
-import type { SystemTaskData, SystemHealthOverview } from "@/queries/admin";
+import type { SystemTaskData, SystemHealthOverview } from "@/queries/admin/health";
 import WorkerOverviewCards from "./health/WorkerOverviewCards";
 import ActiveWorkersMonitor from "./health/ActiveWorkersMonitor";
 import PipelineVolumeChart from "./health/PipelineVolumeChart";

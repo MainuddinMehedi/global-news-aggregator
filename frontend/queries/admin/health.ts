@@ -209,4 +209,3 @@ export async function getIngestionVolumeChartData(daysToChart: number = 7): Prom
     return [];
   }
 }
-

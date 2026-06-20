@@ -1,6 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { format } from "date-fns";
-import type { SystemTaskData } from "@/queries/admin";
+import type { SystemTaskData } from "@/queries/admin/health";
 import { getStatusBadge, formatTaskName, formatDuration, formatMetadata } from "./utils";
 
 interface WorkerExecutionLogTableProps {

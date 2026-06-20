@@ -14,8 +14,10 @@ import {
   getTaskLogs,
   getSystemHealthOverview,
   getIngestionVolumeChartData,
-} from "@/queries/admin";
+} from "@/queries/admin/health";
+import { getFeedSources } from "@/queries/admin/sources";
 import SystemHealthTab from "@/components/admin/SystemHealthTab";
+import SourceControlTab from "@/components/admin/SourceControlTab";
 
 interface PageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -41,6 +43,7 @@ export default async function AdminDashboard({ searchParams }: PageProps) {
     recentErrors: [],
   };
   let chartData: any[] = [];
+  let feedSources: any[] = [];
 
   if (activeTab === "health") {
     [runningTasks, taskLogs, healthOverview, chartData] = await Promise.all([
@@ -49,6 +52,8 @@ export default async function AdminDashboard({ searchParams }: PageProps) {
       getSystemHealthOverview(),
       getIngestionVolumeChartData(7),
     ]);
+  } else if (activeTab === "sources") {
+    feedSources = await getFeedSources();
   }
 
   const tabs = [
@@ -114,15 +119,7 @@ export default async function AdminDashboard({ searchParams }: PageProps) {
           )}
 
           {activeTab === "sources" && (
-            <div className="bg-card border border-border/50 rounded-2xl p-8 shadow-sm space-y-4">
-              <h2 className="text-xl font-bold tracking-tight">Source Control Center</h2>
-              <p className="text-muted-foreground text-sm">
-                Manage geopolitical RSS feed sources, toggle states, inspect crawler failures, and manually trigger ingestion.
-              </p>
-              <div className="h-64 border border-dashed rounded-xl border-border bg-muted/10 animate-pulse flex items-center justify-center text-sm text-muted-foreground">
-                Feeds Manager Table and Actions (Phase 4)
-              </div>
-            </div>
+            <SourceControlTab feedSources={feedSources} />
           )}
 
           {activeTab === "ai" && (
