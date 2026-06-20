@@ -73,7 +73,6 @@ export async function getSystemHealthOverview(): Promise<SystemHealthOverview> {
       activeTasksCount,
       failures24hCount,
       recentErrors,
-      rawCount1h,
       processedCount1h,
       rawCount24h,
       processedCount24h
@@ -107,9 +106,6 @@ export async function getSystemHealthOverview(): Promise<SystemHealthOverview> {
         take: 10,
       }),
       // Ingestion stats for rates
-      prisma.rawArticle.count({
-        where: { fetchedAt: { gte: oneHourAgo } },
-      }),
       prisma.processedArticle.count({
         where: {
           processedAt: { gte: oneHourAgo },

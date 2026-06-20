@@ -58,9 +58,9 @@ This action board lists the step-by-step phases required to implement the comple
 
 ## Phase 8: Verification & Polish
 
-- [ ] Write integration checks ensuring `/system-supar-admin` rejects non-admin users with appropriate HTTP 403 / redirect.
-- [ ] Verify database schema constraints under concurrent operations (e.g. run multiple ingestion tasks).
-- [ ] Verify Next.js 16 caching and tags revalidation function correctly for the new dashboard telemetry.
+- [x] Write integration checks ensuring `/system-supar-admin` rejects non-admin users with appropriate HTTP 403 / redirect.
+- [x] Verify database schema constraints under concurrent operations (e.g. run multiple ingestion tasks).
+- [x] Verify Next.js 16 caching and tags revalidation function correctly for the new dashboard telemetry.
 
 ## Deferred / Optional Tasks
 
