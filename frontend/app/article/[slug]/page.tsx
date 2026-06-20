@@ -16,7 +16,7 @@ import ArticleViewer from "@/components/articles/ArticleViewer";
 import { RelativeTime } from "@/components/ui/RelativeTime";
 
 import { Suspense } from "react";
-import FeedSkeleton from "@/components/Feed/FeedSkeleton";
+import ArticleDetailsSkeleton from "@/components/articles/ArticleSkeleton";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -25,7 +25,7 @@ interface PageProps {
 
 export default function ArticleDetailsPage({ params, searchParams }: PageProps) {
   return (
-    <Suspense fallback={<FeedSkeleton />}>
+    <Suspense fallback={<ArticleDetailsSkeleton />}>
       <ArticleDetailsContent params={params} searchParams={searchParams} />
     </Suspense>
   );

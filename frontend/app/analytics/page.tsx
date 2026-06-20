@@ -1,6 +1,5 @@
 import { getAnalyticsData } from "@/queries/analytics";
 import { cn } from "@/lib/utils";
-import { Suspense } from "react";
 import { BiasDonutChart } from "@/components/widgets/charts/BiasDonutChart";
 import { SentimentBarChart } from "@/components/widgets/charts/SentimentBarChart";
 import { CategoryBarChart } from "@/components/widgets/charts/CategoryBarChart";
@@ -113,12 +112,8 @@ interface AnalyticsProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
-export default function AnalyticsPage(props: AnalyticsProps) {
-  return (
-    <Suspense fallback={<div className="p-8 text-center text-muted-foreground animate-pulse">Loading Command Center Intelligence...</div>}>
-      <AnalyticsPageContent searchParams={props.searchParams} />
-    </Suspense>
-  );
+export default async function AnalyticsPage(props: AnalyticsProps) {
+  return <AnalyticsPageContent searchParams={props.searchParams} />;
 }
 
 async function AnalyticsPageContent(props: AnalyticsProps) {

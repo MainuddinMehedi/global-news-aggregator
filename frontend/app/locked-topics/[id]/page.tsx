@@ -3,7 +3,6 @@ import {
 } from "@/queries/lockedTopics";
 import { getFindings, getFindingCounts } from "@/queries/topicFindings";
 import { notFound } from "next/navigation";
-import { Suspense } from "react";
 import TopicHeader from "@/components/locked-topics/TopicHeader";
 import FindingsFilter from "@/components/locked-topics/FindingsFilter";
 import FindingsList from "@/components/locked-topics/FindingsList";
@@ -18,12 +17,8 @@ interface TopicDetailPageProps {
   }>;
 }
 
-export default function TopicDetailPage({ params, searchParams }: TopicDetailPageProps) {
-  return (
-    <Suspense fallback={<div className="p-8 text-center text-muted-foreground animate-pulse">Loading Topic Details...</div>}>
-      <TopicDetailContent params={params} searchParams={searchParams} />
-    </Suspense>
-  );
+export default async function TopicDetailPage({ params, searchParams }: TopicDetailPageProps) {
+  return <TopicDetailContent params={params} searchParams={searchParams} />;
 }
 
 async function TopicDetailContent({

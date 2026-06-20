@@ -10,7 +10,7 @@ import { Alert01Icon, ArrowLeft01Icon } from "@hugeicons/core-free-icons";
 import { StoryHero, KeyDevelopmentsTimeline, PerspectiveWidget } from "@/components/stories";
 
 import { Suspense } from "react";
-import FeedSkeleton from "@/components/Feed/FeedSkeleton";
+import StoryDetailsSkeleton from "@/components/stories/StorySkeleton";
 
 interface StoryPageProps {
   params: Promise<{ slug: string }>;
@@ -18,7 +18,7 @@ interface StoryPageProps {
 
 export default function StoryDetailsPage({ params }: StoryPageProps) {
   return (
-    <Suspense fallback={<FeedSkeleton />}>
+    <Suspense fallback={<StoryDetailsSkeleton />}>
       <StoryDetailsContent params={params} />
     </Suspense>
   );

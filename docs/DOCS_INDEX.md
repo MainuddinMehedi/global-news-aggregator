@@ -36,6 +36,8 @@ This index serves as the entry point and mindmap for the project's documentation
   Definitive model assignments across the stack, detailing Mistral AI (including Ministral 8B in chat), Groq, and Google AI Studio usage for optimal speed, intelligence, and cost.
 - **[pgvector-and-tsvector](pgvector-and-tsvector.md)**  
   Analysis of Supabase-native vector and full-text search capabilities, current gaps, and a proposal for hybrid search across articles, locked topics, and clustering.
+- **[Loading Skeletons & Next.js Routing Conventions](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/loading-skeletons.md)**  
+  Specifications for page loading skeletons, matching layout grids, modularization, and native Next.js route segment loading.
 
 **Ingestion service folder structure**
 

@@ -11,6 +11,7 @@ import { FindingCard } from "@/components/locked-topics/FindingCard";
 import { Bookmark01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import Link from "next/link";
+import BookmarksLoading from "./loading";
 
 export default function BookmarksPage() {
   const { data: session, status } = useSession();
@@ -40,14 +41,7 @@ export default function BookmarksPage() {
   }, [status]);
 
   if (status === "loading" || loading) {
-    return (
-      <div className="flex flex-col items-center justify-center flex-1 min-h-[60vh] bg-background px-6 text-center">
-        <div className="max-w-md space-y-4">
-          <div className="mx-auto w-10 h-10 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
-          <p className="text-muted-foreground font-medium animate-pulse">Loading bookmarks...</p>
-        </div>
-      </div>
-    );
+    return <BookmarksLoading />;
   }
 
   if (status === "unauthenticated") {
