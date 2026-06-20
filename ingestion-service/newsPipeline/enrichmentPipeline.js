@@ -1,7 +1,7 @@
 import { prisma } from "../db/prisma.js";
 import { enrichWithStage1 } from "./stage1.js";
 import { enrichWithStage2Batch } from "./stage2.js";
-import { primaryConfig } from "../ai/aiConfig.js";
+import { primaryConfig, pauseAI } from "../ai/aiConfig.js";
 
 export function createArticleProcessor(
   config = primaryConfig,
@@ -111,23 +111,35 @@ export function createArticleProcessor(
         // Stage 2: Local ML Enrichment
         let stage2Results = [];
         if (validBatch.length > 0) {
-          try {
-            stage2Results = await enrichWithStage2Batch(
-              validBatch,
-              validCategories,
-              config,
-            );
-          } catch (err) {
-            console.error(`⚠️ Stage 2 ML batch processing failed`, err.message);
-            // Fallback if the Python microservice is completely down
+          if (pauseAI) {
+            console.log("⏸️ Stage 2 ML Enrichment skipped (globally paused via Admin settings)");
             stage2Results = validBatch.map((article) => ({
               ...article,
               entities: [],
               sentimentScore: null,
               biasNote: null,
-              model: "failed-api-fallback",
-              failedEnrichment: true,
+              model: "stage1-only",
+              failedEnrichment: false,
             }));
+          } else {
+            try {
+              stage2Results = await enrichWithStage2Batch(
+                validBatch,
+                validCategories,
+                config,
+              );
+            } catch (err) {
+              console.error(`⚠️ Stage 2 ML batch processing failed`, err.message);
+              // Fallback if the Python microservice is completely down
+              stage2Results = validBatch.map((article) => ({
+                ...article,
+                entities: [],
+                sentimentScore: null,
+                biasNote: null,
+                model: "failed-api-fallback",
+                failedEnrichment: true,
+              }));
+            }
           }
         }
 

@@ -17,6 +17,7 @@ import formatDuration from "./utils/formatDuration.js";
 import cleanupOldSkippedArticles from "./utils/cleanupOldSkippedArticles.js";
 import revalidateCache from "./utils/revalidateCache.js";
 import { startTaskLogging, updateTaskHeartbeat, completeTaskLogging } from "./utils/taskLogger.js";
+import { loadConfigOverrides } from "./ai/aiConfig.js";
 
 const args = process.argv.slice(2);
 const limitArg = args.find((a) => a.startsWith("--limit="));
@@ -27,6 +28,7 @@ const startTime = Date.now();
 export async function processBacklogLogic() {
   const taskId = await startTaskLogging("backlog-processing");
   try {
+    await loadConfigOverrides(prisma);
     // Find RawArticles that have no ProcessedArticle, or a ProcessedArticle that failed enrichment
     const unprocessed = await prisma.rawArticle.findMany({
       where: {

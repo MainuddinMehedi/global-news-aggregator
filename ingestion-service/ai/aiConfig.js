@@ -36,3 +36,28 @@ export const fallbackConfig = {
   maxRequestTokens: parseInt(process.env.AI_GROQ_MAX_REQUEST_TOKENS) || 3500,
   reservedOutputTokens: parseInt(process.env.AI_GROQ_RESERVED_OUTPUT_TOKENS) || 800,
 };
+
+export let pauseAI = false;
+
+export async function loadConfigOverrides(prisma) {
+  try {
+    const setting = await prisma.systemSetting.findUnique({
+      where: { key: "ai_config" },
+    });
+    if (setting && setting.value) {
+      const val = setting.value;
+      if (val.primary) {
+        Object.assign(primaryConfig, val.primary);
+      }
+      if (val.fallback) {
+        Object.assign(fallbackConfig, val.fallback);
+      }
+      if (typeof val.pauseAI === "boolean") {
+        pauseAI = val.pauseAI;
+      }
+    }
+  } catch (err) {
+    console.error("⚠️ Failed to load AI config overrides from database:", err.message);
+  }
+}
+

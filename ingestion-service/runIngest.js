@@ -9,6 +9,7 @@ import revalidateCache from "./utils/revalidateCache.js";
 import { generateSlug } from "./utils/generateSlug.js";
 import { createArticleProcessor } from "./newsPipeline/enrichmentPipeline.js";
 import { startTaskLogging, updateTaskHeartbeat, completeTaskLogging } from "./utils/taskLogger.js";
+import { loadConfigOverrides } from "./ai/aiConfig.js";
 
 // ── CLI Flags ────────────────────────────────────────────────
 const args = process.argv.slice(2);
@@ -16,13 +17,13 @@ const skipAI = args.includes("--skip-ai");
 const aiLimitArg = args.find((a) => a.startsWith("--ai-limit="));
 const aiLimit = aiLimitArg ? parseInt(aiLimitArg.split("=")[1]) : Infinity;
 
-const aiProcessor = skipAI ? null : createArticleProcessor();
-
 const startTime = Date.now();
 
 export async function runIngestionPipeline() {
   const taskId = await startTaskLogging("rss-ingestion");
   try {
+    await loadConfigOverrides(prisma);
+    const aiProcessor = skipAI ? null : createArticleProcessor();
     // ── Log run mode ──
     if (skipAI) {
       console.log("🚀 Running in RAW-ONLY mode (--skip-ai): no AI processing\n");

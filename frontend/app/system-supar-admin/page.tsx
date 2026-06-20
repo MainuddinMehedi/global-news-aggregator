@@ -16,8 +16,10 @@ import {
   getIngestionVolumeChartData,
 } from "@/queries/admin/health";
 import { getFeedSources } from "@/queries/admin/sources";
+import { getAiConfigSettings, getAiUsageTimeline } from "@/queries/admin/ai";
 import SystemHealthTab from "@/components/admin/SystemHealthTab";
 import SourceControlTab from "@/components/admin/SourceControlTab";
+import AiEngineTab from "@/components/admin/ai/AiEngineTab";
 
 interface PageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -44,6 +46,8 @@ export default async function AdminDashboard({ searchParams }: PageProps) {
   };
   let chartData: any[] = [];
   let feedSources: any[] = [];
+  let aiSettings: any = null;
+  let usageTimeline: any[] = [];
 
   if (activeTab === "health") {
     [runningTasks, taskLogs, healthOverview, chartData] = await Promise.all([
@@ -54,6 +58,11 @@ export default async function AdminDashboard({ searchParams }: PageProps) {
     ]);
   } else if (activeTab === "sources") {
     feedSources = await getFeedSources();
+  } else if (activeTab === "ai") {
+    [aiSettings, usageTimeline] = await Promise.all([
+      getAiConfigSettings(),
+      getAiUsageTimeline(30),
+    ]);
   }
 
   const tabs = [
@@ -123,15 +132,7 @@ export default async function AdminDashboard({ searchParams }: PageProps) {
           )}
 
           {activeTab === "ai" && (
-            <div className="bg-card border border-border/50 rounded-2xl p-8 shadow-sm space-y-4">
-              <h2 className="text-xl font-bold tracking-tight">AI Engine Settings</h2>
-              <p className="text-muted-foreground text-sm">
-                Override active AI models, adjust parameters, set rate limits, and view cost/token utilization telemetry.
-              </p>
-              <div className="h-64 border border-dashed rounded-xl border-border bg-muted/10 animate-pulse flex items-center justify-center text-sm text-muted-foreground">
-                Model Settings Forms and Cost Charts (Phase 5)
-              </div>
-            </div>
+            <AiEngineTab initialSettings={aiSettings} usageTimeline={usageTimeline} />
           )}
 
           {activeTab === "users" && (

@@ -30,17 +30,17 @@ This action board lists the step-by-step phases required to implement the comple
 
 ## Phase 4: Tab 2 — Source Control Center
 
-- [ ] Build `FeedSource` CRUD table component with columns: Name, URL, Country, Bias Profile, Scope, Actions.
-- [ ] Build Add/Edit Modal forms matching the 3-axis filters, and hook them to Next.js Server Actions.
-- [ ] Build toggle action to enable/disable specific feeds, calling `toggleFeedSource`.
-- [ ] Add a "Reset Fail-counters" button to clear crawler error counts.
-- [ ] Add "Trigger Ingestion" button to execute runIngest asynchronously via a worker thread or server route.
+- [x] Build `FeedSource` CRUD table component with columns: Name, URL, Country, Bias Profile, Scope, Actions.
+- [x] Build Add/Edit Modal forms matching the 3-axis filters, and hook them to Next.js Server Actions.
+- [x] Build toggle action to enable/disable specific feeds, calling `toggleFeedSource`.
+- [x] Add a "Reset Fail-counters" button to clear crawler error counts.
+- [x] Add "Trigger Ingestion" button to execute runIngest asynchronously via a worker thread or server route.
 
 ## Phase 5: Tab 3 — AI Engine Configs & Token Telemetry
 
-- [ ] Add Form fields to load and override properties of `primaryConfig` and `fallbackConfig` (saved as overrides in `SystemSetting`).
-- [ ] Add "Pause AI Ingestion" toggle switch overriding LLM processing globally in the pipeline.
-- [ ] Render the token utilization line chart and cumulative API cost estimation graphs in Tab 3.
+- [x] Add Form fields to load and override properties of `primaryConfig` and `fallbackConfig` (saved as overrides in `SystemSetting`).
+- [x] Add "Pause AI Ingestion" toggle switch overriding LLM processing globally in the pipeline.
+- [x] Render the token utilization line chart and cumulative API cost estimation graphs in Tab 3.
 
 ## Phase 6: Tab 4 — User Administration
 

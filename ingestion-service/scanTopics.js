@@ -3,6 +3,7 @@ import { prisma } from "./db/prisma.js";
 import { runScannersForTopic } from "./topics/scanner.js";
 import revalidateCache from "./utils/revalidateCache.js";
 import { startTaskLogging, updateTaskHeartbeat, completeTaskLogging } from "./utils/taskLogger.js";
+import { loadConfigOverrides } from "./ai/aiConfig.js";
 
 // Allow triggering for a single topic via CLI args
 const args = process.argv.slice(2);
@@ -12,6 +13,7 @@ const specificTopicId = topicIdArg ? topicIdArg.split("=")[1] : null;
 export async function scanTopicsLogic(topicId = null) {
   const taskId = await startTaskLogging("locked-topic-scan");
   try {
+    await loadConfigOverrides(prisma);
     const effectiveTopicId = topicId || specificTopicId;
     console.log(`🚀 Starting Locked Topics background scanner${effectiveTopicId ? ` for topic ${effectiveTopicId}` : ""}...`);
 

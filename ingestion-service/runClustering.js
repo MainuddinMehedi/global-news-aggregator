@@ -15,6 +15,7 @@ import {
 import { saveClusteringResults } from "./clustering/saveClusteringResults.js";
 import revalidateCache from "./utils/revalidateCache.js";
 import { startTaskLogging, updateTaskHeartbeat, completeTaskLogging } from "./utils/taskLogger.js";
+import { loadConfigOverrides } from "./ai/aiConfig.js";
 
 const lifecycleConfig = {
   low: CLUSTER_LOW_IMPACT_INACTIVE_DAYS,
@@ -49,6 +50,7 @@ export async function runClusteringLogic() {
   let groupsFound = 0;
 
   try {
+    await loadConfigOverrides(prisma);
     console.log("🚀 Starting Story Clustering Worker...");
 
     // Apply basic lifecycle (time-based)
