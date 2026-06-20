@@ -3,13 +3,15 @@
 import { useEffect, useRef, useState } from "react";
 import { Cancel01Icon, Search } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 
 export function SearchBar() {
+  const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
+  
   const search = searchParams.get("search") ?? "";
   const [value, setValue] = useState(search);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(null);
@@ -47,6 +49,10 @@ export function SearchBar() {
     document.addEventListener("keydown", handleKey);
     return () => document.removeEventListener("keydown", handleKey);
   }, []);
+
+  const hiddenPaths = ["/system-supar-admin", "/settings", "/analytics"];
+  const shouldHide = pathname ? hiddenPaths.some((path) => pathname.startsWith(path)) : false;
+  if (shouldHide) return null;
 
   return (
     <>

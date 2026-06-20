@@ -9,10 +9,13 @@ declare module "next-auth" {
     user: {
       /** The user's role. */
       role: UserRole;
+      /** Whether the user has been suspended. */
+      suspended: boolean;
     } & DefaultSession["user"];
   }
 
   interface User {
     role: UserRole;
+    suspended: boolean;
   }
 }

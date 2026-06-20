@@ -2,6 +2,7 @@
 
 import { useIsSidebarCollapsed } from "@/store";
 import { cn } from "@/lib/utils";
+import { usePathname } from "next/navigation";
 
 export default function SidebarWrapper({
   children,
@@ -9,6 +10,10 @@ export default function SidebarWrapper({
   children: React.ReactNode;
 }) {
   const isCollapsed = useIsSidebarCollapsed();
+  const pathname = usePathname();
+  const isAdminPage = pathname?.startsWith("/system-supar-admin");
+
+  if (isAdminPage) return null;
 
   return (
     <div
