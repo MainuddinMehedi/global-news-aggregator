@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { useSettings } from "@/store";
 
 export default function CategoryFilter({
   categories,
@@ -10,10 +11,16 @@ export default function CategoryFilter({
 }) {
   const searchParams = useSearchParams();
   const activeCategory = searchParams.get("category") ?? "all";
+  const { settings } = useSettings();
+  const hiddenCategories = settings?.hiddenCategories || [];
+
+  const visibleCategories = categories.filter(
+    (cat) => !hiddenCategories.includes(cat)
+  );
 
   return (
     <div className="flex items-center space-x-2 overflow-x-auto scrollbar-hide rounded">
-      {["all", ...categories].map((cat) => (
+      {["all", ...visibleCategories].map((cat) => (
         <Link
           key={cat}
           href={cat === "all" ? "/" : `/?category=${cat}`}

@@ -15,6 +15,7 @@ interface getArticlesParams {
   scope?: string;
   cursor?: string;
   enabledSources?: string[];
+  hiddenCategories?: string[];
 }
 
 const TAKE = 20;
@@ -31,6 +32,7 @@ export async function getArticles({
   scope,
   cursor,
   enabledSources,
+  hiddenCategories,
 }: getArticlesParams): Promise<{
   articles: Article[];
   nextCursor: string | null;
@@ -136,6 +138,19 @@ export async function getArticles({
 
   const notSkippedFilter = [{ clusterStatus: { not: "SKIPPED" } }];
 
+  const notHiddenFilter =
+    hiddenCategories && hiddenCategories.length > 0
+      ? [
+          {
+            categories: {
+              none: {
+                name: { in: hiddenCategories },
+              },
+            },
+          },
+        ]
+      : [];
+
   try {
     // Fetch TAKE + 1 to detect whether a next page exists without a COUNT query
     const raw = await prisma.processedArticle.findMany({
@@ -145,6 +160,7 @@ export async function getArticles({
         AND: [
           ...categoryFilter,
           ...notSkippedFilter,
+          ...notHiddenFilter,
           ...searchFilter,
           ...regionFilter,
           ...originFilter,

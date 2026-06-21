@@ -48,6 +48,7 @@ async function HomeContent({ searchParams }: HomeProps) {
   let activeStoryTitle: string | undefined = undefined;
 
   let enabledSources: string[] | undefined = undefined;
+  let hiddenCategories: string[] | undefined = undefined;
 
   try {
     const session = await auth();
@@ -60,6 +61,7 @@ async function HomeContent({ searchParams }: HomeProps) {
         const settings = (user.settings || {}) as any;
         const customSources = settings.customSources || [];
         const disabledBuiltins = settings.disabledBuiltinSources || [];
+        hiddenCategories = settings.hiddenCategories || [];
 
         const enabledCustomNames = customSources
           .filter((s: any) => s.enabled)
@@ -86,6 +88,7 @@ async function HomeContent({ searchParams }: HomeProps) {
         bias,
         scope,
         enabledSources,
+        hiddenCategories,
       }),
       articleId ? getArticleById(articleId) : Promise.resolve(null),
       story !== "all"

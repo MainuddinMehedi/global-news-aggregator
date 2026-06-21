@@ -79,7 +79,7 @@ export interface NotificationChannels {
   mode: NotificationMode;
 }
 
-interface SettingsState {
+export interface SettingsState {
   theme: Theme;
   colorTheme: ColorTheme;
   isSidebarCollapsed: boolean;
