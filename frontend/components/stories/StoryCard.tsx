@@ -4,6 +4,7 @@ import { Clock01Icon, Earth, TradeUpIcon } from "@hugeicons/core-free-icons";
 import Link from "next/link";
 import { SourceAvatarStack } from "@/components/ui/SourceAvatar";
 import { formatTimeWindow } from "@/lib/utils";
+import KeyDevelopmentsTimeline from "./KeyDevelopmentsTimeline";
 
 interface KeyDevelopment {
   title: string;
@@ -134,34 +135,11 @@ export default function StoryCard({ story }: StoryCardProps) {
       </div>
 
       <div className="px-6 py-6 sm:px-8 bg-card/20">
-        <div className="mb-6 flex items-center gap-3 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
-          Key Developments
-          <div className="h-px flex-1 bg-border/50"></div>
-        </div>
-        <div className="relative ml-2 space-y-6 border-l-2 border-border/60 pl-6">
-          {story.keyDevelopments.slice(0, 6).map((dev, index) => (
-            <div key={index} className="relative group/timeline">
-              <div className="absolute -left-[31px] top-1.5 h-3.5 w-3.5 rounded-full border-2 border-muted bg-background ring-4 ring-card transition-colors duration-300 group-hover/timeline:border-primary group-hover/timeline:bg-primary/20" />
-
-              <div className="flex flex-col gap-1">
-                <div className="text-sm 2xl:text-base font-bold text-foreground/90 transition-colors group-hover/timeline:text-foreground tracking-tight">
-                  {dev.title}
-                </div>
-                <div className="text-[10px] 2xl:text-xs font-bold text-muted-foreground/60 uppercase tracking-widest">
-                  {dev.date}
-                </div>
-              </div>
-            </div>
-          ))}
-          {story.keyDevelopments.length > 6 && (
-            <div className="relative group/timeline">
-              <div className="absolute -left-[31px] top-1.5 h-3.5 w-3.5 rounded-full border-2 border-muted bg-muted/30" />
-              <div className="text-[10px] font-bold text-muted-foreground/40 uppercase tracking-widest">
-                + {story.keyDevelopments.length - 6} more
-              </div>
-            </div>
-          )}
-        </div>
+        <KeyDevelopmentsTimeline
+          developments={story.keyDevelopments}
+          limit={6}
+          showTitle={true}
+        />
       </div>
     </article>
   );
