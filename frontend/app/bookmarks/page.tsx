@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Article } from "@/types/article";
 import ArticleCard from "@/components/articles/ArticleCard";
 import { TopicFinding } from "@/types/lockedTopic";
@@ -14,7 +14,7 @@ import Link from "next/link";
 import BookmarksLoading from "./loading";
 
 export default function BookmarksPage() {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const [articles, setArticles] = useState<Article[]>([]);
   const [findings, setFindings] = useState<TopicFinding[]>([]);
   const [loading, setLoading] = useState(true);
@@ -79,8 +79,8 @@ export default function BookmarksPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto py-8 px-4 w-full">
-      <h1 className="text-3xl font-bold mb-8">Bookmarks</h1>
+    <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-8">
+      <h1 className="text-3xl font-bold">Bookmarks</h1>
 
       <Tabs defaultValue="articles" className="w-full">
         <TabsList className="mb-6 bg-muted/50 w-full justify-start overflow-x-auto rounded-xl p-1">

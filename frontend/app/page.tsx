@@ -116,7 +116,7 @@ async function HomeContent({ searchParams }: HomeProps) {
   return (
     <div className="flex flex-1 w-full">
       {/* Feed: Main content area */}
-      <div className="flex-1 min-w-0 p-5 space-y-5">
+      <div className="flex-1 min-w-0 px-4 py-6 sm:px-6 lg:px-8 space-y-6">
         <Filters
           category={category}
           region={region}
