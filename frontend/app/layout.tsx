@@ -10,7 +10,7 @@ import Navbar from "@/components/layout/Navbar";
 import Sidebar from "@/components/layout/Sidebar";
 import SidebarWrapper from "@/components/layout/SidebarWrapper";
 import ChatFAB from "@/components/chat/ChatFAB";
-import ChatSidebar from "@/components/chat/ChatSidebar";
+import FloatingChat from "@/components/chat/FloatingChat";
 import OnboardingModal from "@/components/auth/OnboardingModal";
 import LoginModal from "@/components/auth/LoginModal";
 
@@ -93,7 +93,7 @@ export default function RootLayout({
               {/* Global chat sidebar — available on every page */}
               <Suspense fallback={null}>
                 <ChatFAB />
-                <ChatSidebar />
+                <FloatingChat />
               </Suspense>
 
               <LoginModal />

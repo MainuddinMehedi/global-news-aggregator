@@ -47,11 +47,6 @@ interface ChatInputProps {
   compact?: boolean;
 }
 
-function formatContext(n: number): string {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(0)}M`;
-  return `${(n / 1_000).toFixed(0)}K`;
-}
-
 export default function ChatInput({
   onSend,
   onStop,
@@ -73,7 +68,6 @@ export default function ChatInput({
   const [value, setValue] = useState("");
   const [modelPickerOpen, setModelPickerOpen] = useState(false);
   const [modePickerOpen, setModePickerOpen] = useState(false);
-  const [isFocused, setIsFocused] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const activeModel =
     models.find((model) => model.id === selectedModel) ?? models[0];
@@ -142,8 +136,6 @@ export default function ChatInput({
             value={value}
             onChange={(e) => setValue(e.target.value)}
             onKeyDown={handleKeyDown}
-            onFocus={() => setIsFocused(true)}
-            onBlur={() => setIsFocused(false)}
             disabled={disabled}
             placeholder="Ask about geopolitical events, trends, or analysis…"
             rows={1}
@@ -302,9 +294,6 @@ export default function ChatInput({
                             <span className="block truncate text-xs text-muted-foreground">
                               {model.description}
                             </span>
-                            {/* <span className="block text-[11px] text-muted-foreground/60 mt-0.5">
-                              {formatContext(model.contextWindow)} context
-                            </span> */}
                           </span>
                           {isSelected && (
                             <HugeiconsIcon
@@ -373,7 +362,7 @@ export default function ChatInput({
               >
                 <HugeiconsIcon
                   icon={isLoading ? StopIcon : hasText ? SentIcon : Mic01Icon}
-                  className="w-4.5 h-4.5"
+                  className="w-[18px] h-[18px]"
                 />
               </button>
             </div>

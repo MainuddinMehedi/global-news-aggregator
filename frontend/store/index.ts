@@ -41,8 +41,8 @@ interface TopicSlice {
   setLockedTopicCount: (count: number) => void;
 }
 
-// ─── Chat sidebar slice ──────────────────────────────────────────────────────
-interface ChatSidebarSlice {
+// ─── Floating chat slice ─────────────────────────────────────────────────────
+interface FloatingChatSlice {
   isChatOpen: boolean;
   /** Article context when opened from an article card's AI button */
   contextArticle: Article | null;
@@ -114,7 +114,7 @@ type AppStore = FeedSlice &
   StorySlice &
   NotificationSlice &
   UserSlice &
-  ChatSidebarSlice &
+  FloatingChatSlice &
   TopicSlice &
   AuthSlice &
   SettingsSlice;

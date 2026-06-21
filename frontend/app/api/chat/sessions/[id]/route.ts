@@ -115,14 +115,22 @@ export async function PATCH(
       });
     }
 
-    if (Array.isArray(body.contexts) && body.contexts.length > 0) {
-      await prisma.chatContext.createMany({
-        data: (body.contexts as ContextItem[]).map((context) => ({
-          sessionId: id,
-          ...normalizeContextForDb(context),
-        })),
-        skipDuplicates: true,
-      });
+    if (Array.isArray(body.contexts)) {
+      await prisma.$transaction([
+        prisma.chatContext.deleteMany({
+          where: { sessionId: id },
+        }),
+        ...(body.contexts.length > 0
+          ? [
+              prisma.chatContext.createMany({
+                data: (body.contexts as ContextItem[]).map((context) => ({
+                  sessionId: id,
+                  ...normalizeContextForDb(context),
+                })),
+              }),
+            ]
+          : []),
+      ]);
 
       // Bump updatedAt to move the session to the top of the history list
       if (Object.keys(updateData).length === 0) {

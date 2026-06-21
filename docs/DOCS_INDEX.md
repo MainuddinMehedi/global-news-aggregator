@@ -117,6 +117,8 @@ These documents represent the source of truth for each major platform feature. T
    Session handling via NextAuth.js and Prisma, defining scopes for Public, Authenticated, and Admin users.
 6. **[6. Admin Dashboard](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/1.%20Domain%20specific/4.%20admin-dashboard/0.admin-dashboard.md)**  
    Core administration panel for system health telemetry, ingestion crawler configuration, feed management, user permissions audit, and interactive gazetteer tuning sandbox.
+7. **[7. Chat Interface](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/1.%20Domain%20specific/6.%20chat/0.chat-interface.md)**  
+   Interactive multi-model AI geopolitical analyst chat interface with context RAG grounding, voice-mode integration, and session history management.
 
 ---
 
@@ -136,4 +138,3 @@ These documents represent the source of truth for each major platform feature. T
 Older drafts, development logs, and research files have been archived for record-keeping:
 
 - **[Archive Dump Directory](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/archive_dump/)** — Contains raw files from early iterations of metadata strategy, gliner experimentation, and design logs.
-- **[Chat Analysis & Implementation Guide](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/6.chat/chat_analysis_and_implementation_guide.md)** — Initial architectural feedback and code mapping transcripts.

@@ -81,16 +81,6 @@ function toContextInput(context: IncomingContextItem) {
   } as ContextItem;
 }
 
-function getIncomingMessageText(message: IncomingMessage) {
-  return message.parts
-    ? message.parts
-        .filter((part) => part.type === "text")
-        .map((part) => part.text || "")
-        .join("\n")
-        .trim()
-    : message.content || "";
-}
-
 function formatStreamError(error: unknown) {
   const err =
     error && typeof error === "object"
@@ -186,7 +176,7 @@ export async function POST(req: Request) {
       .find((msg) => msg.role === "user");
 
     const latestUserText = latestUserMessage
-      ? getIncomingMessageText(latestUserMessage)
+      ? getMessageText(latestUserMessage as unknown as UIMessage)
       : "";
 
     let activeSessionId = sessionId;
@@ -325,7 +315,7 @@ export async function POST(req: Request) {
         );
         if (
           msg.role === "assistant" &&
-          !getIncomingMessageText(msg).trim() &&
+          !getMessageText(msg as unknown as UIMessage).trim() &&
           !hasToolCalls
         ) {
           return false;

@@ -4,19 +4,13 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   Cancel01Icon,
-  PlusSignIcon,
   MessageSquare,
-  Robot01Icon,
-  Sparkles,
   File01Icon,
   ArrowDown01Icon,
   LinkSquare01Icon,
 } from "@hugeicons/core-free-icons";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
-import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport } from "ai";
-import { toast } from "sonner";
 import {
   useIsChatOpen,
   useCloseChat,
@@ -27,11 +21,10 @@ import ChatInput from "./ChatInput";
 import MessageList from "./MessageList";
 import ContextPickerModal from "./ContextPickerModal";
 import { MODEL_REGISTRY, getActiveModels } from "@/lib/ai/modelRegistry";
-import type { ContextItem } from "@/types/chat";
 import { contextFromArticle } from "@/lib/chat/contexts";
-import {
-  createSessionTitle,
-} from "@/lib/chat/messages";
+import { useChatContext } from "@/hooks/useChatContext";
+import { useChatFlow } from "@/hooks/useChatFlow";
+import { WelcomeScreen } from "./WelcomeScreen";
 
 // ---------------------------------------------------------------------------
 // Context banner — shown when opened from an article card
@@ -47,10 +40,10 @@ function ContextBanner({
   onClear: () => void;
 }) {
   return (
-    <div className="mx-3 mt-2 p-2.5 rounded-lg bg-primary/5 border border-primary/15">
+    <div className="mx-3 mt-2 p-2.5 rounded-lg bg-primary/5 border border-primary/15 animate-in fade-in slide-in-from-top-1 duration-200">
       <div className="flex items-start gap-2">
         <div className="w-6 h-6 rounded-md bg-primary/10 flex shrink-0 items-center justify-center mt-0.5">
-          <HugeiconsIcon icon={File01Icon} className="w-3 h-3 text-primary" />
+          <HugeiconsIcon icon={File01Icon} className="w-3.5 h-3.5 text-primary" />
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-xs font-medium text-foreground truncate leading-snug">
@@ -60,10 +53,10 @@ function ContextBanner({
         </div>
         <button
           onClick={onClear}
-          className="p-0.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors shrink-0"
+          className="p-0.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors shrink-0 cursor-pointer"
           aria-label="Remove context"
         >
-          <HugeiconsIcon icon={Cancel01Icon} className="w-3 h-3" />
+          <HugeiconsIcon icon={Cancel01Icon} className="w-3.5 h-3.5" />
         </button>
       </div>
       <p className="text-[10px] text-primary/70 mt-1.5 pl-8">
@@ -74,127 +67,47 @@ function ContextBanner({
 }
 
 // ---------------------------------------------------------------------------
-// Welcome screen — shown when no conversation is active
+// Main FloatingChat component — floating panel, Reddit-style
 // ---------------------------------------------------------------------------
 
-function WelcomeScreen({
-  onNewChat,
-  onSend,
-}: {
-  onNewChat: () => void;
-  onSend: (text: string) => void;
-}) {
-  return (
-    <div className="flex-1 flex flex-col items-center justify-center px-6 text-center select-none">
-      {/* Glowing orb illustration */}
-      <div className="relative mb-5">
-        <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20">
-          <HugeiconsIcon icon={Robot01Icon} className="w-8 h-8 text-primary" />
-        </div>
-        {/* Subtle glow rings */}
-        <div className="absolute inset-0 -m-2 rounded-full bg-primary/5 animate-pulse" />
-        <div className="absolute inset-0 -m-4 rounded-full bg-primary/[0.02]" />
-      </div>
-
-      <h3 className="text-sm font-semibold text-foreground mb-1">
-        Welcome to AI Chat
-      </h3>
-      <p className="text-xs text-muted-foreground leading-relaxed max-w-[220px]">
-        Ask questions about geopolitical events, get multi-perspective analysis,
-        or explore trends.
-      </p>
-
-      {/* Quick action chips */}
-      <div className="flex flex-col gap-1.5 mt-5 w-full max-w-[240px]">
-        <button
-          onClick={onNewChat}
-          className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-muted/30 border border-border/60 text-xs text-foreground hover:bg-muted/50 hover:border-primary/30 transition-all group text-left"
-        >
-          <HugeiconsIcon
-            icon={PlusSignIcon}
-            className="w-3.5 h-3.5 text-primary group-hover:scale-110 transition-transform"
-          />
-          <span className="font-medium">Start new chat</span>
-        </button>
-
-        <button
-          onClick={() => onSend("Summarize today's news")}
-          className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-muted/30 border border-border/60 text-xs text-muted-foreground hover:bg-muted/50 hover:border-border hover:text-foreground transition-all group text-left"
-        >
-          <HugeiconsIcon
-            icon={Sparkles}
-            className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary transition-colors"
-          />
-          <span>Summarize today&apos;s news</span>
-        </button>
-
-        <button
-          onClick={() => onSend("What are the latest geopolitical trends?")}
-          className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-muted/30 border border-border/60 text-xs text-muted-foreground hover:bg-muted/50 hover:border-border hover:text-foreground transition-all group text-left"
-        >
-          <HugeiconsIcon
-            icon={MessageSquare}
-            className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary transition-colors"
-          />
-          <span>Latest geopolitical trends</span>
-        </button>
-      </div>
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Main ChatSidebar component — floating panel, Reddit-style
-// ---------------------------------------------------------------------------
-
-export default function ChatSidebar() {
+export default function FloatingChat() {
   const isOpen = useIsChatOpen();
   const closeChat = useCloseChat();
   const contextArticle = useChatContextArticle();
   const clearContext = useClearChatContext();
-  const [contexts, setContexts] = useState<ContextItem[]>([]);
+
   const [sessionId, setSessionId] = useState<string | undefined>();
   const [selectedModel, setSelectedModel] = useState(MODEL_REGISTRY[0].id);
   const [adaptiveThinking, setAdaptiveThinking] = useState(false);
   const [responseMode, setResponseMode] = useState<"concise" | "descriptive">(
     "concise",
   );
-  const [contextPickerOpen, setContextPickerOpen] = useState(false);
+
   const preparedArticleIdRef = useRef<string | null>(null);
 
-  const { messages, sendMessage, status, setMessages } = useChat({
-    transport: new DefaultChatTransport({
-      api: "/api/chat",
-      body: { contexts, sessionId, responseMode },
-    }),
-    onError: (error) => {
-      console.error("Sidebar chat error:", error);
-      toast.error("Failed to get chat response");
-    },
+  const {
+    contexts,
+    setContexts,
+    contextPickerOpen,
+    setContextPickerOpen,
+    handleAddContexts,
+  } = useChatContext(sessionId);
+
+  const {
+    messages,
+    status,
+    setMessages,
+    handleSend,
+  } = useChatFlow({
+    sessionId,
+    onSessionCreated: setSessionId,
+    contexts,
+    selectedModel,
+    adaptiveThinking,
+    responseMode,
   });
 
   const isLoading = status === "submitted" || status === "streaming";
-
-  const createSession = useCallback(
-    async (title: string, initialContexts: ContextItem[] = []) => {
-      const res = await fetch("/api/chat/sessions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title,
-          model: selectedModel,
-          responseMode,
-          contexts: initialContexts,
-        }),
-      });
-      if (!res.ok) throw new Error("Failed to create chat session");
-      const data = await res.json();
-      const id = data.session.id as string;
-      setSessionId(id);
-      return id;
-    },
-    [responseMode, selectedModel],
-  );
 
   const handleNewChat = useCallback(() => {
     setSessionId(undefined);
@@ -206,57 +119,13 @@ export default function ChatSidebar() {
     } else {
       setContexts([]);
     }
-  }, [contextArticle, setMessages]);
-
-  const handleSend = useCallback(
-    async (text: string) => {
-      try {
-        const targetSessionId =
-          sessionId ||
-          (await createSession(createSessionTitle(text), contexts));
-        sendMessage(
-          { role: "user", parts: [{ type: "text", text }] },
-          {
-            body: {
-              model: selectedModel,
-              adaptiveThinking,
-              sessionId: targetSessionId,
-              responseMode,
-              contexts,
-            },
-          },
-        );
-      } catch (error) {
-        console.error(error);
-        toast.error("Failed to send message");
-      }
-    },
-    [
-      adaptiveThinking,
-      contexts,
-      createSession,
-      responseMode,
-      selectedModel,
-      sendMessage,
-      sessionId,
-    ],
-  );
-
-  const handleAddContexts = useCallback((newItems: ContextItem[]) => {
-    setContexts((prev) => {
-      const filtered = newItems.filter(
-        (newItem) => !prev.some((existing) => existing.id === newItem.id),
-      );
-      if (filtered.length === 0) return prev;
-      return [...prev, ...filtered];
-    });
-  }, []);
+  }, [contextArticle, setMessages, setContexts]);
 
   const handleClearContext = useCallback(() => {
     preparedArticleIdRef.current = null;
     setContexts([]);
     clearContext();
-  }, [clearContext]);
+  }, [clearContext, setContexts]);
 
   // Close on Escape key
   useEffect(() => {
@@ -268,6 +137,7 @@ export default function ChatSidebar() {
     return () => document.removeEventListener("keydown", handleKey);
   }, [isOpen, closeChat]);
 
+  // Mount/context update effect
   useEffect(() => {
     if (!isOpen || !contextArticle) return;
     if (preparedArticleIdRef.current === contextArticle.id) return;
@@ -278,14 +148,7 @@ export default function ChatSidebar() {
     setMessages([]);
     setSessionId(undefined);
     setSelectedModel(MODEL_REGISTRY[0].id);
-
-    createSession(`Chat: ${contextArticle.title}`, [articleContext]).catch(
-      (error) => {
-        console.error(error);
-        toast.error("Failed to prepare article chat");
-      },
-    );
-  }, [contextArticle, createSession, isOpen, setMessages]);
+  }, [contextArticle, isOpen, setMessages, setContexts]);
 
   useEffect(() => {
     if (!contextArticle) {
@@ -313,9 +176,14 @@ export default function ChatSidebar() {
         className={cn(
           // Positioning — floating bottom-right like Reddit
           "fixed z-50",
-          "bottom-2 right-6",
-          // Dimensions — compact floating panel
-          "w-[480px] h-[540px]",
+          // Mobile: near-fullscreen inset
+          "inset-x-3 top-20 bottom-3 w-auto h-auto",
+          // sm and up: floating bottom-right
+          "sm:inset-x-auto sm:top-auto sm:bottom-2 sm:right-6 sm:w-[480px] sm:h-[540px]",
+          // lg
+          "lg:w-[560px] lg:h-[600px]",
+          // 2xl
+          "2xl:w-[640px] 2xl:h-[680px]",
           // Surface
           "bg-background rounded-2xl",
           "border border-border",
@@ -356,7 +224,7 @@ export default function ChatSidebar() {
             {/* Minimize */}
             <button
               onClick={closeChat}
-              className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+              className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors cursor-pointer"
               aria-label="Minimize chat"
             >
               <HugeiconsIcon icon={ArrowDown01Icon} className="w-4 h-4" />
@@ -365,7 +233,7 @@ export default function ChatSidebar() {
             {/* Close */}
             <button
               onClick={closeChat}
-              className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+              className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors cursor-pointer"
               aria-label="Close chat"
             >
               <HugeiconsIcon icon={Cancel01Icon} className="w-4 h-4" />
@@ -385,7 +253,11 @@ export default function ChatSidebar() {
         {/* ── Body ────────────────────────────────────────────────────── */}
         <div className="flex flex-1 min-h-0 overflow-hidden">
           {messages.length === 0 ? (
-            <WelcomeScreen onNewChat={handleNewChat} onSend={handleSend} />
+            <WelcomeScreen
+              onNewChat={handleNewChat}
+              onSend={handleSend}
+              compact={true}
+            />
           ) : (
             <MessageList messages={messages} isLoading={isLoading} />
           )}

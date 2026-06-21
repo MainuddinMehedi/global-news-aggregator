@@ -79,7 +79,35 @@ export function formatTimeWindow(timeWindow: string | null | undefined): string 
       year: "numeric",
       hour: "numeric",
       minute: "2-digit",
-      hour12: true,
     });
   });
+}
+
+export function getHostname(url: string) {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return url;
+  }
+}
+
+export function getUrlPath(url: string) {
+  try {
+    const parsed = new URL(url);
+    return parsed.pathname.split("/").filter(Boolean).slice(0, 2).join(" > ");
+  } catch {
+    return "";
+  }
+}
+
+export function formatPublishedDate(value?: string) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+
+  return new Intl.DateTimeFormat(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(date);
 }

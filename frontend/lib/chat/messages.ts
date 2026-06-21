@@ -1,8 +1,11 @@
-/* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-export function getMessageText(message: any): string {
+import { isToolUIPart, type UIMessage } from "ai";
+
+export function getMessageText(
+  message: Partial<UIMessage> & { content?: string | unknown[] },
+): string {
   if (message.parts && Array.isArray(message.parts)) {
     return message.parts
-      .map((part: any) => {
+      .map((part) => {
         if (part.type === "text") return part.text || "";
         // If it's a reasoning part, we might want to include it IF it's the only thing there
         // but for synthesis we really want the text part.
@@ -16,8 +19,18 @@ export function getMessageText(message: any): string {
   }
   // AI SDK Core Message content can be an array of parts
   if (Array.isArray(message.content)) {
-    return message.content
-      .map((part: any) => (part.type === "text" ? part.text || "" : ""))
+    return (message.content as Array<unknown>)
+      .map((part) => {
+        if (
+          typeof part === "object" &&
+          part !== null &&
+          "type" in part &&
+          (part as Record<string, unknown>).type === "text"
+        ) {
+          return String((part as Record<string, unknown>).text || "");
+        }
+        return "";
+      })
       .join("\n")
       .trim();
   }
@@ -29,5 +42,47 @@ export function createSessionTitle(text: string) {
   if (!normalized) return "New Chat";
   return normalized.length > 64 ? `${normalized.slice(0, 61)}...` : normalized;
 }
+
+export function normalizeMarkdownText(text: string) {
+  return text.replace(/<br\s*\/?>/gi, "\n");
+}
+
+export function hasRenderableMessageContent(
+  message: UIMessage,
+  isLastAndLoading: boolean,
+) {
+  if (message.role !== "assistant") return true;
+  if (isLastAndLoading) return true;
+  return (message.parts ?? []).some((part) => {
+    if (part.type === "text") return Boolean(part.text?.trim());
+    if (part.type === "reasoning") return Boolean(part.text?.trim());
+    if (!isToolUIPart(part)) return false;
+    return (
+      (part as { state?: string }).state === "output-error" ||
+      (part as { state?: string }).state === "output-available"
+    );
+  });
+}
+
+export function areMessagePartsEqual(
+  prevParts: UIMessage["parts"],
+  nextParts: UIMessage["parts"],
+) {
+  if (prevParts === nextParts) return true;
+  if (prevParts.length !== nextParts.length) return false;
+
+  return prevParts.every((part, index) => {
+    const next = nextParts[index];
+    if (part.type !== next.type) return false;
+    if ("text" in part && "text" in next) {
+      return (part as { text?: string }).text === (next as { text?: string }).text;
+    }
+    if ("state" in part && "state" in next) {
+      return (part as { state?: string }).state === (next as { state?: string }).state;
+    }
+    return part === next;
+  });
+}
+
 
 

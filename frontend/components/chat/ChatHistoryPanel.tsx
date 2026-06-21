@@ -2,9 +2,7 @@
 
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
-  Bookmark01Icon,
   Delete02Icon,
-  PlusSignIcon,
   Search01Icon,
 } from "@hugeicons/core-free-icons";
 import { cn } from "@/lib/utils";
@@ -35,24 +33,19 @@ type ChatHistoryPanelProps = {
   sessions: ChatSessionListItem[];
   activeSessionId?: string;
   loading?: boolean;
-  onNewChat: () => void;
   onSelectSession: (id: string) => void;
   onDeleteSession: (id: string) => void;
   className?: string;
 };
 
-type Tab = "chats" | "bookmarks" | "images";
-
 export default function ChatHistoryPanel({
   sessions,
   activeSessionId,
   loading,
-  onNewChat,
   onSelectSession,
   onDeleteSession,
   className,
 }: ChatHistoryPanelProps) {
-  const [activeTab, setActiveTab] = useState<Tab>("chats");
   const [searchQuery, setSearchQuery] = useState("");
   const [sessionToDelete, setSessionToDelete] = useState<string | null>(null);
 
@@ -90,27 +83,6 @@ export default function ChatHistoryPanel({
           <h2 className="text-lg font-semibold">History</h2>
         </div>
 
-        {/* Tabs */}
-        <div className="flex items-center gap-6 border-b border-border/50">
-          {(["chats", "bookmarks", "images"] as const).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={cn(
-                "pb-2 text-sm font-medium transition-colors relative",
-                activeTab === tab
-                  ? "text-foreground"
-                  : "text-muted-foreground hover:text-foreground",
-              )}
-            >
-              {tab.charAt(0).toUpperCase() + tab.slice(1)}
-              {activeTab === tab && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
-              )}
-            </button>
-          ))}
-        </div>
-
         {/* Search */}
         <div className="relative">
           <HugeiconsIcon
@@ -119,7 +91,7 @@ export default function ChatHistoryPanel({
           />
           <input
             type="text"
-            placeholder={`Search ${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} History`}
+            placeholder="Search chats"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full h-10 pl-10 pr-4 rounded-xl bg-muted/50 border-none focus:ring-1 focus:ring-primary text-sm"
@@ -131,12 +103,7 @@ export default function ChatHistoryPanel({
       <div className="flex-1 overflow-y-auto p-2 scrollbar-sleek">
         {loading ? (
           <div className="px-3 py-4 text-xs text-muted-foreground">
-            Loading {activeTab}...
-          </div>
-        ) : activeTab !== "chats" ? (
-          <div className="px-3 py-4 text-xs text-muted-foreground italic">
-            {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} history
-            coming soon.
+            Loading chats...
           </div>
         ) : filteredSessions.length === 0 ? (
           <div className="px-3 py-4 text-xs text-muted-foreground">
@@ -175,15 +142,6 @@ export default function ChatHistoryPanel({
                         </div>
                       </button>
                       <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                          className="p-1.5 rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
-                          aria-label="Bookmark"
-                        >
-                          <HugeiconsIcon
-                            icon={Bookmark01Icon}
-                            className="h-4 w-4"
-                          />
-                        </button>
                         <button
                           onClick={() => setSessionToDelete(session.id)}
                           aria-label={`Delete ${session.title}`}
