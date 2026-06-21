@@ -2,7 +2,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function AdminLoading() {
   return (
-    <div className="container max-w-6xl mx-auto py-8 px-4 space-y-8 animate-pulse">
+    <div className="mx-auto w-full max-w-7xl 2xl:max-w-[1400px] px-4 py-8 sm:px-6 lg:px-8 space-y-8 animate-pulse">
       {/* Header Skeleton */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 border-b border-border pb-6">
         <Skeleton className="w-12 h-12 rounded-xl shrink-0" />

@@ -20,7 +20,7 @@ export default function AnalyticsLoading() {
       {/* Ambient glow */}
       <div className="pointer-events-none fixed top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-primary/5 blur-[100px] rounded-full" />
 
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 py-10 space-y-12">
+      <div className="relative z-10 mx-auto w-full max-w-7xl 2xl:max-w-[1400px] px-4 py-8 sm:px-6 lg:px-8 space-y-8">
         {/* Header Skeleton */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div className="space-y-4">

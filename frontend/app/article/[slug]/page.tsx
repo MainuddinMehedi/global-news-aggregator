@@ -45,7 +45,7 @@ async function ArticleDetailsContent({ params, searchParams }: PageProps) {
   }
 
   return (
-    <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="mx-auto w-full max-w-7xl 2xl:max-w-[1400px] px-4 py-8 sm:px-6 lg:px-8 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <Link
         href={storySlug ? `/stories/${storySlug}` : "/"}
         className="inline-flex items-center text-sm text-muted-foreground hover:text-primary transition-colors"

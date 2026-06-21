@@ -2,7 +2,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function LockedTopicsLoading() {
   return (
-    <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-10">
+    <div className="mx-auto w-full max-w-7xl 2xl:max-w-[1400px] px-4 py-8 sm:px-6 lg:px-8 space-y-10">
       {/* Header Skeleton */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div className="space-y-4 w-full max-w-2xl">

@@ -77,7 +77,7 @@ async function StoryDetailsContent({ params }: StoryPageProps) {
   );
 
   return (
-    <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-8">
+    <div className="mx-auto w-full max-w-7xl 2xl:max-w-[1400px] px-4 py-8 sm:px-6 lg:px-8 space-y-8">
       <Link
         href="/stories"
         className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
@@ -88,35 +88,53 @@ async function StoryDetailsContent({ params }: StoryPageProps) {
 
       <StoryHero story={story} sources={sources} origins={uniqueOrigins} />
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        <div className="lg:col-span-8 space-y-8">
-          <div className="rounded-[2.5rem] border border-border bg-card/40 backdrop-blur-xl p-6 md:p-8 shadow-sm space-y-8">
-            <div>
-              <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground mb-5 flex items-center gap-2">
-                <span className="w-8 h-px bg-border" />
-                AI Analysis Summary
-              </h2>
-              <p className="text-base leading-relaxed text-foreground/90">
-                {story.summary}
-              </p>
-            </div>
-
-            {story.whyItMatters && (
-              <div className="bg-primary/5 rounded-xl p-6 border border-primary/10">
-                <h2 className="text-xs font-bold uppercase tracking-widest text-primary mb-3 flex items-center gap-2">
-                  <HugeiconsIcon icon={Alert01Icon} className="h-4 w-4" />
-                  Why It Matters
-                  {/*Strategic Significance*/}
-                </h2>
-                <p className="text-base font-medium leading-relaxed text-foreground">
-                  {story.whyItMatters}
-                </p>
-              </div>
-            )}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        {/* Row 1, Left: AI Analysis Summary */}
+        <div className="lg:col-span-8 order-1 rounded-[2.5rem] border border-border bg-card/40 backdrop-blur-xl p-6 md:p-8 shadow-sm space-y-8">
+          <div>
+            <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground mb-5 flex items-center gap-2">
+              <span className="w-8 h-px bg-border" />
+              AI Analysis Summary
+            </h2>
+            <p className="text-base leading-relaxed text-foreground/90">
+              {story.summary}
+            </p>
           </div>
 
-          <PerspectiveWidget articles={story.articles.map(mapStoryArticleToArticle)} />
+          {story.whyItMatters && (
+            <div className="bg-primary/5 rounded-xl p-6 border border-primary/10">
+              <h2 className="text-xs font-bold uppercase tracking-widest text-primary mb-3 flex items-center gap-2">
+                <HugeiconsIcon icon={Alert01Icon} className="h-4 w-4" />
+                Why It Matters
+              </h2>
+              <p className="text-base font-medium leading-relaxed text-foreground">
+                {story.whyItMatters}
+              </p>
+            </div>
+          )}
+        </div>
 
+        {/* Row 1-3, Right: Timeline of Developments (Sticky Sidebar on Desktop, placed above Perspective/Articles on Mobile) */}
+        <div className="lg:col-span-4 order-2 lg:row-span-3 lg:sticky lg:top-6 lg:self-start">
+          <div className="rounded-[2.5rem] border border-border bg-card/40 backdrop-blur-xl p-8 shadow-sm max-h-[calc(100vh-3rem)] overflow-y-auto scrollbar-hide">
+            <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground mb-8 flex items-center gap-2">
+              <span className="w-4 h-px bg-border" />
+              Timeline of Developments
+            </h3>
+            <KeyDevelopmentsTimeline
+              developments={story.keyDevelopments || []}
+              showTitle={false}
+            />
+          </div>
+        </div>
+
+        {/* Row 2, Left: PerspectiveWidget */}
+        <div className="lg:col-span-8 order-3">
+          <PerspectiveWidget articles={story.articles.map(mapStoryArticleToArticle)} />
+        </div>
+
+        {/* Row 3, Left: Multi-Source Perspectives Articles Listing */}
+        <div className="lg:col-span-8 order-4">
           <div>
             <div className="flex items-center justify-between mb-8 px-2">
               <h2 className="text-2xl font-extrabold tracking-tight">
@@ -143,19 +161,6 @@ async function StoryDetailsContent({ params }: StoryPageProps) {
                 );
               })}
             </div>
-          </div>
-        </div>
-
-        <div className="lg:col-span-4 space-y-8">
-          <div className="rounded-[2.5rem] border border-border bg-card/40 backdrop-blur-xl p-8 shadow-sm sticky top-6 max-h-[calc(100vh-3rem)] overflow-y-auto scrollbar-hide">
-            <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground mb-8 flex items-center gap-2">
-              <span className="w-4 h-px bg-border" />
-              Timeline of Developments
-            </h3>
-            <KeyDevelopmentsTimeline
-              developments={story.keyDevelopments || []}
-              showTitle={false}
-            />
           </div>
         </div>
       </div>

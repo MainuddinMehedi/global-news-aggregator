@@ -64,3 +64,22 @@ export function getPublisherRegion(country: string | null | undefined): string {
   }
   return COUNTRY_TO_REGION[country] || "Global";
 }
+
+export function formatTimeWindow(timeWindow: string | null | undefined): string {
+  if (!timeWindow) return "Recent";
+  const isoDateRegex = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z/g;
+  
+  return timeWindow.replace(isoDateRegex, (match) => {
+    const date = new Date(match);
+    if (isNaN(date.getTime())) return match;
+    
+    return date.toLocaleString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
+  });
+}

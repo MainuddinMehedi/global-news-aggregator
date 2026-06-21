@@ -3,7 +3,7 @@ import { FindingSkeleton } from "@/components/locked-topics/FindingSkeleton";
 
 export default function TopicDetailLoading() {
   return (
-    <div className="max-w-6xl mx-auto px-4 py-12 space-y-12 animate-pulse">
+    <div className="mx-auto w-full max-w-7xl 2xl:max-w-[1400px] px-4 py-8 sm:px-6 lg:px-8 space-y-8 animate-pulse">
       {/* Header Skeleton */}
       <div className="space-y-4">
         <Skeleton className="h-6 w-36 rounded-full" />

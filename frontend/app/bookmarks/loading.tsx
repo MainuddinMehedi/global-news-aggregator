@@ -3,7 +3,7 @@ import { ArticleCardSkeleton } from "@/components/Feed/FeedSkeleton";
 
 export default function BookmarksLoading() {
   return (
-    <div className="max-w-6xl mx-auto py-8 px-4 w-full animate-pulse">
+    <div className="mx-auto w-full max-w-7xl 2xl:max-w-[1400px] px-4 py-8 sm:px-6 lg:px-8 space-y-8 animate-pulse">
       {/* Title */}
       <Skeleton className="h-9 w-40 mb-8 rounded-lg" />
 

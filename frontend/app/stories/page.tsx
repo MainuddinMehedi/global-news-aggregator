@@ -11,7 +11,7 @@ export default async function Page({
   const stories = await getStoryClusters(search || undefined);
 
   return (
-    <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+    <div className="mx-auto w-full max-w-7xl 2xl:max-w-[1400px] px-4 py-8 sm:px-6 lg:px-8">
       <div className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="space-y-3">
           <p className="text-sm uppercase tracking-[0.3em] text-muted-foreground font-semibold">
