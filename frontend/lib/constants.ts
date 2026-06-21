@@ -4,17 +4,16 @@ export const CANONICAL_CATEGORIES = [
   "business",
   "technology",
   "environment",
-  "health",
   "security",
   "politics",
   "society",
   "bangladesh",
+  "sports",
   "other",
 ];
 
 export const EXTRA_CATEGORIES = [
   "science",
-  "sports",
   "entertainment",
   "lifestyle",
   "gaming",

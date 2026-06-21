@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { CANONICAL_CATEGORIES, EXTRA_CATEGORIES, ALL_CATEGORIES } from "@/lib/constants";
+import { CANONICAL_CATEGORIES, EXTRA_CATEGORIES } from "@/lib/constants";
 import { Check } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import NotificationsSection from "./NotificationsSection";
@@ -184,11 +184,13 @@ export default function SettingsInterface({ dbCustomSources = [], dbDisabledBuil
 
   const enabledCategories = [
     ...CANONICAL_CATEGORIES.filter(cat => !settings.hiddenCategories.includes(cat)),
-    ...EXTRA_CATEGORIES.filter(cat => (settings.extraCategories || []).includes(cat))
+    // TODO: Enable once NLP/ML categorization is added to the ingestion service
+    // ...EXTRA_CATEGORIES.filter(cat => (settings.extraCategories || []).includes(cat))
   ];
   const disabledCategories = [
     ...CANONICAL_CATEGORIES.filter(cat => settings.hiddenCategories.includes(cat)),
-    ...EXTRA_CATEGORIES.filter(cat => !(settings.extraCategories || []).includes(cat))
+    // TODO: Enable once NLP/ML categorization is added to the ingestion service
+    // ...EXTRA_CATEGORIES.filter(cat => !(settings.extraCategories || []).includes(cat))
   ];
 
   const aiModels = MODEL_REGISTRY.filter(m => ALLOWED_AI_MODELS.includes(m.id));
@@ -354,7 +356,8 @@ export default function SettingsInterface({ dbCustomSources = [], dbDisabledBuil
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All News</SelectItem>
-                    {ALL_CATEGORIES.map((cat) => (
+                    {/* TODO: Use ALL_CATEGORIES once NLP/ML categorization is added to the ingestion service */}
+                    {CANONICAL_CATEGORIES.map((cat) => (
                       <SelectItem key={cat} value={cat}>
                         {cat.charAt(0).toUpperCase() + cat.slice(1)}
                       </SelectItem>
