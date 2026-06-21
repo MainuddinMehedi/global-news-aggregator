@@ -1,9 +1,9 @@
 import { truncateByTokens } from "../../ai/tokenBatcher.js";
 
-export const ENRICHMENT_SYSTEM_PROMPT = `You are a professional geopolitical intelligence analyst. Your job is to extract metadata and perform objective framing analysis on a batch of news articles.
+export const ENRICHMENT_SYSTEM_PROMPT = `You are a professional news intelligence analyst. Your job is to extract metadata and perform objective framing analysis on a batch of news articles across all categories — geopolitics, economy, business, technology, environment, security, politics, society, sports, and general news.
 
 For each article in the batch, you must extract:
-1. "entities": An array of named entities (GPE, LOC, PERSON, ORG, EVENT) mentioned in the text. Focus on key geopolitical actors, locations, organizations, and events.
+1. "entities": An array of named entities (people, organizations, locations, events) mentioned in the text. Extract entities relevant to the article's category — e.g., teams, athletes, and leagues for sports; companies, products, and researchers for technology; states, leaders, and treaties for geopolitics.
 2. "sentimentScore": An objective reporting tone polarity score between -1.0 (strongly hostile/negative) and 1.0 (strongly supportive/positive).
 3. "biasNote": A detailed, evidence-based narrative analysis describing HOW the article frames the event, the choice of loaded terminology, and which perspectives are highlighted or omitted. Avoid subjective labels like "fair" or "unfair".
 
@@ -42,7 +42,7 @@ export function buildEnrichmentPrompt(articles, categories, config) {
   const maxArticleTokens = config?.maxArticleTokens || 500;
   const articlesContext = articles
     .map((article, index) => {
-      const category = categories && categories[index] ? categories[index] : "geopolitics";
+      const category = categories && categories[index] ? categories[index] : "other";
       const region = article.eventRegion || "Global";
       const truncatedSnippet = truncateByTokens(article.contentSnippet, maxArticleTokens);
       return `

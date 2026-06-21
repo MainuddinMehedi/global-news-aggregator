@@ -2,6 +2,7 @@ import { prisma } from "../db/prisma.js";
 import { enrichWithStage1 } from "./stage1.js";
 import { enrichWithStage2Batch } from "./stage2.js";
 import { primaryConfig, pauseAI } from "../ai/aiConfig.js";
+import { generateEmbeddingsBatch } from "../ai/embeddings.js";
 
 export function createArticleProcessor(
   config = primaryConfig,
@@ -143,6 +144,19 @@ export function createArticleProcessor(
           }
         }
 
+        // Generate embeddings for the valid articles batch to conserve RPD limits
+        let embeddingsBatch = [];
+        if (validBatch.length > 0) {
+          try {
+            const textsToEmbed = validBatch.map(
+              (article) => `${article.title}\n${article.contentSnippet || ""}`
+            );
+            embeddingsBatch = await generateEmbeddingsBatch(textsToEmbed);
+          } catch (embedErr) {
+            console.error("⚠️ Failed to generate embeddings batch for articles:", embedErr.message);
+          }
+        }
+
         let successCount = 0;
         const successfullyProcessedArticles = [];
 
@@ -152,6 +166,7 @@ export function createArticleProcessor(
           const rawArticle = validBatch[j];
           const s1 = stage1Results[originalIndex].stage1;
           const s2 = stage2Results[j];
+          const embedding = embeddingsBatch[j] || null;
 
           const finalCats = s1.categories;
 
@@ -164,7 +179,7 @@ export function createArticleProcessor(
             await prisma.$transaction(
               async (tx) => {
                 // Create ProcessedArticle
-                await tx.processedArticle.create({
+                const created = await tx.processedArticle.create({
                   data: {
                     rawArticleId: rawArticle.id,
                     categories: { connectOrCreate: categoryOps },
@@ -176,6 +191,16 @@ export function createArticleProcessor(
                     clusterStatus: s2.failedEnrichment ? "FAILED_ENRICHMENT" : "HOLDING",
                   },
                 });
+
+                // Update the embedding vector using raw SQL since Prisma doesn't natively map Unsupported types
+                if (embedding) {
+                  const vectorStr = `[${embedding.join(",")}]`;
+                  await tx.$executeRaw`
+                    UPDATE "ProcessedArticle"
+                    SET embedding = ${vectorStr}::vector
+                    WHERE id = ${created.id}
+                  `;
+                }
               },
               {
                 timeout: 15000,

@@ -32,6 +32,7 @@ _Note: **OpenRouter** is currently deprioritized. While present in env vars, its
 | **AI Chat Interface**   | `groq/compound-mini`       | Groq     | Built-in web search and tool use capability.            |
 | **Chat Guard**          | `llama-prompt-guard-2-86m` | Groq     | Specialized low-latency safety model.                   |
 | **Voice Session**       | `Gemini 3 Flash Live`      | Google   | Native multi-modal/audio streaming.                     |
+| **Semantic Search**     | `gemini-embedding-001`     | Google   | 768-dimension embeddings for news grounding & search.   |
 
 ---
 
@@ -47,6 +48,8 @@ _Note: **OpenRouter** is currently deprioritized. While present in env vars, its
 | `ministral-8b-2512`  | 625,000    | 3.13  | 128K tokens    |
 | `codestral-2508`     | 625,000    | 2.08  | 256K tokens    |
 | `open-mistral-nemo`  | 500,000    | 0.50  | 128K tokens    |
+| `codestral-embed`    | 50,000     | 1.00  | Embedding      |
+| `mistral-embed-2312` | 20,000,000 | 1.00  | Embedding      |
 
 ### Groq
 
@@ -65,6 +68,8 @@ _Note: **OpenRouter** is currently deprioritized. While present in env vars, its
 | `gemini-3.1-flash-lite` | 250K          | 15        | 500       |
 | `gemini-2.5-flash`      | 250K          | 5         | 20        |
 | `Gemini 3 Flash Live`   | 65K           | Unlimited | Unlimited |
+| `Gemini Embedding 1`    | 30K           | 100       | 1K        |
+| `Gemini Embedding 2`    | 30K           | 100       | 1K        |
 
 ### GitHub Models
 
@@ -96,6 +101,17 @@ _Critical Constraint: The **8K input token cap** and low RPD make GitHub Models 
 - **Context**: Often involves 50-200 article snippets (~20K - 40K tokens).
 - **Rationale**: Google's "Unlimited TPM" on Gemma 4 is essential here. Groq would rate-limit a single large summary request immediately.
 
+### 4. Semantic Search / Embeddings
+
+- **Model**: `gemini-embedding-001` (Google AI Studio alias for Vertex's `text-embedding-004`)
+- **Rate Limits**: 30K TPM, 100 RPM, 1K RPD
+- **Strategy**: 
+  - **Ingestion**: Article embeddings are generated in batches during Stage 2 database transaction commits. Articles categorized as `"other"` (skipped) do not have embeddings generated.
+  - **Chat Interface**: User search queries are embedded at runtime via the `searchArticlesTool` to run raw SQL cosine distance queries (`<=>`) against the article vectors.
+- **Critical Design Notes**:
+  - **Contract Dimensionality Lock**: Both the ingestion utility and frontend API calls explicitly pass `outputDimensionality: 768` to lock the contract. This prevents schema errors if Google ever updates the model's default output dimensionality.
+  - **Provider Swapping Constraint**: If the system ever migrates to Mistral's `mistral-embed-2312` model, note that it outputs exactly **1024 dimensions**. Swapping embedders will require a database schema migration changing the column to `Unsupported("vector(1024)")` and recreating the HNSW index.
+
 ---
 
 ## AI Chat Interface (Model Picker)
@@ -125,5 +141,4 @@ The frontend chat interface should offer the following options to users:
 ## Future Roadmap
 
 - **Multilingual Support**: Implement `qwen/qwen3-32b` for superior Bengali and non-Western source processing.
-- **Semantic Search**: Integrate `Gemini Embedding 1` with Supabase `pgvector` to replace keyword-based matching.
 - **Prompt Injection**: Deploy `llama-prompt-guard-2-86m` as a middleware for the chat API.

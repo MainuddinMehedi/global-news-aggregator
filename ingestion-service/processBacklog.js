@@ -226,6 +226,7 @@ export async function processBacklogLogic() {
 } finally {
   await prisma.$disconnect();
 }
+}
 
 // Run if called directly from CLI
 if (import.meta.url === `file://${process.argv[1]}`) {

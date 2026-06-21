@@ -2,6 +2,8 @@ import { tool, zodSchema } from "ai";
 import { z } from "zod";
 import { webSearch as exaWebSearch } from "@exalabs/ai-sdk";
 import { extract } from "@extractus/article-extractor";
+import prisma from "@/lib/prisma";
+import { generateQueryEmbedding } from "./embeddings";
 
 const MAX_SEARCH_RESULTS = 10;
 const MAX_SEARCH_SNIPPET_CHARS = 260;
@@ -235,5 +237,119 @@ export const webSearchTool = tool({
         published: r.published,
       })),
     };
+  },
+});
+
+export const searchArticlesTool = tool({
+  description:
+    "Search the platform's internal database of indexed global news articles for relevant news matching a query. Use this tool first before checking the external web search if the user is asking about tracked/platform articles.",
+  inputSchema: zodSchema(
+    z.object({
+      query: z.string().describe("The search query to look up in the database"),
+    }),
+  ),
+  execute: async ({ query }) => {
+    try {
+      const trimmedQuery = query.trim();
+      if (!trimmedQuery) {
+        return {
+          success: true,
+          results: [],
+          message: "The search query was empty. Please provide a valid search term.",
+        };
+      }
+
+      // Check if the ProcessedArticle table has any records at all
+      const dbArticleCountResult = await prisma.$queryRaw<Array<{ count: bigint }>>`
+        SELECT COUNT(*)::bigint AS count FROM "ProcessedArticle";
+      `;
+      const totalArticles = Number(dbArticleCountResult[0]?.count || BigInt(0));
+      if (totalArticles === 0) {
+        return {
+          success: true,
+          results: [],
+          message: "The database currently contains no articles. The ingestion pipeline has not been run yet.",
+        };
+      }
+
+      // Check if there are any embeddings in the database to prevent silent degradation (empty database)
+      const countResult = await prisma.$queryRaw<Array<{ count: bigint }>>`
+        SELECT COUNT(*)::bigint AS count FROM "ProcessedArticle" WHERE embedding IS NOT NULL;
+      `;
+      const totalCount = Number(countResult[0]?.count || BigInt(0));
+      if (totalCount === 0) {
+        return {
+          success: true,
+          results: [],
+          message: "Geopolitical articles are present in the database, but none of them have generated vector embeddings yet. Ingestion service needs to enrich them first.",
+        };
+      }
+
+      const queryEmbedding = await generateQueryEmbedding(trimmedQuery);
+      const vectorStr = `[${queryEmbedding.join(",")}]`;
+
+      const results = await prisma.$queryRaw<unknown[]>`
+        SELECT 
+          p.id, 
+          r.title, 
+          r.url, 
+          r.source, 
+          r."contentSnippet", 
+          p."biasNote", 
+          p."sentimentScore", 
+          r."publishedAt",
+          (p.embedding <=> ${vectorStr}::vector) AS distance
+        FROM "ProcessedArticle" p
+        JOIN "RawArticle" r ON p."rawArticleId" = r.id
+        WHERE p.embedding IS NOT NULL
+        ORDER BY distance ASC
+        LIMIT 10;
+      `;
+
+      // Runtime validation schema for raw query results
+      const rawArticleQueryResultSchema = z.object({
+        id: z.string(),
+        title: z.string(),
+        url: z.string(),
+        source: z.string(),
+        contentSnippet: z.string(),
+        biasNote: z.string().nullable(),
+        sentimentScore: z.number().nullable(),
+        publishedAt: z.union([z.date(), z.string()]).transform((val) => new Date(val)),
+        distance: z.number(),
+      });
+
+      const parsedResults = z.array(rawArticleQueryResultSchema).safeParse(results);
+      if (!parsedResults.success) {
+        console.error("❌ Database query results did not match the expected schema:", parsedResults.error);
+        return {
+          success: false,
+          error: "Database schema mismatch during article retrieval.",
+        };
+      }
+
+      const formatted = parsedResults.data.map((r) => ({
+        id: r.id,
+        title: r.title,
+        url: r.url,
+        source: r.source,
+        snippet: compactText(r.contentSnippet, 300),
+        biasNote: r.biasNote,
+        sentimentScore: r.sentimentScore,
+        publishedAt: r.publishedAt.toISOString(),
+        score: (1 - r.distance).toFixed(4),
+      }));
+
+      return {
+        success: true,
+        results: formatted,
+      };
+    } catch (error) {
+      console.error("❌ Failed to search internal database articles:", error);
+      return {
+        success: false,
+        error: "Failed to search internal database.",
+      };
+    }
   },
 });

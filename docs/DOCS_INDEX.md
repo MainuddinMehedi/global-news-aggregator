@@ -54,7 +54,8 @@ ingestion-service/
 │   ├── aiConfig.js           # provider config (Mistral/Groq endpoints, keys, limits)
 │   ├── requestAI.js          # LLM API client with fallback + retry logic
 │   ├── rateLimiter.js        # sliding window rate limiter (TPM/RPM)
-│   └── tokenBatcher.js       # token counting, truncation, batch composition
+│   ├── tokenBatcher.js       # token counting, truncation, batch composition
+│   └── embeddings.js         # batch embeddings client using Google AI Studio (gemini-embedding-001)
 │
 ├── newsPipeline/             # unified ingestion + enrichment pipeline
 │   ├── rss.js                # RSS/Atom stream fetcher
@@ -117,8 +118,8 @@ These documents represent the source of truth for each major platform feature. T
    Session handling via NextAuth.js and Prisma, defining scopes for Public, Authenticated, and Admin users.
 6. **[6. Admin Dashboard](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/1.%20Domain%20specific/4.%20admin-dashboard/0.admin-dashboard.md)**  
    Core administration panel for system health telemetry, ingestion crawler configuration, feed management, user permissions audit, and interactive gazetteer tuning sandbox.
-7. **[7. Chat Interface](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/1.%20Domain%20specific/6.%20chat/0.chat-interface.md)**  
-   Interactive multi-model AI geopolitical analyst chat interface with context RAG grounding, voice-mode integration, and session history management.
+7. **[7. Chat Interface](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/1.%20Domain%20specific/6.%20chat/0.%20chat-interface.md)**  
+   Interactive multi-model AI global news analyst chat interface with context RAG grounding, voice-mode integration, and session history management. Uses [embeddings.ts](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/frontend/lib/ai/embeddings.ts) to embed user search queries and runs the `searchArticlesTool` (in [tools.ts](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/frontend/lib/ai/tools.ts)) to perform vector similarity lookups on Supabase.
 
 ---
 

@@ -86,6 +86,7 @@ model ProcessedArticle {
   processedAt          DateTime   @default(now())
   clusteredAt          DateTime?
   clusterStatus        String     @default("HOLDING")
+  embedding            Unsupported("vector(768)")?
   matchedTopics UserTopic[]
   storyClusters StoryCluster[] @relation("ArticleStoryClusters")
   bookmarkedBy  ArticleBookmark[]

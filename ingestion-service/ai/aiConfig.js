@@ -37,6 +37,13 @@ export const fallbackConfig = {
   reservedOutputTokens: parseInt(process.env.AI_GROQ_RESERVED_OUTPUT_TOKENS) || 800,
 };
 
+export const embeddingConfig = {
+  baseUrl: process.env.GEMINI_BASE_URL || "https://generativelanguage.googleapis.com/v1beta/openai",
+  apiKey: process.env.GEMINI_API_KEY,
+  model: process.env.AI_EMBEDDING_MODEL || "gemini-embedding-001",
+  provider: "google",
+};
+
 export let pauseAI = false;
 
 export async function loadConfigOverrides(prisma) {
@@ -51,6 +58,9 @@ export async function loadConfigOverrides(prisma) {
       }
       if (val.fallback) {
         Object.assign(fallbackConfig, val.fallback);
+      }
+      if (val.embedding) {
+        Object.assign(embeddingConfig, val.embedding);
       }
       if (typeof val.pauseAI === "boolean") {
         pauseAI = val.pauseAI;
