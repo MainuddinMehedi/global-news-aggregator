@@ -97,16 +97,16 @@ export function FindingDetailsModal({
           <FindingContentSection finding={finding} />
         </div>
 
-        <div className="p-4 border-t border-border/50 backdrop-blur-sm shrink-0 flex justify-between items-center gap-3">
+        <div className="p-4 border-t border-border/50 backdrop-blur-sm shrink-0 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <button
             onClick={onDelete}
-            className="flex items-center justify-center rounded-lg text-sm font-semibold transition-colors focus-visible:outline-none bg-destructive/10 text-destructive hover:bg-destructive/20 h-9 px-4 gap-2"
+            className="flex w-full sm:w-auto items-center justify-center rounded-lg text-sm font-semibold transition-colors focus-visible:outline-none bg-destructive/10 text-destructive hover:bg-destructive/20 h-9 px-4 gap-2 cursor-pointer"
           >
             <HugeiconsIcon icon={Delete01Icon} className="w-4 h-4" />
             Delete Finding
           </button>
 
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
             {finding.sourceType === "REDDIT" && !(finding.metadata as any)?.isSelfPost && (finding.metadata as any)?.externalUrl ? (
               <>
                 <a

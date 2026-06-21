@@ -9,6 +9,9 @@ import FindingsList from "@/components/locked-topics/FindingsList";
 import { MarkAsRead } from "@/components/locked-topics/MarkAsRead";
 import { FindingSource } from "@/types/lockedTopic";
 
+import { Suspense } from "react";
+import TopicDetailLoading from "./loading";
+
 interface TopicDetailPageProps {
   params: Promise<{ id: string }>;
   searchParams: Promise<{
@@ -17,8 +20,12 @@ interface TopicDetailPageProps {
   }>;
 }
 
-export default async function TopicDetailPage({ params, searchParams }: TopicDetailPageProps) {
-  return <TopicDetailContent params={params} searchParams={searchParams} />;
+export default function TopicDetailPage({ params, searchParams }: TopicDetailPageProps) {
+  return (
+    <Suspense fallback={<TopicDetailLoading />}>
+      <TopicDetailContent params={params} searchParams={searchParams} />
+    </Suspense>
+  );
 }
 
 async function TopicDetailContent({
