@@ -13,6 +13,7 @@ import {
   CLUSTER_CRITICAL_IMPACT_INACTIVE_DAYS,
 } from "./clustering/lifecycle.js";
 import { saveClusteringResults } from "./clustering/saveClusteringResults.js";
+import { deduplicateActiveClusters } from "./clustering/dedup.js";
 import revalidateCache from "./utils/revalidateCache.js";
 import { startTaskLogging, updateTaskHeartbeat, completeTaskLogging } from "./utils/taskLogger.js";
 import { loadConfigOverrides } from "./ai/aiConfig.js";
@@ -99,7 +100,7 @@ export async function runClusteringLogic() {
   );
 
   // 2. Entity Overlap Detection
-  const groups = detectEntityOverlap(holdingArticles);
+  const groups = await detectEntityOverlap(holdingArticles);
 
   if (groups.length === 0) {
     console.log(
@@ -113,21 +114,7 @@ export async function runClusteringLogic() {
   );
   groupsFound = groups.length;
 
-  // Load a broad active story pool. Each article group selects its own most
-  // relevant candidates before going to the LLM.
-  const activeClusterCandidates = await prisma.storyCluster.findMany({
-    where: { isActive: true },
-    orderBy: [{ lastActivityAt: "desc" }, { updatedAt: "desc" }],
-    take: CLUSTER_CANDIDATE_POOL_LIMIT,
-    include: {
-      articles: {
-        take: 5,
-        orderBy: { processedAt: "desc" },
-        include: { rawArticle: true, categories: true },
-      },
-    },
-  });
-  let activeClusters = activeClusterCandidates;
+
 
   // Process each group
   for (const group of groups) {
@@ -138,9 +125,8 @@ export async function runClusteringLogic() {
     const chunk_size = 5;
     for (let i = 0; i < group.length; i += chunk_size) {
       const batch = group.slice(i, i + chunk_size);
-      const activeClustersForBatch = selectRelevantClusterCandidates(
+      const { candidates: activeClustersForBatch, isFastExit } = await selectRelevantClusterCandidates(
         batch,
-        activeClusters,
         CLUSTER_LLM_CANDIDATE_LIMIT,
       );
 
@@ -194,14 +180,6 @@ export async function runClusteringLogic() {
         activeClustersWithRefs,
         clusteringResponse,
       );
-
-      const knownClusterIds = new Set(activeClusters.map((cluster) => cluster.id));
-      for (const cluster of activeClustersForBatch) {
-        if (!knownClusterIds.has(cluster.id)) {
-          activeClusters.unshift(cluster);
-          knownClusterIds.add(cluster.id);
-        }
-      }
     }
   }
 
@@ -210,6 +188,9 @@ export async function runClusteringLogic() {
     where: { isActive: true, momentumScore: { gt: 0 } },
     data: { momentumScore: { decrement: 0.5 } }, // Decrease by 0.5 every run
   });
+
+  // Run post-run Medoid deduplication
+  await deduplicateActiveClusters();
 
   console.log(`\n✅ Story Clustering complete.`);
 

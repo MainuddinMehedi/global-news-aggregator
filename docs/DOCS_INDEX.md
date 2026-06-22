@@ -67,7 +67,11 @@ ingestion-service/
 ├── clustering/               # story clustering feature
 │   ├── clusteringEngine.js   # LLM-based story grouping
 │   ├── lifecycle.js          # cluster state transitions (active → stale → archived)
-│   └── utils/                # entity overlap, relevance scoring, key developments
+│   ├── dedup.js              # post-run medoid-based duplicate cluster merging
+│   └── utils/                # clustering helpers
+│       ├── overlap.js        # pre-clustering entity & vector-distance adjacency builder
+│       ├── relevance.js      # raw SQL candidate selection with legacy fallback and fast-exit
+│       └── keyDevelopments.js# cluster key development extractor/merger
 │
 ├── topics/                   # locked topics feature
 │   ├── scanner.js            # scanner orchestrator
@@ -109,6 +113,7 @@ These documents represent the source of truth for each major platform feature. T
    The two-stage parsing flow: Stage 1 local Regex Gazetteer sieve and Stage 2 Python FastAPI NLP microservice (GLiNER + VADER).
 2. **[2. Story Clustering](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/1.%20Domain%20specific/2.%20story/0.story-clustering.md)**
    The end-to-end grouping engine that matches geopolitical entities and runs batch LLM categorization to group news articles into stories.
+   - **[Clustering Technical Audit](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/1.%20Domain%20specific/2.%20story/clustering-audit.md)**: Reviews algorithm limitations, O(N²) scaling, heuristics, and detail optimization pathways using `pgvector`.
 3. **[3. Locked Topics](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/1.%20Domain%20specific/3.%20locked-topics/0.locked-topics.md)**  
    The user-defined custom tracking feature that executes multi-source scans (Google News, Brave, Reddit, web scrapers) and rates findings via AI.
    - **[Scanner Flow Audit](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/1.%20Domain%20specific/3.%20locked-topics/scanner-flow-audit.md)**: Details the ingestion orchestrator, source configuration, data persistence, and relevance scoring.
