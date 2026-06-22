@@ -209,6 +209,7 @@ model LockedTopic {
   userContext         String     @db.Text
   aiRefinedQuery      String     @db.Text
   aiQuerySummary      String     @db.Text
+  queryEmbedding      Unsupported("vector(768)")? // [NEW] Semantic representation of the topic
   conceptualKeywords  Json? // Array of keyword groups for broad pre-filtering
   liveWebSummary      String?    @db.Text
   liveSummary         String?    @db.Text // AI-generated findings overview (distinct from liveWebSummary)

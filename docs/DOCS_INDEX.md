@@ -79,6 +79,7 @@ ingestion-service/
 │   ├── notifier.js           # notification dispatch
 │   ├── overviewGenerator.js  # topic summary generation
 │   ├── scannerConfig.js      # centralized constants (maxResults, minRelevance)
+│   ├── backfillLockedTopicEmbeddings.js # vector embedding backfill script
 │   ├── sources/              # scanner implementations (Brave, Reddit, RSS, GitHub, etc.)
 │   └── utils/                # parseQuery.js, formatSinceDate.js
 │
@@ -87,7 +88,8 @@ ingestion-service/
 │   └── feeds.js              # RSS feed definitions (builtin + user custom)
 │
 ├── db/                       # database
-│   └── prisma.js             # self-contained Prisma client
+│   ├── prisma.js             # self-contained Prisma client
+│   └── restore-indexes.js    # utility to restore custom pgvector indexes
 │
 ├── utils/                    # shared utilities
 │   ├── revalidateCache.js    # Next.js cache invalidation

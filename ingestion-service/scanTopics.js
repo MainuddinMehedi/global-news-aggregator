@@ -26,6 +26,19 @@ export async function scanTopicsLogic(topicId = null) {
       where: whereClause,
     });
 
+    if (topics.length > 0) {
+      const topicIds = topics.map(t => t.id);
+      const embeddings = await prisma.$queryRaw`
+        SELECT id, "queryEmbedding"::text as "queryEmbedding" 
+        FROM "LockedTopic" 
+        WHERE id = ANY(${topicIds}::uuid[])
+      `;
+      const embeddingMap = new Map(embeddings.map(e => [e.id, e.queryEmbedding]));
+      for (const topic of topics) {
+        topic.queryEmbedding = embeddingMap.get(topic.id) || null;
+      }
+    }
+
     if (topics.length === 0) {
       console.log("⚪ No active Locked Topics found.");
       await completeTaskLogging(taskId, "SUCCESS", { topicsScanned: 0, findingsCount: 0 });

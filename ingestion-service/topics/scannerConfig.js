@@ -5,9 +5,15 @@
  * This makes tuning, debugging, and auditing the system straightforward.
  */
 
+const parsedDistance = parseFloat(process.env.TOPIC_VECTOR_DISTANCE_MAX);
+const MAX_VECTOR_DISTANCE = isNaN(parsedDistance) ? 0.45 : parsedDistance;
+
 export const SCANNER_CONFIG = {
   /** Minimum AI relevance score to keep a finding (0.0–1.0). */
   minRelevance: 0.5,
+
+  /** Maximum cosine distance for semantic topic matching. */
+  maxVectorDistance: MAX_VECTOR_DISTANCE,
 
   /** Number of findings per batch sent to the AI scorer. */
   scorerBatchSize: 20,
