@@ -106,13 +106,20 @@ export default function ArticleFeed({
     setLoading(true);
 
     try {
-      const params = new URLSearchParams({ category, sort, search, cursor });
+      const params = new URLSearchParams({ category, sort, search });
       if (region !== "all") params.set("region", region);
       if (origin !== "all") params.set("origin", origin);
       if (type !== "all") params.set("type", type);
       if (story !== "all") params.set("story", story);
       if (bias !== "all") params.set("bias", bias);
       if (scope !== "all") params.set("scope", scope);
+
+      // Search uses offset-based pagination (page), default uses cursor-based
+      if (search) {
+        params.set("page", cursor);
+      } else {
+        params.set("cursor", cursor);
+      }
 
       const res = await fetch(`/api/articles?${params}`);
 

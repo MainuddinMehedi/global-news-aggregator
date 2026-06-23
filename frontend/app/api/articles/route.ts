@@ -35,17 +35,19 @@ export async function GET(req: NextRequest) {
       }
     }
 
+    const pageParam = searchParams.get("page");
     const data = await getArticles({
-      category:    searchParams.get("category")    ?? "all",
-      sort:        searchParams.get("sort")        ?? "latest",
-      search:      searchParams.get("search")      ?? "",
-      region:      searchParams.get("region")      ?? undefined,
-      origin:      searchParams.get("origin")      ?? undefined,
-      type:        searchParams.get("type")        ?? undefined,
-      story:       searchParams.get("story")       ?? undefined,
-      bias:        searchParams.get("bias")        ?? undefined,
-      scope:       searchParams.get("scope")       ?? undefined,
-      cursor:      searchParams.get("cursor")      ?? undefined,
+      category:       searchParams.get("category")    ?? "all",
+      sort:           searchParams.get("sort")        ?? "latest",
+      search:         searchParams.get("search")      ?? "",
+      region:         searchParams.get("region")      ?? undefined,
+      origin:         searchParams.get("origin")      ?? undefined,
+      type:           searchParams.get("type")        ?? undefined,
+      story:          searchParams.get("story")       ?? undefined,
+      bias:           searchParams.get("bias")        ?? undefined,
+      scope:          searchParams.get("scope")       ?? undefined,
+      cursor:         searchParams.get("cursor")      ?? undefined,
+      page:           pageParam ? parseInt(pageParam) : undefined,
       enabledSources,
       hiddenCategories,
     });
