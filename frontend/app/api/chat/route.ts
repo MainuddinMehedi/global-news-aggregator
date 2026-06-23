@@ -39,8 +39,7 @@ source origins, and multi-perspective metadata. Your role:
   sources). Reference bias metadata when relevant.
 
 - Cite specific events, dates, actors, and sources grounded in 
-  the platform's articles. Use the web search tool to supplement 
-  when the platform lacks coverage.
+  the platform's articles.
 
 - Write clearly: paragraphs for narrative, lists for comparisons. 
   Avoid tables except for side-by-side technical or numerical data.
@@ -48,10 +47,16 @@ source origins, and multi-perspective metadata. Your role:
 CRITICAL RULES:
 1. Always conclude with a synthesized text answer — never end on 
    a tool call or reasoning block.
-2. Match search depth to query complexity. A daily briefing needs 
-   one search; a contested conflict analysis may need several.
-3. Ground analysis in the provided context items when available.
-4. If a user provides an article URL or context item, analyze it 
+2. SEMANTIC ROUTING (TOOL USAGE):
+   - If the user asks about news, current events, or geopolitical analysis, you MUST use the \`search_articles\` tool first.
+   - If they ask a general knowledge question, answer directly using your internal knowledge (do NOT use tools).
+   - ONLY fallback to \`web_search\` if \`search_articles\` returns zero results for a highly recent/breaking event.
+3. If the user explicitly asks to "check the db" for a topic, do NOT use 
+   web search at all. Answer based purely on the DB results.
+4. When asked if something exists in the DB, answer with explicit references, 
+   citing the specific sources and articles found.
+5. Ground analysis in the provided context items when available.
+6. If a user provides an article URL or context item, analyze it 
    directly rather than searching the web for it.`;
 
 function estimateRequestSize(
@@ -179,10 +184,10 @@ export async function POST(req: Request) {
     const {
       messages,
       contexts,
-      model = "groq/compound-mini",
+      model = "gemini-3.1-flash-lite",
       adaptiveThinking = false,
       sessionId,
-      responseMode = "descriptive",
+      responseMode = "concise",
     } = (await req.json()) as {
       messages: IncomingMessage[];
       contexts?: IncomingContextItem[];

@@ -306,34 +306,7 @@ export default function ChatInput({
                     })}
                   </div>
 
-                  <div className="my-1 h-px bg-border/80" />
 
-                  <div className="flex items-center gap-3 rounded-lg px-3 py-2">
-                    <div className="min-w-0 flex-1">
-                      <div className="text-sm font-medium leading-5">
-                        Adaptive thinking
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        Thinks for more complex tasks
-                      </div>
-                    </div>
-                    <Switch
-                      checked={adaptiveThinking}
-                      onCheckedChange={onAdaptiveThinkingChange}
-                      aria-label="Toggle adaptive thinking"
-                    />
-                  </div>
-
-                  <button
-                    type="button"
-                    className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-accent/60 hover:text-foreground transition-colors"
-                  >
-                    <span>More models</span>
-                    <HugeiconsIcon
-                      icon={ArrowDown01Icon}
-                      className="h-4 w-4 -rotate-90"
-                    />
-                  </button>
                 </PopoverContent>
               </Popover>
 

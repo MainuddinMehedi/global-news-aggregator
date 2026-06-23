@@ -135,7 +135,6 @@ export default function ContextPanel({
         isOpen ? "w-80 mr-4" : "w-7 mr-4"
       )}
     >
-      {/* Panel - unified rounded floating card */}
       <div
         className={cn(
           "w-full flex flex-col rounded-2xl border border-border bg-background overflow-hidden shadow-sm h-full transition-all duration-300 ease-in-out origin-right",

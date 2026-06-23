@@ -22,7 +22,7 @@ export default function Sort() {
 
   return (
     <div className="flex items-center space-x-2">
-      <span className="text-xs text-muted-foreground font-medium">Sort:</span>
+      <span className="text-sm text-muted-foreground font-medium">Sort:</span>
       <Select value={currentSort} onValueChange={handleSortChange}>
         <SelectTrigger className="w-[110px] h-8 text-xs">
           <SelectValue />

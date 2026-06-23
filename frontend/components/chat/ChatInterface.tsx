@@ -51,7 +51,7 @@ export default function ChatInterface() {
   const [selectedModel, setSelectedModel] = useState(MODEL_REGISTRY[0].id);
   const [adaptiveThinking, setAdaptiveThinking] = useState(false);
   const [responseMode, setResponseMode] = useState<"concise" | "descriptive">(
-    "descriptive",
+    "concise",
   );
 
   const {
@@ -137,7 +137,6 @@ export default function ChatInterface() {
           onDeleteSession={handleDeleteSession}
         />
 
-        {/* Message list + voice overlay share the same flex-1 area */}
         <div className="flex-1 overflow-hidden relative pt-14">
           {messages.length === 0 ? (
             <WelcomeScreen onNewChat={handleNewChat} onSend={handleSend} />
@@ -185,9 +184,7 @@ export default function ChatInterface() {
         items={contexts}
         onRemove={removeContext}
         onAdd={addContext}
-      />
-
-      <ContextPickerModal
+      />      <ContextPickerModal
         isOpen={contextPickerOpen}
         onClose={() => setContextPickerOpen(false)}
         onAdd={handleAddContexts}

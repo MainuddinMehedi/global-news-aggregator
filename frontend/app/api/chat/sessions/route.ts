@@ -64,8 +64,8 @@ export async function POST(req: Request) {
   try {
     const {
       title = "New Chat",
-      model = "groq/compound-mini",
-      responseMode = "descriptive",
+      model = "gemini-3.1-flash-lite",
+      responseMode = "concise",
       contexts = [],
     } = await req.json();
 

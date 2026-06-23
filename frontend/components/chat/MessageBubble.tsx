@@ -103,9 +103,7 @@ function MessageBubble({
   const hasTextContent = message.parts?.some(
     (p) => p.type === "text" && p.text,
   );
-  const hasActiveReasoning = message.parts?.some(
-    (p) => isReasoningUIPart(p) && (p.text?.length ?? 0) > 0,
-  );
+
   const hasActiveToolUI = message.parts?.some((part) => {
     if (!isToolUIPart(part)) return false;
     const toolPart = part as { state: string };
@@ -118,7 +116,6 @@ function MessageBubble({
   const showLoadingDots =
     isLastAndLoading &&
     !hasTextContent &&
-    !hasActiveReasoning &&
     !hasActiveToolUI;
 
   return (
@@ -183,81 +180,39 @@ function MessageBubble({
 
               return (
                 <>
-                  {reasoningParts.map((part, index) => {
-                    if (isReasoningUIPart(part)) {
-                      if (!part.text && !isLastAndLoading) return null;
+                  {reasoningParts.length > 0 && (() => {
+                    const combinedText = reasoningParts
+                      .map((p) => p.text || "")
+                      .filter(Boolean)
+                      .join("\\n\\n");
 
-                      // Collapse reasoning if we have any answer text or if turn is done
-                      const shouldCollapse =
-                        !isLastAndLoading || hasStartedAnswer;
+                    if (!combinedText && !isLastAndLoading) return null;
 
-                      return (
-                        <div key={`reasoning-${index}`} className="mb-3">
-                          {!shouldCollapse ? (
-                            <div className="space-y-2">
-                              <div className="flex items-center gap-2 text-xs font-medium text-primary/70 select-none">
-                                <span className="flex items-center gap-1.5">
-                                  <HugeiconsIcon
-                                    icon={ArrowDown01Icon}
-                                    className="w-3 h-3"
-                                  />{" "}
-                                  Thinking
-                                </span>
-                                <span className="flex items-center gap-0.5">
-                                  <span
-                                    className="w-0.5 h-0.5 rounded-full bg-primary/40 animate-bounce"
-                                    style={{ animationDelay: "0ms" }}
-                                  />
-                                  <span
-                                    className="w-0.5 h-0.5 rounded-full bg-primary/40 animate-bounce"
-                                    style={{ animationDelay: "150ms" }}
-                                  />
-                                  <span
-                                    className="w-0.5 h-0.5 rounded-full bg-primary/40 animate-bounce"
-                                    style={{ animationDelay: "300ms" }}
-                                  />
-                                </span>
-                              </div>
-                              <div className="italic text-muted-foreground/80 text-sm whitespace-pre-wrap break-words pl-4 border-l border-primary/20 leading-relaxed font-serif">
-                                {part.text || "Analyzing query..."}
-                              </div>
-                            </div>
-                          ) : (
-                            <details className="group border border-border/40 rounded-md overflow-hidden bg-muted/10">
-                              <summary className="text-xs font-medium cursor-pointer py-1.5 px-3 bg-muted/20 hover:bg-muted/40 transition-colors flex items-center select-none text-muted-foreground/70">
-                                <span className="group-open:hidden flex items-center gap-1.5">
-                                  <HugeiconsIcon
-                                    icon={ArrowRight01Icon}
-                                    className="w-3 h-3"
-                                  />{" "}
-                                  View Thought Process
-                                </span>
-                                <span className="hidden group-open:flex items-center gap-1.5">
-                                  <HugeiconsIcon
-                                    icon={ArrowDown01Icon}
-                                    className="w-3 h-3"
-                                  />{" "}
-                                  Hide Thought Process
-                                </span>
-                              </summary>
-                              <div className="p-3 text-[11px] text-muted-foreground/80 whitespace-pre-wrap break-words font-mono leading-relaxed border-t border-border/30 bg-muted/5 max-w-full overflow-x-hidden">
-                                {part.text}
-                              </div>
-                            </details>
-                          )}
+                    return (
+                      <details className="group mb-2">
+                        <summary className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors font-medium cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden">
+                          <HugeiconsIcon
+                            icon={ArrowRight01Icon}
+                            className="w-3.5 h-3.5 group-open:hidden"
+                          />
+                          <HugeiconsIcon
+                            icon={ArrowDown01Icon}
+                            className="w-3.5 h-3.5 hidden group-open:block"
+                          />
+                          <span>Thought Process</span>
+                        </summary>
+                        <div className="pl-4 border-l-2 border-border/50 ml-1.5 py-1 mt-2 mb-2 text-[11px] text-muted-foreground/80 whitespace-pre-wrap break-words font-mono leading-relaxed max-w-full overflow-x-hidden">
+                          {combinedText || "Analyzing query..."}
                         </div>
-                      );
-                    }
-                    return null;
-                  })}
+                      </details>
+                    );
+                  })()}
 
                   {toolParts.length > 0 && (
-                    <div className="mb-3">
-                      <CollapsibleToolLogs
-                        toolParts={toolParts}
-                        forceCollapse={hasStartedAnswer}
-                      />
-                    </div>
+                    <CollapsibleToolLogs
+                      toolParts={toolParts}
+                      forceCollapse={hasStartedAnswer}
+                    />
                   )}
 
                   {textParts.map((part, index) => {
