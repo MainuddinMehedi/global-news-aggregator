@@ -1,3 +1,5 @@
+import { emitAdminNotification } from "../notifications/index.js";
+
 /**
  * Triggers cache revalidation for the specified tags on the Next.js frontend.
  * Catches connection errors and logs success or warning status messages.
@@ -21,11 +23,13 @@ export default async function revalidateCache(tags) {
       );
       if (!res.ok) {
         console.warn(`⚠️ Failed to revalidate tag: ${tag} (${res.status})`);
+        await emitAdminNotification('REVALIDATION_FAILED', { tag, error: `HTTP ${res.status}` });
       } else {
         console.log(`✓ Revalidated: ${tag}`);
       }
     }
   } catch (err) {
     console.error("⚠️ Cache revalidation failed:", err.message);
+    await emitAdminNotification('REVALIDATION_FAILED', { tag: tags.join(','), error: err.message });
   }
 }

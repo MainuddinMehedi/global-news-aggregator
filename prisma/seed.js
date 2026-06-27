@@ -12,26 +12,43 @@ async function main() {
   const toInsert = builtinFeeds.filter((f) => !existingUrls.has(f.url));
 
   if (toInsert.length === 0) {
-    console.log("✅ All defaults already present — nothing to seed.");
-    return;
+    console.log("✅ All defaults already present — no new feeds to seed.");
+  } else {
+    for (const feed of toInsert) {
+      await prisma.feedSource.create({
+        data: {
+          name: feed.name,
+          url: feed.url,
+          sourceCountry: feed.sourceCountry,
+          sourceType: feed.sourceType,
+          biasGroup: feed.biasGroup,
+          coverageScope: feed.coverageScope,
+          enabled: feed.enabled,
+        },
+      });
+      console.log(`Seeded: ${feed.name} (${feed.url})`);
+    }
+    console.log(`✅ Seeded ${toInsert.length} new feed source(s).`);
   }
 
-  for (const feed of toInsert) {
-    await prisma.feedSource.create({
-      data: {
-        name: feed.name,
-        url: feed.url,
-        sourceCountry: feed.sourceCountry,
-        sourceType: feed.sourceType,
-        biasGroup: feed.biasGroup,
-        coverageScope: feed.coverageScope,
-        enabled: feed.enabled,
-      },
+  console.log("\n🌱 Seeding AdminNotificationConfig records into database...");
+  const adminConfigs = [
+    { type: 'PIPELINE_FAILURE',      inAppEnabled: true, discordEnabled: true,  cooldownMinutes: 60 },
+    { type: 'INGESTION_STALLED',     inAppEnabled: true, discordEnabled: true,  cooldownMinutes: 60 },
+    { type: 'HIGH_FAILURE_RATE',     inAppEnabled: true, discordEnabled: true,  cooldownMinutes: 60 },
+    { type: 'AI_PROVIDER_DEGRADED',  inAppEnabled: true, discordEnabled: true,  cooldownMinutes: 60 },
+    { type: 'REVALIDATION_FAILED',   inAppEnabled: true, discordEnabled: false, cooldownMinutes: 60 },
+    { type: 'TOPIC_SOURCE_DEGRADED', inAppEnabled: true, discordEnabled: false, cooldownMinutes: 60 },
+  ];
+
+  for (const config of adminConfigs) {
+    await prisma.adminNotificationConfig.upsert({
+      where: { type: config.type },
+      update: {}, 
+      create: config,
     });
-    console.log(`Seeded: ${feed.name} (${feed.url})`);
   }
-
-  console.log(`✅ Seeded ${toInsert.length} new feed source(s).`);
+  console.log(`✅ Seeded/verified admin notification configurations.`);
 }
 
 main()

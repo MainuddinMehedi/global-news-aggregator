@@ -3,6 +3,9 @@ import { runIngestionPipeline } from "./runIngest.js";
 import { runClusteringLogic } from "./runClustering.js";
 import { processBacklogLogic } from "./processBacklog.js";
 import { scanTopicsLogic } from "./scanTopics.js";
+import { processDeliveryBatch } from "./notifications/deliveryWorker.js";
+import { runHealthMonitor } from "./health/monitor.js";
+import { cleanupNotifications } from "./notifications/retention.js";
 
 async function runMasterWorker() {
   const boss = await startBoss();
@@ -15,6 +18,9 @@ async function runMasterWorker() {
   await boss.createQueue("cluster-queue");
   await boss.createQueue("backlog-queue");
   await boss.createQueue("topics-queue");
+  await boss.createQueue("notification-delivery");
+  await boss.createQueue("health-monitor");
+  await boss.createQueue("notification-retention");
 
   // --- 2. Set Up Schedules (CRON) ---
   // These replace the old GitHub Actions
@@ -22,6 +28,9 @@ async function runMasterWorker() {
   await boss.schedule("cluster-queue", "45 * * * *");
   await boss.schedule("backlog-queue", "0 3 * * *");
   await boss.schedule("topics-queue", "15 */2 * * *");
+  await boss.schedule("notification-delivery", "* * * * *");
+  await boss.schedule("health-monitor", "*/15 * * * *");
+  await boss.schedule("notification-retention", "0 4 * * *");
   
   console.log("🕒 [Master Worker] Cron schedules active in pg-boss.");
 
@@ -83,6 +92,45 @@ async function runMasterWorker() {
       } catch (err) {
         console.error(`[Worker] ❌ topics-queue job ${job.id} failed:`, err);
         throw err; // Let pg-boss retry it
+      }
+    }
+  });
+
+  // Notification Delivery handler
+  await boss.work("notification-delivery", { concurrency: 1, batchSize: 1 }, async (jobs) => {
+    const jobArray = Array.isArray(jobs) ? jobs : [jobs];
+    for (const job of jobArray) {
+      try {
+        await processDeliveryBatch();
+      } catch (err) {
+        console.error(`[Worker] ❌ notification-delivery job ${job.id} failed:`, err);
+        throw err;
+      }
+    }
+  });
+
+  // Health Monitor handler
+  await boss.work("health-monitor", { concurrency: 1, batchSize: 1 }, async (jobs) => {
+    const jobArray = Array.isArray(jobs) ? jobs : [jobs];
+    for (const job of jobArray) {
+      try {
+        await runHealthMonitor();
+      } catch (err) {
+        console.error(`[Worker] ❌ health-monitor job ${job.id} failed:`, err);
+        throw err;
+      }
+    }
+  });
+
+  // Notification Retention handler
+  await boss.work("notification-retention", { concurrency: 1, batchSize: 1 }, async (jobs) => {
+    const jobArray = Array.isArray(jobs) ? jobs : [jobs];
+    for (const job of jobArray) {
+      try {
+        await cleanupNotifications();
+      } catch (err) {
+        console.error(`[Worker] ❌ notification-retention job ${job.id} failed:`, err);
+        throw err;
       }
     }
   });
