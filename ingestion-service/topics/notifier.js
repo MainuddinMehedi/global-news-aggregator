@@ -1,57 +1,8 @@
 /**
- * Notifier — Sends alerts for high-relevance findings to Discord/Telegram.
+ * Notifier — Integrates Locked Topic scanner findings with the new Notification Engine.
  */
 
-const DISCORD_WEBHOOK_URL = process.env.DISCORD_WEBHOOK_URL;
-const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
-
-/**
- * Send a notification to Discord
- */
-async function sendDiscord(topic, finding) {
-  if (!DISCORD_WEBHOOK_URL) return;
-
-  const content = `🚨 **New Finding for Topic: ${topic.displayName}** 🚨\n\n**Title:** ${finding.title}\n**Source:** ${finding.sourceName}\n**Relevance:** ${finding.relevanceScore}\n**Link:** ${finding.sourceUrl}`;
-
-  try {
-    await fetch(DISCORD_WEBHOOK_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ content }),
-    });
-  } catch (err) {
-    console.error("⚠️ [notifier] Discord delivery failed:", err.message);
-    // TODO(notification): Admin - Persistent webhook failures (4xx/5xx) → admin health alert
-  }
-}
-
-/**
- * Send a notification to Telegram
- */
-async function sendTelegram(topic, finding) {
-  if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) return;
-
-  const text = `🚨 *New Finding for Topic: ${topic.displayName}* 🚨\n\n*Title:* ${finding.title}\n*Source:* ${finding.sourceName}\n*Relevance:* ${finding.relevanceScore}\n[Read More](${finding.sourceUrl})`;
-
-  try {
-    await fetch(
-      `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          chat_id: TELEGRAM_CHAT_ID,
-          text: text,
-          parse_mode: "Markdown",
-        }),
-      },
-    );
-  } catch (err) {
-    console.error("⚠️ [notifier] Telegram delivery failed:", err.message);
-    // TODO(notification): Admin - Persistent webhook failures (4xx/5xx) → admin health alert
-  }
-}
+import { emitNotification } from "../notifications/emitter.js";
 
 /**
  * Processes a list of new findings and sends notifications based on topic settings.
@@ -72,27 +23,50 @@ export async function processNotifications(topic, findings) {
   if (highRelevanceFindings.length === 0) return;
 
   console.log(
-    `🔔 [notifier] Sending ${highRelevanceFindings.length} notifications for topic: "${topic.displayName}"...`,
+    `🔔 [notifier] Processing ${highRelevanceFindings.length} notifications for topic: "${topic.displayName}" via Notification Engine...`,
   );
 
   // Extract notifyChannels configuration
-  let channels = { discord: false, telegram: false };
+  let channelsConfig = { discord: false, telegram: false };
   try {
     if (typeof topic.notifyChannels === "string") {
-      channels = JSON.parse(topic.notifyChannels);
-    } else if (typeof topic.notifyChannels === "object") {
-      channels = topic.notifyChannels;
+      channelsConfig = JSON.parse(topic.notifyChannels);
+    } else if (typeof topic.notifyChannels === "object" && topic.notifyChannels !== null) {
+      channelsConfig = topic.notifyChannels;
     }
   } catch (e) {
-    console.warn(`⚠️ [notifier] Failed to parse notifyChannels for topic "${topic.displayName}" (raw: ${topic.notifyChannels}). Defaulting to none.`);
-    // TODO(notification): User - Corrupted notifyChannels → topic detail page warning that notification config is invalid
+    console.warn(`⚠️ [notifier] Failed to parse notifyChannels for topic "${topic.displayName}" (raw: ${topic.notifyChannels}). Defaulting to in-app only.`);
   }
 
-  for (const finding of highRelevanceFindings) {
-    const promises = [];
-    if (channels.discord) promises.push(sendDiscord(topic, finding));
-    if (channels.telegram) promises.push(sendTelegram(topic, finding));
+  // Build channels array: In-app is always enabled for alerts, others are opt-in
+  const resolvedChannels = ["IN_APP"];
+  if (channelsConfig.discord) resolvedChannels.push("DISCORD");
+  if (channelsConfig.telegram) resolvedChannels.push("TELEGRAM");
 
-    await Promise.allSettled(promises);
+  for (const finding of highRelevanceFindings) {
+    if (!topic.userId) {
+      console.warn(`⚠️ [notifier] Missing userId for topic "${topic.displayName}". Skipping notification emit.`);
+      continue;
+    }
+
+    try {
+      await emitNotification({
+        userId: topic.userId,
+        type: "TOPIC_FINDING_ALERT",
+        priority: "NORMAL",
+        payload: {
+          topicName: topic.displayName,
+          findingTitle: finding.title,
+          sourceName: finding.sourceName,
+          relevanceScore: finding.relevanceScore,
+          sourceUrl: finding.sourceUrl,
+          topicId: topic.id,
+          findingId: finding.id,
+        },
+        channels: resolvedChannels,
+      });
+    } catch (err) {
+      console.error(`⚠️ [notifier] Failed to emit finding notification:`, err.message);
+    }
   }
 }

@@ -49,6 +49,27 @@ async function main() {
     });
   }
   console.log(`✅ Seeded/verified admin notification configurations.`);
+
+  console.log("\n🌱 Seeding default NotificationPreference records for users...");
+  const users = await prisma.user.findMany({
+    include: { notificationPreference: true }
+  });
+
+  let createdPrefCount = 0;
+  for (const user of users) {
+    if (!user.notificationPreference) {
+      await prisma.notificationPreference.create({
+        data: {
+          userId: user.id,
+          inAppEnabled: true,
+          discordEnabled: false,
+          telegramEnabled: false,
+        }
+      });
+      createdPrefCount++;
+    }
+  }
+  console.log(`✅ Verified/created default preferences for ${createdPrefCount} user(s).`);
 }
 
 main()

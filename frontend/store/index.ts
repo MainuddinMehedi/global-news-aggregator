@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
+import { useShallow } from "zustand/shallow";
 import type { Article } from "@/types/article";
 
 // ─── Feed slice ───────────────────────────────────────────────────────────────
@@ -59,7 +60,6 @@ export type ColorTheme = "maia" | "ember" | "iris" | "pine" | "slate";
 export type ResponseStyle = "concise" | "detailed";
 
 export type HomePageMode = "continuous" | "daily" | "hourly";
-export type NotificationMode = "alert" | "digest" | "none";
 
 export interface CustomSource {
   id: string;
@@ -71,12 +71,6 @@ export interface CustomSource {
   biasGroup: string;
   coverageScope: string;
   enabled: boolean;
-}
-
-export interface NotificationChannels {
-  discord: string;
-  telegram: string;
-  mode: NotificationMode;
 }
 
 export interface SettingsState {
@@ -95,7 +89,6 @@ export interface SettingsState {
   hiddenCategories: string[];
   extraCategories: string[];
   homePageMode: HomePageMode;
-  notificationChannels: NotificationChannels;
   hasOnboardedSources: boolean;
 }
 
@@ -173,7 +166,6 @@ export const useAppStore = create<AppStore>()(
       hiddenCategories: [],
       extraCategories: [],
       homePageMode: "continuous",
-      notificationChannels: { discord: "", telegram: "", mode: "none" },
       hasOnboardedSources: false,
       setSetting: (key, value) => set((state) => ({ ...state, [key]: value })),
     }),
@@ -197,7 +189,6 @@ export const useAppStore = create<AppStore>()(
         hiddenCategories: state.hiddenCategories,
         extraCategories: state.extraCategories,
         homePageMode: state.homePageMode,
-        notificationChannels: state.notificationChannels,
         hasOnboardedSources: state.hasOnboardedSources,
       }),
     },
@@ -233,27 +224,27 @@ export const useSetLockedTopicCount = () =>
 
 // Settings selectors
 export const useSettings = () => {
-  const store = useAppStore();
-  const settings = {
-    theme: store.theme,
-    colorTheme: store.colorTheme,
-    isSidebarCollapsed: store.isSidebarCollapsed,
-    feedDefaultCategory: store.feedDefaultCategory,
-    feedDefaultSort: store.feedDefaultSort,
-    articlesPerPage: store.articlesPerPage,
-    compactMode: store.compactMode,
-    showBiasBadges: store.showBiasBadges,
-    showSentiment: store.showSentiment,
-    defaultAiModel: store.defaultAiModel,
-    responseStyle: store.responseStyle,
-    favoriteCategories: store.favoriteCategories,
-    hiddenCategories: store.hiddenCategories,
-    extraCategories: store.extraCategories,
-    homePageMode: store.homePageMode,
-    notificationChannels: store.notificationChannels,
-    hasOnboardedSources: store.hasOnboardedSources,
-  };
-  const setSetting = store.setSetting;
+  const settings = useAppStore(
+    useShallow((s) => ({
+      theme: s.theme,
+      colorTheme: s.colorTheme,
+      isSidebarCollapsed: s.isSidebarCollapsed,
+      feedDefaultCategory: s.feedDefaultCategory,
+      feedDefaultSort: s.feedDefaultSort,
+      articlesPerPage: s.articlesPerPage,
+      compactMode: s.compactMode,
+      showBiasBadges: s.showBiasBadges,
+      showSentiment: s.showSentiment,
+      defaultAiModel: s.defaultAiModel,
+      responseStyle: s.responseStyle,
+      favoriteCategories: s.favoriteCategories,
+      hiddenCategories: s.hiddenCategories,
+      extraCategories: s.extraCategories,
+      homePageMode: s.homePageMode,
+      hasOnboardedSources: s.hasOnboardedSources,
+    }))
+  );
+  const setSetting = useAppStore((s) => s.setSetting);
   return { settings, setSetting };
 };
 

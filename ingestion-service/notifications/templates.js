@@ -42,3 +42,20 @@ export function formatRevalidationFailed(payload) {
     message: `Failed to revalidate Next.js cache.\n\n**Tag:** \`${tag}\`\n**Error:** ${error || 'Unknown'}`
   };
 }
+
+export function formatTopicFindingAlert(payload) {
+  const { topicName, findingTitle, sourceName, relevanceScore, sourceUrl } = payload || {};
+  return {
+    title: `🚨 New Finding for Topic: ${topicName || 'Topic'}`,
+    message: `**Title:** ${findingTitle || 'No Title'}\n**Source:** ${sourceName || 'Unknown'}\n**Relevance:** ${relevanceScore !== undefined ? (relevanceScore * 100).toFixed(0) + '%' : 'N/A'}\n**Link:** ${sourceUrl || '#'}`
+  };
+}
+
+export function formatTopicSourceDegraded(payload) {
+  const { topicName, sourceName, failureCount } = payload || {};
+  return {
+    title: `⚠️ Topic Source Degraded: ${topicName}`,
+    message: `The source \`${sourceName}\` for topic \`${topicName}\` has failed ${failureCount || 3} consecutive scans. Please verify its credentials or availability.`
+  };
+}
+

@@ -1,81 +1,217 @@
 "use client";
 
-import { useSettings, type NotificationMode } from "@/store";
+import { useState, useEffect, useTransition } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import { getNotificationPreferenceAction, saveNotificationPreferenceAction } from "@/app/actions/notifications";
+import { Skeleton } from "@/components/ui/skeleton";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Tick01Icon } from "@hugeicons/core-free-icons";
 
 export default function NotificationsSection() {
-  const { settings, setSetting } = useSettings();
-  const channels = settings.notificationChannels;
+  const [isPending, startTransition] = useTransition();
+  const [loading, setLoading] = useState(true);
 
-  const updateChannel = (key: keyof typeof channels, value: string) => {
-    const updatedChannels = { ...channels, [key]: value };
-    setSetting("notificationChannels", updatedChannels);
-    
-    // Fire and forget server action to persist
-    import("@/app/actions/settings").then((m) => {
-      m.updateSingleSettingAction("notificationChannels", updatedChannels)
-        .catch(err => console.error("Failed to save notification settings", err));
+  // Form states
+  const [inAppEnabled, setInAppEnabled] = useState(true);
+  const [discordEnabled, setDiscordEnabled] = useState(false);
+  const [telegramEnabled, setTelegramEnabled] = useState(false);
+  const [discordWebhook, setDiscordWebhook] = useState("");
+  const [telegramChatId, setTelegramChatId] = useState("");
+  const [digestEnabled, setDigestEnabled] = useState(false);
+
+  // 1. Fetch preference on mount
+  useEffect(() => {
+    async function loadPreferences() {
+      try {
+        const pref = await getNotificationPreferenceAction();
+        setInAppEnabled(pref.inAppEnabled);
+        setDiscordEnabled(pref.discordEnabled);
+        setTelegramEnabled(pref.telegramEnabled);
+        setDiscordWebhook(pref.discordWebhook || "");
+        setTelegramChatId(pref.telegramChatId || "");
+        setDigestEnabled(pref.digestEnabled);
+      } catch (err) {
+        console.error("Failed to load notification preferences:", err);
+        toast.error("Failed to load notification preferences");
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadPreferences();
+  }, []);
+
+  const handleSave = () => {
+    startTransition(async () => {
+      try {
+        await saveNotificationPreferenceAction({
+          inAppEnabled,
+          discordEnabled,
+          telegramEnabled,
+          discordWebhook: discordWebhook.trim() || null,
+          telegramChatId: telegramChatId.trim() || null,
+          digestEnabled,
+        });
+        toast.success("Notification preferences saved successfully.");
+      } catch (err: unknown) {
+        console.error(err);
+        const message = err instanceof Error ? err.message : String(err);
+        toast.error(`Failed to save preferences: ${message}`);
+      }
     });
   };
 
+  if (loading) {
+    return (
+      <Card>
+        <CardContent className="p-6 space-y-6">
+          <div className="space-y-2">
+            <Skeleton className="h-5 w-1/4 rounded-md animate-pulse" />
+            <Skeleton className="h-4 w-3/4 rounded-md animate-pulse" />
+          </div>
+          <Separator />
+          <div className="space-y-4">
+            <Skeleton className="h-10 w-full rounded-md animate-pulse" />
+            <Skeleton className="h-10 w-full rounded-md animate-pulse" />
+            <Skeleton className="h-10 w-full rounded-md animate-pulse" />
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
-    <Card>
+    <Card className="bg-card/45 border-border/50 shadow-sm overflow-hidden">
       <CardContent className="p-6 space-y-6">
-        {/* TODO: Notifications — add app notification channel toggle (in-app bell feed, broadcast opt-in) */}
+        {/* Title Block */}
+        <div>
+          <h2 className="text-xl font-bold tracking-tight">Notification Settings</h2>
+          <p className="text-xs text-muted-foreground mt-1">
+            Configure where and how you receive updates for your Locked Topics and story events.
+          </p>
+        </div>
+
+        <Separator />
+
+        {/* Notification Mode */}
         <div className="flex items-center justify-between">
           <div className="space-y-1">
-            <Label>Notification Mode</Label>
-            <p className="text-sm text-muted-foreground">
-              Choose how you want to receive alerts for your Locked Topics.
+            <Label className="font-bold text-sm">Delivery Mode</Label>
+            <p className="text-xs text-muted-foreground">
+              Choose how you want to receive alerts (immediate alerts vs periodic digests).
             </p>
           </div>
           <Select 
-            value={channels.mode} 
-            onValueChange={(v: NotificationMode) => updateChannel("mode", v)}
+            value={digestEnabled ? "digest" : "alert"} 
+            onValueChange={(v) => setDigestEnabled(v === "digest")}
+            disabled={isPending}
           >
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-[180px] h-9 text-xs rounded-xl font-bold">
               <SelectValue placeholder="Select mode" />
             </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">None</SelectItem>
-              <SelectItem value="digest">Digest (Periodic)</SelectItem>
-              <SelectItem value="alert">Alert (Immediate)</SelectItem>
+            <SelectContent className="rounded-xl">
+              <SelectItem value="alert" className="text-xs rounded-lg">Alert (Immediate)</SelectItem>
+              <SelectItem value="digest" className="text-xs rounded-lg">Digest (Periodic)</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         <Separator />
 
-        <div className="space-y-4">
+        {/* In App Feed */}
+        <div className="flex items-center justify-between">
           <div className="space-y-1">
-            <Label>Telegram Configuration</Label>
-            <p className="text-sm text-muted-foreground">Enter your Telegram Chat ID to receive updates via the bot.</p>
+            <Label className="font-bold text-sm">In-App Feed Notifications</Label>
+            <p className="text-xs text-muted-foreground">
+              Show unread badge in the navigation bar and list alerts in the notification page.
+            </p>
           </div>
-          <Input 
-            placeholder="e.g. 123456789" 
-            value={channels.telegram} 
-            onChange={(e) => updateChannel("telegram", e.target.value)}
-            className="max-w-md"
+          <Switch 
+            checked={inAppEnabled} 
+            disabled={isPending}
+            onCheckedChange={setInAppEnabled}
+            className="cursor-pointer"
           />
         </div>
 
         <Separator />
 
+        {/* Discord Configuration */}
         <div className="space-y-4">
-          <div className="space-y-1">
-            <Label>Discord Configuration</Label>
-            <p className="text-sm text-muted-foreground">Enter your Discord Webhook URL for channel notifications.</p>
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <Label className="font-bold text-sm">Discord Channel Integration</Label>
+              <p className="text-xs text-muted-foreground">Receive real-time alerts directly in your Discord channel.</p>
+            </div>
+            <Switch 
+              checked={discordEnabled} 
+              disabled={isPending}
+              onCheckedChange={setDiscordEnabled}
+              className="cursor-pointer"
+            />
           </div>
-          <Input 
-            placeholder="https://discord.com/api/webhooks/..." 
-            value={channels.discord} 
-            onChange={(e) => updateChannel("discord", e.target.value)}
-            className="max-w-md"
-          />
+          {discordEnabled && (
+            <div className="space-y-2 pt-1 animate-in fade-in slide-in-from-top-1 duration-200">
+              <Label className="text-xs font-bold text-muted-foreground">Discord Webhook URL</Label>
+              <Input 
+                placeholder="https://discord.com/api/webhooks/..." 
+                value={discordWebhook} 
+                disabled={isPending}
+                onChange={(e) => setDiscordWebhook(e.target.value)}
+                className="max-w-md h-9 text-xs rounded-xl font-mono"
+              />
+            </div>
+          )}
+        </div>
+
+        <Separator />
+
+        {/* Telegram Configuration */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <Label className="font-bold text-sm">Telegram Bot Integration</Label>
+              <p className="text-xs text-muted-foreground">Get updates directly via the Telegram monitoring bot.</p>
+            </div>
+            <Switch 
+              checked={telegramEnabled} 
+              disabled={isPending}
+              onCheckedChange={setTelegramEnabled}
+              className="cursor-pointer"
+            />
+          </div>
+          {telegramEnabled && (
+            <div className="space-y-2 pt-1 animate-in fade-in slide-in-from-top-1 duration-200">
+              <Label className="text-xs font-bold text-muted-foreground">Telegram Chat ID</Label>
+              <Input 
+                placeholder="e.g. 123456789" 
+                value={telegramChatId} 
+                disabled={isPending}
+                onChange={(e) => setTelegramChatId(e.target.value)}
+                className="max-w-md h-9 text-xs rounded-xl font-mono"
+              />
+            </div>
+          )}
+        </div>
+
+        <Separator />
+
+        {/* Action button */}
+        <div className="flex justify-end pt-2">
+          <Button
+            onClick={handleSave}
+            disabled={isPending}
+            className="text-xs font-bold px-4 py-2 rounded-xl cursor-pointer bg-primary text-primary-foreground shadow-md hover:bg-primary/95 flex items-center gap-1.5"
+          >
+            <HugeiconsIcon icon={Tick01Icon} size={14} />
+            Save Preferences
+          </Button>
         </div>
 
       </CardContent>

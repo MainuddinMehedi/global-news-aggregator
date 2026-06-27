@@ -7,14 +7,51 @@ import * as templates from "./templates.js";
  */
 export async function emitNotification({ userId, type, title, message, priority, payload, channels }) {
   try {
+    // 1. Resolve channels from NotificationPreference if not specified
+    let resolvedChannels = channels;
+    if (!resolvedChannels || resolvedChannels.length === 0) {
+      resolvedChannels = ['IN_APP'];
+      const pref = await prisma.notificationPreference.findUnique({
+        where: { userId }
+      });
+      if (pref) {
+        if (pref.discordEnabled && pref.discordWebhook) {
+          resolvedChannels.push('DISCORD');
+        }
+        if (pref.telegramEnabled && pref.telegramChatId) {
+          resolvedChannels.push('TELEGRAM');
+        }
+      }
+    }
+
+    // 2. Resolve title and message from templates if missing
+    let resolvedTitle = title;
+    let resolvedMessage = message;
+    if (!resolvedTitle || !resolvedMessage) {
+      let formatted;
+      switch (type) {
+        case 'TOPIC_FINDING_ALERT':
+          formatted = templates.formatTopicFindingAlert(payload);
+          break;
+        case 'TOPIC_SOURCE_DEGRADED':
+        case 'TOPIC_SCAN_DEGRADED':
+          formatted = templates.formatTopicSourceDegraded(payload);
+          break;
+        default:
+          formatted = { title: title || `Alert: ${type}`, message: message || JSON.stringify(payload) };
+      }
+      resolvedTitle = formatted.title;
+      resolvedMessage = formatted.message;
+    }
+
     const notification = await enqueueNotification({
       userId,
       type,
-      title,
-      message,
+      title: resolvedTitle,
+      message: resolvedMessage,
       priority: priority || 'NORMAL',
       payload: payload || {},
-      channels: channels || ['IN_APP']
+      channels: resolvedChannels
     });
     console.log(`[Notification Engine] Emitted ${type} for user ${userId}`);
     return notification;
@@ -71,6 +108,7 @@ export async function emitAdminNotification(type, payload) {
       case 'HIGH_FAILURE_RATE':     formatted = templates.formatHighFailureRate(payload); break;
       case 'AI_PROVIDER_DEGRADED':  formatted = templates.formatAiProviderDegraded(payload); break;
       case 'REVALIDATION_FAILED':   formatted = templates.formatRevalidationFailed(payload); break;
+      case 'TOPIC_SOURCE_DEGRADED': formatted = templates.formatTopicSourceDegraded(payload); break;
       default:
         formatted = { title: `Admin Alert: ${type}`, message: JSON.stringify(payload) };
     }

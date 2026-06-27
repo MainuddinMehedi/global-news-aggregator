@@ -14,27 +14,63 @@ export async function processDeliveryBatch() {
   const adminConfigs = await prisma.adminNotificationConfig.findMany();
   const configMap = new Map(adminConfigs.map(c => [c.type, c]));
 
+  const ADMIN_NOTIFICATION_TYPES = [
+    'PIPELINE_FAILURE',
+    'INGESTION_STALLED',
+    'HIGH_FAILURE_RATE',
+    'AI_PROVIDER_DEGRADED',
+    'REVALIDATION_FAILED',
+    'TOPIC_SOURCE_DEGRADED'
+  ];
+
+  // Batch-fetch non-admin notification user preferences to prevent N+1 queries
+  const userIds = [
+    ...new Set(
+      deliveries
+        .filter(d => !ADMIN_NOTIFICATION_TYPES.includes(d.notification.type) && d.notification.userId)
+        .map(d => d.notification.userId)
+    )
+  ];
+
+  let prefMap = new Map();
+  if (userIds.length > 0) {
+    const prefs = await prisma.notificationPreference.findMany({
+      where: { userId: { in: userIds } }
+    });
+    prefMap = new Map(prefs.map(p => [p.userId, p]));
+  }
+
   for (const delivery of deliveries) {
     const { notification, channel } = delivery;
 
     try {
-      // Admin notifications use global AdminNotificationConfig
-      // For now all notifications processed here are Admin, but we'll check it anyway
-      const config = configMap.get(notification.type);
+      const isAdmin = ADMIN_NOTIFICATION_TYPES.includes(notification.type);
+      let targetWebhook = null;
+      let targetChatId = null;
+
+      if (isAdmin) {
+        const config = configMap.get(notification.type);
+        if (channel === 'DISCORD') targetWebhook = config?.discordWebhook;
+        if (channel === 'TELEGRAM') targetChatId = config?.telegramChatId;
+      } else {
+        const pref = prefMap.get(notification.userId);
+        if (channel === 'DISCORD') targetWebhook = pref?.discordWebhook;
+        if (channel === 'TELEGRAM') targetChatId = pref?.telegramChatId;
+      }
       
       switch (channel) {
         case 'IN_APP':
           await deliverInApp(notification);
           break;
         case 'DISCORD':
-          if (!config?.discordWebhook) throw new Error("Discord webhook URL not configured");
-          await deliverDiscord(notification, config.discordWebhook);
+          if (!targetWebhook) throw new Error("Discord webhook URL not configured");
+          await deliverDiscord(notification, targetWebhook);
           break;
         case 'TELEGRAM':
-          if (!config?.telegramChatId) throw new Error("Telegram chat ID not configured");
-          // NOTE: Bot token should be in environment variables
+          if (!targetChatId) throw new Error("Telegram chat ID not configured");
           const botToken = process.env.TELEGRAM_BOT_TOKEN;
-          await deliverTelegram(notification, config.telegramChatId, botToken);
+          if (!botToken) throw new Error("Telegram bot token (TELEGRAM_BOT_TOKEN) is not configured in process environment");
+          await deliverTelegram(notification, targetChatId, botToken);
           break;
         default:
           throw new Error(`Unsupported channel: ${channel}`);
