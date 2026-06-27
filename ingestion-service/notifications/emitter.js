@@ -34,8 +34,10 @@ export async function emitNotification({ userId, type, title, message, priority,
           formatted = templates.formatTopicFindingAlert(payload);
           break;
         case 'TOPIC_SOURCE_DEGRADED':
-        case 'TOPIC_SCAN_DEGRADED':
           formatted = templates.formatTopicSourceDegraded(payload);
+          break;
+        case 'TOPIC_SCAN_DEGRADED':
+          formatted = templates.formatTopicScanDegraded(payload);
           break;
         default:
           formatted = { title: title || `Alert: ${type}`, message: message || JSON.stringify(payload) };

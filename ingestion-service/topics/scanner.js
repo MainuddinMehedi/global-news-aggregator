@@ -1,4 +1,5 @@
 import { prisma } from "../db/prisma.js";
+import { emitNotification, emitAdminNotification } from "../notifications/emitter.js";
 import { scanInternalDb } from "./sources/internalDb.js";
 import { scanRss } from "./sources/rssScanner.js";
 import { scanReddit } from "./sources/redditScanner.js";
@@ -114,7 +115,11 @@ export async function runScannersForTopic(topic, options = {}) {
 
   if (sourceErrors.length > 0) {
     console.warn(`⚠️ [orchestrator] ${sourceErrors.length}/${sources.filter(s => s.enabled).length} sources failed during scan for "${topic.displayName}": [${sourceErrors.join(', ')}]`);
-    // TODO(notification): Admin - Any source failure feeds into the Admin Source Health dashboard. Repeated failures across cycles trigger a direct admin alert.
+    await emitAdminNotification("TOPIC_SOURCE_DEGRADED", {
+      topicName: topic.displayName,
+      sourceName: "Orchestrator",
+      error: `Failed sources during scan: ${sourceErrors.join(', ')}`
+    });
   }
 
   // Apply metadata updates (summaries, hashes) to the topic record
@@ -247,7 +252,16 @@ export async function runScannersForTopic(topic, options = {}) {
       insertedCount = createResult.count;
     } catch (err) {
       console.error(`❌ [orchestrator] Bulk insert failed for "${topic.displayName}":`, err.message);
-      // TODO(notification): User - Topic shows stale data with no explanation → user-facing "scan partially failed" indicator
+      if (topic.userId) {
+        await emitNotification({
+          userId: topic.userId,
+          type: "TOPIC_SCAN_DEGRADED",
+          payload: {
+            topicName: topic.displayName,
+            error: `Database save failed: ${err.message}`
+          }
+        });
+      }
     }
   }
 
@@ -276,7 +290,10 @@ export async function runScannersForTopic(topic, options = {}) {
         `⚠️ [orchestrator] Failed to trigger revalidation for topic ${topic.id}:`,
         e.message,
       );
-      // TODO(notification): Admin - Revalidation failure means stale configs or environment issues → direct admin message/alert.
+      await emitAdminNotification("REVALIDATION_FAILED", {
+        topicName: topic.displayName,
+        error: e.message
+      });
     }
   }
 

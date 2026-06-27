@@ -12,6 +12,7 @@ import { evaluateQuery } from "../utils/parseQuery.js";
 import { formatSinceDate } from "../utils/formatSinceDate.js";
 import { SCANNER_CONFIG } from "../scannerConfig.js";
 import { fetchWithBackoff } from "../utils/fetchWithBackoff.js";
+import { emitAdminNotification } from "../../notifications/emitter.js";
 
 const MAX_RESULTS = SCANNER_CONFIG.maxResults.reddit;
 const REDDIT_BOT_BLACKLIST = ["AutoModerator", "[deleted]", "reddit-bot"];
@@ -26,7 +27,7 @@ const parser = new Parser();
 /**
  * Fetch and parse a Reddit RSS URL.
  */
-async function fetchAndParseRss(url) {
+async function fetchAndParseRss(url, topic, sourceConfig) {
   try {
     const response = await fetchWithBackoff(url, {
       headers: {
@@ -37,6 +38,11 @@ async function fetchAndParseRss(url) {
 
     if (!response.ok) {
       console.error(`❌ [redditScanner] Failed to fetch ${url}: HTTP ${response.status} ${response.statusText}`);
+      await emitAdminNotification("TOPIC_SOURCE_DEGRADED", {
+        topicName: topic.displayName,
+        sourceName: `Reddit (${url})`,
+        error: `HTTP ${response.status} ${response.statusText}`
+      });
       return [];
     }
 
@@ -45,7 +51,11 @@ async function fetchAndParseRss(url) {
     return feed.items || [];
   } catch (err) {
     console.error(`❌ [redditScanner] Error fetching/parsing ${url}:`, err.message);
-    // TODO(notification): Admin - Repeated Reddit 429s persisting across cycles → feeds into Source Health dashboard
+    await emitAdminNotification("TOPIC_SOURCE_DEGRADED", {
+      topicName: topic.displayName,
+      sourceName: `Reddit (${url})`,
+      error: err.message
+    });
     return [];
   }
 }
@@ -87,7 +97,7 @@ export async function scanReddit(topic, sourceConfig, options = {}) {
     const allItems = [];
     for (const target of urlsToFetch) {
       console.log(`🔍 [redditScanner] Fetching ${target.type} for ${sourceName}: ${target.url}`);
-      const fetchedItems = await fetchAndParseRss(target.url);
+      const fetchedItems = await fetchAndParseRss(target.url, topic, sourceConfig);
       allItems.push(...fetchedItems);
     }
 
@@ -108,7 +118,7 @@ export async function scanReddit(topic, sourceConfig, options = {}) {
     const url = `https://www.reddit.com/user/${user}/submitted.rss?sort=new`;
     
     console.log(`🔍 [redditScanner] Fetching user submissions for ${sourceName}: ${url}`);
-    items = await fetchAndParseRss(url);
+    items = await fetchAndParseRss(url, topic, sourceConfig);
   } else {
     sourceName = "Reddit Global Search";
     const cleanSearchUrl = `https://www.reddit.com/search.rss?q=${encodeURIComponent(topic.displayName)}&sort=new`;
@@ -125,7 +135,7 @@ export async function scanReddit(topic, sourceConfig, options = {}) {
     const allItems = [];
     for (const target of urlsToFetch) {
       console.log(`🔍 [redditScanner] Fetching ${target.type}: ${target.url}`);
-      const fetchedItems = await fetchAndParseRss(target.url);
+      const fetchedItems = await fetchAndParseRss(target.url, topic, sourceConfig);
       allItems.push(...fetchedItems);
     }
 

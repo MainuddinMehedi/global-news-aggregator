@@ -52,10 +52,20 @@ export function formatTopicFindingAlert(payload) {
 }
 
 export function formatTopicSourceDegraded(payload) {
-  const { topicName, sourceName, failureCount } = payload || {};
+  const { topicName, sourceName, failureCount, error } = payload || {};
+  const failText = failureCount !== undefined ? `${failureCount} consecutive scans` : "its scans";
+  const errorText = error ? `\n\n**Error Details:** ${error}` : "";
   return {
-    title: `⚠️ Topic Source Degraded: ${topicName}`,
-    message: `The source \`${sourceName}\` for topic \`${topicName}\` has failed ${failureCount || 3} consecutive scans. Please verify its credentials or availability.`
+    title: `⚠️ Topic Source Degraded: ${topicName || 'Topic'}`,
+    message: `The source \`${sourceName || 'Unknown'}\` for topic \`${topicName || 'Topic'}\` has failed ${failText}. Please verify its credentials or availability.${errorText}`
+  };
+}
+
+export function formatTopicScanDegraded(payload) {
+  const { topicName, error } = payload || {};
+  return {
+    title: `⚠️ Topic Scan Stalled: ${topicName || 'Topic'}`,
+    message: `Your monitored topic \`${topicName || 'Topic'}\` failed to scan properly due to system errors or unreachable sources. ${error ? `\n\n**Error:** ${error}` : ''}`
   };
 }
 

@@ -17,6 +17,7 @@ import crypto from "crypto";
 import { evaluateQuery } from "../utils/parseQuery.js";
 import { extractCleanText } from "../utils/extractCleanText.js";
 import hashSnippet from "../../utils/hashSnippet.js";
+import { emitNotification } from "../../notifications/emitter.js";
 
 const USER_AGENT = "global-news-aggregator/1.0 (LockedTopics Webpage Monitor)";
 
@@ -93,7 +94,17 @@ export async function scanWebpage(topic, sourceConfig, options = {}) {
     };
   } catch (err) {
     console.error(`❌ [webpageScanner] Failed to fetch ${url}:`, err.message);
-    // TODO(notification): User - Monitored page repeatedly unreachable → topic detail stale source indicator
+    if (topic.userId) {
+      await emitNotification({
+        userId: topic.userId,
+        type: "TOPIC_SOURCE_DEGRADED",
+        payload: {
+          topicName: topic.displayName,
+          sourceName,
+          error: err.message
+        }
+      });
+    }
     return { findings: [], metadata: {} };
   }
 }
