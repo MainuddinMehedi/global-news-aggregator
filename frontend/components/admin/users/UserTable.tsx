@@ -3,7 +3,7 @@
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { UserAdminData } from "@/queries/admin/users";
-import { updateUserRole, toggleUserSuspension } from "@/app/actions/admin";
+import { updateUserRole, toggleUserSuspension } from "@/app/actions/admin/users";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";

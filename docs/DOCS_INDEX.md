@@ -28,8 +28,8 @@ This index serves as the entry point and mindmap for the project's documentation
 
 ## 2. Architecture & Conventions
 
-- **[Architectural Philosophy: The "User-Agnostic" News Engine](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/architecture-philosophy.md)**  
-  The core identity of the platform, explaining the "Views, Not Silos" philosophy and the strict 10-category lock.
+- **[Architectural Philosophy](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/project-philosophy.md)**  
+  The core identity of the platform, explaining the "Views, Not Silos" philosophy, scoped ingestion, and the strict 10-category lock.
 - **[Project Architecture & Conventions](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/project_architecture_and_conventions.md)**  
   Foundational directory layout, key commands, coding style rules, pagination logic, and caching structures.
 - **[AI Model Strategy Guide](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/AI_MODELS.md)**  
@@ -85,7 +85,8 @@ ingestion-service/
 │
 ├── data/                     # static data + configuration
 │   ├── gazetteer.json        # category/region keyword dictionaries
-│   └── feeds.js              # RSS feed definitions (builtin + user custom)
+│   ├── builtin-feeds.js      # built-in RSS feed defaults (seed source)
+│   └── feeds.js              # RSS feed loader (DB + builtin fallback + user custom)
 │
 ├── db/                       # database
 │   ├── prisma.js             # self-contained Prisma client
@@ -112,7 +113,7 @@ ingestion-service/
 These documents represent the source of truth for each major platform feature. They conform to the standardized outline format and are ordered by logic and data flow.
 
 1. **[1. Ingestion & Enrichment Pipeline](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/1.%20Domain%20specific/1.%20enrichment-pipeline/0.enrichment-pipeline.md)**  
-   The two-stage parsing flow: Stage 1 local Regex Gazetteer sieve and Stage 2 Python FastAPI NLP microservice (GLiNER + VADER).
+   The two-stage parsing flow: Stage 1 local Regex Gazetteer sieve and Stage 2 LLM enrichment (Mistral/Groq).
 2. **[2. Story Clustering](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/1.%20Domain%20specific/2.%20story/0.story-clustering.md)**
    The end-to-end grouping engine that matches geopolitical entities and runs batch LLM categorization to group news articles into stories.
    - **[Clustering Technical Audit](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/1.%20Domain%20specific/2.%20story/clustering-audit.md)**: Reviews algorithm limitations, O(N²) scaling, heuristics, and detail optimization pathways using `pgvector`.
@@ -125,7 +126,9 @@ These documents represent the source of truth for each major platform feature. T
    Session handling via NextAuth.js and Prisma, defining scopes for Public, Authenticated, and Admin users.
 6. **[6. Admin Dashboard](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/1.%20Domain%20specific/4.%20admin-dashboard/0.admin-dashboard.md)**  
    Core administration panel for system health telemetry, ingestion crawler configuration, feed management, user permissions audit, and interactive gazetteer tuning sandbox.
-7. **[7. Chat Interface](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/1.%20Domain%20specific/6.%20chat/0.%20chat-interface.md)**  
+7. **[7. Chat Interface](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/1.%20Domain%20specific/6.%20chat/0.%20chat-interface.md)**
+8. **[8. Notification System](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/1.%20Domain%20specific/7.%20notification-system/0.%20notification-system.md)**  
+   Intent and design document for the global in-app notification system (broadcast, channels, schedule). Implementation deferred.  
    Interactive multi-model AI global news analyst chat interface with context RAG grounding, voice-mode integration, and session history management. Uses [embeddings.ts](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/frontend/lib/ai/embeddings.ts) to embed user search queries and runs the `searchArticlesTool` (in [tools.ts](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/frontend/lib/ai/tools.ts)) to perform vector similarity lookups on Supabase.
 
 ---

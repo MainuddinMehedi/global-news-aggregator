@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { SkippedArticleData, GazetteerConfig } from "@/queries/admin/skipped";
-import { forceRecategorizeArticle } from "@/app/actions/admin";
+import { forceRecategorizeArticle } from "@/app/actions/admin/enrichment";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";

@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { FailedEnrichmentData } from "@/queries/admin/skipped";
-import { retryFailedEnrichments, discardFailedEnrichments } from "@/app/actions/admin";
+import { retryFailedEnrichments, discardFailedEnrichments } from "@/app/actions/admin/enrichment";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";

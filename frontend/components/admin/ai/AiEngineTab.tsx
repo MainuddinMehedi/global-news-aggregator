@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { saveAiConfig, toggleAiPause } from "@/app/actions/admin";
+import { saveAiConfig, toggleAiPause } from "@/app/actions/admin/ai";
 import { AiConfigSettings, AiUsageDataPoint } from "@/queries/admin/ai";
 import AiUsageCharts from "./AiUsageCharts";
 

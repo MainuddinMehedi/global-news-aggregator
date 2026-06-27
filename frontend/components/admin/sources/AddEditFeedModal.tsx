@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { saveFeedSource } from "@/app/actions/admin";
+import { saveFeedSource } from "@/app/actions/admin/feeds";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 

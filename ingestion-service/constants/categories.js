@@ -1,6 +1,6 @@
 /**
- * Canonical Geopolitical News Monitor Category Definitions
- * 
+ * Canonical News Monitor Category Definitions
+ *
  * Core 10 Categories:
  *   geopolitics — International relations, treaties, cross-border issues, intl law
  *   economy     — Macroeconomics, inflation, GDP, central banks
@@ -25,5 +25,5 @@ export const ALLOWED_CATEGORIES = [
   "society",
   "bangladesh",
   "sports",
-  "other"
+  "other",
 ];

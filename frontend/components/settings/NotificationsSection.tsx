@@ -25,6 +25,7 @@ export default function NotificationsSection() {
   return (
     <Card>
       <CardContent className="p-6 space-y-6">
+        {/* TODO: Notifications — add app notification channel toggle (in-app bell feed, broadcast opt-in) */}
         <div className="flex items-center justify-between">
           <div className="space-y-1">
             <Label>Notification Mode</Label>

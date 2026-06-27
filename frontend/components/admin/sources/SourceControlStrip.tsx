@@ -3,8 +3,9 @@
 import { useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Add01Icon, RefreshIcon, PlayIcon } from "@hugeicons/core-free-icons";
-import { resetAllFeedFailures, triggerManualIngestion } from "@/app/actions/admin";
+import { Add01Icon, RefreshIcon, PlayIcon, DatabaseImportIcon } from "@hugeicons/core-free-icons";
+import { resetAllFeedFailures, seedFeedSources } from "@/app/actions/admin/feeds";
+import { triggerManualIngestion } from "@/app/actions/admin/ingestion";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
@@ -29,6 +30,22 @@ export default function SourceControlStrip({ onAddClick }: SourceControlStripPro
     });
   };
 
+  const handleSeedFeeds = () => {
+    startTransition(async () => {
+      const res = await seedFeedSources();
+      if (res.success) {
+        if (res.seeded > 0) {
+          toast.success(`Seeded ${res.seeded} new feed source(s).`);
+        } else {
+          toast.info("All defaults already present — nothing to seed.");
+        }
+        router.refresh();
+      } else {
+        toast.error(`Failed to seed: ${res.error}`);
+      }
+    });
+  };
+
   const handleTriggerIngest = () => {
     startTransition(async () => {
       const res = await triggerManualIngestion();
@@ -49,10 +66,20 @@ export default function SourceControlStrip({ onAddClick }: SourceControlStripPro
           Source Control Center
         </h3>
         <p className="text-xs text-muted-foreground font-medium">
-          Manage geopolitical news feed sources and trigger crawler updates.
+          Manage news feed sources and trigger crawler updates.
         </p>
       </div>
       <div className="flex flex-wrap gap-2.5">
+        <Button
+          onClick={handleSeedFeeds}
+          variant="outline"
+          size="sm"
+          disabled={isPending}
+          className="gap-2 text-xs font-semibold"
+        >
+          <HugeiconsIcon icon={DatabaseImportIcon} className="w-3.5 h-3.5" />
+          {isPending ? "Seeding..." : "Seed Feeds"}
+        </Button>
         <Button
           onClick={handleResetAll}
           variant="outline"

@@ -1,50 +1,84 @@
-# Architectural Philosophy: The "User-Agnostic" News Engine
+# Architectural Philosophy: Global News Aggregator
 
-## 1. Core Identity & Platform Goal
+## 1. Core Identity
 
-This project is a **User-Agnostic Global News Aggregator**. It is *not* exclusively a niche geopolitical tracker, nor is it a dedicated competitive exam (BCS/Bank) preparation app.
+This is a **general news aggregator** with **scoped ingestion** — it does not attempt to ingest everything on the internet. Instead, it focuses on high-signal news across 10 categories (plus a catch-all). There is no target demographic; the platform is designed to be useful for anyone who wants meaningful insight from their daily news.
 
-Instead, it is a high-signal, low-noise reading platform designed to be universally useful. By rigorously filtering the internet into 10 pristine categories, the platform allows different demographics to extract distinct value:
+The core question the platform answers is not just "what happened?" but **"what insight can we extract from what happened?"**
 
-* A **Day Trader** can filter for the `Economy` and `Business` buckets.
-* A **Geopolitical Analyst** can filter for `Geopolitics` and `Security`.
-* A **Competitive Exam Candidate (Bangladesh)** can use it as a powerful "Current Affairs" tool by tracking the `Bangladesh`, `Geopolitics`, and `Sports` buckets.
+## 2. Views, Not Silos
 
-The philosophy is **"Views, Not Silos"**: The backend ingests data broadly but cleanly. The frontend allows users to shape that pristine data into the exact "View" they need.
+The backend ingests broadly across all categories without pre-sorting for any specific audience. The data layer is unified.
 
-## 2. The "Master Control" Synergy (Stage 1 + Stage 2)
+The frontend lets each user shape their own view — choosing which categories matter, which sources to follow, and how the feed surfaces articles. Future interest signals (usage tracking, feedback) will further personalize the experience.
 
-To maintain this user-agnostic flexibility without suffering from "content aggregator bloat" (like Yahoo News), the pipeline relies on a strict two-stage separation of concerns:
+The data is not siloed for specific demographics. Every user sees the same pool of articles, filtered by their own preferences.
 
-* **Stage 1 (The Bouncer - `gazetteer.json`):** A Node.js Regex compiler that acts as the master control valve. It uses **Weights** to identify high-value news and **Exclusions** to ruthlessly block low-value noise (celebrity gossip, lifestyle fads, daily match recaps).
-* **Stage 2 (The Fine-Tooth Comb - Python NER):** A Python AI microservice that reads the filtered articles to extract precise Entities (People, Organizations, Locations, Products).
+## 3. Scoped Ingestion
 
-## 3. Rationale for Specific Domain Decisions
+The system does not crawl the open web indiscriminately. It ingests from a curated list of feed sources, each tagged with metadata (country, bias, type, coverage scope). This scoped approach ensures signal quality and enables the AI to provide meaningful cross-source analysis.
 
-To prevent category bloat while serving diverse users, we handle specific content domains using the following strategies:
+Articles are classified into one of 10 core categories (plus a catch-all):
 
-### A. Why We Kept "Sports" as a Distinct Category (With a Catch)
+`geopolitics`, `economy`, `business`, `technology`, `environment`, `security`, `politics`, `society`, `bangladesh`, `sports`, `other`
 
-* **The Problem:** Broad aggregators drown in daily sports trivia, but dropping sports entirely alienates a massive demographic, including competitive exam candidates who strictly need to track global tournaments for General Knowledge (GK) MCQs.
-* **The Solution:** We keep `sports` as Category #10, but we weaponize the `exclusions` array.
-* **Implementation:** We assign Weight 3 to major global events (`"olympics"`, `"world cup"`, `"icc"`) and use exclusions (`"match highlights"`, `"transfer rumors"`, `"fantasy football"`) to kill the daily noise. This keeps the category highly relevant for geopolitical soft-power and exam-prep, without diluting the platform's professional tone.
+No new categories will be added. New topics are folded into existing categories via the gazetteer.
 
-### B. Why "Awards & Honors" is NOT a Category (Search-First Strategy)
+## 4. The Insight Engine
 
-* **The Problem:** Users (especially students) need to track the Nobel Prize, Oscars, and Ekushey Padak. Creating a dedicated category for this causes structural bloat.
-* **The Solution:** Rely on the synergy between Stage 1 and Stage 2.
-* **Implementation:** If the "Nobel Prize in Economics" is awarded, Stage 1 catches the word `"economy"` and routes it to the `Economy` bucket. Stage 2 (Python) extracts `"Nobel Prize"` as an Entity. The article stays neatly in the Economy feed, but the user can instantly find it using the search bar. We achieve feature-parity through intelligent indexing, not extra categories.
+The pipeline has two stages, both in Node.js:
 
-### C. Folding Edge Cases into the Core 10 Categories
+**Stage 1 — Gazetteer (Deterministic)**
+A regex-based classifier that matches articles against weighted keywords and exclusion rules. It determines:
+- Category (which bucket the article belongs to)
+- Region (where the event takes place — optional, defaults to "Global" if no match)
 
-Instead of creating categories for Health, Science, or Crime, we map them based on their *impact*:
+Region is extracted by Stage 1, not by AI. It is not forced — articles without a clear region match will use "Global".
 
-* **Applied Science/Medicine** (e.g., vaccine breakthroughs, space exploration) routes to **`Technology`**.
-* **High-Profile Justice** routes based on the actor: State law to **`Politics`**, Corporate lawsuits to **`Business`**, International war crimes to **`Geopolitics`**.
-* **Disasters** route based on cause: Natural to **`Environment`**, Man-made/Pandemics to **`Security`** or **`Society`**.
+**Stage 2 — AI Enrichment (LLM)**
+Each article is sent through an LLM (Mistral or Groq) that extracts:
+- Entities (people, organizations, locations, events)
+- Sentiment score (tone polarity from -1.0 to 1.0)
+- Bias note (how the article frames the story, what language choices reveal)
 
-## 4. Directive for the AI Agent
+The insight methodology is category-appropriate:
+- A geopolitics article gets analyzed for strategic interests and power dynamics
+- A business article gets analyzed for corporate strategy and market forces
+- A technology article gets analyzed for innovation vectors and control of infrastructure
+- A politics article gets analyzed for governance trends and domestic power shifts
+- An environment article gets analyzed for policy impacts and resource competition
+- A security article gets analyzed for threat posture and defense dynamics
+- A society article gets analyzed for cultural currents and social movements
 
-When navigating this codebase, writing implementation plans, or suggesting features, **do not suggest adding new categories**. The 10 core categories (`geopolitics, politics, economy, business, technology, security, environment, society, sports, bangladesh`) are locked.
+The common thread across all categories: surfacing the **structural dynamics and meaningful patterns** behind the news, not just summarizing what happened.
 
-If a new topic needs to be tracked, **update `gazetteer.json`** to fold it into an existing category using strategic Weights and Exclusions. Always prioritize keeping the database lean and relying on Stage 2 Entity extraction for granular searchability.
+## 5. Article Surfacing & Presentation
+
+The front page presents articles based on user interest signals. This is not a static firehose — future features will incorporate:
+
+- Category preferences (which categories to show)
+- Source preferences (which sources to prioritize or hide)
+- Usage patterns (what the user reads, what they skip)
+- Feedback signals (upvotes, saves, dismissals)
+
+"What's happening today" is one presentation mode among several. Users can also view stories (clusters), locked topics (surveillance topics), and a dedicated chat interface for deep-dive analysis.
+
+See Settings → Feed Preferences for current controls.
+
+## 6. Category Architecture (Locked)
+
+The 10 core categories are final. No new categories. Edge cases are folded based on the nature of the event:
+
+- Applied science / medical breakthroughs → `technology`
+- High-profile justice → actor determines category (state → politics, corporate → business, international → geopolitics)
+- Natural disasters → `environment`
+- Man-made disasters / pandemics → `security` or `society`
+
+This folding is configured through `gazetteer.json` weights and exclusions, not through code changes.
+
+## 7. Directive
+
+- Do not add new categories
+- Fold new topics into existing categories by updating `gazetteer.json`
+- Keep the pipeline deterministic first, AI-assisted second
+- Prioritize signal quality over ingestion volume

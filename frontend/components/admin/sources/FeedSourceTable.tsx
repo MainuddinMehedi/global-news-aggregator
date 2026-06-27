@@ -6,7 +6,7 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Delete01Icon, Edit01Icon, RefreshIcon } from "@hugeicons/core-free-icons";
-import { toggleFeedSource, resetFeedFailures, deleteFeedSource } from "@/app/actions/admin";
+import { toggleFeedSource, resetFeedFailures, deleteFeedSource } from "@/app/actions/admin/feeds";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { formatDistanceToNow } from "date-fns";

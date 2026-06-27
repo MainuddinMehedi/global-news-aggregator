@@ -52,6 +52,7 @@ export default async function Navbar() {
           </Suspense>
         </div>
 
+        {/* TODO: Notifications — wire bell to notification system (badge count, dropdown) */}
         <button className="relative p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors">
           <HugeiconsIcon icon={Bell} className="w-5 h-5" />
           <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-destructive rounded-full animate-pulse" />
