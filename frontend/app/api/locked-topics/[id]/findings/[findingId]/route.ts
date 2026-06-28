@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { revalidateTag } from "next/cache";
+import { requireTopicOwner } from "@/lib/auth/requireTopicOwner";
 
 export async function DELETE(
   req: NextRequest,
@@ -8,6 +9,9 @@ export async function DELETE(
 ) {
   try {
     const { id, findingId } = await params;
+    
+    const ownership = await requireTopicOwner(id);
+    if (!ownership.ok) return ownership.response;
 
     // 1. Delete the specific finding from the database
     await prisma.topicFinding.delete({

@@ -33,7 +33,6 @@ interface AuthSlice {
   setLoginModalOpen: (isOpen: boolean) => void;
 }
 
-
 // ─── Topic slice ──────────────────────────────────────────────────────────────
 interface TopicSlice {
   totalMatchCount: number;
@@ -205,7 +204,8 @@ export const useUnreadCount = () => useAppStore((s) => s.unreadCount);
 export const useSetUnreadCount = () => useAppStore((s) => s.setUnreadCount);
 
 export const useIsLoginModalOpen = () => useAppStore((s) => s.isLoginModalOpen);
-export const useSetLoginModalOpen = () => useAppStore((s) => s.setLoginModalOpen);
+export const useSetLoginModalOpen = () =>
+  useAppStore((s) => s.setLoginModalOpen);
 
 export const useIsChatOpen = () => useAppStore((s) => s.isChatOpen);
 export const useOpenChat = () => useAppStore((s) => s.openChat);
@@ -242,7 +242,7 @@ export const useSettings = () => {
       extraCategories: s.extraCategories,
       homePageMode: s.homePageMode,
       hasOnboardedSources: s.hasOnboardedSources,
-    }))
+    })),
   );
   const setSetting = useAppStore((s) => s.setSetting);
   return { settings, setSetting };

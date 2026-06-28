@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { startBoss } from "@/lib/boss";
+import { requireTopicOwner } from "@/lib/auth/requireTopicOwner";
 
 export async function GET(
   req: NextRequest,
@@ -7,6 +8,9 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
+    const ownership = await requireTopicOwner(id);
+    if (!ownership.ok) return ownership.response;
+    
     const url = new URL(req.url);
     const jobId = url.searchParams.get("jobId");
 

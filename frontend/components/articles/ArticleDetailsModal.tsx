@@ -11,7 +11,7 @@ import {
 import { useRouter, useSearchParams } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { SentimentBadge } from "./SentimentBadge";
-import { formatRelativeTime, getEventRegionBadgeVariant } from "@/lib/utils";
+import { getEventRegionBadgeVariant } from "@/lib/utils";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { LinkSquare02Icon, Sparkles } from "@hugeicons/core-free-icons";
 import Link from "next/link";
@@ -37,7 +37,7 @@ export function ArticleDetailsModal({ article }: { article: Article | null }) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[52rem] max-h-[85vh] flex-col overflow-y-auto p-0 rounded-lg border border-border/50 shadow-2xl no-scrollbar">
+      <DialogContent className="sm:max-w-208 max-h-[85vh] flex-col overflow-y-auto p-0 rounded-lg border border-border/50 shadow-2xl no-scrollbar">
         <DialogHeader className="px-5 py-4 border-b border-border/50 shrink-0">
           <div className="flex flex-wrap items-center gap-2 mb-2">
             <span className="w-6 h-6 rounded bg-secondary flex items-center justify-center text-[9px] font-bold text-secondary-foreground">
@@ -66,38 +66,6 @@ export function ArticleDetailsModal({ article }: { article: Article | null }) {
 
         {/* Content area */}
         <div className="flex-1 overflow-y-auto px-5 py- space-y-5 bg-card">
-          {/* AI Analysis Section */}
-          {/*<div className="mb- p-4 bg-emerald-500/5 dark:bg-emerald-500/10 border border-emerald-500/20 rounded-xl relative">
-            <button
-              className="absolute top-3 right-3 p-1.5 hover:bg-emerald-500/10 rounded-md text-emerald-500 hover:text-emerald-400 transition-colors opacity-80 hover:opacity-100"
-              title="Discuss with AI"
-            >
-              <HugeiconsIcon icon={Sparkles} className="w-4 h-4" />
-            </button>
-            <div className="font-bold text-xs uppercase tracking-wide text-emerald-600 dark:text-emerald-400 mb-3 flex items-center gap-1.5">
-              ✨ AI Analysis
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-              <div className="flex items-center gap-1.5">
-                <span className="text-muted-foreground/80">Bias Category:</span>
-                <Badge variant={getBiasBadgeVariant(article.biasCategory)}>
-                  {article.biasCategory || "Neutral"}
-                </Badge>
-              </div>
-            </div>
-
-            {article.biasNote && (
-              <div className="mt-3 text-xs text-muted-foreground/90 border-t border-emerald-500/10 pt-3">
-                <span className="font-medium text-foreground/80">
-                  Loaded Terms:
-                </span>{" "}
-                {article.biasNote}
-              </div>
-            )}
-          </div>*/}
-
-          {/*-----------------------*/}
           <div className="p-4 bg-emerald-500/5 border border-emerald-500/20 rounded-lg">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center space-x-2">
@@ -198,8 +166,6 @@ export function ArticleDetailsModal({ article }: { article: Article | null }) {
             </div>
           </div>
 
-          {/*-----------------------*/}
-
           {/* Main Snippet */}
           <div className="prose dark:prose-invert max-w-none mb-">
             <p className="text-[15px] leading-relaxed text-muted-foreground">
@@ -228,16 +194,6 @@ export function ArticleDetailsModal({ article }: { article: Article | null }) {
                   ))}
                 </div>
               )}
-
-              {/*{article.entities && article.entities.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 mt-2">
-                  {article.entities.map((entity, i) => (
-                    <Badge key={i} variant="purple">
-                      {entity}
-                    </Badge>
-                  ))}
-                </div>
-              )}*/}
             </div>
           </div>
         </div>
