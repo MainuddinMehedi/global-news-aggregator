@@ -54,16 +54,17 @@ export default function StoryHero({ story, sources, origins }: StoryHeroProps) {
         {story.title}
       </h1>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="space-y-4 bg-muted/20 rounded-2xl p-5 border border-border/50 backdrop-blur-sm group">
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
-            <span className="w-4 h-px bg-border group-hover:w-8 transition-all" />
+      <div className="bg-muted/15 rounded-3xl p-6 md:p-8 border border-border/50 backdrop-blur-sm space-y-5">
+        {/* Regions Row */}
+        <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-6 pb-5 border-b border-border/20 last:border-0 last:pb-0">
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground w-40 shrink-0 flex items-center gap-2">
+            <span className="w-2 h-px bg-border" />
             Regions
           </p>
           <div className="flex flex-wrap gap-2">
             {story.regions && story.regions.length > 0 ? (
               story.regions.map((r) => (
-                <Badge key={r} variant="secondary">
+                <Badge key={r} variant="secondary" className="px-3 py-1 rounded-lg text-xs font-semibold">
                   {r}
                 </Badge>
               ))
@@ -75,15 +76,16 @@ export default function StoryHero({ story, sources, origins }: StoryHeroProps) {
           </div>
         </div>
 
-        <div className="space-y-4 bg-muted/20 rounded-2xl p-5 border border-border/50 backdrop-blur-sm group">
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
-            <span className="w-4 h-px bg-border group-hover:w-8 transition-all" />
+        {/* Themes Row */}
+        <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-6 pb-5 border-b border-border/20 last:border-0 last:pb-0">
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground w-40 shrink-0 flex items-center gap-2">
+            <span className="w-2 h-px bg-border" />
             Themes
           </p>
           <div className="flex flex-wrap gap-2">
             {story.themes && story.themes.length > 0 ? (
               story.themes.map((t) => (
-                <Badge key={t} variant="secondary">
+                <Badge key={t} variant="secondary" className="px-3 py-1 rounded-lg text-xs font-semibold">
                   {t}
                 </Badge>
               ))
@@ -93,15 +95,16 @@ export default function StoryHero({ story, sources, origins }: StoryHeroProps) {
           </div>
         </div>
 
-        <div className="space-y-4 bg-muted/20 rounded-2xl p-5 border border-border/50 backdrop-blur-sm group">
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
-            <span className="w-4 h-px bg-border group-hover:w-8 transition-all" />
+        {/* Reporting Origins Row */}
+        <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-6 pb-5 border-b border-border/20 last:border-0 last:pb-0">
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground w-40 shrink-0 flex items-center gap-2">
+            <span className="w-2 h-px bg-border" />
             Reporting Origins
           </p>
           <div className="flex flex-wrap gap-2">
             {origins && origins.length > 0 ? (
               origins.map((o) => (
-                <Badge key={o} variant="outline" className="text-muted-foreground">
+                <Badge key={o} variant="outline" className="px-3 py-1 rounded-lg text-xs font-semibold text-muted-foreground">
                   {o}
                 </Badge>
               ))
@@ -111,20 +114,21 @@ export default function StoryHero({ story, sources, origins }: StoryHeroProps) {
           </div>
         </div>
 
-        <div className="space-y-4 bg-muted/20 rounded-2xl p-6 border border-border/50 backdrop-blur-sm group">
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
-            <span className="w-4 h-px bg-border group-hover:w-8 transition-all" />
+        {/* Intelligence Sources Row */}
+        <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-6 pb-5 border-b border-border/20 last:border-0 last:pb-0">
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground w-40 shrink-0 flex items-center gap-2">
+            <span className="w-2 h-px bg-border" />
             Intelligence Sources
           </p>
           {sources && sources.length > 0 ? (
-            <div className="flex items-center gap-3">
-              <SourceAvatarStack sources={sources} max={5} />
-              <div className="flex flex-col min-w-0">
-                <span className="text-xs font-bold text-foreground leading-none">
+            <div className="flex items-center gap-4">
+              <SourceAvatarStack sources={sources} max={8} />
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-foreground">
                   {sources.length} {sources.length === 1 ? "Source" : "Sources"}
                 </span>
-                <span className="text-[9px] text-muted-foreground font-semibold uppercase tracking-wider truncate max-w-[120px] mt-1" title={sources.map(s => s.name).join(", ")}>
-                  {sources.map(s => s.name).join(", ")}
+                <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider hidden sm:inline-block">
+                  ({sources.map(s => s.name).join(", ")})
                 </span>
               </div>
             </div>

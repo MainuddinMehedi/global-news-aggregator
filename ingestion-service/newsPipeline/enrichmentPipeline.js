@@ -1,11 +1,13 @@
 import { prisma } from "../db/prisma.js";
 import { enrichWithStage1 } from "./stage1.js";
 import { enrichWithStage2Batch } from "./stage2.js";
-import { primaryConfig } from "../ai/aiConfig.js";
+import { primaryConfig, pauseAI } from "../ai/aiConfig.js";
+import { generateEmbeddingsBatch } from "../ai/embeddings.js";
 
 export function createArticleProcessor(
-  batchSize = primaryConfig.batchSize,
+  config = primaryConfig,
 ) {
+  const batchSize = config.batchSize;
   const buffer = [];
   let currentBatchPromise = null;
   let flushPromise = null;
@@ -110,19 +112,48 @@ export function createArticleProcessor(
         // Stage 2: Local ML Enrichment
         let stage2Results = [];
         if (validBatch.length > 0) {
-          try {
-            stage2Results = await enrichWithStage2Batch(
-              validBatch,
-              validCategories,
-            );
-          } catch (err) {
-            console.error(`⚠️ Stage 2 ML batch processing failed`, err.message);
-            // Fallback if the Python microservice is completely down
+          if (pauseAI) {
+            console.log("⏸️ Stage 2 ML Enrichment skipped (globally paused via Admin settings)");
             stage2Results = validBatch.map((article) => ({
               ...article,
               entities: [],
               sentimentScore: null,
+              biasNote: null,
+              model: "stage1-only",
+              failedEnrichment: false,
             }));
+          } else {
+            try {
+              stage2Results = await enrichWithStage2Batch(
+                validBatch,
+                validCategories,
+                config,
+              );
+            } catch (err) {
+              console.error(`⚠️ Stage 2 ML batch processing failed`, err.message);
+              // Fallback if the Python microservice is completely down
+              stage2Results = validBatch.map((article) => ({
+                ...article,
+                entities: [],
+                sentimentScore: null,
+                biasNote: null,
+                model: "failed-api-fallback",
+                failedEnrichment: true,
+              }));
+            }
+          }
+        }
+
+        // Generate embeddings for the valid articles batch to conserve RPD limits
+        let embeddingsBatch = [];
+        if (validBatch.length > 0) {
+          try {
+            const textsToEmbed = validBatch.map(
+              (article) => `${article.title}\n${article.contentSnippet || ""}`
+            );
+            embeddingsBatch = await generateEmbeddingsBatch(textsToEmbed);
+          } catch (embedErr) {
+            console.error("⚠️ Failed to generate embeddings batch for articles:", embedErr.message);
           }
         }
 
@@ -135,6 +166,7 @@ export function createArticleProcessor(
           const rawArticle = validBatch[j];
           const s1 = stage1Results[originalIndex].stage1;
           const s2 = stage2Results[j];
+          const embedding = embeddingsBatch[j] || null;
 
           const finalCats = s1.categories;
 
@@ -147,7 +179,7 @@ export function createArticleProcessor(
             await prisma.$transaction(
               async (tx) => {
                 // Create ProcessedArticle
-                await tx.processedArticle.create({
+                const created = await tx.processedArticle.create({
                   data: {
                     rawArticleId: rawArticle.id,
                     categories: { connectOrCreate: categoryOps },
@@ -156,9 +188,19 @@ export function createArticleProcessor(
                     biasNote: s2.biasNote || null,
                     eventRegion: s1.eventRegion || null,
                     model: s2.model || "mistral-small-2506",
-                    clusterStatus: "HOLDING",
+                    clusterStatus: s2.failedEnrichment ? "FAILED_ENRICHMENT" : "HOLDING",
                   },
                 });
+
+                // Update the embedding vector using raw SQL since Prisma doesn't natively map Unsupported types
+                if (embedding) {
+                  const vectorStr = `[${embedding.join(",")}]`;
+                  await tx.$executeRaw`
+                    UPDATE "ProcessedArticle"
+                    SET embedding = ${vectorStr}::vector
+                    WHERE id = ${created.id}
+                  `;
+                }
               },
               {
                 timeout: 15000,

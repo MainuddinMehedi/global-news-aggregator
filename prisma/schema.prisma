@@ -29,6 +29,7 @@ model User {
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
   role          UserRole    @default(USER)
+  suspended     Boolean     @default(false)
   settings      Json?
 
   accounts      Account[]
@@ -85,6 +86,7 @@ model ProcessedArticle {
   processedAt          DateTime   @default(now())
   clusteredAt          DateTime?
   clusterStatus        String     @default("HOLDING")
+  embedding            Unsupported("vector(768)")?
   matchedTopics UserTopic[]
   storyClusters StoryCluster[] @relation("ArticleStoryClusters")
   bookmarkedBy  ArticleBookmark[]
@@ -207,6 +209,7 @@ model LockedTopic {
   userContext         String     @db.Text
   aiRefinedQuery      String     @db.Text
   aiQuerySummary      String     @db.Text
+  queryEmbedding      Unsupported("vector(768)")? // [NEW] Semantic representation of the topic
   conceptualKeywords  Json? // Array of keyword groups for broad pre-filtering
   liveWebSummary      String?    @db.Text
   liveSummary         String?    @db.Text // AI-generated findings overview (distinct from liveWebSummary)
@@ -328,5 +331,41 @@ model FindingBookmark {
 
   @@unique([userId, findingId])
   @@index([userId])
+}
+
+model FeedSource {
+  id            String    @id @default(uuid())
+  name          String    @unique
+  url           String    @unique
+  sourceCountry String
+  sourceType    String    // e.g. "Commercial Publisher", "State Media"
+  biasGroup     String    // e.g. "Centrist", "State-Aligned"
+  coverageScope String    // e.g. "National", "Global"
+  enabled       Boolean   @default(true)
+  fetchFailures Int       @default(0)
+  lastFetchedAt DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model SystemSetting {
+  key         String   @id
+  value       Json     // Arbitrary configuration object
+  description String?
+  updatedAt   DateTime @updatedAt
+}
+
+model SystemTask {
+  id           String    @id @default(uuid())
+  taskName     String    // e.g., "rss-ingestion", "story-clustering", "locked-topic-scan", "backlog-processing"
+  status       String    // "RUNNING" | "SUCCESS" | "FAILED"
+  startedAt    DateTime  @default(now())
+  completedAt  DateTime?
+  heartbeatAt  DateTime  @default(now())
+  errorMessage String?   @db.Text
+  metadata     Json?     // Statistics: { fetchedCount: Int, insertedCount: Int, dupeCount: Int, cost: Float }
+  
+  @@index([taskName, status])
+  @@index([startedAt])
 }
 

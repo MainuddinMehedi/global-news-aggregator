@@ -74,6 +74,33 @@ export default function FeedSkeleton() {
           ))}
         </div>
       </div>
+
+      {/* Information Widgets Skeleton — only on xl+ */}
+      <div className="hidden xl:flex xl:w-72 shrink-0 p-4 pl-1">
+        <aside className="flex flex-col space-y-4 w-full">
+          {/* SourceOriginWidget Skeleton */}
+          <div className="rounded-2xl border border-border/40 bg-card/20 p-5 space-y-3">
+            <Skeleton className="h-3.5 w-28 rounded" />
+            <Skeleton className="h-[120px] w-full rounded-xl" />
+          </div>
+
+          {/* EventClustersWidget Skeleton */}
+          <div className="rounded-2xl border border-border/40 bg-card/20 p-5 space-y-3">
+            <Skeleton className="h-3.5 w-36 rounded" />
+            <div className="space-y-2">
+              <Skeleton className="h-10 w-full rounded-lg" />
+              <Skeleton className="h-10 w-full rounded-lg" />
+              <Skeleton className="h-10 w-full rounded-lg" />
+            </div>
+          </div>
+
+          {/* DiversityInsightWidget Skeleton */}
+          <div className="rounded-2xl border border-border/40 bg-card/20 p-5 space-y-3">
+            <Skeleton className="h-3.5 w-32 rounded" />
+            <Skeleton className="h-16 w-full rounded-xl" />
+          </div>
+        </aside>
+      </div>
     </div>
   );
 }

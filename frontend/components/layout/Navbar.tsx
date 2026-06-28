@@ -6,8 +6,13 @@ import { Bell, Globe } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import Link from "next/link";
 import { Suspense } from "react";
+import { auth } from "@/auth";
+import SuspensionWarning from "@/components/auth/SuspensionWarning";
 
-export default function Navbar() {
+export default async function Navbar() {
+  const session = await auth();
+  const isSuspended = session?.user?.suspended === true;
+
   return (
     // sticky already establishes the containing block for the SearchBar overlay
     <header className="h-16 border-b border-secondary bg-background/80 backdrop-blur-md flex items-center justify-between px-4 lg:px-6 sticky top-0 z-20 w-full">
@@ -47,10 +52,13 @@ export default function Navbar() {
           </Suspense>
         </div>
 
+        {/* TODO: Notifications — wire bell to notification system (badge count, dropdown) */}
         <button className="relative p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors">
           <HugeiconsIcon icon={Bell} className="w-5 h-5" />
           <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-destructive rounded-full animate-pulse" />
         </button>
+
+        {isSuspended && <SuspensionWarning />}
 
         <ThemeToggle />
       </div>

@@ -3,12 +3,14 @@ import {
 } from "@/queries/lockedTopics";
 import { getFindings, getFindingCounts } from "@/queries/topicFindings";
 import { notFound } from "next/navigation";
-import { Suspense } from "react";
 import TopicHeader from "@/components/locked-topics/TopicHeader";
 import FindingsFilter from "@/components/locked-topics/FindingsFilter";
 import FindingsList from "@/components/locked-topics/FindingsList";
 import { MarkAsRead } from "@/components/locked-topics/MarkAsRead";
 import { FindingSource } from "@/types/lockedTopic";
+
+import { Suspense } from "react";
+import TopicDetailLoading from "./loading";
 
 interface TopicDetailPageProps {
   params: Promise<{ id: string }>;
@@ -20,7 +22,7 @@ interface TopicDetailPageProps {
 
 export default function TopicDetailPage({ params, searchParams }: TopicDetailPageProps) {
   return (
-    <Suspense fallback={<div className="p-8 text-center text-muted-foreground animate-pulse">Loading Topic Details...</div>}>
+    <Suspense fallback={<TopicDetailLoading />}>
       <TopicDetailContent params={params} searchParams={searchParams} />
     </Suspense>
   );
@@ -46,7 +48,7 @@ async function TopicDetailContent({
   });
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-12 space-y-12">
+    <div className="mx-auto w-full max-w-7xl 2xl:max-w-[1400px] px-4 py-8 sm:px-6 lg:px-8 space-y-8">
       <MarkAsRead topicId={id} />
       <TopicHeader topic={topic} />
 

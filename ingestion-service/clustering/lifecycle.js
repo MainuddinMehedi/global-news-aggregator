@@ -1,8 +1,20 @@
 import { prisma } from "../db/prisma.js";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
-export const CLUSTER_STABLE_INACTIVE_DAYS = Number.parseInt(
-  process.env.CLUSTER_STABLE_INACTIVE_DAYS || "7",
+export const CLUSTER_STABLE_LOW_DAYS = Number.parseInt(
+  process.env.CLUSTER_STABLE_LOW_DAYS || "7",
+  10,
+);
+export const CLUSTER_STABLE_MEDIUM_DAYS = Number.parseInt(
+  process.env.CLUSTER_STABLE_MEDIUM_DAYS || "14",
+  10,
+);
+export const CLUSTER_STABLE_HIGH_DAYS = Number.parseInt(
+  process.env.CLUSTER_STABLE_HIGH_DAYS || "21",
+  10,
+);
+export const CLUSTER_STABLE_CRITICAL_DAYS = Number.parseInt(
+  process.env.CLUSTER_STABLE_CRITICAL_DAYS || "30",
   10,
 );
 export const CLUSTER_LOW_IMPACT_INACTIVE_DAYS = Number.parseInt(
@@ -34,32 +46,34 @@ function inactiveByActivityCutoff(cutoff) {
     ],
   };
 }
-
 export async function applyClusterLifecycle() {
-  const stableCutoff = daysAgo(CLUSTER_STABLE_INACTIVE_DAYS);
-  const lowImpactCutoff = daysAgo(CLUSTER_LOW_IMPACT_INACTIVE_DAYS);
-  const mediumImpactCutoff = daysAgo(CLUSTER_MEDIUM_IMPACT_INACTIVE_DAYS);
-  const highImpactCutoff = daysAgo(CLUSTER_HIGH_IMPACT_INACTIVE_DAYS);
-  const criticalImpactCutoff = daysAgo(CLUSTER_CRITICAL_IMPACT_INACTIVE_DAYS);
+  const stableLowCutoff = daysAgo(CLUSTER_STABLE_LOW_DAYS);
+  const stableMediumCutoff = daysAgo(CLUSTER_STABLE_MEDIUM_DAYS);
+  const stableHighCutoff = daysAgo(CLUSTER_STABLE_HIGH_DAYS);
+  const stableCriticalCutoff = daysAgo(CLUSTER_STABLE_CRITICAL_DAYS);
 
-  const [stableResult, lowResult, mediumResult, highResult, criticalResult] =
+  const activeLowCutoff = daysAgo(CLUSTER_LOW_IMPACT_INACTIVE_DAYS);
+  const activeMediumCutoff = daysAgo(CLUSTER_MEDIUM_IMPACT_INACTIVE_DAYS);
+  const activeHighCutoff = daysAgo(CLUSTER_HIGH_IMPACT_INACTIVE_DAYS);
+  const activeCriticalCutoff = daysAgo(CLUSTER_CRITICAL_IMPACT_INACTIVE_DAYS);
+
+  const [lowResult, mediumResult, highResult, criticalResult, fallbackResult] =
     await Promise.all([
-      // STABLE or RESOLVING — deactivate after 7 days regardless of impact
-      prisma.storyCluster.updateMany({
-        where: {
-          isActive: true,
-          status: { in: ["STABLE", "RESOLVING"] },
-          AND: [inactiveByActivityCutoff(stableCutoff)],
-        },
-        data: { isActive: false },
-      }),
       // LOW impact
       prisma.storyCluster.updateMany({
         where: {
           isActive: true,
           impact: "LOW",
-          status: { notIn: ["STABLE", "RESOLVING"] },
-          AND: [inactiveByActivityCutoff(lowImpactCutoff)],
+          OR: [
+            {
+              status: { in: ["STABLE", "RESOLVING"] },
+              AND: [inactiveByActivityCutoff(stableLowCutoff)],
+            },
+            {
+              status: { notIn: ["STABLE", "RESOLVING"] },
+              AND: [inactiveByActivityCutoff(activeLowCutoff)],
+            },
+          ],
         },
         data: { isActive: false },
       }),
@@ -68,8 +82,16 @@ export async function applyClusterLifecycle() {
         where: {
           isActive: true,
           impact: "MEDIUM",
-          status: { notIn: ["STABLE", "RESOLVING"] },
-          AND: [inactiveByActivityCutoff(mediumImpactCutoff)],
+          OR: [
+            {
+              status: { in: ["STABLE", "RESOLVING"] },
+              AND: [inactiveByActivityCutoff(stableMediumCutoff)],
+            },
+            {
+              status: { notIn: ["STABLE", "RESOLVING"] },
+              AND: [inactiveByActivityCutoff(activeMediumCutoff)],
+            },
+          ],
         },
         data: { isActive: false },
       }),
@@ -78,8 +100,16 @@ export async function applyClusterLifecycle() {
         where: {
           isActive: true,
           impact: "HIGH",
-          status: { notIn: ["STABLE", "RESOLVING"] },
-          AND: [inactiveByActivityCutoff(highImpactCutoff)],
+          OR: [
+            {
+              status: { in: ["STABLE", "RESOLVING"] },
+              AND: [inactiveByActivityCutoff(stableHighCutoff)],
+            },
+            {
+              status: { notIn: ["STABLE", "RESOLVING"] },
+              AND: [inactiveByActivityCutoff(activeHighCutoff)],
+            },
+          ],
         },
         data: { isActive: false },
       }),
@@ -88,19 +118,45 @@ export async function applyClusterLifecycle() {
         where: {
           isActive: true,
           impact: "CRITICAL",
-          status: { notIn: ["STABLE", "RESOLVING"] },
-          AND: [inactiveByActivityCutoff(criticalImpactCutoff)],
+          OR: [
+            {
+              status: { in: ["STABLE", "RESOLVING"] },
+              AND: [inactiveByActivityCutoff(stableCriticalCutoff)],
+            },
+            {
+              status: { notIn: ["STABLE", "RESOLVING"] },
+              AND: [inactiveByActivityCutoff(activeCriticalCutoff)],
+            },
+          ],
+        },
+        data: { isActive: false },
+      }),
+      // Fallback for null/unspecified impact
+      prisma.storyCluster.updateMany({
+        where: {
+          isActive: true,
+          impact: null,
+          OR: [
+            {
+              status: { in: ["STABLE", "RESOLVING"] },
+              AND: [inactiveByActivityCutoff(stableLowCutoff)],
+            },
+            {
+              status: { notIn: ["STABLE", "RESOLVING"] },
+              AND: [inactiveByActivityCutoff(activeLowCutoff)],
+            },
+          ],
         },
         data: { isActive: false },
       }),
     ]);
 
   const deactivatedCount =
-    stableResult.count +
     lowResult.count +
     mediumResult.count +
     highResult.count +
-    criticalResult.count;
+    criticalResult.count +
+    fallbackResult.count;
 
   if (deactivatedCount > 0) {
     console.log(`🧹 Deactivated ${deactivatedCount} stale story clusters`);

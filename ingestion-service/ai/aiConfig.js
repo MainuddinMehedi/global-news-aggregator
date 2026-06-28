@@ -14,6 +14,10 @@ export const primaryConfig = {
   rpmLimit: parseInt(process.env.AI_MISTRAL_RPM_LIMIT) || 60,
   concurrencyLimit: parseInt(process.env.AI_MISTRAL_CONCURRENCY) || 5,
   batchSize: parseInt(process.env.AI_MISTRAL_BATCH_SIZE) || 10,
+  tokenMultiplier: parseFloat(process.env.AI_MISTRAL_TOKEN_MULTIPLIER) || 1.1,
+  maxArticleTokens: parseInt(process.env.AI_MISTRAL_MAX_ARTICLE_TOKENS) || 600,
+  maxRequestTokens: parseInt(process.env.AI_MISTRAL_MAX_REQUEST_TOKENS) || 8000,
+  reservedOutputTokens: parseInt(process.env.AI_MISTRAL_RESERVED_OUTPUT_TOKENS) || 1000,
 };
 
 export const fallbackConfig = {
@@ -27,4 +31,43 @@ export const fallbackConfig = {
   rpmLimit: parseInt(process.env.AI_GROQ_RPM_LIMIT) || 28,
   concurrencyLimit: parseInt(process.env.AI_GROQ_CONCURRENCY) || 1,
   batchSize: parseInt(process.env.AI_GROQ_BATCH_SIZE) || 5,
+  tokenMultiplier: parseFloat(process.env.AI_GROQ_TOKEN_MULTIPLIER) || 1.4,
+  maxArticleTokens: parseInt(process.env.AI_GROQ_MAX_ARTICLE_TOKENS) || 400,
+  maxRequestTokens: parseInt(process.env.AI_GROQ_MAX_REQUEST_TOKENS) || 3500,
+  reservedOutputTokens: parseInt(process.env.AI_GROQ_RESERVED_OUTPUT_TOKENS) || 800,
 };
+
+export const embeddingConfig = {
+  baseUrl: process.env.GEMINI_BASE_URL || "https://generativelanguage.googleapis.com/v1beta/openai",
+  apiKey: process.env.GEMINI_API_KEY,
+  model: process.env.AI_EMBEDDING_MODEL || "gemini-embedding-001",
+  provider: "google",
+};
+
+export let pauseAI = false;
+
+export async function loadConfigOverrides(prisma) {
+  try {
+    const setting = await prisma.systemSetting.findUnique({
+      where: { key: "ai_config" },
+    });
+    if (setting && setting.value) {
+      const val = setting.value;
+      if (val.primary) {
+        Object.assign(primaryConfig, val.primary);
+      }
+      if (val.fallback) {
+        Object.assign(fallbackConfig, val.fallback);
+      }
+      if (val.embedding) {
+        Object.assign(embeddingConfig, val.embedding);
+      }
+      if (typeof val.pauseAI === "boolean") {
+        pauseAI = val.pauseAI;
+      }
+    }
+  } catch (err) {
+    console.error("⚠️ Failed to load AI config overrides from database:", err.message);
+  }
+}
+

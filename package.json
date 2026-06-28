@@ -18,7 +18,10 @@
     "backlog": "node ingestion-service/processBacklog.js",
     "scan-topics": "node ingestion-service/scanTopics.js",
     "cluster": "node ingestion-service/runClustering.js",
-    "worker": "node ingestion-service/masterWorker.js"
+    "worker": "node ingestion-service/masterWorker.js",
+    "backfill:topic-embeddings": "node ingestion-service/topics/backfillLockedTopicEmbeddings.js",
+    "seed:feeds": "node prisma/seed.js",
+    "db:restore-indexes": "node prisma/restore-indexes.js"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.8.0",

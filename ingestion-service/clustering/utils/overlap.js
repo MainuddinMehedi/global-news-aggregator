@@ -1,5 +1,7 @@
 import { cleanString } from "./clean.js";
 import { normalizedEntitySet, intersectionSize } from "./entity.js";
+import { prisma } from "../../db/prisma.js";
+
 
 export function getArticleSignals(articles) {
   const sourceCounts = new Map();
@@ -26,7 +28,7 @@ export function getArticleSignals(articles) {
   };
 }
 
-export function detectEntityOverlap(holdingArticles) {
+export async function detectEntityOverlap(holdingArticles) {
   const minEntityOverlap = Number.parseInt(
     process.env.CLUSTER_MIN_ENTITY_OVERLAP || "2",
     10,
@@ -35,25 +37,51 @@ export function detectEntityOverlap(holdingArticles) {
     process.env.CLUSTER_MIN_GROUP_SIZE || "3",
     10,
   );
-  const eligibleArticles = holdingArticles.filter(
-    (article) => normalizedEntitySet(article.entities).size > 0,
+  const similarityThreshold = Number.parseFloat(
+    process.env.CLUSTER_PRE_CLUSTERING_THRESHOLD || "0.25",
+  );
+
+  const holdingIds = holdingArticles.map((a) => a.id).filter(Boolean);
+  if (holdingIds.length === 0) return [];
+
+  // 1. Fetch vector-similar article pairs using raw SQL (HNSW optimized)
+  const rawPairs = await prisma.$queryRaw`
+    SELECT a1.id AS id1, a2.id AS id2
+    FROM "ProcessedArticle" a1
+    JOIN "ProcessedArticle" a2 ON a1.id < a2.id
+    WHERE a1.id = ANY(${holdingIds})
+      AND a2.id = ANY(${holdingIds})
+      AND a1.embedding IS NOT NULL
+      AND a2.embedding IS NOT NULL
+      AND (a1.embedding <=> a2.embedding) < ${similarityThreshold};
+  `;
+
+  // 2. Build adjacency graph (initial nodes from all holding articles)
+  const adjacency = new Map(holdingArticles.map((a) => [a.id, new Set()]));
+
+  for (const pair of rawPairs) {
+    adjacency.get(pair.id1).add(pair.id2);
+    adjacency.get(pair.id2).add(pair.id1);
+  }
+
+  // 3. Fallback for legacy articles without embeddings (check entity overlap)
+  const eligibleArticlesForEntities = holdingArticles.filter(
+    (article) => !article.embedding && normalizedEntitySet(article.entities).size > 0,
   );
   const entitySetsById = new Map(
-    eligibleArticles.map((article) => [
+    holdingArticles.map((article) => [
       article.id,
       normalizedEntitySet(article.entities),
     ]),
   );
-  const adjacency = new Map(
-    eligibleArticles.map((article) => [article.id, new Set()]),
-  );
 
-  for (let i = 0; i < eligibleArticles.length; i++) {
-    const article = eligibleArticles[i];
+  for (let i = 0; i < eligibleArticlesForEntities.length; i++) {
+    const article = eligibleArticlesForEntities[i];
     const articleEntities = entitySetsById.get(article.id);
 
-    for (let j = i + 1; j < eligibleArticles.length; j++) {
-      const otherArticle = eligibleArticles[j];
+    // Compare with all other holding articles
+    for (const otherArticle of holdingArticles) {
+      if (article.id === otherArticle.id) continue;
       const otherEntities = entitySetsById.get(otherArticle.id);
 
       if (intersectionSize(articleEntities, otherEntities) >= minEntityOverlap) {
@@ -63,11 +91,12 @@ export function detectEntityOverlap(holdingArticles) {
     }
   }
 
-  const articlesById = new Map(eligibleArticles.map((article) => [article.id, article]));
+  // 4. Find connected components (DFS)
+  const articlesById = new Map(holdingArticles.map((article) => [article.id, article]));
   const visited = new Set();
   const groups = [];
 
-  for (const article of eligibleArticles) {
+  for (const article of holdingArticles) {
     if (visited.has(article.id)) continue;
 
     const stack = [article.id];
@@ -92,3 +121,4 @@ export function detectEntityOverlap(holdingArticles) {
 
   return groups;
 }
+

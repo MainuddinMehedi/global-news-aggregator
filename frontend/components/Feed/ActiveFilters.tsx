@@ -72,10 +72,11 @@ export default function ActiveFilters({
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-2 py-1 px-2.5 bg-secondary/20 rounded-xl border border-secondary/30 text-xs text-muted-foreground animate-in fade-in duration-200">
-      <span className="font-semibold text-foreground text-[11px]">
+    <div className="flex items-center gap-2 py-1 px-2.5 bg-secondary/20 rounded-xl border border-secondary/30 text-xs text-muted-foreground animate-in fade-in duration-200 max-w-full min-w-0">
+      <span className="font-semibold text-foreground text-[11px] shrink-0">
         Active Filters:
       </span>
+      <div className="flex flex-wrap items-center gap-2 flex-1 min-w-0">
       {category !== "all" && (
         <div className="inline-flex items-center space-x-1 bg-card text-foreground border border-border px-2 py-0.5 rounded-lg">
           <span className="capitalize font-medium text-[11px]">
@@ -177,9 +178,10 @@ export default function ActiveFilters({
           </button>
         </div>
       )}
+      </div>
       <button
         onClick={handleClearAll}
-        className="text-[11px] text-primary hover:underline ml-1 font-semibold cursor-pointer"
+        className="text-[11px] text-primary hover:underline ml-1 font-semibold cursor-pointer shrink-0"
       >
         Clear
       </button>

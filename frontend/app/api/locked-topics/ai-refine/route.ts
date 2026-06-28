@@ -65,7 +65,11 @@ TASK:
    - TASK: Create several short buckets (1-2 terms each) to capture "signals behind the noise", synonyms, and related technologies.
    - Example for "Nvidia B200": [["Blackwell"], ["B200"], ["Vera Rubin"], ["Nvidia", "AI Factory"], ["Nvidia", "Azure"]]
    - This allows high recall while keeping signal sharp. Avoid buckets with 3+ terms unless they are a mandatory exact phrase.
-3. Summarize the user's intent in one short, sharp sentence (AI Query Summary).
+3. Distill the user's true underlying research goal and intention (AI Query Summary).
+   - Do NOT just summarize their literal words. Read between the lines to figure out what they are actually trying to achieve or the "feeling" they are looking for.
+   - Remove all rambling, filler words, or personal venting.
+   - Expand on their unexpressed goals. If they ask about "OpenAI drama", distill the intent to: "Tracking executive leadership conflicts, safety vs commercialization debates, and organizational instability at OpenAI."
+   - Keep it to 1-2 sharp, highly descriptive sentences that capture the pure semantic core of their desire.
 4. Identify 1-3 specific high-signal sources (RSS feeds, subreddits, or unique webpages).
    - CRITICAL: AI data can be stale. Do NOT invent or guess exact RSS XML paths if you are unsure.
    - If you recommend a publication but don't know the exact RSS URL, provide the homepage URL and append " (Find RSS)" to the label. This serves as a cue for the user to visit the site and find the correct feed themselves.

@@ -70,11 +70,18 @@ function getScore(text, compiledRules) {
 }
 
 export function enrichWithStage1(rawArticle) {
+  if (rawArticle && rawArticle._forcedCategory) {
+    return {
+      categories: [rawArticle._forcedCategory],
+      eventRegion: rawArticle._forcedRegion || null,
+    };
+  }
+
   const content = `${rawArticle.title || ""} ${rawArticle.contentSnippet || ""}`;
 
   // 1. Categories
   let bestCategory = "other";
-  let maxCategoryScore = 0;
+  let maxCategoryScore = 2;
 
   for (const [category, rules] of Object.entries(COMPILED_CATEGORIES)) {
     const score = getScore(content, rules);

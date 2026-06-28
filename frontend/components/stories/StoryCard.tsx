@@ -3,6 +3,8 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { Clock01Icon, Earth, TradeUpIcon } from "@hugeicons/core-free-icons";
 import Link from "next/link";
 import { SourceAvatarStack } from "@/components/ui/SourceAvatar";
+import { formatTimeWindow } from "@/lib/utils";
+import KeyDevelopmentsTimeline from "./KeyDevelopmentsTimeline";
 
 interface KeyDevelopment {
   title: string;
@@ -34,121 +36,111 @@ interface StoryCardProps {
 
 export default function StoryCard({ story }: StoryCardProps) {
   return (
-    <Link
-      key={story.id}
-      href={`/stories/${story.slug}`}
-      className="block outline-none"
-    >
-      <article className="break-inside-avoid group max-h-fit relative flex flex-col overflow-hidden rounded-[2rem] border border-border bg-card/50 text-card-foreground shadow-sm backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/5">
-        <div className="absolute inset-0 -z-10 bg-linear-to-br from-primary/5 via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+    <article className="break-inside-avoid group max-h-fit relative flex flex-col overflow-hidden rounded-[2rem] border border-border bg-card/50 text-card-foreground shadow-sm backdrop-blur-xl transition-all duration-300 hover:border-primary/20 hover:shadow-lg">
+      <div className="absolute inset-0 -z-10 bg-linear-to-br from-primary/5 via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
 
-        <div className="flex-1 space-y-4 border-b border-border/40 bg-muted/20 px-6 py-6 sm:px-8">
-          <div className="flex flex-wrap items-center justify-between gap-4 mb-2">
+      <div className="flex-1 space-y-4 border-b border-border/40 bg-muted/20 px-6 py-6 sm:px-8">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-2 w-full">
+          <div className="flex-1 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <ImpactBadge impact={story.impact} />
 
-              <span className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-                <HugeiconsIcon icon={Earth} className="w-3 h-3" />
+              <span className="text-xs 2xl:text-sm font-medium text-muted-foreground flex items-center gap-1">
+                <HugeiconsIcon
+                  icon={Earth}
+                  className="w-3.5 h-3.5 2xl:w-4 2xl:h-4"
+                />
                 {story.articleCount} Articles
               </span>
             </div>
 
-            <div className="flex items-center gap-3">
-              {story.status && (
-                <span className="text-xs font-bold text-rose-500 uppercase tracking-widest flex items-center gap-1">
-                  <HugeiconsIcon icon={TradeUpIcon} className="w-3 h-3" />
-                  {story.status}
-                </span>
-              )}
-              <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1">
-                <HugeiconsIcon icon={Clock01Icon} className="w-3 h-3" />
-                {story.timeWindow}
+            {story.status && (
+              <span className="text-xs 2xl:text-sm font-bold text-rose-500 uppercase tracking-widest flex items-center gap-1 whitespace-nowrap">
+                <HugeiconsIcon
+                  icon={TradeUpIcon}
+                  className="w-3.5 h-3.5 2xl:w-4 2xl:h-4"
+                />
+                {story.status}
               </span>
-            </div>
+            )}
           </div>
 
-          <div className="space-y-2.5">
-            <h2 className="text-xl sm:text-2xl md:text-[28px] font-extrabold leading-tight text-foreground group-hover:text-primary transition-colors tracking-tight">
-              {story.title}
-            </h2>
-
-            <div className="flex flex-col items-start gap-x-4 gap-y-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground pt-1">
-              {story.regions && story.regions.length > 0 && (
-                <div className="flex items-center gap-2">
-                  <span className="text-foreground/40 font-black">/</span>
-                  <span className="text-foreground/70">Regions:</span>
-                  <span className="text-muted-foreground/60">
-                    {story.regions.slice(0, 3).join(", ")}
-                    {story.regions.length > 3 && ", ..."}
-                  </span>
-                </div>
-              )}
-              {story.themes && story.themes.length > 0 && (
-                <div className="flex items-center gap-2">
-                  <span className="text-foreground/40 font-black">/</span>
-                  <span className="text-foreground/70">Themes:</span>
-                  <span className="text-muted-foreground/60">
-                    {story.themes.slice(0, 3).join(", ")}
-                    {story.themes.length > 3 && ", ..."}
-                  </span>
-                </div>
-              )}
-              {story.sources && story.sources.length > 0 && (
-                <div className="flex items-center gap-2">
-                  <span className="text-foreground/40 font-black">/</span>
-                  <span className="text-foreground/70">Sources:</span>
-                  <SourceAvatarStack sources={story.sources} max={4} className="py-0.5" />
-                </div>
-              )}
-              {story.origins && story.origins.length > 0 && (
-                <div className="flex items-center gap-2">
-                  <span className="text-foreground/40 font-black">/</span>
-                  <span className="text-foreground/70">Origins:</span>
-                  <span className="text-muted-foreground/60">
-                    {story.origins.slice(0, 3).join(", ")}
-                    {story.origins.length > 3 && ", ..."}
-                  </span>
-                </div>
-              )}
-            </div>
-
-            <p className="text-sm leading-relaxed text-muted-foreground/90 font-medium line-clamp-2 mt-2">
-              {story.summary}
-            </p>
-          </div>
+          <span className="ml-auto text-xs 2xl:text-sm font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1 whitespace-nowrap text-right shrink-0">
+            <HugeiconsIcon
+              icon={Clock01Icon}
+              className="w-3.5 h-3.5 2xl:w-4 2xl:h-4"
+            />
+            {formatTimeWindow(story.timeWindow)}
+          </span>
         </div>
 
-        <div className="px-6 py-6 sm:px-8 bg-card/20">
-          <div className="mb-6 flex items-center gap-3 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
-            Key Developments
-            <div className="h-px flex-1 bg-border/50"></div>
-          </div>
-          <div className="relative ml-2 space-y-6 border-l-2 border-border/60 pl-6">
-            {story.keyDevelopments.slice(0, 6).map((dev, index) => (
-              <div key={index} className="relative group/timeline">
-                <div className="absolute -left-[31px] top-1.5 h-3.5 w-3.5 rounded-full border-2 border-muted bg-background ring-4 ring-card transition-colors duration-300 group-hover/timeline:border-primary group-hover/timeline:bg-primary/20" />
+        <div className="space-y-2.5">
+          <h2 className="text-xl sm:text-2xl md:text-[28px] xl:text-3xl 2xl:text-4xl font-extrabold leading-tight text-foreground tracking-tight">
+            <Link
+              href={`/stories/${story.slug}`}
+              className="hover:text-primary transition-colors"
+            >
+              {story.title}
+            </Link>
+          </h2>
 
-                <div className="flex flex-col gap-1">
-                  <div className="text-sm font-bold text-foreground/90 transition-colors group-hover/timeline:text-foreground tracking-tight">
-                    {dev.title}
-                  </div>
-                  <div className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">
-                    {dev.date}
-                  </div>
-                </div>
+          <div className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-x-4 gap-y-2 text-[10px] 2xl:text-xs font-bold uppercase tracking-widest text-muted-foreground pt-1">
+            {story.regions && story.regions.length > 0 && (
+              <div className="flex items-center gap-2">
+                <span className="text-foreground/40 font-black">/</span>
+                <span className="text-foreground/70">Regions:</span>
+                <span className="text-muted-foreground/60">
+                  {story.regions.slice(0, 3).join(", ")}
+                  {story.regions.length > 3 && ", ..."}
+                </span>
               </div>
-            ))}
-            {story.keyDevelopments.length > 6 && (
-              <div className="relative group/timeline">
-                <div className="absolute -left-[31px] top-1.5 h-3.5 w-3.5 rounded-full border-2 border-muted bg-muted/30" />
-                <div className="text-[10px] font-bold text-muted-foreground/40 uppercase tracking-widest">
-                  + {story.keyDevelopments.length - 6} more
-                </div>
+            )}
+            {story.themes && story.themes.length > 0 && (
+              <div className="flex items-center gap-2">
+                <span className="text-foreground/40 font-black">/</span>
+                <span className="text-foreground/70">Themes:</span>
+                <span className="text-muted-foreground/60">
+                  {story.themes.slice(0, 3).join(", ")}
+                  {story.themes.length > 3 && ", ..."}
+                </span>
+              </div>
+            )}
+            {story.sources && story.sources.length > 0 && (
+              <div className="flex items-center gap-2">
+                <span className="text-foreground/40 font-black">/</span>
+                <span className="text-foreground/70">Sources:</span>
+                <SourceAvatarStack
+                  sources={story.sources}
+                  max={4}
+                  className="py-0.5"
+                />
+              </div>
+            )}
+            {story.origins && story.origins.length > 0 && (
+              <div className="flex items-center gap-2">
+                <span className="text-foreground/40 font-black">/</span>
+                <span className="text-foreground/70">Origins:</span>
+                <span className="text-muted-foreground/60">
+                  {story.origins.slice(0, 3).join(", ")}
+                  {story.origins.length > 3 && ", ..."}
+                </span>
               </div>
             )}
           </div>
+
+          <p className="text-sm 2xl:text-base leading-relaxed text-muted-foreground/90 font-medium line-clamp-2 2xl:line-clamp-3 mt-2">
+            {story.summary}
+          </p>
         </div>
-      </article>
-    </Link>
+      </div>
+
+      <div className="px-6 py-6 sm:px-8 bg-card/20">
+        <KeyDevelopmentsTimeline
+          developments={story.keyDevelopments}
+          limit={6}
+          showTitle={true}
+        />
+      </div>
+    </article>
   );
 }

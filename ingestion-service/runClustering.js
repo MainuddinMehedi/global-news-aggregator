@@ -13,7 +13,10 @@ import {
   CLUSTER_CRITICAL_IMPACT_INACTIVE_DAYS,
 } from "./clustering/lifecycle.js";
 import { saveClusteringResults } from "./clustering/saveClusteringResults.js";
+import { deduplicateActiveClusters } from "./clustering/dedup.js";
 import revalidateCache from "./utils/revalidateCache.js";
+import { startTaskLogging, updateTaskHeartbeat, completeTaskLogging } from "./utils/taskLogger.js";
+import { loadConfigOverrides } from "./ai/aiConfig.js";
 
 const lifecycleConfig = {
   low: CLUSTER_LOW_IMPACT_INACTIVE_DAYS,
@@ -43,10 +46,16 @@ const CLUSTER_MIN_GROUP_SIZE = Number.parseInt(
 );
 
 export async function runClusteringLogic() {
-  console.log("🚀 Starting Story Clustering Worker...");
+  const taskId = await startTaskLogging("story-clustering");
+  let archivedCount = 0;
+  let groupsFound = 0;
 
-  // Apply basic lifecycle (time-based)
-  await applyClusterLifecycle();
+  try {
+    await loadConfigOverrides(prisma);
+    console.log("🚀 Starting Story Clustering Worker...");
+
+    // Apply basic lifecycle (time-based)
+    await applyClusterLifecycle();
 
   // 1. Fetch HOLDING articles from the holding window. Default is 7 days so
   // low-volume strategic stories can accumulate enough evidence.
@@ -72,6 +81,7 @@ export async function runClusteringLogic() {
     },
     data: { clusterStatus: "ARCHIVED_UNCLUSTERED", clusteredAt: new Date() },
   });
+  archivedCount = archivedOld.count;
   if (archivedOld.count > 0) {
     console.log(
       `🗄️  Archived ${archivedOld.count} holding articles older than ${CLUSTER_HOLDING_WINDOW_HOURS} hours.`,
@@ -90,7 +100,7 @@ export async function runClusteringLogic() {
   );
 
   // 2. Entity Overlap Detection
-  const groups = detectEntityOverlap(holdingArticles);
+  const groups = await detectEntityOverlap(holdingArticles);
 
   if (groups.length === 0) {
     console.log(
@@ -102,34 +112,21 @@ export async function runClusteringLogic() {
   console.log(
     `🎯 Achieved critical mass! Found ${groups.length} groups of overlapping articles.`,
   );
+  groupsFound = groups.length;
 
-  // Load a broad active story pool. Each article group selects its own most
-  // relevant candidates before going to the LLM.
-  const activeClusterCandidates = await prisma.storyCluster.findMany({
-    where: { isActive: true },
-    orderBy: [{ lastActivityAt: "desc" }, { updatedAt: "desc" }],
-    take: CLUSTER_CANDIDATE_POOL_LIMIT,
-    include: {
-      articles: {
-        take: 5,
-        orderBy: { processedAt: "desc" },
-        include: { rawArticle: true, categories: true },
-      },
-    },
-  });
-  let activeClusters = activeClusterCandidates;
+
 
   // Process each group
   for (const group of groups) {
+    await updateTaskHeartbeat(taskId);
     console.log(`\n🤖 Processing group of ${group.length} articles...`);
 
     // Chunk batched articles into safe groups of 5 to respect LLM tokens
     const chunk_size = 5;
     for (let i = 0; i < group.length; i += chunk_size) {
       const batch = group.slice(i, i + chunk_size);
-      const activeClustersForBatch = selectRelevantClusterCandidates(
+      const { candidates: activeClustersForBatch, isFastExit } = await selectRelevantClusterCandidates(
         batch,
-        activeClusters,
         CLUSTER_LLM_CANDIDATE_LIMIT,
       );
 
@@ -183,14 +180,6 @@ export async function runClusteringLogic() {
         activeClustersWithRefs,
         clusteringResponse,
       );
-
-      const knownClusterIds = new Set(activeClusters.map((cluster) => cluster.id));
-      for (const cluster of activeClustersForBatch) {
-        if (!knownClusterIds.has(cluster.id)) {
-          activeClusters.unshift(cluster);
-          knownClusterIds.add(cluster.id);
-        }
-      }
     }
   }
 
@@ -200,10 +189,24 @@ export async function runClusteringLogic() {
     data: { momentumScore: { decrement: 0.5 } }, // Decrease by 0.5 every run
   });
 
+  // Run post-run Medoid deduplication
+  await deduplicateActiveClusters();
+
   console.log(`\n✅ Story Clustering complete.`);
 
   // Revalidate Cache
   await revalidateCache(["articles", "stories"]);
+
+  await completeTaskLogging(taskId, "SUCCESS", {
+    holdingCount: holdingArticles.length,
+    archivedCount,
+    groupsFound,
+  });
+} catch (err) {
+  console.error("Clustering failed:", err);
+  await completeTaskLogging(taskId, "FAILED", null, err.message);
+  throw err;
+}
 }
 
 // Run if called directly from CLI

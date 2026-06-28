@@ -74,6 +74,16 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   },
   callbacks: {
     async signIn({ user, account, profile }) {
+      if (user.id) {
+        const dbUser = await prisma.user.findUnique({
+          where: { id: user.id },
+          select: { suspended: true },
+        });
+        if (dbUser?.suspended) {
+          return false; // Block sign-in for suspended accounts
+        }
+      }
+
       // Sync Google profile picture to the database if the user doesn't have an image
       if (account?.provider === "google" && profile?.picture && !user.image) {
         try {
@@ -92,6 +102,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (session.user) {
         session.user.id = user.id;
         session.user.role = user.role;
+        session.user.suspended = user.suspended;
       }
       return session;
     },

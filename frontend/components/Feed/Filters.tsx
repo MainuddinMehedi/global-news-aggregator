@@ -38,11 +38,12 @@ export default async function Filters({
       <CategoryFilter categories={categories} />
 
       {/* Sort control + active filters + live article count */}
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <div className="flex items-center gap-3 flex-wrap">
+      <div className="flex items-start sm:items-center justify-between gap-4">
+        <div className="shrink-0">
           <Sort />
-          <div className="h-6 w-px bg-border hidden sm:block" />
+        </div>
 
+        <div className="flex-1 min-w-0 flex justify-center">
           <Suspense fallback={null}>
             <ActiveFilters
               category={category}
@@ -57,7 +58,7 @@ export default async function Filters({
           </Suspense>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 shrink-0">
           <ArticleCount />
           <Suspense fallback={null}>
             <FilterPopover />

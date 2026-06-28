@@ -1,27 +1,16 @@
 import { getAnalyticsData } from "@/queries/analytics";
 import { cn } from "@/lib/utils";
-import { Suspense } from "react";
 import { BiasDonutChart } from "@/components/widgets/charts/BiasDonutChart";
 import { SentimentBarChart } from "@/components/widgets/charts/SentimentBarChart";
 import { CategoryBarChart } from "@/components/widgets/charts/CategoryBarChart";
-import { AiUsageLineChart } from "@/components/widgets/charts/AiUsageLineChart";
-import { IngestionVolumeChart } from "@/components/widgets/charts/IngestionVolumeChart";
-import { SourceStatusIndicator } from "@/components/widgets/SourceStatusIndicator";
-import { RelativeTime } from "@/components/ui/RelativeTime";
 import { AnalyticsTimeFilter } from "@/components/widgets/AnalyticsTimeFilter";
-import { ModelUtilizationChart } from "@/components/widgets/charts/ModelUtilizationChart";
 import { TopicSourceDistributionChart } from "@/components/widgets/charts/TopicSourceDistributionChart";
-import { ChatTelemetryWidget } from "@/components/widgets/ChatTelemetryWidget";
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
 function formatNumber(n: number): string {
   if (n >= 1000) return `${(n / 1000).toFixed(1)}K`;
   return n.toString();
-}
-
-function formatCost(n: number): string {
-  return `$${n.toFixed(4)}`;
 }
 
 // ── Components ─────────────────────────────────────────────────────────────
@@ -119,12 +108,8 @@ interface AnalyticsProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
-export default function AnalyticsPage(props: AnalyticsProps) {
-  return (
-    <Suspense fallback={<div className="p-8 text-center text-muted-foreground animate-pulse">Loading Command Center Intelligence...</div>}>
-      <AnalyticsPageContent searchParams={props.searchParams} />
-    </Suspense>
-  );
+export default async function AnalyticsPage(props: AnalyticsProps) {
+  return <AnalyticsPageContent searchParams={props.searchParams} />;
 }
 
 async function AnalyticsPageContent(props: AnalyticsProps) {
@@ -135,33 +120,24 @@ async function AnalyticsPageContent(props: AnalyticsProps) {
 
   const sentimentLabel =
     data.avgSentiment == null
-      ? "No data"
-      : data.avgSentiment > 0.2
-        ? "Positive"
-        : data.avgSentiment < -0.2
-          ? "Negative"
-          : "Neutral";
+  ? "No data"
+  : data.avgSentiment > 0.2
+    ? "Positive"
+    : data.avgSentiment < -0.2
+      ? "Negative"
+      : "Neutral";
 
   const sentimentColor =
     data.avgSentiment == null
-      ? "#6b7280"
-      : data.avgSentiment > 0.2
-        ? "#10b981"
-        : data.avgSentiment < -0.2
-          ? "#ef4444"
-          : "#f59e0b";
+  ? "#6b7280"
+  : data.avgSentiment > 0.2
+    ? "#10b981"
+    : data.avgSentiment < -0.2
+      ? "#ef4444"
+      : "#f59e0b";
 
   const maxEntityCount = data.topEntities[0]?.count ?? 1;
   const maxCountryCount = data.topSourceCountries[0]?.count ?? 1;
-
-  const totalAiTokens = data.aiUsageChart.reduce(
-    (s, d) => s + d.tokensUsed,
-    0,
-  );
-  const totalAiCost = data.aiUsageChart.reduce(
-    (s, d) => s + d.estimatedCost,
-    0,
-  );
 
   return (
     <div className="relative min-h-full bg-background pb-20">
@@ -170,7 +146,7 @@ async function AnalyticsPageContent(props: AnalyticsProps) {
       {/* Ambient glow */}
       <div className="pointer-events-none fixed top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-primary/5 blur-[100px] rounded-full" />
 
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 py-10 space-y-12">
+      <div className="relative z-10 mx-auto w-full max-w-7xl 2xl:max-w-[1400px] px-4 py-8 sm:px-6 lg:px-8 space-y-8">
         {/* ── Page header ─────────────────────────────────────────────── */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
@@ -228,105 +204,14 @@ async function AnalyticsPageContent(props: AnalyticsProps) {
             value={sentimentLabel}
             sub={
               data.avgSentiment != null
-                ? `Score: ${data.avgSentiment.toFixed(3)}`
-                : undefined
+            ? `Score: ${data.avgSentiment.toFixed(3)}`
+            : undefined
             }
             accent={sentimentColor}
           />
         </div>
 
-        {/* ── Section: System Vitality ─────────────────────────────────── */}
-        <section className="space-y-6">
-          <SectionHeader
-            title="System Vitality"
-            sub="Ingestion & Health Metrics"
-          />
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Source Health Table */}
-            <PanelShell className="lg:col-span-1 flex flex-col">
-              <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-6 px-1">
-                Source Health
-              </h3>
-
-              <div className="flex items-center justify-between mb-5 px-1">
-                <div className="space-y-1">
-                  <p className="text-4xl font-black tracking-tighter text-foreground font-mono">
-                    {data.sourceHealth.length}
-                  </p>
-                  <p className="text-[9px] text-muted-foreground uppercase font-black tracking-widest">
-                    Active Sources
-                  </p>
-                </div>
-                <div className="text-right space-y-1">
-                  <p className="text-4xl font-black tracking-tighter text-emerald-500 font-mono">
-                    {data.dedupRate}%
-                  </p>
-                  <p className="text-[9px] text-muted-foreground uppercase font-black tracking-widest">
-                    Dedup Rate
-                  </p>
-                </div>
-              </div>
-
-              <div className="h-px w-full bg-border/20 mb-8" />
-
-              <div className="flex-1 space-y-4">
-                {data.sourceHealth.length > 0 ? data.sourceHealth.slice(0, 6).map((source) => (
-                  <div
-                    key={source.name}
-                    className="flex items-center justify-between group px-1"
-                  >
-                    <div className="flex items-center gap-4 overflow-hidden">
-                      <SourceStatusIndicator lastFetch={source.lastFetch} />
-                      <span className="text-[12px] font-bold text-foreground/90 group-hover:text-primary transition-colors truncate">
-                        {source.name}
-                      </span>
-                    </div>
-                    <div className="text-right flex-shrink-0 ml-4">
-                      <p className="text-[10px] font-mono text-foreground/80 font-black leading-tight">
-                        {source.count} articles
-                      </p>
-                      <RelativeTime
-                        date={source.lastFetch}
-                        className="text-[9px] text-muted-foreground/60 font-medium"
-                      />
-                    </div>
-                  </div>
-                )) : (
-                  <p className="text-xs text-muted-foreground/50 italic text-center">No active sources in this timeframe.</p>
-                )}
-              </div>
-            </PanelShell>
-
-            {/* Ingestion Volume Chart */}
-            <PanelShell className="lg:col-span-2 flex flex-col">
-              <div className="flex items-center justify-between mb-6 px-1">
-                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                  Ingestion Volume
-                </p>
-                <p className="text-[9px] text-muted-foreground/60 font-mono italic">
-                  Daily Fetch vs Processed
-                </p>
-              </div>
-              <div className="flex-1 w-full min-h-[320px]">
-                {data.ingestionVolumeChart.length > 0 ? (
-                  <IngestionVolumeChart data={data.ingestionVolumeChart} />
-                ) : (
-                  <p className="text-xs text-muted-foreground/50 italic text-center mt-20">No ingestion data available.</p>
-                )}
-              </div>
-            </PanelShell>
-          </div>
-        </section>
-
-        {/* ── Section: Command Telemetry ───────────────────────────────── */}
-        <section className="space-y-6">
-          <SectionHeader
-            title="Command Telemetry"
-            sub="Agent Chat & Interactions"
-          />
-          <ChatTelemetryWidget data={data.chatTelemetry} />
-        </section>
 
         {/* ── Section: News Intelligence ───────────────────────────────── */}
         <section className="space-y-6">
@@ -595,81 +480,7 @@ async function AnalyticsPageContent(props: AnalyticsProps) {
           </div>
         </section>
 
-        {/* ── Section: AI Intelligence ──────────────────────────────────── */}
-        <section className="space-y-6">
-          <SectionHeader
-            title="AI Architecture"
-            sub="Pipeline Cost & Utilization"
-          />
-          
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <PanelShell className="lg:col-span-1">
-              <SectionHeader title="Model Utilization" />
-              {data.modelUtilization.length > 0 ? (
-                <ModelUtilizationChart data={data.modelUtilization} />
-              ) : (
-                <p className="text-xs text-muted-foreground/50 italic py-10 text-center">No AI model utilization logged.</p>
-              )}
-            </PanelShell>
 
-            <PanelShell className="lg:col-span-2">
-              <SectionHeader
-                title="AI Usage Pipeline"
-                sub="Token & Cost Area Analysis"
-              />
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                <div>
-                  <div className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground/60 mb-1">
-                    Total Tokens
-                  </div>
-                  <div className="text-2xl font-black font-mono text-foreground">
-                    {formatNumber(totalAiTokens)}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground/60 mb-1">
-                    Est. Cost
-                  </div>
-                  <div className="text-2xl font-black font-mono text-foreground">
-                    {formatCost(totalAiCost)}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground/60 mb-1">
-                    Runs
-                  </div>
-                  <div className="text-2xl font-black font-mono text-foreground">
-                    {data.aiUsageChart.length}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground/60 mb-1">
-                    Avg / Day
-                  </div>
-                  <div className="text-2xl font-black font-mono text-foreground">
-                    {data.aiUsageChart.length > 0
-                      ? formatNumber(
-                          Math.round(
-                            totalAiTokens / data.aiUsageChart.length,
-                          ),
-                        )
-                      : "—"}
-                  </div>
-                </div>
-              </div>
-
-              {data.aiUsageChart.length > 0 ? (
-                <div className="h-64">
-                  <AiUsageLineChart data={data.aiUsageChart} />
-                </div>
-              ) : (
-                <p className="text-xs text-muted-foreground/50 italic py-4 text-center">
-                  No AI usage data in this timeframe.
-                </p>
-              )}
-            </PanelShell>
-          </div>
-        </section>
 
         {/* ── Footer ───────────────────────────────────────────────────── */}
         <div className="flex items-center justify-center gap-4 pt-4">

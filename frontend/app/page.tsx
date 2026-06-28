@@ -48,6 +48,7 @@ async function HomeContent({ searchParams }: HomeProps) {
   let activeStoryTitle: string | undefined = undefined;
 
   let enabledSources: string[] | undefined = undefined;
+  let hiddenCategories: string[] | undefined = undefined;
 
   try {
     const session = await auth();
@@ -60,6 +61,7 @@ async function HomeContent({ searchParams }: HomeProps) {
         const settings = (user.settings || {}) as any;
         const customSources = settings.customSources || [];
         const disabledBuiltins = settings.disabledBuiltinSources || [];
+        hiddenCategories = settings.hiddenCategories || [];
 
         const enabledCustomNames = customSources
           .filter((s: any) => s.enabled)
@@ -86,6 +88,7 @@ async function HomeContent({ searchParams }: HomeProps) {
         bias,
         scope,
         enabledSources,
+        hiddenCategories,
       }),
       articleId ? getArticleById(articleId) : Promise.resolve(null),
       story !== "all"
@@ -113,7 +116,7 @@ async function HomeContent({ searchParams }: HomeProps) {
   return (
     <div className="flex flex-1 w-full">
       {/* Feed: Main content area */}
-      <div className="flex-1 min-w-0 p-5 space-y-5">
+      <div className="flex-1 min-w-0 px-4 py-6 sm:px-6 lg:px-8 space-y-6">
         <Filters
           category={category}
           region={region}

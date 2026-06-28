@@ -1,41 +1,20 @@
-import { getLockedTopics, getUnreadFindingCount } from "@/queries/lockedTopics";
-import { getInitialFindings } from "@/queries/topicFindings";
-import LockedTopicGrid from "@/components/locked-topics/LockedTopicGrid";
+import { Suspense } from "react";
+import CreateTopicModal from "@/components/locked-topics/CreateTopicModal";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { RssLockedIcon } from "@hugeicons/core-free-icons";
-import CreateTopicModal from "@/components/locked-topics/CreateTopicModal";
-import { TopicFinding } from "@/types/lockedTopic";
+import {
+  LockedTopicsContainer,
+  LockedTopicGridSkeleton,
+} from "@/components/locked-topics/LockedTopicsContainer";
 
-export default async function LockedTopicsPage({
-  searchParams,
-}: {
+interface PageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
-}) {
-  const params = await searchParams;
-  const search = typeof params.search === "string" ? params.search : "";
-  const topics = await getLockedTopics(search || undefined);
+}
 
-  // Fetch latest 3 findings and unread count for each topic to show on the card
-  // This is efficient because getInitialFindings and getUnreadFindingCount are cached
-  const latestFindingsMap: Record<string, TopicFinding[]> = {};
-  const unreadCountsMap: Record<string, number> = {};
-
-  await Promise.all(
-    topics.map(async (topic) => {
-      const [{ findings }, unreadCount] = await Promise.all([
-        getInitialFindings(topic.id),
-        getUnreadFindingCount(topic.id),
-      ]);
-      console.log(
-        `[LockedTopicsPage] Topic: ${topic.displayName}, Findings: ${findings.length}, Unread: ${unreadCount}`,
-      );
-      latestFindingsMap[topic.id] = findings.slice(0, 3);
-      unreadCountsMap[topic.id] = unreadCount;
-    }),
-  );
-
+export default function LockedTopicsPage({ searchParams }: PageProps) {
   return (
-    <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+    <div className="mx-auto w-full max-w-7xl 2xl:max-w-[1400px] px-4 py-8 sm:px-6 lg:px-8">
+      {/* Static Shell Header (Instant Render) */}
       <div className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="space-y-3">
           <p className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-bold uppercase tracking-widest shadow-sm">
@@ -55,11 +34,10 @@ export default async function LockedTopicsPage({
         <CreateTopicModal />
       </div>
 
-      <LockedTopicGrid
-        topics={topics}
-        latestFindingsMap={latestFindingsMap}
-        unreadCountsMap={unreadCountsMap}
-      />
+      {/* Dynamic Content Boundary */}
+      <Suspense fallback={<LockedTopicGridSkeleton />}>
+        <LockedTopicsContainer searchParams={searchParams} />
+      </Suspense>
     </div>
   );
 }

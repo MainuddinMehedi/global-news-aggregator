@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Article } from "@/types/article";
 import ArticleCard from "@/components/articles/ArticleCard";
 import { TopicFinding } from "@/types/lockedTopic";
@@ -11,9 +11,10 @@ import { FindingCard } from "@/components/locked-topics/FindingCard";
 import { Bookmark01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import Link from "next/link";
+import BookmarksLoading from "./loading";
 
 export default function BookmarksPage() {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const [articles, setArticles] = useState<Article[]>([]);
   const [findings, setFindings] = useState<TopicFinding[]>([]);
   const [loading, setLoading] = useState(true);
@@ -40,14 +41,7 @@ export default function BookmarksPage() {
   }, [status]);
 
   if (status === "loading" || loading) {
-    return (
-      <div className="flex flex-col items-center justify-center flex-1 min-h-[60vh] bg-background px-6 text-center">
-        <div className="max-w-md space-y-4">
-          <div className="mx-auto w-10 h-10 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
-          <p className="text-muted-foreground font-medium animate-pulse">Loading bookmarks...</p>
-        </div>
-      </div>
-    );
+    return <BookmarksLoading />;
   }
 
   if (status === "unauthenticated") {
@@ -85,8 +79,8 @@ export default function BookmarksPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto py-8 px-4 w-full">
-      <h1 className="text-3xl font-bold mb-8">Bookmarks</h1>
+    <div className="mx-auto w-full max-w-7xl 2xl:max-w-[1400px] px-4 py-8 sm:px-6 lg:px-8 space-y-8">
+      <h1 className="text-3xl font-bold">Bookmarks</h1>
 
       <Tabs defaultValue="articles" className="w-full">
         <TabsList className="mb-6 bg-muted/50 w-full justify-start overflow-x-auto rounded-xl p-1">

@@ -9,6 +9,7 @@ export async function GET(req: NextRequest) {
 
   try {
     let enabledSources: string[] | undefined = undefined;
+    let hiddenCategories: string[] | undefined = undefined;
 
     const session = await auth();
     if (session?.user?.email) {
@@ -20,6 +21,7 @@ export async function GET(req: NextRequest) {
         const settings = (user.settings || {}) as any;
         const customSources = settings.customSources || [];
         const disabledBuiltins = settings.disabledBuiltinSources || [];
+        hiddenCategories = settings.hiddenCategories || [];
 
         const enabledCustomNames = customSources
           .filter((s: any) => s.enabled)
@@ -33,18 +35,21 @@ export async function GET(req: NextRequest) {
       }
     }
 
+    const pageParam = searchParams.get("page");
     const data = await getArticles({
-      category:    searchParams.get("category")    ?? "all",
-      sort:        searchParams.get("sort")        ?? "latest",
-      search:      searchParams.get("search")      ?? "",
-      region:      searchParams.get("region")      ?? undefined,
-      origin:      searchParams.get("origin")      ?? undefined,
-      type:        searchParams.get("type")        ?? undefined,
-      story:       searchParams.get("story")       ?? undefined,
-      bias:        searchParams.get("bias")        ?? undefined,
-      scope:       searchParams.get("scope")       ?? undefined,
-      cursor:      searchParams.get("cursor")      ?? undefined,
+      category:       searchParams.get("category")    ?? "all",
+      sort:           searchParams.get("sort")        ?? "latest",
+      search:         searchParams.get("search")      ?? "",
+      region:         searchParams.get("region")      ?? undefined,
+      origin:         searchParams.get("origin")      ?? undefined,
+      type:           searchParams.get("type")        ?? undefined,
+      story:          searchParams.get("story")       ?? undefined,
+      bias:           searchParams.get("bias")        ?? undefined,
+      scope:          searchParams.get("scope")       ?? undefined,
+      cursor:         searchParams.get("cursor")      ?? undefined,
+      page:           pageParam ? parseInt(pageParam) : undefined,
       enabledSources,
+      hiddenCategories,
     });
 
     return NextResponse.json(data);

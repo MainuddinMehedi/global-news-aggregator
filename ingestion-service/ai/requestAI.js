@@ -1,5 +1,5 @@
 import { waitForCapacity, recordUsage, logHeaders } from "./rateLimiter.js";
-import { countTokens, TOKEN_MULTIPLIER } from "./tokenBatcher.js";
+import { countTokens } from "./tokenBatcher.js";
 import { primaryConfig, fallbackConfig } from "./aiConfig.js";
 
 export async function requestAI(
@@ -25,8 +25,8 @@ export async function requestAI(
     // If no explicit token estimate is provided, use a generic safe estimate
     const tokensToWait =
       estimatedTokens ||
-      Math.ceil((countTokens(prompt) + 1000) * TOKEN_MULTIPLIER);
-    await waitForCapacity(tokensToWait, config.tpmLimit, config.rpmLimit);
+      Math.ceil((countTokens(prompt) + config.reservedOutputTokens) * config.tokenMultiplier);
+    await waitForCapacity(config.provider, tokensToWait, config.tpmLimit, config.rpmLimit);
 
     const controller = new AbortController();
     const timeout = setTimeout(
@@ -76,7 +76,7 @@ export async function requestAI(
     const actualTokens = data.usage?.total_tokens || 0;
 
     // Record actual usage in the rate limiter window
-    recordUsage(actualTokens);
+    recordUsage(config.provider, actualTokens);
 
     return {
       content: data.choices[0].message.content,

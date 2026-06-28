@@ -1,83 +1,5 @@
-/**
- * RSS feed sources for the ingestion pipeline.
- *
- * Each entry must have:
- *   - name:          Human-readable source name
- *   - sourceCountry: Country of origin (or "Global")
- *   - url:           RSS/Atom feed URL
- *   - enabled:       Set to false to skip without deleting the entry
- */
-
 import { prisma } from "../db/prisma.js";
-
-const builtinFeeds = [
-  // ── Bangladesh ───────────────────────────────────────────
-  {
-    name: "The Daily Star",
-    sourceCountry: "Bangladesh",
-    sourceType: "Commercial Publisher",
-    biasGroup: "Centrist",
-    coverageScope: "National",
-    url: "https://www.thedailystar.net/frontpage/rss.xml",
-    enabled: true,
-  },
-  {
-    name: "Dhaka Tribune",
-    sourceCountry: "Bangladesh",
-    sourceType: "Commercial Publisher",
-    biasGroup: "Centrist",
-    coverageScope: "National",
-    url: "https://www.dhakatribune.com/feed/",
-    enabled: true,
-  },
-  {
-    name: "BD24 Live",
-    sourceCountry: "Bangladesh",
-    sourceType: "Commercial Publisher",
-    biasGroup: "Centrist",
-    coverageScope: "National",
-    url: "https://www.bd24live.com/feed",
-    enabled: true,
-  },
-  {
-    name: "Jagonews24",
-    sourceCountry: "Bangladesh",
-    sourceType: "Commercial Publisher",
-    biasGroup: "Centrist",
-    coverageScope: "National",
-    url: "https://www.jagonews24.com/rss/rss.xml",
-    enabled: false,
-  },
-
-  // ── International ────────────────────────────────────────
-  {
-    name: "Al Jazeera",
-    sourceCountry: "Qatar",
-    sourceType: "State Media",
-    biasGroup: "State-Aligned",
-    coverageScope: "Global",
-    url: "https://www.aljazeera.com/xml/rss/all.xml",
-    enabled: true,
-  },
-  {
-    name: "UN News",
-    sourceCountry: "",
-    sourceType: "Independent Wire",
-    biasGroup: "Centrist",
-    coverageScope: "Global",
-    url: "https://news.un.org/feed/subscribe/en/news/region/global/feed/rss.xml",
-    enabled: true,
-  },
-  {
-    name: "TechCrunch",
-    sourceCountry: "USA",
-    sourceType: "Commercial Publisher",
-    biasGroup: "Centrist",
-    coverageScope: "Global",
-    url: "https://techcrunch.com/feed/",
-    enabled: true,
-  },
-];
+import builtinFeeds from "./builtin-feeds.js";
 
 /** Returns only feeds where `enabled` is true across all users or defaults. */
 export async function getActiveFeeds() {
@@ -85,8 +7,23 @@ export async function getActiveFeeds() {
   return allFeeds.filter((f) => f.enabled);
 }
 
-/** Returns all feeds regardless of enabled status, merged from users and defaults. */
+/** Returns all feeds regardless of enabled status, merged from users and database FeedSource. */
 export async function getAllFeeds() {
+  let systemFeeds = [];
+  try {
+    systemFeeds = await prisma.feedSource.findMany();
+  } catch (err) {
+    console.warn(
+      "Could not fetch FeedSource from DB, falling back to static list:",
+      err.message,
+    );
+  }
+
+  // Fallback to static list if database query fails or returned no records (e.g., unseeded)
+  if (!systemFeeds || systemFeeds.length === 0) {
+    systemFeeds = builtinFeeds;
+  }
+
   let users = [];
   try {
     users = await prisma.user.findMany({ select: { settings: true } });
@@ -96,12 +33,20 @@ export async function getAllFeeds() {
 
   const feedsMap = new Map();
 
-  // Load defaults
-  for (const f of builtinFeeds) {
-    feedsMap.set(f.url, { ...f });
+  // Load system feeds (from DB or fallback)
+  for (const f of systemFeeds) {
+    feedsMap.set(f.url, {
+      name: f.name,
+      sourceCountry: f.sourceCountry,
+      sourceType: f.sourceType,
+      biasGroup: f.biasGroup,
+      coverageScope: f.coverageScope,
+      url: f.url,
+      enabled: f.enabled,
+    });
   }
 
-  // Load user feeds
+  // Load user custom feeds
   for (const user of users) {
     if (user.settings && Array.isArray(user.settings.customSources)) {
       for (const src of user.settings.customSources) {
