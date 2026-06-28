@@ -3,7 +3,7 @@
 import { TopicFinding } from "@/types/lockedTopic";
 import { useExtractedContent } from "@/hooks/useExtractedContent";
 import { getYouTubeVideoId } from "@/lib/locked-topics";
-import { ContentSkeleton } from "./ContentSkeleton";
+import { ContentSkeleton } from "@/components/locked-topics/sources/ContentSkeleton";
 
 interface YouTubeContentProps {
   finding: TopicFinding;

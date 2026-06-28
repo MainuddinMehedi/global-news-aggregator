@@ -1,12 +1,12 @@
 import { Suspense } from "react";
 import { auth } from "@/auth";
-import CreateTopicModal from "@/components/locked-topics/CreateTopicModal";
+import CreateTopicModal from "@/components/locked-topics/modals/CreateTopicModal";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { RssLockedIcon } from "@hugeicons/core-free-icons";
 import {
   LockedTopicsContainer,
   LockedTopicGridSkeleton,
-} from "@/components/locked-topics/LockedTopicsContainer";
+} from "@/components/locked-topics/grid/LockedTopicsContainer";
 
 interface PageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;

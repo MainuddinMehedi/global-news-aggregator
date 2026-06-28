@@ -6,8 +6,8 @@ import { Card } from "@/components/ui/card";
 import { Article } from "@/types/article";
 import ArticleCard from "@/components/articles/ArticleCard";
 import { TopicFinding } from "@/types/lockedTopic";
-import { FindingCard } from "@/components/locked-topics/FindingCard";
-import { FindingDetailsModal } from "@/components/locked-topics/FindingDetailsModal";
+import { FindingCard } from "@/components/locked-topics/findings/FindingCard";
+import { FindingDetailsModal } from "@/components/locked-topics/findings/FindingDetailsModal";
 
 export default function BookmarksTabs({
   articles,

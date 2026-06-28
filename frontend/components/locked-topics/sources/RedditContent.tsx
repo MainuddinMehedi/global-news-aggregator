@@ -2,7 +2,7 @@
 
 import { TopicFinding } from "@/types/lockedTopic";
 import { autoFormatPlainText } from "@/lib/locked-topics";
-import { ExtractableContent } from "./ExtractableContent";
+import { ExtractableContent } from "@/components/locked-topics/findings/ExtractableContent";
 
 interface RedditContentProps {
   finding: TopicFinding;

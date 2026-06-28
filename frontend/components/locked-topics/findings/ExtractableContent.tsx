@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { TopicFinding } from "@/types/lockedTopic";
 import { useExtractedContent } from "@/hooks/useExtractedContent";
-import { ContentSkeleton } from "./ContentSkeleton";
+import { ContentSkeleton } from "@/components/locked-topics/sources/ContentSkeleton";
 
 const loadingMessages: Record<string, string> = {
   ARTICLE: "Extracting article content...",

@@ -3,8 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { RssLockedIcon } from "@hugeicons/core-free-icons";
-import TopicActiveToggle from "./TopicActiveToggle";
-import { NotificationsPopover } from "./NotificationsPopover";
+import TopicActiveToggle from "@/components/locked-topics/header/TopicActiveToggle";
+import { NotificationsPopover } from "@/components/locked-topics/NotificationsPopover";
 import { RelativeTime } from "@/components/ui/RelativeTime";
 
 interface LockedTopicCardProps {

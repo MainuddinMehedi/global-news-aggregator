@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { TopicFinding } from "@/types/lockedTopic";
 import { readGoogleCache, writeGoogleCache } from "@/lib/locked-topics";
-import { ContentSkeleton } from "./ContentSkeleton";
+import { ContentSkeleton } from "@/components/locked-topics/sources/ContentSkeleton";
 
 interface GoogleNewsContentProps {
   finding: TopicFinding;

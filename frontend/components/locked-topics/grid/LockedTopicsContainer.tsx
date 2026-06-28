@@ -1,6 +1,6 @@
 import { getLockedTopics, getUnreadFindingCount } from "@/queries/lockedTopics";
 import { getInitialFindings } from "@/queries/topicFindings";
-import LockedTopicGrid from "./LockedTopicGrid";
+import LockedTopicGrid from "@/components/locked-topics/grid/LockedTopicGrid";
 import { TopicFinding } from "@/types/lockedTopic";
 import { Skeleton } from "@/components/ui/skeleton";
 

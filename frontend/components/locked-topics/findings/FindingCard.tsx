@@ -4,7 +4,7 @@ import { TopicFinding } from "@/types/lockedTopic";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { LinkSquare02Icon, Delete01Icon } from "@hugeicons/core-free-icons";
 import BookmarkButton from "@/components/bookmarks/BookmarkButton";
-import { RelativeTime } from "../ui/RelativeTime";
+import { RelativeTime } from "@/components/ui/RelativeTime";
 
 export function FindingCard({
   finding,

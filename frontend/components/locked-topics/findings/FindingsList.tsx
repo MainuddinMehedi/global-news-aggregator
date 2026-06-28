@@ -5,10 +5,10 @@ import { useIntersectionObserver } from "@/hooks/useIntersectionObserver";
 import { TopicFinding, FindingSource } from "@/types/lockedTopic";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { RefreshIcon } from "@hugeicons/core-free-icons";
-import { Button } from "../ui/button";
-import { FindingCard } from "./FindingCard";
-import { FindingSkeleton } from "./FindingSkeleton";
-import { FindingDetailsModal } from "./FindingDetailsModal";
+import { Button } from "@/components/ui/button";
+import { FindingCard } from "@/components/locked-topics/findings/FindingCard";
+import { FindingSkeleton } from "@/components/locked-topics/findings/FindingSkeleton";
+import { FindingDetailsModal } from "@/components/locked-topics/findings/FindingDetailsModal";
 
 interface FindingsListProps {
   initialFindings: TopicFinding[];

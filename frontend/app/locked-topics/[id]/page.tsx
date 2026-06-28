@@ -4,10 +4,10 @@ import {
 import { getFindings, getFindingCounts } from "@/queries/topicFindings";
 import { notFound } from "next/navigation";
 import { auth } from "@/auth";
-import TopicHeader from "@/components/locked-topics/TopicHeader";
-import FindingsFilter from "@/components/locked-topics/FindingsFilter";
-import FindingsList from "@/components/locked-topics/FindingsList";
-import { MarkAsRead } from "@/components/locked-topics/MarkAsRead";
+import TopicHeader from "@/components/locked-topics/header/TopicHeader";
+import FindingsFilter from "@/components/locked-topics/findings/FindingsFilter";
+import FindingsList from "@/components/locked-topics/findings/FindingsList";
+import { MarkAsRead } from "@/components/locked-topics/header/MarkAsRead";
 import { FindingSource } from "@/types/lockedTopic";
 
 import { Suspense } from "react";

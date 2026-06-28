@@ -11,7 +11,7 @@ import {
   DialogDescription,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import FindingContentSection from "./FindingContentSection";
+import FindingContentSection from "@/components/locked-topics/findings/FindingContentSection";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { LinkSquare02Icon, Delete01Icon } from "@hugeicons/core-free-icons";
 import { RelativeTime } from "@/components/ui/RelativeTime";

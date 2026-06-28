@@ -8,12 +8,12 @@ import {
 } from "@hugeicons/core-free-icons";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { TopicActions } from "./TopicActions";
-import { DeleteTopicModal } from "./DeleteTopicModal";
-import { ClearFindingsModal } from "./ClearFindingsModal";
+import { TopicActions } from "@/components/locked-topics/header/TopicActions";
+import { DeleteTopicModal } from "@/components/locked-topics/modals/DeleteTopicModal";
+import { ClearFindingsModal } from "@/components/locked-topics/modals/ClearFindingsModal";
 import { RelativeTime } from "@/components/ui/RelativeTime";
-import { ScanNowButton } from "./ScanNowButton";
-import CreateTopicModal from "./CreateTopicModal";
+import { ScanNowButton } from "@/components/locked-topics/header/ScanNowButton";
+import CreateTopicModal from "@/components/locked-topics/modals/CreateTopicModal";
 
 export default function TopicHeader({
   topic,

@@ -7,7 +7,7 @@ import {
   SelectValue,
   SelectContent,
   SelectItem,
-} from "../ui/select";
+} from "@/components/ui/select";
 import { SourceConfig } from "@/types/lockedTopic";
 
 const SORTS = [
@@ -104,7 +104,7 @@ export default function FindingsFilter({
         </span>
         <Select
           value={currentSort}
-          onValueChange={(v) => updateParam("sort", v)}
+          onValueChange={(v: string) => updateParam("sort", v)}
         >
           <SelectTrigger className="w-[180px] rounded-xl border-secondary bg-background/50 h-10 text-[11px] font-bold uppercase tracking-wider">
             <SelectValue />

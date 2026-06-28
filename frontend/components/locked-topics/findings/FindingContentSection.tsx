@@ -2,10 +2,10 @@
 
 import { TopicFinding } from "@/types/lockedTopic";
 import { isYouTubeUrl } from "@/lib/locked-topics";
-import { GoogleNewsContent } from "./GoogleNewsContent";
-import { RedditContent } from "./RedditContent";
-import { YouTubeContent } from "./YouTubeContent";
-import { ExtractableContent } from "./ExtractableContent";
+import { GoogleNewsContent } from "@/components/locked-topics/sources/GoogleNewsContent";
+import { RedditContent } from "@/components/locked-topics/sources/RedditContent";
+import { YouTubeContent } from "@/components/locked-topics/sources/YouTubeContent";
+import { ExtractableContent } from "@/components/locked-topics/findings/ExtractableContent";
 
 interface FindingContentSectionProps {
   finding: TopicFinding;
