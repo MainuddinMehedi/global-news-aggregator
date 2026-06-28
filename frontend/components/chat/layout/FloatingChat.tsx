@@ -17,14 +17,14 @@ import {
   useChatContextArticle,
   useClearChatContext,
 } from "@/store";
-import ChatInput from "./ChatInput";
-import MessageList from "./MessageList";
-import ContextPickerModal from "./ContextPickerModal";
+import ChatInput from "@/components/chat/input/ChatInput";
+import MessageList from "@/components/chat/messages/MessageList";
+import ContextPickerModal from "@/components/chat/context/ContextPickerModal";
 import { MODEL_REGISTRY, getActiveModels } from "@/lib/ai/modelRegistry";
 import { contextFromArticle } from "@/lib/chat/contexts";
 import { useChatContext } from "@/hooks/useChatContext";
 import { useChatFlow } from "@/hooks/useChatFlow";
-import { WelcomeScreen } from "./WelcomeScreen";
+import { WelcomeScreen } from "@/components/chat/messages/WelcomeScreen";
 
 // ---------------------------------------------------------------------------
 // Context banner — shown when opened from an article card

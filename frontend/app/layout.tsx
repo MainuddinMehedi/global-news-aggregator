@@ -9,8 +9,8 @@ import "./globals.css";
 import Navbar from "@/components/layout/Navbar";
 import Sidebar from "@/components/layout/Sidebar";
 import SidebarWrapper from "@/components/layout/SidebarWrapper";
-import ChatFAB from "@/components/chat/ChatFAB";
-import FloatingChat from "@/components/chat/FloatingChat";
+import ChatFAB from "@/components/chat/layout/ChatFAB";
+import FloatingChat from "@/components/chat/layout/FloatingChat";
 import OnboardingModal from "@/components/auth/OnboardingModal";
 import LoginModal from "@/components/auth/LoginModal";
 

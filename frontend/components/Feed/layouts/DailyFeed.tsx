@@ -6,10 +6,10 @@ import ArticleCard from "@/components/articles/ArticleCard";
 import { ArticleFeedLoadingGrid } from "@/components/Feed/FeedSkeleton";
 import { Article } from "@/types/article";
 import { useSetArticleCount } from "@/store";
-import { Button } from "../ui/button";
+import { Button } from "@/components/ui/button";
 import { getGroupingKey, formatGroupingKey } from "@/lib/helpers/dateUtils";
 import { buildFeedQueryParams } from "@/lib/helpers/feedUtils";
-import { PaginationError } from "./PaginationError";
+import { PaginationError } from "@/components/Feed/PaginationError";
 
 interface DailyFeedProps {
   initialArticles: Article[];

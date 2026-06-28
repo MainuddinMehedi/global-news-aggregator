@@ -7,7 +7,7 @@ import {
   SelectValue,
   SelectContent,
   SelectItem,
-} from "../ui/select";
+} from "@/components/ui/select";
 
 interface FilterDropdownProps {
   label: string;

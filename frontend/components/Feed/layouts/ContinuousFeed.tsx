@@ -8,7 +8,7 @@ import { Article } from "@/types/article";
 import { useSetArticleCount } from "@/store";
 import { getGroupingKey, formatGroupingKey } from "@/lib/helpers/dateUtils";
 import { buildFeedQueryParams } from "@/lib/helpers/feedUtils";
-import { PaginationError } from "./PaginationError";
+import { PaginationError } from "@/components/Feed/PaginationError";
 
 interface ContinuousFeedProps {
   initialArticles: Article[];

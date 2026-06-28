@@ -14,7 +14,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Check } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import type { ColorTheme, HomePageMode, SettingsState } from "@/store";
-import ProfileSection from "./ProfileSection";
+import ProfileSection from "@/components/settings/sections/ProfileSection";
 
 const COLOR_THEMES: { id: ColorTheme; label: string; swatch: string }[] = [
   { id: "maia", label: "Maia", swatch: "bg-[oklch(0.55_0.15_200)]" },

@@ -20,17 +20,17 @@ import { useCallback, useEffect, useState } from "react";
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSetSidebarCollapsed } from "@/store";
-import ChatInput from "./ChatInput";
-import { WelcomeScreen } from "./WelcomeScreen";
-import ContextPanel, { ContextPills } from "./ContextPanel";
-import MessageList from "./MessageList";
+import ChatInput from "@/components/chat/input/ChatInput";
+import { WelcomeScreen } from "@/components/chat/messages/WelcomeScreen";
+import ContextPanel, { ContextPills } from "@/components/chat/context/ContextPanel";
+import MessageList from "@/components/chat/messages/MessageList";
 import { getActiveModels, MODEL_REGISTRY } from "@/lib/ai/modelRegistry";
-import VoiceSession from "./VoiceSession";
-import ContextPickerModal from "./ContextPickerModal";
+import VoiceSession from "@/components/chat/input/VoiceSession";
+import ContextPickerModal from "@/components/chat/context/ContextPickerModal";
 import { useChatContext } from "@/hooks/useChatContext";
 import { useChatSessions } from "@/hooks/useChatSessions";
 import { useChatFlow } from "@/hooks/useChatFlow";
-import ChatHeader from "./ChatHeader";
+import ChatHeader from "@/components/chat/layout/ChatHeader";
 
 export default function ChatInterface() {
   const router = useRouter();

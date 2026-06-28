@@ -14,7 +14,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import ChatHistoryPanel, { type ChatSessionListItem } from "./ChatHistoryPanel";
+import ChatHistoryPanel, { type ChatSessionListItem } from "@/components/chat/layout/ChatHistoryPanel";
 
 interface ChatHeaderProps {
   activeSessionId?: string;

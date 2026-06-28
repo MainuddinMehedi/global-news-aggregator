@@ -1,10 +1,10 @@
 import { Suspense } from "react";
 import { getCategories } from "@/queries/categories";
-import CategoryFilter from "./CategoryFilter";
-import Sort from "./Sort";
-import { ArticleCount } from "./ArticleCount";
-import ActiveFilters from "./ActiveFilters";
-import FilterPopover from "./FilterPopover";
+import CategoryFilter from "@/components/Feed/filters/CategoryFilter";
+import Sort from "@/components/Feed/Sort";
+import { ArticleCount } from "@/components/Feed/ArticleCount";
+import ActiveFilters from "@/components/Feed/filters/ActiveFilters";
+import FilterPopover from "@/components/Feed/filters/FilterPopover";
 
 // TODO: After the new ingestion with the updated category list, make sure if they fit in without scroll. If overflowed, implement scrolling without holding down shift key. So when the user scrolls with the mouse wheel, it should scroll right away.
 // TODO: Also Make sure the "all" button is at the first position and the "Others" button is at the last position.

@@ -2,8 +2,8 @@
 
 import { Article } from "@/types/article";
 import { useSettings } from "@/store";
-import ContinuousFeed from "./ContinuousFeed";
-import DailyFeed from "./DailyFeed";
+import ContinuousFeed from "@/components/Feed/layouts/ContinuousFeed";
+import DailyFeed from "@/components/Feed/layouts/DailyFeed";
 
 export interface ArticleFeedProps {
   initialArticles: Article[];

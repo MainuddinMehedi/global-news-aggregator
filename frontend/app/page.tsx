@@ -1,6 +1,6 @@
-import ArticleFeed from "@/components/Feed/ArticleFeed";
+import ArticleFeed from "@/components/Feed/layouts/ArticleFeed";
 import FeedError from "@/components/Feed/FeedError";
-import Filters from "@/components/Feed/Filters";
+import Filters from "@/components/Feed/filters/Filters";
 import { SourceOriginWidget } from "@/components/widgets/SourceOriginWidget";
 import { DiversityInsightWidget } from "@/components/widgets/DiversityInsightWidget";
 import { EventClustersWidget } from "@/components/widgets/EventClustersWidget";

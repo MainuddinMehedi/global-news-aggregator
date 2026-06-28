@@ -17,8 +17,8 @@ import {
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { MODEL_LABELS } from "@/lib/ai/modelRegistry";
-import { CitationsStrip } from "./CitationsStrip";
-import { CollapsibleToolLogs } from "./CollapsibleToolLogs";
+import { CitationsStrip } from "@/components/chat/messages/CitationsStrip";
+import { CollapsibleToolLogs } from "@/components/chat/messages/CollapsibleToolLogs";
 import {
   normalizeMarkdownText,
   areMessagePartsEqual,

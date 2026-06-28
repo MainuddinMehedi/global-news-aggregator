@@ -1,4 +1,4 @@
-import ChatInterface from "@/components/chat/ChatInterface";
+import ChatInterface from "@/components/chat/layout/ChatInterface";
 import { Suspense } from "react";
 
 export const metadata = {

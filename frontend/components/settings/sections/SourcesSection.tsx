@@ -10,7 +10,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { CANONICAL_REGIONS, CANONICAL_BIAS_GROUPS, CANONICAL_COVERAGE_SCOPES, CANONICAL_SOURCE_TYPES } from "@/lib/constants";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { InformationCircleIcon } from "@hugeicons/core-free-icons";
-import ManageSourcesModal from "./ManageSourcesModal";
+import ManageSourcesModal from "@/components/settings/modals/ManageSourcesModal";
 import { addCustomSourceAction } from "@/app/actions/settings";
 
 interface SourcesSectionProps {

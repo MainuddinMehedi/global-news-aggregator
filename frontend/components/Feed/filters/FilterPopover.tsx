@@ -1,16 +1,16 @@
 "use client";
 
-import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "../ui/tooltip";
-import { Button } from "../ui/button";
+} from "@/components/ui/tooltip";
+import { Button } from "@/components/ui/button";
 import { Filter, InformationCircleIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import FilterDropdown from "./FilterDropdown";
+import FilterDropdown from "@/components/Feed/filters/FilterDropdown";
 
 export default function FilterPopover() {
   return (

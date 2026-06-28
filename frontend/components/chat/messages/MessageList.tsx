@@ -2,7 +2,7 @@
 
 import { type UIMessage } from "ai";
 import { useEffect, useRef, useMemo } from "react";
-import { MemoMessageBubble } from "./MessageBubble";
+import { MemoMessageBubble } from "@/components/chat/messages/MessageBubble";
 import { hasRenderableMessageContent } from "@/lib/chat/messages";
 
 interface MessageListProps {

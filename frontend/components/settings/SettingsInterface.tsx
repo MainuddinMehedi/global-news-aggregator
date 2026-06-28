@@ -7,13 +7,13 @@ import { updateSingleSettingAction } from "@/app/actions/settings";
 import { useSession } from "next-auth/react";
 import { SignInPromptCard } from "@/components/ui/SignInPromptCard";
 import { Settings02Icon } from "@hugeicons/core-free-icons";
-import NotificationsSection from "./NotificationsSection";
-import SourcesSection from "./SourcesSection";
-import GeneralSection from "./GeneralSection";
-import FeedSection from "./FeedSection";
-// import AiSection from "./AiSection";
-import AdvancedCategoriesSection from "./AdvancedCategoriesSection";
-import DangerZoneSection from "./DangerZoneSection";
+import NotificationsSection from "@/components/settings/sections/NotificationsSection";
+import SourcesSection from "@/components/settings/sections/SourcesSection";
+import GeneralSection from "@/components/settings/sections/GeneralSection";
+import FeedSection from "@/components/settings/sections/FeedSection";
+// import AiSection from "@/components/settings/sections/AiSection";
+import AdvancedCategoriesSection from "@/components/settings/sections/AdvancedCategoriesSection";
+import DangerZoneSection from "@/components/settings/sections/DangerZoneSection";
 
 const SETTINGS_SECTIONS = [
   { id: "general", label: "General" },
