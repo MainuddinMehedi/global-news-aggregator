@@ -1,8 +1,8 @@
 import { getClusterStats, getStoryClustersWithOrigins } from "@/queries/analytics";
 import { cn } from "@/lib/utils";
-import EventClustersList from "./EventClustersList";
+import EventClustersList from "@/components/widgets/events/EventClustersList";
 import { Suspense } from "react";
-import { Skeleton } from "../ui/skeleton";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const IMPACT_COLORS: Record<string, string> = {
   CRITICAL: "bg-red-500",

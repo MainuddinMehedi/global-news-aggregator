@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 import { BiasDonutChart } from "@/components/widgets/charts/BiasDonutChart";
 import { SentimentBarChart } from "@/components/widgets/charts/SentimentBarChart";
 import { CategoryBarChart } from "@/components/widgets/charts/CategoryBarChart";
-import { AnalyticsTimeFilter } from "@/components/widgets/AnalyticsTimeFilter";
+import { AnalyticsTimeFilter } from "@/components/widgets/analytics/AnalyticsTimeFilter";
 import { TopicSourceDistributionChart } from "@/components/widgets/charts/TopicSourceDistributionChart";
 
 // ── Helpers ────────────────────────────────────────────────────────────────

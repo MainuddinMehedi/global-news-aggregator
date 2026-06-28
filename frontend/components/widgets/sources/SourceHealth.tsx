@@ -1,6 +1,6 @@
 import { getIngestionStats } from "@/queries/analytics";
 import { RelativeTime } from "@/components/ui/RelativeTime";
-import { SourceStatusIndicator } from "./SourceStatusIndicator";
+import { SourceStatusIndicator } from "@/components/widgets/sources/SourceStatusIndicator";
 
 export async function SourceHealth() {
   const stats = await getIngestionStats();

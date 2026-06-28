@@ -1,7 +1,7 @@
 import { getSourceOriginCounts } from "@/queries/analytics";
-import SourceOriginList from "./SourceOriginList";
+import SourceOriginList from "@/components/widgets/sources/SourceOriginList";
 import { Suspense } from "react";
-import { Skeleton } from "../ui/skeleton";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export async function SourceOriginWidget() {
   const countsData = await getSourceOriginCounts();

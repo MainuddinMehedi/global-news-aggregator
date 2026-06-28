@@ -1,5 +1,5 @@
 import { getContentInsights } from "@/queries/analytics";
-import EventRegionList from "./EventRegionList";
+import EventRegionList from "@/components/widgets/events/EventRegionList";
 
 export async function EventRegionWidget() {
   const insights = await getContentInsights();
