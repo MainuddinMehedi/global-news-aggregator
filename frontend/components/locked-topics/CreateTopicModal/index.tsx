@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useSession } from "next-auth/react";
+import { useSetLoginModalOpen } from "@/store";
 import {
   Dialog,
   DialogContent,
@@ -25,7 +27,17 @@ export default function CreateTopicModal({
   initialData?: CreateTopicData;
   topicId?: string;
 }) {
+  const { data: session } = useSession();
+  const setLoginModalOpen = useSetLoginModalOpen();
   const [open, setOpen] = useState(false);
+
+  const handleOpenChange = (next: boolean) => {
+    if (next && !session?.user?.id) {
+      setLoginModalOpen(true);
+      return;
+    }
+    setOpen(next);
+  };
   const [step, setStep] = useState(1);
   const [notifyEnabled, setNotifyEnabled] = useState(true);
   const [notifyMode, setNotifyMode] = useState<"DIGEST" | "ALERT">("DIGEST");
@@ -78,7 +90,7 @@ export default function CreateTopicModal({
   const isEdit = !!topicId;
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         {trigger || (
           <Button

@@ -3,7 +3,7 @@
 import { TopicFinding } from "@/types/lockedTopic";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { LinkSquare02Icon, Delete01Icon } from "@hugeicons/core-free-icons";
-import BookmarkButton from "@/components/ui/BookmarkButton";
+import BookmarkButton from "@/components/bookmarks/BookmarkButton";
 
 export function FindingCard({
   finding,
@@ -56,18 +56,30 @@ export function FindingCard({
             <div className="flex items-center gap-2 min-w-0 flex-1">
               {isReddit ? (
                 <>
-                  <span className="inline-block font-extrabold text-[#FF4500] bg-[#FF4500]/10 px-2.5 py-1 rounded-full whitespace-nowrap truncate max-w-[120px] sm:max-w-[160px] md:max-w-[200px]" title={redditMeta?.subreddit || "r/Reddit"}>
+                  <span
+                    className="inline-block font-extrabold text-[#FF4500] bg-[#FF4500]/10 px-2.5 py-1 rounded-full whitespace-nowrap truncate max-w-[120px] sm:max-w-[160px] md:max-w-[200px]"
+                    title={redditMeta?.subreddit || "r/Reddit"}
+                  >
                     {redditMeta?.subreddit || "r/Reddit"}
                   </span>
                   <span className="w-1 h-1 rounded-full bg-border shrink-0" />
-                  <span className="inline-block font-semibold text-muted-foreground/60 truncate max-w-[120px] sm:max-w-[160px] md:max-w-[200px]" title={`posted by u/${redditMeta?.author || "unknown"}`}>
+                  <span
+                    className="inline-block font-semibold text-muted-foreground/60 truncate max-w-[120px] sm:max-w-[160px] md:max-w-[200px]"
+                    title={`posted by u/${redditMeta?.author || "unknown"}`}
+                  >
                     posted by u/{redditMeta?.author || "unknown"}
                   </span>
                   {!redditMeta?.isSelfPost && domain && (
                     <>
                       <span className="w-1 h-1 rounded-full bg-border shrink-0" />
-                      <span className="inline-flex items-center gap-1 font-extrabold text-[#0079D3] bg-[#0079D3]/10 px-2 py-0.5 rounded-full text-[9px] whitespace-nowrap truncate max-w-[100px] sm:max-w-[130px] md:max-w-[160px]" title={domain}>
-                        <HugeiconsIcon icon={LinkSquare02Icon} className="w-2.5 h-2.5 shrink-0" />
+                      <span
+                        className="inline-flex items-center gap-1 font-extrabold text-[#0079D3] bg-[#0079D3]/10 px-2 py-0.5 rounded-full text-[9px] whitespace-nowrap truncate max-w-[100px] sm:max-w-[130px] md:max-w-[160px]"
+                        title={domain}
+                      >
+                        <HugeiconsIcon
+                          icon={LinkSquare02Icon}
+                          className="w-2.5 h-2.5 shrink-0"
+                        />
                         <span className="truncate">{domain}</span>
                       </span>
                     </>
@@ -79,7 +91,10 @@ export function FindingCard({
                     {finding.sourceType}
                   </span>
                   <span className="w-1 h-1 rounded-full bg-border shrink-0" />
-                  <span className="inline-block text-[9px] font-bold uppercase tracking-[0.2em] text-muted-foreground/60 truncate" title={finding.sourceName}>
+                  <span
+                    className="inline-block text-[9px] font-bold uppercase tracking-[0.2em] text-muted-foreground/60 truncate"
+                    title={finding.sourceName}
+                  >
                     {finding.sourceName}
                   </span>
                 </>
@@ -96,7 +111,10 @@ export function FindingCard({
               >
                 <HugeiconsIcon icon={Delete01Icon} size={14} />
               </button>
-              <div onClick={(e) => e.stopPropagation()} className="z-10 relative cursor-pointer">
+              <div
+                onClick={(e) => e.stopPropagation()}
+                className="z-10 relative cursor-pointer"
+              >
                 <BookmarkButton type="finding" targetId={finding.id} />
               </div>
             </div>
@@ -125,7 +143,9 @@ export function FindingCard({
               </span>
               <div className="text-3xl font-black text-primary font-mono leading-none tracking-tighter flex items-baseline justify-center w-full">
                 <span>{(finding.relevanceScore * 100).toFixed(0)}</span>
-                <span className="text-[10px] ml-0.5 opacity-50 font-sans">%</span>
+                <span className="text-[10px] ml-0.5 opacity-50 font-sans">
+                  %
+                </span>
               </div>
             </div>
           )}

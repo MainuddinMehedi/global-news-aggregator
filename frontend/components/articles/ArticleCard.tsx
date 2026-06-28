@@ -1,6 +1,6 @@
 import { SentimentBadge } from "./SentimentBadge";
 import { Article } from "@/types/article";
-import BookmarkButton from "@/components/ui/BookmarkButton";
+import BookmarkButton from "@/components/bookmarks/BookmarkButton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";

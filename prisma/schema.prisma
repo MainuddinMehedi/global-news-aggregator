@@ -25,7 +25,6 @@ model User {
   emailVerified DateTime?
   image         String?
   
-  topics        UserTopic[]
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
   role          UserRole    @default(USER)
@@ -36,21 +35,12 @@ model User {
   sessions      Session[]
   articleBookmarks ArticleBookmark[]
   findingBookmarks FindingBookmark[]
-  notifications          Notification[]
+  notifications    Notification[]
   notificationPreference NotificationPreference?
+  
+  lockedTopics     LockedTopic[]
 }
 
-model UserTopic {
-  id             String            @id @default(uuid())
-  userId         String
-  user           User              @relation(fields: [userId], references: [id])
-  topicName      String
-  lastNotifiedAt DateTime?
-  article        ProcessedArticle? @relation(fields: [articleId], references: [id])
-  articleId      String?
-
-  @@unique([userId, topicName])
-}
 
 model RawArticle {
   id               String   @id @default(uuid())
@@ -89,7 +79,6 @@ model ProcessedArticle {
   clusteredAt          DateTime?
   clusterStatus        String     @default("HOLDING")
   embedding            Unsupported("vector(768)")?
-  matchedTopics UserTopic[]
   storyClusters StoryCluster[] @relation("ArticleStoryClusters")
   bookmarkedBy  ArticleBookmark[]
 }
@@ -207,7 +196,8 @@ model StoryCluster {
 
 model LockedTopic {
   id                  String     @id @default(uuid())
-  userId              String? // nullable — single user for now, ready for multi-user
+  userId              String
+  user                User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   displayName         String
   userContext         String     @db.Text
   aiRefinedQuery      String     @db.Text

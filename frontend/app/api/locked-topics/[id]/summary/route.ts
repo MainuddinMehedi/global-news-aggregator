@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { requireTopicOwner } from "@/lib/auth/requireTopicOwner";
 
 const PRIMARY_CONFIG = {
   baseUrl: process.env.GEMINI_BASE_URL || "https://generativelanguage.googleapis.com/v1beta/openai",
@@ -46,6 +47,8 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
+    const ownership = await requireTopicOwner(id);
+    if (!ownership.ok) return ownership.response;
 
     const topic = await prisma.lockedTopic.findUnique({
       where: { id },
@@ -72,15 +75,15 @@ export async function POST(
       .map((f) => `- ${f.title} (${f.sourceName}): ${f.summary || ""}`)
       .join("\n");
 
-    const prompt = `You are a geopolitical intelligence archivist. A user is archiving their tracking topic titled "${topic.displayName}".
-Your task is to provide a final documented history of what happened regarding this topic during its lifecycle, as all underlying articles will be deleted to save space.
+    const prompt = `You are a neutral intelligence archivist. A user is archiving their personal research tracking topic titled "${topic.displayName}".
+Your task is to write a final documented summary of what was found and what happened during this topic's lifecycle. The underlying findings will be deleted to save space, so this summary is the permanent historical record.
 
 TOPIC INTENT: ${topic.aiQuerySummary}
 
 LATEST FINDINGS (Up to 50):
 ${findingTexts}
 
-Write a comprehensive, professional, 2-3 paragraph historical record of the major events, narrative shifts, and key takeaways from these findings. Make it read like a permanent historical document. Use markdown formatting.`;
+Write a comprehensive, professional, 2-3 paragraph summary covering the major findings, key developments, and overall narrative arc of this topic. Adapt your tone to the topic's nature (e.g. analytical for news events, factual for job/career tracking, technical for software releases). Make it read like a permanent historical document. Use markdown formatting.`;
 
     let summary: string;
 

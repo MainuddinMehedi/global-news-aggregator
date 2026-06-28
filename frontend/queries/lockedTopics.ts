@@ -2,15 +2,16 @@ import { cacheLife, cacheTag } from "next/cache";
 import prisma from "@/lib/prisma";
 import { LockedTopic } from "@/types/lockedTopic";
 
-export async function getLockedTopics(search?: string): Promise<LockedTopic[]> {
+export async function getLockedTopics(userId: string, search?: string): Promise<LockedTopic[]> {
   "use cache";
-  cacheTag("locked-topics");
+  cacheTag(`locked-topics-${userId}`);
   cacheLife("minutes");
 
   const words = search?.trim().split(/\s+/).filter(Boolean) ?? [];
-  const searchFilter =
+  const searchFilter: Record<string, unknown> =
     words.length > 0
       ? {
+          userId,
           AND: words.map((word) => ({
             OR: [
               { displayName: { contains: word, mode: "insensitive" as const } },
@@ -24,7 +25,7 @@ export async function getLockedTopics(search?: string): Promise<LockedTopic[]> {
             ],
           })),
         }
-      : {};
+      : { userId };
 
   try {
     const topics = await prisma.lockedTopic.findMany({
@@ -44,7 +45,6 @@ export async function getLockedTopicById(
 ): Promise<LockedTopic | null> {
   "use cache";
   cacheTag(`locked-topic-${id}`);
-  cacheTag("locked-topics");
   cacheLife("minutes");
 
   try {
@@ -61,13 +61,14 @@ export async function getLockedTopicById(
   }
 }
 
-export async function getTotalMatchCount(): Promise<number> {
+export async function getTotalMatchCount(userId: string): Promise<number> {
   "use cache";
-  cacheTag("locked-topics");
+  cacheTag(`locked-topics-${userId}`);
   cacheLife("minutes");
 
   try {
     const result = await prisma.lockedTopic.aggregate({
+      where: { userId },
       _sum: {
         matchCount: true,
       },
@@ -80,13 +81,15 @@ export async function getTotalMatchCount(): Promise<number> {
   }
 }
 
-export async function getLockedTopicCount(): Promise<number> {
+export async function getLockedTopicCount(userId: string): Promise<number> {
   "use cache";
-  cacheTag("locked-topics");
+  cacheTag(`locked-topics-${userId}`);
   cacheLife("minutes");
 
   try {
-    const count = await prisma.lockedTopic.count();
+    const count = await prisma.lockedTopic.count({
+      where: { userId },
+    });
     return count;
   } catch (error) {
     console.error("getLockedTopicCount error:", error);
@@ -94,7 +97,7 @@ export async function getLockedTopicCount(): Promise<number> {
   }
 }
 
-export async function getUnreadFindingCount(topicId: string): Promise<number> {
+export async function getUnreadFindingCount(topicId: string, userId: string): Promise<number> {
   "use cache";
   cacheTag(`locked-topic-${topicId}-findings`);
   cacheLife("minutes");
@@ -104,6 +107,7 @@ export async function getUnreadFindingCount(topicId: string): Promise<number> {
       where: {
         topicId,
         isRead: false,
+        topic: { userId },
       },
     });
     return count;

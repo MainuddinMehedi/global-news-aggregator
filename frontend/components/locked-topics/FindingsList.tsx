@@ -28,8 +28,9 @@ export default function FindingsList({
   const [cursor, setCursor] = useState(initialNextCursor);
   const [isLoading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedFinding, setSelectedFinding] =
-    useState<TopicFinding | null>(null);
+  const [selectedFinding, setSelectedFinding] = useState<TopicFinding | null>(
+    null,
+  );
   const sentinelRef = useRef<HTMLDivElement>(null);
 
   // Reset list when filters change
@@ -82,21 +83,27 @@ export default function FindingsList({
     return () => observer.disconnect();
   }, [fetchNextPage, error]);
 
-  const handleDeleteFinding = useCallback(async (findingId: string) => {
-    // Optimistic UI update: remove from state immediately
-    setFindings((prev) => prev.filter((f) => f.id !== findingId));
+  const handleDeleteFinding = useCallback(
+    async (findingId: string) => {
+      // Optimistic UI update: remove from state immediately
+      setFindings((prev) => prev.filter((f) => f.id !== findingId));
 
-    try {
-      const res = await fetch(`/api/locked-topics/${topicId}/findings/${findingId}`, {
-        method: "DELETE",
-      });
-      if (!res.ok) {
-        throw new Error("Failed to delete from database");
+      try {
+        const res = await fetch(
+          `/api/locked-topics/${topicId}/findings/${findingId}`,
+          {
+            method: "DELETE",
+          },
+        );
+        if (!res.ok) {
+          throw new Error("Failed to delete from database");
+        }
+      } catch (err) {
+        console.error("Error deleting finding:", err);
       }
-    } catch (err) {
-      console.error("Error deleting finding:", err);
-    }
-  }, [topicId]);
+    },
+    [topicId],
+  );
 
   const handleRetry = () => {
     setError(null);

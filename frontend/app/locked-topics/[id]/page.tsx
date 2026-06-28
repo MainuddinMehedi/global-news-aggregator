@@ -3,6 +3,7 @@ import {
 } from "@/queries/lockedTopics";
 import { getFindings, getFindingCounts } from "@/queries/topicFindings";
 import { notFound } from "next/navigation";
+import { auth } from "@/auth";
 import TopicHeader from "@/components/locked-topics/TopicHeader";
 import FindingsFilter from "@/components/locked-topics/FindingsFilter";
 import FindingsList from "@/components/locked-topics/FindingsList";
@@ -32,11 +33,14 @@ async function TopicDetailContent({
   params,
   searchParams,
 }: TopicDetailPageProps) {
+  const session = await auth();
+  const userId = session?.user?.id;
+
   const { id } = await params;
   const { source = "ALL", sort = "newest" } = await searchParams;
 
   const topic = await getLockedTopicById(id);
-  if (!topic) notFound();
+  if (!topic || topic.userId !== userId) notFound();
 
   const counts = await getFindingCounts(id);
 
