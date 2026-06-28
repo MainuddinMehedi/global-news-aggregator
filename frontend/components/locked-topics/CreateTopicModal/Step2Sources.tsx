@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,14 +12,12 @@ import {
   RedditIcon,
   Github01Icon,
   YoutubeIcon,
-  Add01Icon,
-  LinkSquare01Icon,
-  ArrowUpRight01Icon,
-  InformationCircleIcon,
 } from "@hugeicons/core-free-icons";
-import { detectSourceType, generateSourceLabel } from "@/lib/sourceDetection";
+import { detectSourceType } from "@/lib/sourceDetection";
 import { toast } from "sonner";
 import { CreateTopicData, SourceConfig } from "@/types/lockedTopic";
+import CustomSourceInput from "./CustomSourceInput";
+import SuggestedSourcesList from "./SuggestedSourcesList";
 
 interface Step2Props {
   data: CreateTopicData;
@@ -40,124 +38,6 @@ export default function Step2Sources({
     label: string;
     url: string;
   }[];
-
-  const [customUrl, setCustomUrl] = useState("");
-  const [isValidating, setIsValidating] = useState(false);
-  const [isValidated, setIsValidated] = useState(false);
-  const [validationError, setValidationError] = useState("");
-  const [detectedType, setDetectedType] = useState("");
-
-  useEffect(() => {
-    if (!customUrl.trim()) {
-      setIsValidating(false);
-      setIsValidated(false);
-      setValidationError("");
-      setDetectedType("");
-      return;
-    }
-
-    try {
-      new URL(customUrl);
-    } catch {
-      setIsValidating(false);
-      setIsValidated(false);
-      setValidationError("Invalid URL format. Make sure to include http:// or https://");
-      setDetectedType("");
-      return;
-    }
-
-    setIsValidating(true);
-    setIsValidated(false);
-    setValidationError("");
-    setDetectedType("");
-
-    const delayDebounceFn = setTimeout(async () => {
-      try {
-        const res = await fetch(`/api/locked-topics/check-source?url=${encodeURIComponent(customUrl)}`);
-        if (res.ok) {
-          const json = await res.json();
-          if (json.valid) {
-            setIsValidated(true);
-            setDetectedType(json.type);
-          } else {
-            setValidationError(json.error || "Source validation failed.");
-          }
-        } else {
-          setValidationError("Could not connect to validation server.");
-        }
-      } catch (err) {
-        setValidationError("Could not connect to validation server.");
-      } finally {
-        setIsValidating(false);
-      }
-    }, 600);
-
-    return () => clearTimeout(delayDebounceFn);
-  }, [customUrl]);
-
-  const [suggestionStatuses, setSuggestionStatuses] = useState<Record<string, {
-    isValidating: boolean;
-    isValidated: boolean;
-    error?: string;
-  }>>({});
-
-  useEffect(() => {
-    if (suggestedSources.length === 0) return;
-
-    const toValidate = suggestedSources.filter(
-      (source) => source.url && 
-                  !suggestionStatuses[source.url] && 
-                  !data.sources.some((s) => s.url === source.url)
-    );
-
-    if (toValidate.length === 0) return;
-
-    setSuggestionStatuses((prev) => {
-      const next = { ...prev };
-      for (const source of toValidate) {
-        next[source.url] = { isValidating: true, isValidated: false };
-      }
-      return next;
-    });
-
-    for (const source of toValidate) {
-      (async (url: string) => {
-        try {
-          const res = await fetch(`/api/locked-topics/check-source?url=${encodeURIComponent(url)}`);
-          if (res.ok) {
-            const json = await res.json();
-            setSuggestionStatuses((prev) => ({
-              ...prev,
-              [url]: {
-                isValidating: false,
-                isValidated: json.valid,
-                error: json.valid ? undefined : (json.error || "Source is unreachable or invalid.")
-              }
-            }));
-          } else {
-            setSuggestionStatuses((prev) => ({
-              ...prev,
-              [url]: {
-                isValidating: false,
-                isValidated: false,
-                error: "Could not connect to validation server."
-              }
-            }));
-          }
-        } catch (err: any) {
-          setSuggestionStatuses((prev) => ({
-            ...prev,
-            [url]: {
-              isValidating: false,
-              isValidated: false,
-              error: err.message || "Connection failed."
-            }
-          }));
-        }
-      })(source.url);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [suggestedSources, data.sources.length]);
 
   const existingGithub = data.sources.find((s) => s.type === "github");
   const [githubUrl, setGithubUrl] = useState(existingGithub?.url || "");
@@ -205,7 +85,6 @@ export default function Step2Sources({
     }
     return null;
   }
-
 
   const toggleGithub = (enabled: boolean) => {
     setGithubUrlError("");
@@ -296,37 +175,16 @@ export default function Step2Sources({
     }
   };
 
-  const removeCustomSource = (url: string) => {
-    setData({
-      ...data,
-      sources: data.sources.filter((s) => s.url !== url),
-    });
-  };
+  const isSourceEnabled = (type: SourceConfig["type"]) =>
+    data.sources.some((s) => s.type === type && !s.url);
 
-  const handleAddCustomSource = () => {
-    if (!customUrl) return;
-    if (isValidating) {
-      toast.error("Please wait for source validation to complete.");
-      return;
-    }
-    if (validationError) {
-      toast.error(`Cannot add source: ${validationError}`);
-      return;
-    }
-    if (!isValidated) {
-      toast.error("Please enter a valid, reachable URL.");
-      return;
-    }
-
-    const type = (detectedType || detectSourceType(customUrl)) as SourceConfig["type"];
-    const exists = data.sources.find((s) => s.url === customUrl);
-
+  const handleAddCustomSource = (source: { url: string; type: SourceConfig["type"]; label: string }) => {
+    const exists = data.sources.find((s) => s.url === source.url);
     if (!exists) {
-      const label = generateSourceLabel(customUrl, type);
       let siteRestriction;
-      if (type === "search") {
+      if (source.type === "search") {
         try {
-          siteRestriction = new URL(customUrl).hostname.replace("www.", "");
+          siteRestriction = new URL(source.url).hostname.replace("www.", "");
         } catch {}
       }
 
@@ -334,28 +192,48 @@ export default function Step2Sources({
         ...data,
         sources: [
           ...data.sources,
-          { 
-            id: customUrl, 
-            type: type as any, 
-            label, 
-            url: customUrl, 
+          {
+            id: source.url,
+            type: source.type,
+            label: source.label,
+            url: source.url,
             ...(siteRestriction ? { siteRestriction } : {}),
             enabled: true,
-            preChecked: true
+            preChecked: true,
           },
         ],
       });
-      setCustomUrl("");
-      toast.success(`Added as ${type.replace("_", " ")} source.`);
+      toast.success(`Added as ${source.type.replace("_", " ")} source.`);
     } else {
       toast.info("Source already added.");
     }
   };
 
-  const isSourceEnabled = (type: SourceConfig["type"]) =>
-    data.sources.some((s) => s.type === type && !s.url);
+  const handleAddSuggestedSource = (source: { url: string; type: SourceConfig["type"]; label: string }) => {
+    setData({
+      ...data,
+      sources: [
+        ...data.sources,
+        {
+          id: source.url,
+          type: source.type,
+          label: source.label,
+          url: source.url,
+          enabled: true,
+          preChecked: true,
+        },
+      ],
+      suggestedSources: suggestedSources.filter((s) => s.url !== source.url),
+    });
+    toast.success(`Added ${source.label} to sources.`);
+  };
 
-
+  const handleRemoveSource = (url: string) => {
+    setData({
+      ...data,
+      sources: data.sources.filter((s) => s.url !== url),
+    });
+  };
 
   return (
     <div className="space-y-8">
@@ -444,202 +322,17 @@ export default function Step2Sources({
         </div>
       </div>
 
-      <div className="space-y-4 pt-4 border-t border-secondary/30">
-        <h4 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">
-          Tier 3 — Custom Sources
-        </h4>
-        <div className="flex gap-2">
-          <Input
-            placeholder="Paste URL (RSS, YouTube, GitHub, Webpage...)"
-            value={customUrl}
-            onChange={(e) => setCustomUrl(e.target.value)}
-            className="flex-1 bg-secondary/10 border-secondary rounded-xl"
-            onKeyDown={(e) => e.key === "Enter" && handleAddCustomSource()}
-          />
-          <Button
-            onClick={handleAddCustomSource}
-            variant="outline"
-            className="rounded-xl border-secondary text-primary"
-          >
-            <HugeiconsIcon icon={Add01Icon} size={18} />
-          </Button>
-        </div>
+      <CustomSourceInput
+        onAddSource={handleAddCustomSource}
+        customSources={customSources}
+        onRemoveSource={handleRemoveSource}
+      />
 
-        {customUrl && (
-          <div className="text-[10px] mt-1 font-medium transition-all duration-200">
-            {isValidating && (
-              <span className="text-muted-foreground animate-pulse">
-                🔍 Checking source availability...
-              </span>
-            )}
-            {validationError && (
-              <span className="text-destructive font-semibold">
-                ❌ Error: {validationError}
-              </span>
-            )}
-            {isValidated && (
-              <span className="text-emerald-500 font-bold">
-                ✅ Valid {detectedType.replace("_", " ")} source detected.
-              </span>
-            )}
-          </div>
-        )}
-
-        {customSources.length > 0 && (
-          <div className="space-y-2">
-            {customSources.map((source) => (
-              <div
-                key={source.url}
-                className="flex items-center justify-between p-3 rounded-xl border border-primary/20 bg-primary/5"
-              >
-                <div className="flex items-center gap-3 overflow-hidden">
-                  <HugeiconsIcon
-                    icon={LinkSquare01Icon}
-                    size={16}
-                    className="text-primary shrink-0"
-                  />
-                  <div className="flex flex-col truncate">
-                    <span className="text-xs font-bold truncate">
-                      {source.url}
-                    </span>
-                    <span className="text-[9px] uppercase tracking-widest text-muted-foreground">
-                      Type: {source.type.replace("_", " ")}
-                    </span>
-                  </div>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => source.url && removeCustomSource(source.url)}
-                  className="text-destructive hover:bg-destructive/10"
-                >
-                  Remove
-                </Button>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {suggestedSources.length > 0 && (
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">
-                AI-Suggested Sources
-              </span>
-              <div className="flex items-center gap-1.5">
-                <div className="flex items-center gap-1 text-[9px] font-bold text-emerald-500/80 uppercase tracking-tighter bg-emerald-500/5 px-2 py-0.5 rounded-full border border-emerald-500/10">
-                  <HugeiconsIcon icon={InformationCircleIcon} size={10} />
-                  Auto-Validated by system
-                </div>
-                <div className="flex items-center gap-1 text-[9px] font-bold text-amber-500/80 uppercase tracking-tighter bg-amber-500/5 px-2 py-0.5 rounded-full border border-amber-500/10">
-                  <HugeiconsIcon icon={InformationCircleIcon} size={10} />
-                  Verify URLs before adding
-                </div>
-              </div>
-            </div>
-            <div className="space-y-2">
-              {suggestedSources.map((source, idx) => {
-                const alreadyAdded = data.sources.some(
-                  (s) => s.url === source.url,
-                );
-                const status = suggestionStatuses[source.url];
-                const isValidating = status?.isValidating;
-                const isValidated = status?.isValidated;
-                const validationError = status?.error;
-
-                const isAddDisabled = alreadyAdded || isValidating || (status && !isValidated);
-                let buttonText = "Add";
-                if (alreadyAdded) {
-                  buttonText = "Added";
-                } else if (isValidating) {
-                  buttonText = "Checking...";
-                } else if (status && !isValidated) {
-                  buttonText = "Invalid";
-                }
-
-                return (
-                  <div
-                    key={idx}
-                    className="flex items-center justify-between p-3 rounded-xl border border-secondary bg-secondary/10 group hover:border-primary/30 transition-colors"
-                  >
-                    <div className="flex flex-col gap-0.5 min-w-0 flex-1 mr-4">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold truncate">
-                          {source.label}
-                        </span>
-                        <a
-                          href={source.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-muted-foreground hover:text-primary transition-colors"
-                          title="Open URL to verify"
-                        >
-                          <HugeiconsIcon
-                            icon={ArrowUpRight01Icon}
-                            size={12}
-                          />
-                        </a>
-                      </div>
-                      <span className="text-[10px] text-muted-foreground truncate italic">
-                        {source.url}
-                      </span>
-                      {status && (
-                        <div className="text-[9px] mt-0.5 font-medium transition-all duration-200">
-                          {isValidating && (
-                            <span className="text-muted-foreground animate-pulse">
-                              🔍 Checking source...
-                            </span>
-                          )}
-                          {validationError && (
-                            <span className="text-destructive font-semibold">
-                              ❌ {validationError}
-                            </span>
-                          )}
-                          {isValidated && (
-                            <span className="text-emerald-500 font-bold">
-                              ✅ Validated source
-                            </span>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      disabled={isAddDisabled}
-                      onClick={() => {
-                        const type =
-                          source.type || detectSourceType(source.url);
-                        setData({
-                          ...data,
-                          sources: [
-                            ...data.sources,
-                            {
-                              id: source.url,
-                              type: type as SourceConfig["type"],
-                              label: source.label,
-                              url: source.url,
-                              enabled: true,
-                              preChecked: true,
-                            },
-                          ],
-                          suggestedSources: suggestedSources.filter(
-                            (s) => s.url !== source.url,
-                          ),
-                        });
-                        toast.success(`Added ${source.label} to sources.`);
-                      }}
-                      className="h-8 px-4 text-[10px] font-black uppercase tracking-widest text-primary hover:bg-primary/10"
-                    >
-                      {buttonText}
-                    </Button>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-      </div>
+      <SuggestedSourcesList
+        suggestedSources={suggestedSources}
+        sources={data.sources}
+        onAddSource={handleAddSuggestedSource}
+      />
 
       <div className="flex gap-4">
         <Button

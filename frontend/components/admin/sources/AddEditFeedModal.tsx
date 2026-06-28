@@ -103,7 +103,7 @@ export default function AddEditFeedModal({ isOpen, onOpenChange, source }: AddEd
       setBiasGroup("Centrist");
       setCoverageScope("National");
     }
-  }, [source, isOpen]);
+  }, [source?.id, isOpen]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
