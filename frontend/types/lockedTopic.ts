@@ -35,6 +35,8 @@ export interface SourceConfig {
   subConfig?: Record<string, string>; // e.g. { channelId: "UCxxx" } for YouTube
   lastSeenHash?: string; // for webpage diff: last known content hash
   lastFetchedAt?: string; // ISO timestamp
+  lastSucceededAt?: string; // ISO timestamp for last successful RSS scan
+  preChecked?: boolean; // indicates if source was verified pre-launch
   siteRestriction?: string; // for search type: domain restriction (e.g. "reddit.com")
 }
 

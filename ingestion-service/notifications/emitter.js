@@ -39,6 +39,9 @@ export async function emitNotification({ userId, type, title, message, priority,
         case 'TOPIC_SCAN_DEGRADED':
           formatted = templates.formatTopicScanDegraded(payload);
           break;
+        case 'NEW_SOURCE_ADDED':
+          formatted = templates.formatNewSourceAdded(payload);
+          break;
         default:
           formatted = { title: title || `Alert: ${type}`, message: message || JSON.stringify(payload) };
       }
@@ -111,6 +114,7 @@ export async function emitAdminNotification(type, payload) {
       case 'AI_PROVIDER_DEGRADED':  formatted = templates.formatAiProviderDegraded(payload); break;
       case 'REVALIDATION_FAILED':   formatted = templates.formatRevalidationFailed(payload); break;
       case 'TOPIC_SOURCE_DEGRADED': formatted = templates.formatTopicSourceDegraded(payload); break;
+      case 'NEW_SOURCE_ADDED':      formatted = templates.formatNewSourceAdded(payload); break;
       default:
         formatted = { title: `Admin Alert: ${type}`, message: JSON.stringify(payload) };
     }

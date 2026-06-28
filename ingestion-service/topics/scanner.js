@@ -104,6 +104,9 @@ export async function runScannersForTopic(topic, options = {}) {
       if (metadata.newHash) {
         sourceUpdates.push({ url: metadata.url, newHash: metadata.newHash });
       }
+      if (metadata.lastSucceededAt && sourceConfig.url) {
+        sourceUpdates.push({ url: sourceConfig.url, lastSucceededAt: metadata.lastSucceededAt });
+      }
     } catch (err) {
       console.error(
         `❌ [orchestrator] Scanner ${sourceConfig.type} failed:`,
@@ -129,9 +132,16 @@ export async function runScannersForTopic(topic, options = {}) {
     if (sourceUpdates.length > 0) {
       const updatedSources = sources.map((s) => {
         const update = sourceUpdates.find(
-          (u) => u.url === s.url && s.type === "webpage",
+          (u) => u.url && u.url === s.url,
         );
-        return update ? { ...s, lastSeenHash: update.newHash } : s;
+        if (update) {
+          return {
+            ...s,
+            ...(update.newHash ? { lastSeenHash: update.newHash } : {}),
+            ...(update.lastSucceededAt ? { lastSucceededAt: update.lastSucceededAt } : {}),
+          };
+        }
+        return s;
       });
       data.sources = updatedSources;
     }
@@ -252,16 +262,10 @@ export async function runScannersForTopic(topic, options = {}) {
       insertedCount = createResult.count;
     } catch (err) {
       console.error(`❌ [orchestrator] Bulk insert failed for "${topic.displayName}":`, err.message);
-      if (topic.userId) {
-        await emitNotification({
-          userId: topic.userId,
-          type: "TOPIC_SCAN_DEGRADED",
-          payload: {
-            topicName: topic.displayName,
-            error: `Database save failed: ${err.message}`
-          }
-        });
-      }
+      await emitAdminNotification("PIPELINE_FAILURE", {
+        topicName: topic.displayName,
+        error: `Database write failure during scan: ${err.message}`
+      });
     }
   }
 

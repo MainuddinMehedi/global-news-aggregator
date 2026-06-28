@@ -69,3 +69,11 @@ export function formatTopicScanDegraded(payload) {
   };
 }
 
+export function formatNewSourceAdded(payload) {
+  const { sourceName, sourceUrl } = payload || {};
+  return {
+    title: `📡 New Feed Source: ${sourceName || 'Unknown'}`,
+    message: `A new news feed source \`${sourceName || 'Unknown'}\` (${sourceUrl || ''}) has been added to the system.`
+  };
+}
+

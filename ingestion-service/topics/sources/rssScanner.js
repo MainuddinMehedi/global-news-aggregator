@@ -119,11 +119,22 @@ export async function scanRss(topic, sourceConfig, options = {}) {
     console.log(
       `   📊 [rssScanner] Found ${findings.length} new matches from ${sourceName} (${skipped} skipped as old/duplicate${filteredSuffix})`,
     );
+    return { findings, metadata: { lastSucceededAt: new Date().toISOString() } };
   } catch (err) {
     console.error(
       `❌ [rssScanner] Failed to fetch feed for ${sourceName}:`,
       err.message,
     );
+
+    // If it succeeded before, emit PIPELINE_FAILURE admin alert
+    if (sourceConfig.lastSucceededAt) {
+      await emitAdminNotification("PIPELINE_FAILURE", {
+        topicName: topic.displayName,
+        sourceName,
+        error: `Previously verified source failed: ${err.message}`
+      });
+    }
+
     // Custom RSS URL unreachable or fetch issue
     if (sourceConfig.type === "rss" && topic.userId) {
       await emitNotification({

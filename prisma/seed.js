@@ -39,6 +39,7 @@ async function main() {
     { type: 'AI_PROVIDER_DEGRADED',  inAppEnabled: true, discordEnabled: true,  cooldownMinutes: 60 },
     { type: 'REVALIDATION_FAILED',   inAppEnabled: true, discordEnabled: false, cooldownMinutes: 60 },
     { type: 'TOPIC_SOURCE_DEGRADED', inAppEnabled: true, discordEnabled: false, cooldownMinutes: 60 },
+    { type: 'NEW_SOURCE_ADDED',      inAppEnabled: true, discordEnabled: false, cooldownMinutes: 0  },
   ];
 
   for (const config of adminConfigs) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,7 +34,130 @@ export default function Step2Sources({
   onNext,
   onPrev,
 }: Step2Props) {
+  const customSources = data.sources.filter((s) => s.url);
+  const suggestedSources = (data.suggestedSources || []) as {
+    type: string;
+    label: string;
+    url: string;
+  }[];
+
   const [customUrl, setCustomUrl] = useState("");
+  const [isValidating, setIsValidating] = useState(false);
+  const [isValidated, setIsValidated] = useState(false);
+  const [validationError, setValidationError] = useState("");
+  const [detectedType, setDetectedType] = useState("");
+
+  useEffect(() => {
+    if (!customUrl.trim()) {
+      setIsValidating(false);
+      setIsValidated(false);
+      setValidationError("");
+      setDetectedType("");
+      return;
+    }
+
+    try {
+      new URL(customUrl);
+    } catch {
+      setIsValidating(false);
+      setIsValidated(false);
+      setValidationError("Invalid URL format. Make sure to include http:// or https://");
+      setDetectedType("");
+      return;
+    }
+
+    setIsValidating(true);
+    setIsValidated(false);
+    setValidationError("");
+    setDetectedType("");
+
+    const delayDebounceFn = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/locked-topics/check-source?url=${encodeURIComponent(customUrl)}`);
+        if (res.ok) {
+          const json = await res.json();
+          if (json.valid) {
+            setIsValidated(true);
+            setDetectedType(json.type);
+          } else {
+            setValidationError(json.error || "Source validation failed.");
+          }
+        } else {
+          setValidationError("Could not connect to validation server.");
+        }
+      } catch (err) {
+        setValidationError("Could not connect to validation server.");
+      } finally {
+        setIsValidating(false);
+      }
+    }, 600);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [customUrl]);
+
+  const [suggestionStatuses, setSuggestionStatuses] = useState<Record<string, {
+    isValidating: boolean;
+    isValidated: boolean;
+    error?: string;
+  }>>({});
+
+  useEffect(() => {
+    if (suggestedSources.length === 0) return;
+
+    const toValidate = suggestedSources.filter(
+      (source) => source.url && 
+                  !suggestionStatuses[source.url] && 
+                  !data.sources.some((s) => s.url === source.url)
+    );
+
+    if (toValidate.length === 0) return;
+
+    setSuggestionStatuses((prev) => {
+      const next = { ...prev };
+      for (const source of toValidate) {
+        next[source.url] = { isValidating: true, isValidated: false };
+      }
+      return next;
+    });
+
+    for (const source of toValidate) {
+      (async (url: string) => {
+        try {
+          const res = await fetch(`/api/locked-topics/check-source?url=${encodeURIComponent(url)}`);
+          if (res.ok) {
+            const json = await res.json();
+            setSuggestionStatuses((prev) => ({
+              ...prev,
+              [url]: {
+                isValidating: false,
+                isValidated: json.valid,
+                error: json.valid ? undefined : (json.error || "Source is unreachable or invalid.")
+              }
+            }));
+          } else {
+            setSuggestionStatuses((prev) => ({
+              ...prev,
+              [url]: {
+                isValidating: false,
+                isValidated: false,
+                error: "Could not connect to validation server."
+              }
+            }));
+          }
+        } catch (err: any) {
+          setSuggestionStatuses((prev) => ({
+            ...prev,
+            [url]: {
+              isValidating: false,
+              isValidated: false,
+              error: err.message || "Connection failed."
+            }
+          }));
+        }
+      })(source.url);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [suggestedSources, data.sources.length]);
 
   const existingGithub = data.sources.find((s) => s.type === "github");
   const [githubUrl, setGithubUrl] = useState(existingGithub?.url || "");
@@ -182,14 +305,20 @@ export default function Step2Sources({
 
   const handleAddCustomSource = () => {
     if (!customUrl) return;
-    try {
-      new URL(customUrl);
-    } catch {
-      toast.error("Please enter a valid URL (including https://)");
+    if (isValidating) {
+      toast.error("Please wait for source validation to complete.");
+      return;
+    }
+    if (validationError) {
+      toast.error(`Cannot add source: ${validationError}`);
+      return;
+    }
+    if (!isValidated) {
+      toast.error("Please enter a valid, reachable URL.");
       return;
     }
 
-    const type = detectSourceType(customUrl);
+    const type = (detectedType || detectSourceType(customUrl)) as SourceConfig["type"];
     const exists = data.sources.find((s) => s.url === customUrl);
 
     if (!exists) {
@@ -207,11 +336,12 @@ export default function Step2Sources({
           ...data.sources,
           { 
             id: customUrl, 
-            type, 
+            type: type as any, 
             label, 
             url: customUrl, 
             ...(siteRestriction ? { siteRestriction } : {}),
-            enabled: true 
+            enabled: true,
+            preChecked: true
           },
         ],
       });
@@ -225,12 +355,7 @@ export default function Step2Sources({
   const isSourceEnabled = (type: SourceConfig["type"]) =>
     data.sources.some((s) => s.type === type && !s.url);
 
-  const customSources = data.sources.filter((s) => s.url);
-  const suggestedSources = (data.suggestedSources || []) as {
-    type: string;
-    label: string;
-    url: string;
-  }[];
+
 
   return (
     <div className="space-y-8">
@@ -340,6 +465,26 @@ export default function Step2Sources({
           </Button>
         </div>
 
+        {customUrl && (
+          <div className="text-[10px] mt-1 font-medium transition-all duration-200">
+            {isValidating && (
+              <span className="text-muted-foreground animate-pulse">
+                🔍 Checking source availability...
+              </span>
+            )}
+            {validationError && (
+              <span className="text-destructive font-semibold">
+                ❌ Error: {validationError}
+              </span>
+            )}
+            {isValidated && (
+              <span className="text-emerald-500 font-bold">
+                ✅ Valid {detectedType.replace("_", " ")} source detected.
+              </span>
+            )}
+          </div>
+        )}
+
         {customSources.length > 0 && (
           <div className="space-y-2">
             {customSources.map((source) => (
@@ -381,9 +526,15 @@ export default function Step2Sources({
               <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">
                 AI-Suggested Sources
               </span>
-              <div className="flex items-center gap-1 text-[9px] font-bold text-amber-500/80 uppercase tracking-tighter bg-amber-500/5 px-2 py-0.5 rounded-full border border-amber-500/10">
-                <HugeiconsIcon icon={InformationCircleIcon} size={10} />
-                Verify URLs before adding
+              <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1 text-[9px] font-bold text-emerald-500/80 uppercase tracking-tighter bg-emerald-500/5 px-2 py-0.5 rounded-full border border-emerald-500/10">
+                  <HugeiconsIcon icon={InformationCircleIcon} size={10} />
+                  Auto-Validated by system
+                </div>
+                <div className="flex items-center gap-1 text-[9px] font-bold text-amber-500/80 uppercase tracking-tighter bg-amber-500/5 px-2 py-0.5 rounded-full border border-amber-500/10">
+                  <HugeiconsIcon icon={InformationCircleIcon} size={10} />
+                  Verify URLs before adding
+                </div>
               </div>
             </div>
             <div className="space-y-2">
@@ -391,6 +542,21 @@ export default function Step2Sources({
                 const alreadyAdded = data.sources.some(
                   (s) => s.url === source.url,
                 );
+                const status = suggestionStatuses[source.url];
+                const isValidating = status?.isValidating;
+                const isValidated = status?.isValidated;
+                const validationError = status?.error;
+
+                const isAddDisabled = alreadyAdded || isValidating || (status && !isValidated);
+                let buttonText = "Add";
+                if (alreadyAdded) {
+                  buttonText = "Added";
+                } else if (isValidating) {
+                  buttonText = "Checking...";
+                } else if (status && !isValidated) {
+                  buttonText = "Invalid";
+                }
+
                 return (
                   <div
                     key={idx}
@@ -417,11 +583,30 @@ export default function Step2Sources({
                       <span className="text-[10px] text-muted-foreground truncate italic">
                         {source.url}
                       </span>
+                      {status && (
+                        <div className="text-[9px] mt-0.5 font-medium transition-all duration-200">
+                          {isValidating && (
+                            <span className="text-muted-foreground animate-pulse">
+                              🔍 Checking source...
+                            </span>
+                          )}
+                          {validationError && (
+                            <span className="text-destructive font-semibold">
+                              ❌ {validationError}
+                            </span>
+                          )}
+                          {isValidated && (
+                            <span className="text-emerald-500 font-bold">
+                              ✅ Validated source
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
                     <Button
                       size="sm"
                       variant="ghost"
-                      disabled={alreadyAdded}
+                      disabled={isAddDisabled}
                       onClick={() => {
                         const type =
                           source.type || detectSourceType(source.url);
@@ -435,6 +620,7 @@ export default function Step2Sources({
                               label: source.label,
                               url: source.url,
                               enabled: true,
+                              preChecked: true,
                             },
                           ],
                           suggestedSources: suggestedSources.filter(
@@ -445,7 +631,7 @@ export default function Step2Sources({
                       }}
                       className="h-8 px-4 text-[10px] font-black uppercase tracking-widest text-primary hover:bg-primary/10"
                     >
-                      {alreadyAdded ? "Added" : "Add"}
+                      {buttonText}
                     </Button>
                   </div>
                 );
