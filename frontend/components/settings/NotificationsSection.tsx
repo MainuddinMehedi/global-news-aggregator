@@ -12,9 +12,12 @@ import { toast } from "sonner";
 import { getNotificationPreferenceAction, saveNotificationPreferenceAction } from "@/app/actions/notifications";
 import { Skeleton } from "@/components/ui/skeleton";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Tick01Icon } from "@hugeicons/core-free-icons";
+import { Tick01Icon, Bell } from "@hugeicons/core-free-icons";
+import { useSession } from "next-auth/react";
+import { SignInPromptCard } from "@/components/ui/SignInPromptCard";
 
 export default function NotificationsSection() {
+  const { status } = useSession();
   const [isPending, startTransition] = useTransition();
   const [loading, setLoading] = useState(true);
 
@@ -29,6 +32,10 @@ export default function NotificationsSection() {
   // 1. Fetch preference on mount
   useEffect(() => {
     async function loadPreferences() {
+      if (status !== "authenticated") {
+        setLoading(false);
+        return;
+      }
       try {
         const pref = await getNotificationPreferenceAction();
         setInAppEnabled(pref.inAppEnabled);
@@ -45,7 +52,7 @@ export default function NotificationsSection() {
       }
     }
     loadPreferences();
-  }, []);
+  }, [status]);
 
   const handleSave = () => {
     startTransition(async () => {
@@ -67,7 +74,7 @@ export default function NotificationsSection() {
     });
   };
 
-  if (loading) {
+  if (status === "loading" || (status === "authenticated" && loading)) {
     return (
       <Card>
         <CardContent className="p-6 space-y-6">
@@ -83,6 +90,16 @@ export default function NotificationsSection() {
           </div>
         </CardContent>
       </Card>
+    );
+  }
+
+  if (status === "unauthenticated") {
+    return (
+      <SignInPromptCard
+        icon={Bell}
+        title="Sign in for Notifications"
+        description="Configure webhook integrations (Discord, Telegram) and periodic summaries for your monitored topics."
+      />
     );
   }
 

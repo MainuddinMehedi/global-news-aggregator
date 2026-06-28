@@ -1,8 +1,6 @@
 "use client";
 
 import { useTheme } from "next-themes";
-import { useSession } from "next-auth/react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { Label } from "@/components/ui/label";
 import {
@@ -16,6 +14,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Check } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import type { ColorTheme, HomePageMode, SettingsState } from "@/store";
+import ProfileSection from "./ProfileSection";
 
 const COLOR_THEMES: { id: ColorTheme; label: string; swatch: string }[] = [
   { id: "maia", label: "Maia", swatch: "bg-[oklch(0.55_0.15_200)]" },
@@ -35,13 +34,7 @@ interface GeneralSectionProps {
 
 export default function GeneralSection({ settings, onSettingChange }: GeneralSectionProps) {
   const { theme, setTheme } = useTheme();
-  const { data: session } = useSession();
   const { colorTheme } = settings;
-
-  const getInitials = (name?: string | null, email?: string | null) => {
-    const displayValue = name || email || "?";
-    return displayValue.charAt(0).toUpperCase();
-  };
 
   return (
     <>
@@ -53,23 +46,7 @@ export default function GeneralSection({ settings, onSettingChange }: GeneralSec
       </div>
       <Card>
         <CardContent className="p-6 space-y-6">
-          {session?.user && (
-            <>
-              <div className="flex items-center gap-4">
-                <Avatar className="w-16 h-16">
-                  <AvatarImage src={session.user.image || undefined} alt={session.user.name || "User"} />
-                  <AvatarFallback className="bg-primary text-primary-foreground text-xl font-bold">
-                    {getInitials(session.user.name, session.user.email)}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex flex-col">
-                  <h3 className="text-xl font-bold">{session.user.name || "Anonymous User"}</h3>
-                  <p className="text-sm text-muted-foreground">{session.user.email}</p>
-                </div>
-              </div>
-              <Separator />
-            </>
-          )}
+          <ProfileSection />
 
           <div className="flex items-center justify-between">
             <div className="space-y-1">

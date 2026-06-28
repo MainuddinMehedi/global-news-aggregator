@@ -4,6 +4,9 @@ import { useEffect, useState } from "react";
 import { useSettings, type SettingsState, type CustomSource } from "@/store";
 import { toast } from "sonner";
 import { updateSingleSettingAction } from "@/app/actions/settings";
+import { useSession } from "next-auth/react";
+import { SignInPromptCard } from "@/components/ui/SignInPromptCard";
+import { Settings02Icon } from "@hugeicons/core-free-icons";
 import NotificationsSection from "./NotificationsSection";
 import SourcesSection from "./SourcesSection";
 import GeneralSection from "./GeneralSection";
@@ -30,17 +33,20 @@ export default function SettingsInterface({
   const [mounted, setMounted] = useState(false);
   const { settings, setSetting } = useSettings();
   const [activeSection, setActiveSection] = useState<string>("general");
+  const { status } = useSession();
 
   const handleSettingChange = <K extends keyof SettingsState>(
     key: K,
     value: SettingsState[K],
   ) => {
     setSetting(key, value);
-    // Persist to DB immediately
-    updateSingleSettingAction(key, value).catch(err => {
-      console.error(`Failed to sync setting ${key}:`, err);
-      toast.error("Failed to save setting");
-    });
+    // Persist to DB immediately if authenticated
+    if (status === "authenticated") {
+      updateSingleSettingAction(key, value).catch(err => {
+        console.error(`Failed to sync setting ${key}:`, err);
+        toast.error("Failed to save setting");
+      });
+    }
   };
 
   useEffect(() => {
@@ -157,14 +163,22 @@ export default function SettingsInterface({
             </p>
           </div>
           
-          <div className="space-y-6">
-            <AdvancedCategoriesSection settings={settings} onSettingChange={handleSettingChange} />
-            <SourcesSection 
-              dbCustomSources={dbCustomSources} 
-              dbDisabledBuiltinSources={dbDisabledBuiltinSources} 
+          {status === "authenticated" ? (
+            <div className="space-y-6">
+              <AdvancedCategoriesSection settings={settings} onSettingChange={handleSettingChange} />
+              <SourcesSection 
+                dbCustomSources={dbCustomSources} 
+                dbDisabledBuiltinSources={dbDisabledBuiltinSources} 
+              />
+              <DangerZoneSection />
+            </div>
+          ) : (
+            <SignInPromptCard
+              icon={Settings02Icon}
+              title="Sign in to access Advanced Settings"
+              description="Manage category favorites, custom RSS sources, and your account settings."
             />
-            <DangerZoneSection />
-          </div>
+          )}
         </section>
       </div>
     </div>

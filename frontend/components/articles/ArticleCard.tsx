@@ -26,11 +26,7 @@ export default function ArticleCard({
     <Card className="h-full flex flex-col gap-3 group hover:border-primary/50 transition-colors duration-200">
       <CardHeader className="">
         <div className="flex items-start justify-between gap-2">
-          <Link
-            href={articleHref}
-            scroll={false}
-            className="flex-1"
-          >
+          <Link href={articleHref} scroll={false} className="flex-1">
             <CardTitle className="text-lg font-bold leading-snug group-hover:text-primary dark:group-hover:text-primary transition-colors line-clamp-2">
               {article.title}
             </CardTitle>
@@ -75,11 +71,7 @@ export default function ArticleCard({
         </div>
 
         {/* Snippet */}
-        <Link
-          href={articleHref}
-          scroll={false}
-          className="flex-1 block"
-        >
+        <Link href={articleHref} scroll={false} className="flex-1 block">
           <p className="text-sm leading-relaxed text-muted-foreground line-clamp-3">
             {article.contentSnippet}
           </p>

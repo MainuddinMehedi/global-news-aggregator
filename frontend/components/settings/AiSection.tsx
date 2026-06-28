@@ -3,7 +3,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -20,8 +19,6 @@ interface AiSectionProps {
   settings: {
     defaultAiModel: string;
     responseStyle: ResponseStyle;
-    showBiasBadges: boolean;
-    showSentiment: boolean;
   };
   onSettingChange: <K extends keyof SettingsState>(key: K, value: SettingsState[K]) => void;
 }
@@ -85,43 +82,9 @@ export default function AiSection({ settings, onSettingChange }: AiSectionProps)
                   Detailed (Paragraphs)
                 </SelectItem>
               </SelectContent>
-            </Select>
-          </div>
-
-          <Separator />
-
-          <div className="flex items-center justify-between">
-            <div className="space-y-1">
-              <Label>Bias Transparency</Label>
-              <p className="text-sm text-muted-foreground">
-                Show perspective and bias badges on news articles.
-              </p>
-            </div>
-            <Switch
-              checked={settings.showBiasBadges}
-              onCheckedChange={(checked) =>
-                onSettingChange("showBiasBadges", checked)
-              }
-            />
-          </div>
-
-          <Separator />
-
-          <div className="flex items-center justify-between">
-            <div className="space-y-1">
-              <Label>Sentiment Analysis</Label>
-              <p className="text-sm text-muted-foreground">
-                Display detected sentiment on article previews.
-              </p>
-            </div>
-            <Switch
-              checked={settings.showSentiment}
-              onCheckedChange={(checked) =>
-                onSettingChange("showSentiment", checked)
-              }
-            />
-          </div>
-        </CardContent>
+          </Select>
+        </div>
+      </CardContent>
       </Card>
     </>
   );

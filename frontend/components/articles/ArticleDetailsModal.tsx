@@ -153,16 +153,23 @@ export function ArticleDetailsModal({ article }: { article: Article | null }) {
                       Scope: {article.coverageScope}
                     </span>
                   )}
-                  {!article.sourceType && !article.sourceOrigin && !article.biasGroup && !article.coverageScope && (
-                    <span className="text-xs text-zinc-500">Unknown Profile</span>
-                  )}
+                  {!article.sourceType &&
+                    !article.sourceOrigin &&
+                    !article.biasGroup &&
+                    !article.coverageScope && (
+                      <span className="text-xs text-zinc-500">
+                        Unknown Profile
+                      </span>
+                    )}
                 </div>
               </div>
               <div className="mx-auto space-y-2">
                 <span className="text-xs block text-muted-foreground/80 tracking-tighter uppercase">
                   Event Region:
                 </span>
-                <Badge variant={getEventRegionBadgeVariant(article.eventRegion)}>
+                <Badge
+                  variant={getEventRegionBadgeVariant(article.eventRegion)}
+                >
                   {article.eventRegion || "Unknown"}
                 </Badge>
               </div>
