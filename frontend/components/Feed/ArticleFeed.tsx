@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useIntersectionObserver } from "@/hooks/useIntersectionObserver";
 import ArticleCard from "@/components/articles/ArticleCard";
 import { ArticleCardSkeleton } from "@/components/Feed/FeedSkeleton";
 import { Article } from "@/types/article";
@@ -9,8 +10,6 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { RefreshIcon } from "@hugeicons/core-free-icons";
 import { Button } from "../ui/button";
 import { getGroupingKey, formatGroupingKey } from "@/lib/helpers/dateUtils";
-import { useRouter, useSearchParams } from "next/navigation";
-import { cn } from "@/lib/utils";
 
 interface ArticleFeedProps {
   initialArticles: Article[];
@@ -39,10 +38,7 @@ export default function ArticleFeed({
   story,
   bias,
   scope,
-  activeStoryTitle,
 }: ArticleFeedProps) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
   const { settings } = useSettings();
   const mode = settings.homePageMode || "continuous";
 
@@ -53,15 +49,16 @@ export default function ArticleFeed({
 
   const [currentGroupKey, setCurrentGroupKey] = useState<string | null>(null);
 
-  const sentinelRef = useRef<HTMLDivElement>(null);
   const setArticleCount = useSetArticleCount();
 
-  // Initialize or update currentGroupKey if mode changes
+  // Initialize currentGroupKey ONLY when mode or initial data changes.
+  // We use initialArticles instead of the ever-growing articles array to prevent
+  // infinite scroll fetches from violently resetting the user's view.
   useEffect(() => {
-    if (articles.length > 0) {
-      setCurrentGroupKey(getGroupingKey(articles[0].publishedAt, mode));
+    if (initialArticles.length > 0) {
+      setCurrentGroupKey(getGroupingKey(initialArticles[0].publishedAt, mode));
     }
-  }, [mode, articles]);
+  }, [mode, initialArticles]);
 
   // Grouping logic
   const groups: { key: string; articles: Article[] }[] = [];
@@ -86,13 +83,15 @@ export default function ArticleFeed({
     visibleGroups = groups.filter((g) => g.key === currentGroupKey);
   }
 
-  const visibleArticlesCount = visibleGroups.reduce((acc, g) => acc + g.articles.length, 0);
+  const visibleArticlesCount = visibleGroups.reduce(
+    (acc, g) => acc + g.articles.length,
+    0,
+  );
 
   // Keep the store in sync with the live article list
   useEffect(() => {
     setArticleCount(visibleArticlesCount);
   }, [visibleArticlesCount, setArticleCount]);
-
 
   const handleNextGroup = () => {
     if (hasOlderGroupsLoaded) {
@@ -138,22 +137,27 @@ export default function ArticleFeed({
     } finally {
       setLoading(false);
     }
-  }, [cursor, isLoading, error, category, sort, search, region, origin, type, story, bias, scope]);
+  }, [
+    cursor,
+    isLoading,
+    error,
+    category,
+    sort,
+    search,
+    region,
+    origin,
+    type,
+    story,
+    bias,
+    scope,
+  ]);
 
   // Intersection observer logic
-  useEffect(() => {
-    const el = sentinelRef.current;
-    if (!el || error || isEndOfCurrentGroup) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) fetchNextPage();
-      },
-      { rootMargin: "100px" },
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [fetchNextPage, error, isEndOfCurrentGroup]);
+  const sentinelRef = useIntersectionObserver(
+    fetchNextPage,
+    !error && !isEndOfCurrentGroup,
+    "200px",
+  );
 
   // Pagination fetch retry logic
   const handleRetry = () => {
@@ -161,13 +165,6 @@ export default function ArticleFeed({
     setTimeout(() => {
       fetchNextPage();
     }, 0);
-  };
-
-  const handleClearFilter = (filterKey: "region" | "origin" | "type" | "story") => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.delete(filterKey);
-    params.delete("cursor");
-    router.push(`?${params.toString()}`);
   };
 
   return (
@@ -231,6 +228,7 @@ export default function ArticleFeed({
                 You've reached the end of{" "}
                 {formatGroupingKey(currentGroupKey || "", mode).toLowerCase()}.
               </p>
+
               {hasOlderGroupsLoaded ? (
                 <Button
                   onClick={handleNextGroup}
@@ -260,6 +258,7 @@ export default function ArticleFeed({
                   <ArticleCardSkeleton />
                 </div>
               )}
+
               {!cursor && !isLoading && visibleGroups.length > 0 && (
                 <div className="flex items-center justify-center py-6">
                   <p className="text-xs text-muted-foreground">

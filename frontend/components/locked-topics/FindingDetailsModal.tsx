@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 import { TopicFinding } from "@/types/lockedTopic";
 import {
   Dialog,
@@ -7,6 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import FindingContentSection from "./FindingContentSection";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -15,25 +18,35 @@ import { RelativeTime } from "@/components/ui/RelativeTime";
 
 interface FindingDetailsModalProps {
   finding: TopicFinding | null;
-  onClose: () => void;
+
   onDelete: () => Promise<void>;
 }
 
 export function FindingDetailsModal({
   finding,
-  onClose,
   onDelete,
 }: FindingDetailsModalProps) {
+  const [open, setOpen] = useState(false);
+
   if (!finding) return null;
 
   return (
-    <Dialog
-      open={!!finding}
-      onOpenChange={(open) => {
-        if (!open) onClose();
-      }}
-    >
-      <DialogContent className="sm:max-w-[52rem] max-h-[85vh] flex-col overflow-y-auto p-0 rounded-lg border border-border/50 shadow-2xl no-scrollbar">
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <button className="text-left w-full cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-lg group/btn mt-1 block">
+          <h3 className="text-2xl font-extrabold group-hover/btn:text-primary transition-colors leading-tight tracking-tight">
+            {finding.title}
+          </h3>
+
+          {finding.summary && (
+            <p className="text-[15px] text-muted-foreground/90 line-clamp-3 leading-relaxed font-medium tracking-tight mt-3">
+              {finding.summary}
+            </p>
+          )}
+        </button>
+      </DialogTrigger>
+
+      <DialogContent className="sm:max-w-208 max-h-[85vh] flex-col overflow-y-auto p-0 rounded-lg border border-border/50 shadow-2xl no-scrollbar">
         <DialogHeader className="px-5 py-4 border-b border-border/50 shrink-0">
           {/*Metadata part*/}
           <div className="flex flex-wrap items-center gap-2 mb-2">
@@ -77,7 +90,9 @@ export function FindingDetailsModal({
           </DialogTitle>
 
           {(() => {
-            const isRedditSelfPost = finding.sourceType === "REDDIT" && (finding.metadata as any)?.isSelfPost !== false;
+            const isRedditSelfPost =
+              finding.sourceType === "REDDIT" &&
+              (finding.metadata as any)?.isSelfPost !== false;
             if (finding.summary && !isRedditSelfPost) {
               return (
                 <p className="text-[15px] text-muted-foreground/90 leading-relaxed mt-1 text-left">
@@ -99,7 +114,10 @@ export function FindingDetailsModal({
 
         <div className="p-4 border-t border-border/50 backdrop-blur-sm shrink-0 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <button
-            onClick={onDelete}
+            onClick={async () => {
+              await onDelete();
+              setOpen(false);
+            }}
             className="flex w-full sm:w-auto items-center justify-center rounded-lg text-sm font-semibold transition-colors focus-visible:outline-none bg-destructive/10 text-destructive hover:bg-destructive/20 h-9 px-4 gap-2 cursor-pointer"
           >
             <HugeiconsIcon icon={Delete01Icon} className="w-4 h-4" />
@@ -107,7 +125,9 @@ export function FindingDetailsModal({
           </button>
 
           <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-            {finding.sourceType === "REDDIT" && !(finding.metadata as any)?.isSelfPost && (finding.metadata as any)?.externalUrl ? (
+            {finding.sourceType === "REDDIT" &&
+            !(finding.metadata as any)?.isSelfPost &&
+            (finding.metadata as any)?.externalUrl ? (
               <>
                 <a
                   href={finding.sourceUrl}

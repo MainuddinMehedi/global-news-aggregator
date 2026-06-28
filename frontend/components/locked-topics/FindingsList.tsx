@@ -1,11 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useState } from "react";
+import { useIntersectionObserver } from "@/hooks/useIntersectionObserver";
 import { TopicFinding, FindingSource } from "@/types/lockedTopic";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { RefreshIcon } from "@hugeicons/core-free-icons";
 import { Button } from "../ui/button";
-import { FindingDetailsModal } from "./FindingDetailsModal";
 import { FindingCard } from "./FindingCard";
 import { FindingSkeleton } from "./FindingSkeleton";
 
@@ -28,18 +28,6 @@ export default function FindingsList({
   const [cursor, setCursor] = useState(initialNextCursor);
   const [isLoading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedFinding, setSelectedFinding] = useState<TopicFinding | null>(
-    null,
-  );
-  const sentinelRef = useRef<HTMLDivElement>(null);
-
-  // Reset list when filters change
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setFindings(initialFindings);
-    setCursor(initialNextCursor);
-    setError(null);
-  }, [initialFindings, initialNextCursor]);
 
   const fetchNextPage = useCallback(async () => {
     if (!cursor || isLoading || error) return;
@@ -51,6 +39,7 @@ export default function FindingsList({
         sort,
         cursor,
       });
+
       const res = await fetch(
         `/api/locked-topics/${topicId}/findings?${params}`,
       );
@@ -58,6 +47,7 @@ export default function FindingsList({
       if (!res.ok) throw new Error("Failed to fetch");
 
       const { findings: next, nextCursor } = await res.json();
+
       setFindings((prev) => [...prev, ...next]);
       setCursor(nextCursor);
     } catch (err) {
@@ -69,19 +59,7 @@ export default function FindingsList({
   }, [cursor, isLoading, error, topicId, sourceType, sort]);
 
   // intersection observer
-  useEffect(() => {
-    const el = sentinelRef.current;
-    if (!el || error) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) fetchNextPage();
-      },
-      { rootMargin: "300px" },
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [fetchNextPage, error]);
+  const sentinelRef = useIntersectionObserver(fetchNextPage, !error, "300px");
 
   const handleDeleteFinding = useCallback(
     async (findingId: string) => {
@@ -127,23 +105,10 @@ export default function FindingsList({
           <FindingCard
             key={finding.id}
             finding={finding}
-            onSelect={setSelectedFinding}
             onDelete={handleDeleteFinding}
           />
         ))}
       </div>
-
-      {selectedFinding && (
-        <FindingDetailsModal
-          finding={selectedFinding}
-          onClose={() => setSelectedFinding(null)}
-          onDelete={async () => {
-            const idToDelete = selectedFinding.id;
-            setSelectedFinding(null);
-            await handleDeleteFinding(idToDelete);
-          }}
-        />
-      )}
 
       {!error && (
         <div ref={sentinelRef}>

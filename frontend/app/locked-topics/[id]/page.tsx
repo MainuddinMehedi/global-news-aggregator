@@ -65,6 +65,7 @@ async function TopicDetailContent({
         />
 
         <FindingsList
+          key={`${source}-${sort}`}
           initialFindings={findings}
           initialNextCursor={nextCursor}
           topicId={id}

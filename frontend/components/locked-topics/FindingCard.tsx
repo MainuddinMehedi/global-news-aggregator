@@ -4,14 +4,13 @@ import { TopicFinding } from "@/types/lockedTopic";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { LinkSquare02Icon, Delete01Icon } from "@hugeicons/core-free-icons";
 import BookmarkButton from "@/components/bookmarks/BookmarkButton";
+import { FindingDetailsModal } from "./FindingDetailsModal";
 
 export function FindingCard({
   finding,
-  onSelect,
   onDelete,
 }: {
   finding: TopicFinding;
-  onSelect: (f: TopicFinding) => void;
   onDelete: (findingId: string) => void;
 }) {
   const showNewBadge = !finding.isRead;
@@ -37,19 +36,7 @@ export function FindingCard({
   }
 
   return (
-    <div
-      className="p-8 rounded-2xl border border-secondary bg-secondary/10 hover:border-primary/40 transition-all duration-500 group hover:shadow-2xl hover:shadow-primary/5 hover:-translate-y-0.5 backdrop-blur-sm relative overflow-hidden cursor-pointer"
-      onClick={() => onSelect(finding)}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          onSelect(finding);
-        }
-      }}
-      tabIndex={0}
-      role="button"
-      aria-label={`View details for ${finding.title}`}
-    >
+    <div className="p-8 rounded-2xl border border-secondary bg-secondary/10 hover:border-primary/40 transition-all duration-500 group hover:shadow-2xl hover:shadow-primary/5 hover:-translate-y-0.5 backdrop-blur-sm relative overflow-hidden">
       <div className="flex flex-col md:flex-row items-start justify-between gap-4">
         <div className="space-y-3 flex-1 min-w-0">
           <div className="flex items-center justify-between gap-4 text-[10px] w-full min-w-0">
@@ -119,14 +106,11 @@ export function FindingCard({
               </div>
             </div>
           </div>
-          <h3 className="text-2xl font-extrabold group-hover:text-primary transition-colors leading-tight tracking-tight">
-            {finding.title}
-          </h3>
-          {finding.summary && (
-            <p className="text-[15px] text-muted-foreground/90 line-clamp-3 leading-relaxed font-medium tracking-tight">
-              {finding.summary}
-            </p>
-          )}
+
+          <FindingDetailsModal
+            finding={finding}
+            onDelete={async () => onDelete(finding.id)}
+          />
         </div>
 
         <div className="flex flex-col items-end md:items-center gap-3 shrink-0">

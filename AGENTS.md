@@ -1,8 +1,11 @@
 # AGENTS.md — Global News Aggregator
 
+WARNING: Never edit, implement, change code unless the user explicitly told you to.
+
 ## Quick Reference
 
 **Root commands:**
+
 - `npm run ingest` — Main pipeline (RSS fetch → dedup → AI enrich → revalidate)
 - `npm run ingest:raw` — RSS fetch + dedup only (skip AI)
 - `npm run backlog` — Process unenriched articles (default 100, `--limit=N`)
@@ -10,6 +13,7 @@
 - `npm run cluster` — Story clustering pass
 
 **Frontend (in `frontend/`):**
+
 - `npm run dev` — Next.js 16 dev server
 - `npm run build` — Production build
 - `npm run lint` — ESLint (no typecheck script)
@@ -28,18 +32,18 @@
 
 All background jobs run via **pg-boss** (defined in `ingestion-service/lib/boss.js`), not GitHub Actions.
 
-| Job | Schedule | Purpose |
-|-----|----------|---------|
-| `rss-ingestion` | `*/30 * * * *` | Main RSS ingestion + AI enrichment |
-| `story-clustering` | `45 * * * *` | Story clustering (staggered from ingest) |
-| `backlog-processing` | `0 3 * * *` | Daily backlog of unprocessed articles |
-| `locked-topic-scan` | `15 */2 * * *` | Surveillance scanning for Locked Topics |
-| `notification-immediate` | Every 10s | Deliver HIGH/CRITICAL priority notifications |
-| `notification-batch` | Every 5min | Deliver NORMAL/LOW priority notifications |
-| `notification-digest` | Every 15min | Compile and send due digests |
-| `health-monitor` | Every 15min | System health checks, admin alerts |
-| `notification-retention` | Daily 04:00 | Delete notifications per retention policy |
-| `topic-summarizer` | On-demand | Generate topic summaries for archived topics |
+| Job                      | Schedule       | Purpose                                      |
+| ------------------------ | -------------- | -------------------------------------------- |
+| `rss-ingestion`          | `*/30 * * * *` | Main RSS ingestion + AI enrichment           |
+| `story-clustering`       | `45 * * * *`   | Story clustering (staggered from ingest)     |
+| `backlog-processing`     | `0 3 * * *`    | Daily backlog of unprocessed articles        |
+| `locked-topic-scan`      | `15 */2 * * *` | Surveillance scanning for Locked Topics      |
+| `notification-immediate` | Every 10s      | Deliver HIGH/CRITICAL priority notifications |
+| `notification-batch`     | Every 5min     | Deliver NORMAL/LOW priority notifications    |
+| `notification-digest`    | Every 15min    | Compile and send due digests                 |
+| `health-monitor`         | Every 15min    | System health checks, admin alerts           |
+| `notification-retention` | Daily 04:00    | Delete notifications per retention policy    |
+| `topic-summarizer`       | On-demand      | Generate topic summaries for archived topics |
 
 All workers: `node-version: "25"`, `npx prisma generate`, inject secrets + vars via env.
 

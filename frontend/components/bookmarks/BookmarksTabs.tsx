@@ -50,7 +50,6 @@ export default function BookmarksTabs({
               <FindingCard
                 key={finding.id}
                 finding={finding}
-                onSelect={() => window.open(finding.sourceUrl, "_blank")}
                 onDelete={() => {}}
               />
             ))}
