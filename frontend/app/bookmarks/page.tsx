@@ -14,11 +14,11 @@ export default async function BookmarksPage() {
     return (
       <EmptyState
         icon={Bookmark01Icon}
-        title="Sign in to view bookmarks"
+        title="Sign in to add bookmarks"
         description="Save important articles and key concept findings to access them later. Your bookmarked items will be synchronized across your devices."
         authRequired={true}
-        signInText="Sign in to view bookmarks"
-        className="min-h-[60vh]"
+        signInText="Sign in to add bookmarks"
+        className="min-h-[60vh] border-none max-w-md bg-transparent mx-auto mt-5"
       />
     );
   }
