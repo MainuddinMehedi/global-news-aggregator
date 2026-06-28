@@ -10,11 +10,12 @@ import { TopicFinding } from "@/types/lockedTopic";
 import { FindingCard } from "@/components/locked-topics/FindingCard";
 import { Bookmark01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import Link from "next/link";
+import { useSetLoginModalOpen } from "@/store";
 import BookmarksLoading from "./loading";
 
 export default function BookmarksPage() {
   const { status } = useSession();
+  const setLoginModalOpen = useSetLoginModalOpen();
   const [articles, setArticles] = useState<Article[]>([]);
   const [findings, setFindings] = useState<TopicFinding[]>([]);
   const [loading, setLoading] = useState(true);
@@ -66,12 +67,12 @@ export default function BookmarksPage() {
 
           {/* Action */}
           <div className="pt-2">
-            <Link
-              href="/settings"
+            <button
+              onClick={() => setLoginModalOpen(true)}
               className="inline-flex items-center gap-2 bg-primary text-primary-foreground text-sm font-semibold rounded-xl px-6 py-3 shadow-lg shadow-primary/20 transition-all hover:bg-primary/90 hover:-translate-y-0.5 active:translate-y-0"
             >
-              Go to Settings to Sign In
-            </Link>
+              Sign in to add bookmarks
+            </button>
           </div>
         </div>
       </div>
