@@ -1,5 +1,5 @@
 import { getStoryClusters } from "@/queries/stories";
-import StoryCard from "./StoryCard";
+import StoryCard from "@/components/stories/grid/StoryCard";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface StoryClustersContainerProps {

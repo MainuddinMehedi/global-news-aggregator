@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import { ImpactBadge } from "./ImpactBadge";
+import { ImpactBadge } from "@/components/stories/widgets/ImpactBadge";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Clock01Icon, Earth, TradeUpIcon } from "@hugeicons/core-free-icons";
 import { SourceAvatarStack } from "@/components/ui/SourceAvatar";

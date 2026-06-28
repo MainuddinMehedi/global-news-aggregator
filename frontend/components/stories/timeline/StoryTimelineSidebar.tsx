@@ -1,4 +1,4 @@
-import KeyDevelopmentsTimeline from "./KeyDevelopmentsTimeline";
+import KeyDevelopmentsTimeline from "@/components/stories/timeline/KeyDevelopmentsTimeline";
 
 interface KeyDevelopment {
   title: string;

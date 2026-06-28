@@ -1,10 +1,10 @@
-import { ImpactBadge } from "./ImpactBadge";
+import { ImpactBadge } from "@/components/stories/widgets/ImpactBadge";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Clock01Icon, Earth, TradeUpIcon } from "@hugeicons/core-free-icons";
 import Link from "next/link";
 import { SourceAvatarStack } from "@/components/ui/SourceAvatar";
 import { formatTimeWindow } from "@/lib/utils";
-import KeyDevelopmentsTimeline from "./KeyDevelopmentsTimeline";
+import KeyDevelopmentsTimeline from "@/components/stories/timeline/KeyDevelopmentsTimeline";
 
 interface KeyDevelopment {
   title: string;
