@@ -2,7 +2,7 @@ import MobileNavDrawer from "@/components/layout/MobileNavDrawer";
 import { SearchBar } from "@/components/layout/SearchBar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { Bell, Globe } from "@hugeicons/core-free-icons";
+import { Globe } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import Link from "next/link";
 import { Suspense } from "react";
