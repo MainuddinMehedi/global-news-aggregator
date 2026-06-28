@@ -1,11 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { Article } from "@/types/article";
 import ArticleCard from "@/components/articles/ArticleCard";
 import { TopicFinding } from "@/types/lockedTopic";
 import { FindingCard } from "@/components/locked-topics/FindingCard";
+import { FindingDetailsModal } from "@/components/locked-topics/FindingDetailsModal";
 
 export default function BookmarksTabs({
   articles,
@@ -14,6 +16,8 @@ export default function BookmarksTabs({
   articles: Article[];
   findings: TopicFinding[];
 }) {
+  const [selectedFinding, setSelectedFinding] = useState<TopicFinding | null>(null);
+
   return (
     <Tabs defaultValue="articles" className="w-full">
       <TabsList className="mb-6 bg-muted/50 w-full justify-start overflow-x-auto rounded-xl p-1">
@@ -51,11 +55,25 @@ export default function BookmarksTabs({
                 key={finding.id}
                 finding={finding}
                 onDelete={() => {}}
+                onSelect={setSelectedFinding}
               />
             ))}
           </div>
         )}
       </TabsContent>
+
+      <FindingDetailsModal
+        finding={selectedFinding}
+        open={!!selectedFinding}
+        onOpenChange={(open) => {
+          if (!open) setSelectedFinding(null);
+        }}
+        onDelete={async () => {
+          if (selectedFinding) {
+            setSelectedFinding(null);
+          }
+        }}
+      />
     </Tabs>
   );
 }

@@ -4,14 +4,16 @@ import { TopicFinding } from "@/types/lockedTopic";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { LinkSquare02Icon, Delete01Icon } from "@hugeicons/core-free-icons";
 import BookmarkButton from "@/components/bookmarks/BookmarkButton";
-import { FindingDetailsModal } from "./FindingDetailsModal";
+import { RelativeTime } from "../ui/RelativeTime";
 
 export function FindingCard({
   finding,
   onDelete,
+  onSelect,
 }: {
   finding: TopicFinding;
   onDelete: (findingId: string) => void;
+  onSelect: (finding: TopicFinding) => void;
 }) {
   const showNewBadge = !finding.isRead;
 
@@ -36,22 +38,24 @@ export function FindingCard({
   }
 
   return (
-    <div className="p-8 rounded-2xl border border-secondary bg-secondary/10 hover:border-primary/40 transition-all duration-500 group hover:shadow-2xl hover:shadow-primary/5 hover:-translate-y-0.5 backdrop-blur-sm relative overflow-hidden">
-      <div className="flex flex-col md:flex-row items-start justify-between gap-4">
-        <div className="space-y-3 flex-1 min-w-0">
-          <div className="flex items-center justify-between gap-4 text-[10px] w-full min-w-0">
+    <div className="group relative flex flex-col md:flex-row gap-5 p-6 rounded-[2rem] bg-card hover:bg-secondary/5 border border-transparent hover:border-border/50 transition-all duration-300 shadow-sm hover:shadow-md h-full overflow-hidden">
+      <div className="absolute top-0 left-0 w-1.5 h-full bg-linear-to-b from-primary/80 to-primary/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+      <div className="flex-1 min-w-0 flex flex-col justify-between">
+        <div className="flex-1">
+          <div className="flex items-center gap-2 mb-3 min-w-0">
             <div className="flex items-center gap-2 min-w-0 flex-1">
               {isReddit ? (
                 <>
                   <span
-                    className="inline-block font-extrabold text-[#FF4500] bg-[#FF4500]/10 px-2.5 py-1 rounded-full whitespace-nowrap truncate max-w-[120px] sm:max-w-[160px] md:max-w-[200px]"
+                    className="inline-block font-extrabold text-[#FF4500] bg-[#FF4500]/10 px-2.5 py-1 rounded-full whitespace-nowrap truncate max-w-[120px] sm:max-w-[160px] md:max-w-[200px] text-[9px]"
                     title={redditMeta?.subreddit || "r/Reddit"}
                   >
                     {redditMeta?.subreddit || "r/Reddit"}
                   </span>
                   <span className="w-1 h-1 rounded-full bg-border shrink-0" />
                   <span
-                    className="inline-block font-semibold text-muted-foreground/60 truncate max-w-[120px] sm:max-w-[160px] md:max-w-[200px]"
+                    className="inline-block font-semibold text-muted-foreground/60 truncate max-w-[120px] sm:max-w-[160px] md:max-w-[200px] text-[10px]"
                     title={`posted by u/${redditMeta?.author || "unknown"}`}
                   >
                     posted by u/{redditMeta?.author || "unknown"}
@@ -79,7 +83,7 @@ export function FindingCard({
                   </span>
                   <span className="w-1 h-1 rounded-full bg-border shrink-0" />
                   <span
-                    className="inline-block text-[9px] font-bold uppercase tracking-[0.2em] text-muted-foreground/60 truncate"
+                    className="inline-block text-[10px] font-semibold uppercase tracking-wider text-muted-foreground truncate"
                     title={finding.sourceName}
                   >
                     {finding.sourceName}
@@ -87,7 +91,14 @@ export function FindingCard({
                 </>
               )}
             </div>
-            <div className="flex items-center gap-2 shrink-0">
+
+            <span className="w-1 h-1 rounded-full bg-border shrink-0" />
+            <span className="text-xs text-muted-foreground font-medium shrink-0">
+              <RelativeTime date={finding.foundAt} />
+            </span>
+
+            {/* Desktop Actions */}
+            <div className="hidden md:flex items-center gap-1 ml-auto shrink-0">
               <button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -107,10 +118,20 @@ export function FindingCard({
             </div>
           </div>
 
-          <FindingDetailsModal
-            finding={finding}
-            onDelete={async () => onDelete(finding.id)}
-          />
+          <button
+            onClick={() => onSelect(finding)}
+            className="text-left w-full cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-lg group/btn mt-1 block"
+          >
+            <h3 className="text-2xl font-extrabold group-hover/btn:text-primary transition-colors leading-tight tracking-tight">
+              {finding.title}
+            </h3>
+
+            {finding.summary && (
+              <p className="text-[15px] text-muted-foreground/90 line-clamp-3 leading-relaxed font-medium tracking-tight mt-3">
+                {finding.summary}
+              </p>
+            )}
+          </button>
         </div>
 
         <div className="flex flex-col items-end md:items-center gap-3 shrink-0">
@@ -120,8 +141,8 @@ export function FindingCard({
             </span>
           )}
 
-          {finding.relevanceScore && (
-            <div className="flex flex-col items-center justify-center py-3 px-4 rounded-2xl bg-secondary/10 border border-secondary/20 min-w-[90px] text-center">
+          {finding.relevanceScore != null && (
+            <div className="flex flex-col items-center justify-center py-3 px-4 rounded-2xl bg-secondary/10 border border-secondary/20 min-w-[90px] text-center mt-auto">
               <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/40 mb-1 text-center w-full block">
                 Signal
               </span>

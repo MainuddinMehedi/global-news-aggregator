@@ -8,6 +8,7 @@ import { RefreshIcon } from "@hugeicons/core-free-icons";
 import { Button } from "../ui/button";
 import { FindingCard } from "./FindingCard";
 import { FindingSkeleton } from "./FindingSkeleton";
+import { FindingDetailsModal } from "./FindingDetailsModal";
 
 interface FindingsListProps {
   initialFindings: TopicFinding[];
@@ -28,6 +29,9 @@ export default function FindingsList({
   const [cursor, setCursor] = useState(initialNextCursor);
   const [isLoading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedFinding, setSelectedFinding] = useState<TopicFinding | null>(
+    null,
+  );
 
   const fetchNextPage = useCallback(async () => {
     if (!cursor || isLoading || error) return;
@@ -65,6 +69,9 @@ export default function FindingsList({
     async (findingId: string) => {
       // Optimistic UI update: remove from state immediately
       setFindings((prev) => prev.filter((f) => f.id !== findingId));
+      if (selectedFinding?.id === findingId) {
+        setSelectedFinding(null);
+      }
 
       try {
         const res = await fetch(
@@ -80,7 +87,7 @@ export default function FindingsList({
         console.error("Error deleting finding:", err);
       }
     },
-    [topicId],
+    [topicId, selectedFinding],
   );
 
   const handleRetry = () => {
@@ -106,6 +113,7 @@ export default function FindingsList({
             key={finding.id}
             finding={finding}
             onDelete={handleDeleteFinding}
+            onSelect={setSelectedFinding}
           />
         ))}
       </div>
@@ -144,6 +152,20 @@ export default function FindingsList({
           </Button>
         </div>
       )}
+
+      <FindingDetailsModal
+        finding={selectedFinding}
+        open={!!selectedFinding}
+        onOpenChange={(open) => {
+          if (!open) setSelectedFinding(null);
+        }}
+        onDelete={async () => {
+          if (selectedFinding) {
+            await handleDeleteFinding(selectedFinding.id);
+            setSelectedFinding(null);
+          }
+        }}
+      />
     </div>
   );
 }

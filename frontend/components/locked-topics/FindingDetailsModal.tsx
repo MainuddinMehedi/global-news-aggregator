@@ -18,34 +18,21 @@ import { RelativeTime } from "@/components/ui/RelativeTime";
 
 interface FindingDetailsModalProps {
   finding: TopicFinding | null;
-
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   onDelete: () => Promise<void>;
 }
 
 export function FindingDetailsModal({
   finding,
+  open,
+  onOpenChange,
   onDelete,
 }: FindingDetailsModalProps) {
-  const [open, setOpen] = useState(false);
-
   if (!finding) return null;
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <button className="text-left w-full cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-lg group/btn mt-1 block">
-          <h3 className="text-2xl font-extrabold group-hover/btn:text-primary transition-colors leading-tight tracking-tight">
-            {finding.title}
-          </h3>
-
-          {finding.summary && (
-            <p className="text-[15px] text-muted-foreground/90 line-clamp-3 leading-relaxed font-medium tracking-tight mt-3">
-              {finding.summary}
-            </p>
-          )}
-        </button>
-      </DialogTrigger>
-
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-208 max-h-[85vh] flex-col overflow-y-auto p-0 rounded-lg border border-border/50 shadow-2xl no-scrollbar">
         <DialogHeader className="px-5 py-4 border-b border-border/50 shrink-0">
           {/*Metadata part*/}
@@ -116,7 +103,7 @@ export function FindingDetailsModal({
           <button
             onClick={async () => {
               await onDelete();
-              setOpen(false);
+              onOpenChange(false);
             }}
             className="flex w-full sm:w-auto items-center justify-center rounded-lg text-sm font-semibold transition-colors focus-visible:outline-none bg-destructive/10 text-destructive hover:bg-destructive/20 h-9 px-4 gap-2 cursor-pointer"
           >
