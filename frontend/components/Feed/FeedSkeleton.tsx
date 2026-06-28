@@ -42,6 +42,16 @@ export function ArticleCardSkeleton() {
   );
 }
 
+export function ArticleFeedLoadingGrid() {
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 pb-5">
+      <ArticleCardSkeleton />
+      <ArticleCardSkeleton />
+      <ArticleCardSkeleton />
+      <ArticleCardSkeleton />
+    </div>
+  );
+}
 export function FiltersSkeleton() {
   return (
     <div className="space-y-3">

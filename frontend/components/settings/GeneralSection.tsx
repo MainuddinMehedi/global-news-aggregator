@@ -83,7 +83,6 @@ export default function GeneralSection({ settings, onSettingChange }: GeneralSec
               <SelectContent>
                 <SelectItem value="continuous">Continuous Feed</SelectItem>
                 <SelectItem value="daily">Daily View (Today&apos;s News)</SelectItem>
-                <SelectItem value="hourly">Shift View (4-Hour Blocks)</SelectItem>
               </SelectContent>
             </Select>
           </div>

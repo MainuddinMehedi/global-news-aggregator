@@ -15,6 +15,7 @@ interface getArticlesParams {
   bias?: string;
   scope?: string;
   cursor?: string;
+  date?: string; // YYYY-MM-DD format
   page?: number;
   enabledSources?: string[];
   hiddenCategories?: string[];
@@ -70,6 +71,7 @@ export async function getArticles({
   bias,
   scope,
   cursor,
+  date,
   page = 0,
   enabledSources,
   hiddenCategories,
@@ -225,6 +227,20 @@ export async function getArticles({
       ? [{ storyClusters: { some: { slug: story } } }]
       : [];
 
+    let dateFilter: Record<string, unknown>[] = [];
+    if (date) {
+      const parsedDate = new Date(date);
+      if (!isNaN(parsedDate.getTime())) {
+        const startOfDay = new Date(parsedDate);
+        startOfDay.setUTCHours(0, 0, 0, 0);
+        
+        const endOfDay = new Date(parsedDate);
+        endOfDay.setUTCHours(23, 59, 59, 999);
+        
+        dateFilter = [{ rawArticle: { publishedAt: { gte: startOfDay, lte: endOfDay } } }];
+      }
+    }
+
     const notSkippedFilter = [{ clusterStatus: { not: "SKIPPED" } }];
 
     const notHiddenFilter = hiddenCategories && hiddenCategories.length > 0
@@ -260,6 +276,7 @@ export async function getArticles({
           ...biasFilter,
           ...scopeFilter,
           ...storyFilter,
+          ...dateFilter,
           ...sourcesFilter,
         ],
       },

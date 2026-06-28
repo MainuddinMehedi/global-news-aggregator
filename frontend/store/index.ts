@@ -59,7 +59,7 @@ export type Theme = "light" | "dark" | "system";
 export type ColorTheme = "maia" | "ember" | "iris" | "pine" | "slate";
 export type ResponseStyle = "concise" | "detailed";
 
-export type HomePageMode = "continuous" | "daily" | "hourly";
+export type HomePageMode = "continuous" | "daily";
 
 export interface CustomSource {
   id: string;
