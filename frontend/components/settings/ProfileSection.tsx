@@ -9,11 +9,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { useSetLoginModalOpen } from "@/store";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { UserCircle02Icon } from "@hugeicons/core-free-icons";
 
 export default function ProfileSection() {
   const { data: session, status } = useSession();
+  const setLoginModalOpen = useSetLoginModalOpen();
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -24,8 +26,13 @@ export default function ProfileSection() {
   if (!session?.user) {
     return (
       <Card>
-        <CardContent className="p-6 text-center text-muted-foreground">
-          Sign in to manage your profile and account settings.
+        <CardContent className="p-6 text-center space-y-4">
+          <p className="text-muted-foreground">
+            Sign in to manage your profile and account settings.
+          </p>
+          <Button size="sm" onClick={() => setLoginModalOpen(true)}>
+            Sign In
+          </Button>
         </CardContent>
       </Card>
     );
