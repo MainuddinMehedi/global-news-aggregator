@@ -11,14 +11,14 @@ import NotificationsSection from "./NotificationsSection";
 import SourcesSection from "./SourcesSection";
 import GeneralSection from "./GeneralSection";
 import FeedSection from "./FeedSection";
-import AiSection from "./AiSection";
+// import AiSection from "./AiSection";
 import AdvancedCategoriesSection from "./AdvancedCategoriesSection";
 import DangerZoneSection from "./DangerZoneSection";
 
 const SETTINGS_SECTIONS = [
   { id: "general", label: "General" },
   { id: "feed", label: "Feed Preferences" },
-  { id: "ai", label: "AI & Analysis" },
+  // { id: "ai", label: "AI & Analysis" },
   { id: "notifications", label: "Notifications" },
   { id: "advanced", label: "Advanced" },
 ];
@@ -145,9 +145,11 @@ export default function SettingsInterface({
         </section>
 
         {/* AI & Chat Settings */}
+        {/*
         <section id="ai" className="scroll-mt-32 space-y-6">
           <AiSection settings={settings} onSettingChange={handleSettingChange} />
         </section>
+        */}
 
         {/* Notifications Settings */}
         <section id="notifications" className="scroll-mt-32 space-y-6">
