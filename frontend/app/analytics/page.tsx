@@ -3,11 +3,7 @@ import {
   getUserAnalyticsData,
 } from "@/queries/analytics";
 import { auth } from "@/auth";
-import { BiasDonutChart } from "@/components/widgets/charts/BiasDonutChart";
-import { SentimentBarChart } from "@/components/widgets/charts/SentimentBarChart";
-import { CategoryBarChart } from "@/components/widgets/charts/CategoryBarChart";
-import { AnalyticsTimeFilter } from "@/components/widgets/analytics/AnalyticsTimeFilter";
-import { TopicSourceDistributionChart } from "@/components/widgets/charts/TopicSourceDistributionChart";
+import { AnalyticsTimeFilter } from "@/components/analytics/AnalyticsTimeFilter";
 
 import {
   formatCompactNumber,
@@ -17,8 +13,16 @@ import {
   ScanlineOverlay,
   StatCard,
   SectionHeader,
-  PanelShell,
-} from "@/components/widgets/analytics/AnalyticsUI";
+} from "@/components/analytics/AnalyticsUI";
+
+import { EventRegionPanel } from "@/components/analytics/panels/EventRegionPanel";
+import { SentimentSpectrumPanel } from "@/components/analytics/panels/SentimentSpectrumPanel";
+import { BiasLeaningPanel } from "@/components/analytics/panels/BiasLeaningPanel";
+import { CoverageScopePanel } from "@/components/analytics/panels/CoverageScopePanel";
+import { SourceGeographyPanel } from "@/components/analytics/panels/SourceGeographyPanel";
+import { CategoryCoveragePanel } from "@/components/analytics/panels/CategoryCoveragePanel";
+import { TopicSourcePanel } from "@/components/analytics/panels/TopicSourcePanel";
+import { TopEntitiesPanel } from "@/components/analytics/panels/TopEntitiesPanel";
 
 // ── Page ───────────────────────────────────────────────────────────────────
 
@@ -131,258 +135,18 @@ export default async function AnalyticsPage(props: AnalyticsProps) {
           />
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Event Region Distribution */}
-            <PanelShell>
-              <SectionHeader
-                title="Event Region Distribution"
-                sub="Interactive Donut Analysis"
-              />
-
-              {data.eventRegionDistribution.length > 0 ? (
-                <div className="flex flex-col md:flex-row items-center gap-6">
-                  <BiasDonutChart
-                    data={data.eventRegionDistribution}
-                    filterParam="region"
-                  />
-
-                  <div className="w-full md:w-48 space-y-2">
-                    {data.eventRegionDistribution.map((item) => (
-                      <div
-                        key={item.label}
-                        className="flex items-center justify-between group"
-                      >
-                        <div className="flex items-center gap-2">
-                          <div
-                            className="w-2 h-2 rounded-full"
-                            style={{ backgroundColor: item.color }}
-                          />
-                          <span className="text-[10px] font-bold text-muted-foreground group-hover:text-foreground transition-colors uppercase tracking-wider">
-                            {item.label}
-                          </span>
-                        </div>
-                        <span className="text-[10px] font-black font-mono text-foreground/80">
-                          {item.percentage}%
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <p className="text-xs text-muted-foreground/50 italic py-10 text-center">
-                  No event region data available.
-                </p>
-              )}
-            </PanelShell>
-
-            {/* Sentiment Distribution */}
-            <PanelShell>
-              <SectionHeader
-                title="Sentiment Spectrum"
-                sub="5-Bucket Distribution"
-              />
-
-              <SentimentBarChart data={data.sentimentDistribution} />
-            </PanelShell>
+            <EventRegionPanel data={data.eventRegionDistribution} />
+            <SentimentSpectrumPanel data={data.sentimentDistribution} />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Bias Leaning Distribution */}
-            <PanelShell>
-              <SectionHeader
-                title="Bias Leaning Distribution"
-                sub="Publisher Ideological Lenses"
-              />
-
-              {data.biasGroupDistribution.length > 0 ? (
-                <div className="flex flex-col md:flex-row items-center gap-6">
-                  <BiasDonutChart
-                    filterParam="bias"
-                    data={data.biasGroupDistribution.map((item) => ({
-                      label: item.label,
-                      count: item.count,
-                      percentage: item.percentage,
-                      color:
-                        item.label === "Centrist"
-                          ? "#10b981"
-                          : item.label === "Left-leaning"
-                            ? "#3b82f6"
-                            : item.label === "Right-leaning"
-                              ? "#ef4444"
-                              : item.label === "State-Aligned"
-                                ? "#f59e0b"
-                                : item.label === "State-Controlled"
-                                  ? "#8b5cf6"
-                                  : "#6b7280",
-                    }))}
-                  />
-                  <div className="w-full md:w-48 space-y-2">
-                    {data.biasGroupDistribution.map((item) => {
-                      const color =
-                        item.label === "Centrist"
-                          ? "#10b981"
-                          : item.label === "Left-leaning"
-                            ? "#3b82f6"
-                            : item.label === "Right-leaning"
-                              ? "#ef4444"
-                              : item.label === "State-Aligned"
-                                ? "#f59e0b"
-                                : item.label === "State-Controlled"
-                                  ? "#8b5cf6"
-                                  : "#6b7280";
-                      return (
-                        <div
-                          key={item.label}
-                          className="flex items-center justify-between group"
-                        >
-                          <div className="flex items-center gap-2">
-                            <div
-                              className="w-2 h-2 rounded-full"
-                              style={{ backgroundColor: color }}
-                            />
-                            <span className="text-[10px] font-bold text-muted-foreground group-hover:text-foreground transition-colors uppercase tracking-wider">
-                              {item.label}
-                            </span>
-                          </div>
-                          <span className="text-[10px] font-black font-mono text-foreground/80">
-                            {item.percentage}%
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              ) : (
-                <p className="text-xs text-muted-foreground/50 italic py-10 text-center">
-                  No bias leaning data available.
-                </p>
-              )}
-            </PanelShell>
-
-            {/* Coverage Scope Distribution */}
-            <PanelShell>
-              <SectionHeader
-                title="Coverage Scope Distribution"
-                sub="Publisher Reporting Reach"
-              />
-
-              {data.coverageScopeDistribution.length > 0 ? (
-                <div className="flex flex-col md:flex-row items-center gap-6">
-                  <BiasDonutChart
-                    filterParam="scope"
-                    data={data.coverageScopeDistribution.map((item) => ({
-                      label: item.label,
-                      count: item.count,
-                      percentage: item.percentage,
-                      color:
-                        item.label === "Global"
-                          ? "#10b981"
-                          : item.label === "Regional"
-                            ? "#3b82f6"
-                            : item.label === "National"
-                              ? "#f59e0b"
-                              : "#6b7280",
-                    }))}
-                  />
-                  <div className="w-full md:w-48 space-y-2">
-                    {data.coverageScopeDistribution.map((item) => {
-                      const color =
-                        item.label === "Global"
-                          ? "#10b981"
-                          : item.label === "Regional"
-                            ? "#3b82f6"
-                            : item.label === "National"
-                              ? "#f59e0b"
-                              : "#6b7280";
-                      return (
-                        <div
-                          key={item.label}
-                          className="flex items-center justify-between group"
-                        >
-                          <div className="flex items-center gap-2">
-                            <div
-                              className="w-2 h-2 rounded-full"
-                              style={{ backgroundColor: color }}
-                            />
-                            <span className="text-[10px] font-bold text-muted-foreground group-hover:text-foreground transition-colors uppercase tracking-wider">
-                              {item.label}
-                            </span>
-                          </div>
-                          <span className="text-[10px] font-black font-mono text-foreground/80">
-                            {item.percentage}%
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              ) : (
-                <p className="text-xs text-muted-foreground/50 italic py-10 text-center">
-                  No coverage scope data available.
-                </p>
-              )}
-            </PanelShell>
+            <BiasLeaningPanel data={data.biasGroupDistribution} />
+            <CoverageScopePanel data={data.coverageScopeDistribution} />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Source Countries */}
-            <PanelShell>
-              <SectionHeader title="Source Geography" />
-
-              {data.topSourceCountries.length > 0 ? (
-                <div className="space-y-2.5">
-                  {data.topSourceCountries.map((item, i) => (
-                    <div key={item.country} className="flex items-center gap-3">
-                      <span className="text-[9px] font-black font-mono text-muted-foreground/40 w-4 text-right">
-                        {String(i + 1).padStart(2, "0")}
-                      </span>
-
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-xs font-bold text-foreground/80">
-                            {item.country}
-                          </span>
-                          <span className="text-[10px] font-mono text-muted-foreground">
-                            {item.count.toLocaleString()}
-                          </span>
-                        </div>
-
-                        <div className="h-1 w-full bg-border/20 rounded-full overflow-hidden">
-                          <div
-                            className="h-full rounded-full bg-primary/60 transition-all duration-1000"
-                            style={{
-                              width: `${(item.count / maxCountryCount) * 100}%`,
-                            }}
-                          />
-                        </div>
-                      </div>
-                      <span className="text-[10px] font-black font-mono text-primary/60 w-8 text-right">
-                        {item.percentage}%
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-xs text-muted-foreground/50 italic py-10 text-center">
-                  No geography data available.
-                </p>
-              )}
-            </PanelShell>
-
-            {/* Category Breakdown */}
-            <PanelShell>
-              <SectionHeader
-                title="Coverage by Category"
-                sub="Top 8 Categories"
-              />
-
-              {data.categoryBreakdown.length > 0 ? (
-                <CategoryBarChart data={data.categoryBreakdown} />
-              ) : (
-                <p className="text-xs text-muted-foreground/50 italic py-10 text-center">
-                  No category data available.
-                </p>
-              )}
-            </PanelShell>
+            <SourceGeographyPanel data={data.topSourceCountries} maxCountryCount={maxCountryCount} />
+            <CategoryCoveragePanel data={data.categoryBreakdown} />
           </div>
         </section>
 
@@ -395,53 +159,17 @@ export default async function AnalyticsPage(props: AnalyticsProps) {
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {userData && (
-              <PanelShell className="lg:col-span-1">
-                <SectionHeader title="Your Tracking Sources" />
-
-                <TopicSourceDistributionChart
-                  data={userData.topicSourceDistribution}
-                />
-              </PanelShell>
+              <TopicSourcePanel 
+                data={userData.topicSourceDistribution} 
+                className="lg:col-span-1" 
+              />
             )}
 
-            <PanelShell
-              className={userData ? "lg:col-span-2" : "lg:col-span-3"}
-            >
-              <SectionHeader title="Top Entities" />
-
-              {data.topEntities.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                  {data.topEntities.map((item) => {
-                    const intensity = Math.round(
-                      (item.count / maxEntityCount) * 100,
-                    );
-                    return (
-                      <div
-                        key={item.entity}
-                        className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-border/30 bg-card/30 hover:border-primary/40 transition-colors group"
-                      >
-                        <span className="text-xs font-bold text-foreground/80 group-hover:text-foreground transition-colors">
-                          {item.entity}
-                        </span>
-                        <span
-                          className="text-[9px] font-black font-mono px-1.5 py-0.5 rounded-full"
-                          style={{
-                            backgroundColor: `oklch(from var(--primary) l c h / ${(intensity / 100) * 0.25})`,
-                            color: `oklch(from var(--primary) l c h / 0.8)`,
-                          }}
-                        >
-                          {item.count}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <p className="text-xs text-muted-foreground/50 italic py-4 text-center">
-                  No entity data yet. Articles need AI processing.
-                </p>
-              )}
-            </PanelShell>
+            <TopEntitiesPanel 
+              data={data.topEntities} 
+              maxEntityCount={maxEntityCount} 
+              className={userData ? "lg:col-span-2" : "lg:col-span-3"} 
+            />
           </div>
         </section>
 

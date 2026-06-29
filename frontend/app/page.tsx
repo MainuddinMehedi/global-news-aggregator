@@ -2,7 +2,7 @@ import ArticleFeed from "@/components/Feed/layouts/ArticleFeed";
 import FeedError from "@/components/Feed/FeedError";
 import Filters from "@/components/Feed/filters/Filters";
 import { SourceOriginWidget } from "@/components/widgets/sources/SourceOriginWidget";
-import { DiversityInsightWidget } from "@/components/widgets/analytics/DiversityInsightWidget";
+import { DiversityInsightWidget } from "@/components/analytics/DiversityInsightWidget";
 import { EventClustersWidget } from "@/components/widgets/events/EventClustersWidget";
 
 import { getArticles, getArticleById } from "@/queries/articles";
