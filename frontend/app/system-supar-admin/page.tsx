@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   PresentationBarChart02FreeIcons,
@@ -8,26 +9,17 @@ import {
   Sparkles,
   UserSettings01Icon,
   Bookmark02Icon,
+  Bell,
 } from "@hugeicons/core-free-icons";
-import {
-  getRunningTasks,
-  getTaskLogs,
-  getSystemHealthOverview,
-  getIngestionVolumeChartData,
-} from "@/queries/admin/health";
-import { getFeedSources } from "@/queries/admin/sources";
-import { getAiConfigSettings, getAiUsageTimeline } from "@/queries/admin/ai";
-import { getUsers } from "@/queries/admin/users";
-import {
-  getSkippedArticles,
-  getFailedEnrichments,
-  getGazetteerCategoriesAndRegions,
-} from "@/queries/admin/skipped";
-import SystemHealthTab from "@/components/admin/SystemHealthTab";
-import SourceControlTab from "@/components/admin/SourceControlTab";
-import AiEngineTab from "@/components/admin/ai/AiEngineTab";
-import UserAdminTab from "@/components/admin/UserAdminTab";
-import SkippedBacklogTab from "@/components/admin/SkippedBacklogTab";
+
+// Wrapper Components
+import SystemHealthTabWrapper from "@/components/admin/tabs/SystemHealthTabWrapper";
+import SourceControlTabWrapper from "@/components/admin/tabs/SourceControlTabWrapper";
+import AiEngineTabWrapper from "@/components/admin/tabs/AiEngineTabWrapper";
+import UserAdminTabWrapper from "@/components/admin/tabs/UserAdminTabWrapper";
+import SkippedBacklogTabWrapper from "@/components/admin/tabs/SkippedBacklogTabWrapper";
+import NotificationConfigTabWrapper from "@/components/admin/tabs/NotificationConfigTabWrapper";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface PageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -42,55 +34,13 @@ export default async function AdminDashboard({ searchParams }: PageProps) {
 
   const params = await searchParams;
   const activeTab = typeof params.tab === "string" ? params.tab : "health";
-
-  let runningTasks: any[] = [];
-  let taskLogs: any[] = [];
-  let healthOverview: any = {
-    activeWorkersCount: 0,
-    ingestionRatePerHour: 0,
-    dedupEfficiency: 0,
-    totalFailures24h: 0,
-    recentErrors: [],
-  };
-  let chartData: any[] = [];
-  let feedSources: any[] = [];
-  let aiSettings: any = null;
-  let usageTimeline: any[] = [];
-  let users: any[] = [];
-  let searchQuery = "";
-  let skippedArticles: any[] = [];
-  let failedEnrichments: any[] = [];
-  let gazetteerConfig: any = { categories: [], regions: [], rawConfig: {} };
-
-  if (activeTab === "health") {
-    [runningTasks, taskLogs, healthOverview, chartData] = await Promise.all([
-      getRunningTasks(),
-      getTaskLogs(50),
-      getSystemHealthOverview(),
-      getIngestionVolumeChartData(7),
-    ]);
-  } else if (activeTab === "sources") {
-    feedSources = await getFeedSources();
-  } else if (activeTab === "ai") {
-    [aiSettings, usageTimeline] = await Promise.all([
-      getAiConfigSettings(),
-      getAiUsageTimeline(30),
-    ]);
-  } else if (activeTab === "users") {
-    searchQuery = typeof params.q === "string" ? params.q : "";
-    users = await getUsers(searchQuery);
-  } else if (activeTab === "skipped") {
-    [skippedArticles, failedEnrichments, gazetteerConfig] = await Promise.all([
-      getSkippedArticles(50),
-      getFailedEnrichments(50),
-      getGazetteerCategoriesAndRegions(),
-    ]);
-  }
+  const searchQuery = typeof params.q === "string" ? params.q : "";
 
   const tabs = [
     { id: "health", label: "System Health & Tasks", shortLabel: "Health", icon: PresentationBarChart02FreeIcons },
     { id: "sources", label: "Source Control Center", shortLabel: "Feeds", icon: Newspaper },
     { id: "ai", label: "AI Engine Settings", shortLabel: "AI Config", icon: Sparkles },
+    { id: "notifications", label: "Notification Channels", shortLabel: "Alerts", icon: Bell },
     { id: "users", label: "User Administration", shortLabel: "Users", icon: UserSettings01Icon },
     { id: "skipped", label: "Caching & Skipped Backlog", shortLabel: "Backlog", icon: Bookmark02Icon },
   ];
@@ -142,36 +92,25 @@ export default async function AdminDashboard({ searchParams }: PageProps) {
 
         {/* Dynamic Tab Content Area */}
         <div className="flex-1 w-full space-y-6">
-          {activeTab === "health" && (
-            <SystemHealthTab
-              runningTasks={runningTasks}
-              taskLogs={taskLogs}
-              healthOverview={healthOverview}
-              chartData={chartData}
-            />
-          )}
-
-          {activeTab === "sources" && (
-            <SourceControlTab feedSources={feedSources} />
-          )}
-
-          {activeTab === "ai" && (
-            <AiEngineTab initialSettings={aiSettings} usageTimeline={usageTimeline} />
-          )}
-
-          {activeTab === "users" && (
-            <UserAdminTab users={users} searchQuery={searchQuery} />
-          )}
-
-          {activeTab === "skipped" && (
-            <SkippedBacklogTab
-              skippedArticles={skippedArticles}
-              failedEnrichments={failedEnrichments}
-              gazetteerConfig={gazetteerConfig}
-            />
-          )}
+          <Suspense fallback={<AdminTabLoading />}>
+            {activeTab === "health" && <SystemHealthTabWrapper />}
+            {activeTab === "sources" && <SourceControlTabWrapper />}
+            {activeTab === "ai" && <AiEngineTabWrapper />}
+            {activeTab === "users" && <UserAdminTabWrapper searchQuery={searchQuery} />}
+            {activeTab === "skipped" && <SkippedBacklogTabWrapper />}
+            {activeTab === "notifications" && <NotificationConfigTabWrapper />}
+          </Suspense>
         </div>
       </div>
+    </div>
+  );
+}
+
+function AdminTabLoading() {
+  return (
+    <div className="space-y-6">
+      <Skeleton className="h-12 w-full rounded-2xl animate-pulse" />
+      <Skeleton className="h-64 w-full rounded-2xl animate-pulse" />
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { requireTopicOwner } from "@/lib/auth/requireTopicOwner";
 
 export async function POST(
   req: NextRequest,
@@ -7,6 +8,8 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
+    const ownership = await requireTopicOwner(id);
+    if (!ownership.ok) return ownership.response;
 
     // Mark all findings for this topic as read
     await prisma.topicFinding.updateMany({

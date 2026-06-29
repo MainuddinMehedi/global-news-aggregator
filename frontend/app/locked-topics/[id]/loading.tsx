@@ -1,5 +1,5 @@
 import { Skeleton } from "@/components/ui/skeleton";
-import { FindingSkeleton } from "@/components/locked-topics/FindingSkeleton";
+import { FindingSkeleton } from "@/components/locked-topics/findings/FindingSkeleton";
 
 export default function TopicDetailLoading() {
   return (

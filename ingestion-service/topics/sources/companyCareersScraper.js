@@ -5,6 +5,8 @@
  * to see if a public job board exists. If found, extracts jobs matching the topic.
  */
 
+import { emitNotification } from "../../notifications/emitter.js";
+
 const USER_AGENT = 'global-news-aggregator/1.0 (LockedTopics ATS Monitor)';
 
 /**
@@ -50,7 +52,17 @@ async function checkGreenhouse(companySlug, topic, lastScan) {
     }
   } catch (err) {
     console.warn(`⚠️ [companyCareersScraper] Greenhouse check failed for "${companySlug}":`, err.message);
-    // TODO(notification): User - ATS platform consistently erroring (non-404) → topic page warning
+    if (topic.userId) {
+      await emitNotification({
+        userId: topic.userId,
+        type: "TOPIC_SOURCE_DEGRADED",
+        payload: {
+          topicName: topic.displayName,
+          sourceName: `${companySlug} (Greenhouse)`,
+          error: err.message
+        }
+      });
+    }
   }
   return findings;
 }
@@ -103,7 +115,17 @@ async function checkLever(companySlug, topic, lastScan) {
     }
   } catch (err) {
     console.warn(`⚠️ [companyCareersScraper] Lever check failed for "${companySlug}":`, err.message);
-    // TODO(notification): User - ATS platform consistently erroring (non-404) → topic page warning
+    if (topic.userId) {
+      await emitNotification({
+        userId: topic.userId,
+        type: "TOPIC_SOURCE_DEGRADED",
+        payload: {
+          topicName: topic.displayName,
+          sourceName: `${companySlug} (Lever)`,
+          error: err.message
+        }
+      });
+    }
   }
   return findings;
 }

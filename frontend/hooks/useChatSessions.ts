@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { MODEL_REGISTRY } from "@/lib/ai/modelRegistry";
-import type { ChatSessionListItem } from "@/components/chat/ChatHistoryPanel";
+import type { ChatSessionListItem } from "@/components/chat/layout/ChatHistoryPanel";
 import type { UIMessage } from "ai";
 import type { ContextItem } from "@/types/chat";
 

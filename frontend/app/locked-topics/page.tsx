@@ -1,17 +1,21 @@
 import { Suspense } from "react";
-import CreateTopicModal from "@/components/locked-topics/CreateTopicModal";
+import { auth } from "@/auth";
+import CreateTopicModal from "@/components/locked-topics/modals/CreateTopicModal";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { RssLockedIcon } from "@hugeicons/core-free-icons";
 import {
   LockedTopicsContainer,
   LockedTopicGridSkeleton,
-} from "@/components/locked-topics/LockedTopicsContainer";
+} from "@/components/locked-topics/grid/LockedTopicsContainer";
 
 interface PageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
-export default function LockedTopicsPage({ searchParams }: PageProps) {
+export default async function LockedTopicsPage({ searchParams }: PageProps) {
+  const session = await auth();
+  const userId = session?.user?.id;
+
   return (
     <div className="mx-auto w-full max-w-7xl 2xl:max-w-[1400px] px-4 py-8 sm:px-6 lg:px-8">
       {/* Static Shell Header (Instant Render) */}
@@ -36,7 +40,7 @@ export default function LockedTopicsPage({ searchParams }: PageProps) {
 
       {/* Dynamic Content Boundary */}
       <Suspense fallback={<LockedTopicGridSkeleton />}>
-        <LockedTopicsContainer searchParams={searchParams} />
+        <LockedTopicsContainer userId={userId} searchParams={searchParams} />
       </Suspense>
     </div>
   );

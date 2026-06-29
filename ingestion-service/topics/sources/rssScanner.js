@@ -9,6 +9,7 @@ import { evaluateQuery } from "../utils/parseQuery.js";
 import { formatSinceDate } from "../utils/formatSinceDate.js";
 import { SCANNER_CONFIG } from "../scannerConfig.js";
 import extractHostname from "../utils/extractHostname.js";
+import { emitNotification, emitAdminNotification } from "../../notifications/emitter.js";
 
 /**
  * Build the appropriate RSS URL based on the source config type.
@@ -118,12 +119,40 @@ export async function scanRss(topic, sourceConfig, options = {}) {
     console.log(
       `   📊 [rssScanner] Found ${findings.length} new matches from ${sourceName} (${skipped} skipped as old/duplicate${filteredSuffix})`,
     );
+    return { findings, metadata: { lastSucceededAt: new Date().toISOString() } };
   } catch (err) {
     console.error(
       `❌ [rssScanner] Failed to fetch feed for ${sourceName}:`,
       err.message,
     );
-    // TODO(notification): User/Admin - Custom RSS URL unreachable: If it's a malformed URL provided by the user, surface on the topic detail page. If it's a system fetch issue, feed to Admin Source Health.
+
+    // If it succeeded before, emit PIPELINE_FAILURE admin alert
+    if (sourceConfig.lastSucceededAt) {
+      await emitAdminNotification("PIPELINE_FAILURE", {
+        topicName: topic.displayName,
+        sourceName,
+        error: `Previously verified source failed: ${err.message}`
+      });
+    }
+
+    // Custom RSS URL unreachable or fetch issue
+    if (sourceConfig.type === "rss" && topic.userId) {
+      await emitNotification({
+        userId: topic.userId,
+        type: "TOPIC_SOURCE_DEGRADED",
+        payload: {
+          topicName: topic.displayName,
+          sourceName,
+          error: err.message
+        }
+      });
+    } else {
+      await emitAdminNotification("TOPIC_SOURCE_DEGRADED", {
+        topicName: topic.displayName,
+        sourceName,
+        error: err.message
+      });
+    }
   }
 
   return { findings, metadata: {} };

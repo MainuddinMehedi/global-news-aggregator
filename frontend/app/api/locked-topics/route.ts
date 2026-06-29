@@ -2,8 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { revalidateTag } from "next/cache";
 import { generateQueryEmbedding } from "@/lib/ai/embeddings";
+import { auth } from "@/auth";
 
 export async function POST(req: NextRequest) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const body = await req.json();
     const {
@@ -24,6 +30,7 @@ export async function POST(req: NextRequest) {
         userContext,
         aiRefinedQuery,
         aiQuerySummary,
+        userId: session.user.id,
         conceptualKeywords: conceptualKeywords || [],
         sources: sources || [],
         notifyEnabled: notifyEnabled ?? false,
@@ -33,7 +40,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    revalidateTag("locked-topics", "max");
+    revalidateTag(`locked-topics-${session.user.id}`, "max");
 
     // Generate and save embedding before returning
     try {

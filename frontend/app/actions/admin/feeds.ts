@@ -3,6 +3,7 @@
 import prisma from "@/lib/prisma";
 import { revalidateTag } from "next/cache";
 import { verifyAdmin } from "./varifyAdmin";
+import { FeedSource } from "@news/db";
 
 export async function toggleFeedSource(id: string, enabled: boolean) {
   await verifyAdmin();
@@ -71,7 +72,7 @@ export async function saveFeedSource(data: {
   await verifyAdmin();
   try {
     const { id, ...payload } = data;
-    let feed;
+    let feed: FeedSource;
     if (id) {
       feed = await prisma.feedSource.update({
         where: { id },
@@ -85,6 +86,31 @@ export async function saveFeedSource(data: {
           fetchFailures: 0,
         },
       });
+
+      try {
+        const users = await prisma.user.findMany({
+          select: { id: true }
+        });
+        if (users.length > 0) {
+          await prisma.notification.createMany({
+            data: users.map((u) => ({
+              userId: u.id,
+              type: "NEW_SOURCE_ADDED",
+              title: `📡 New Feed Source: ${feed.name}`,
+              message: `A new news feed source "${feed.name}" (${feed.url}) has been added to the system.`,
+              priority: "NORMAL",
+              channels: ["IN_APP"],
+              payload: {
+                sourceName: feed.name,
+                sourceUrl: feed.url
+              }
+            })),
+          });
+        }
+      } catch (broadcastError: any) {
+        console.error("Failed to broadcast NEW_SOURCE_ADDED notification:", broadcastError);
+        // Do not fail the main saveFeedSource operation if broadcast fails
+      }
     }
     revalidateTag("articles", "max");
     return { success: true, feed };
@@ -126,7 +152,6 @@ export async function seedFeedSources() {
     }
 
     revalidateTag("articles", "max");
-    // TODO: Notifications — broadcast to all users when new feeds are seeded
     return { success: true, seeded: toInsert.length };
   } catch (error: any) {
     console.error("seedFeedSources error:", error);

@@ -3,10 +3,11 @@ import {
 } from "@/queries/lockedTopics";
 import { getFindings, getFindingCounts } from "@/queries/topicFindings";
 import { notFound } from "next/navigation";
-import TopicHeader from "@/components/locked-topics/TopicHeader";
-import FindingsFilter from "@/components/locked-topics/FindingsFilter";
-import FindingsList from "@/components/locked-topics/FindingsList";
-import { MarkAsRead } from "@/components/locked-topics/MarkAsRead";
+import { auth } from "@/auth";
+import TopicHeader from "@/components/locked-topics/header/TopicHeader";
+import FindingsFilter from "@/components/locked-topics/findings/FindingsFilter";
+import FindingsList from "@/components/locked-topics/findings/FindingsList";
+import { MarkAsRead } from "@/components/locked-topics/header/MarkAsRead";
 import { FindingSource } from "@/types/lockedTopic";
 
 import { Suspense } from "react";
@@ -32,11 +33,14 @@ async function TopicDetailContent({
   params,
   searchParams,
 }: TopicDetailPageProps) {
+  const session = await auth();
+  const userId = session?.user?.id;
+
   const { id } = await params;
   const { source = "ALL", sort = "newest" } = await searchParams;
 
   const topic = await getLockedTopicById(id);
-  if (!topic) notFound();
+  if (!topic || topic.userId !== userId) notFound();
 
   const counts = await getFindingCounts(id);
 
@@ -61,6 +65,7 @@ async function TopicDetailContent({
         />
 
         <FindingsList
+          key={`${source}-${sort}`}
           initialFindings={findings}
           initialNextCursor={nextCursor}
           topicId={id}

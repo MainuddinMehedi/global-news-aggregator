@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/auth";
 
 // This route is for refining the users topic and context for getting the users intent and better searchablity.
 // applied in the topic creation modal at step 3.
@@ -46,6 +47,11 @@ async function requestAI(
 
 export async function POST(req: NextRequest) {
   try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { displayName, userContext } = await req.json();
 
     const prompt = `You are an expert news researcher and intelligence analyst. A user wants to track a specific topic.

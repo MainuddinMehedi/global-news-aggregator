@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { startBoss } from "@/lib/boss";
+import { requireTopicOwner } from "@/lib/auth/requireTopicOwner";
 
 export async function POST(
   req: NextRequest,
@@ -7,6 +8,9 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
+    const ownership = await requireTopicOwner(id);
+    if (!ownership.ok) return ownership.response;
+
     const boss = await startBoss();
 
     console.log(`[Scan Route] Queueing scan for topic ${id}...`);

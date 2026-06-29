@@ -9,10 +9,12 @@ import { saveFeedSource } from "@/app/actions/admin/feeds";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
+import { FeedSource } from "@news/db";
+
 interface AddEditFeedModalProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  source: any | null;
+  source: FeedSource | null;
 }
 
 export default function AddEditFeedModal({ isOpen, onOpenChange, source }: AddEditFeedModalProps) {
@@ -25,6 +27,65 @@ export default function AddEditFeedModal({ isOpen, onOpenChange, source }: AddEd
   const [sourceType, setSourceType] = useState("Commercial Publisher");
   const [biasGroup, setBiasGroup] = useState("Centrist");
   const [coverageScope, setCoverageScope] = useState("National");
+
+  const [isValidating, setIsValidating] = useState(false);
+  const [isValidated, setIsValidated] = useState(false);
+  const [validationError, setValidationError] = useState("");
+  const [detectedType, setDetectedType] = useState("");
+
+  const isUrlUnchanged = source !== null && url === source.url;
+
+  useEffect(() => {
+    if (isUrlUnchanged || !url.trim()) {
+      setIsValidating(false);
+      setIsValidated(true);
+      setValidationError("");
+      setDetectedType("rss");
+      return;
+    }
+
+    try {
+      new URL(url);
+    } catch {
+      setIsValidating(false);
+      setIsValidated(false);
+      setValidationError("Invalid URL format. Make sure to include http:// or https://");
+      setDetectedType("");
+      return;
+    }
+
+    setIsValidating(true);
+    setIsValidated(false);
+    setValidationError("");
+    setDetectedType("");
+
+    const delayDebounceFn = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/locked-topics/check-source?url=${encodeURIComponent(url)}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.valid) {
+            setDetectedType(data.type);
+            if (data.type !== "rss") {
+              setValidationError("The system source manager only accepts RSS feeds. Webpages, subreddits, or GitHub repositories must be added under a user's Locked Topic.");
+            } else {
+              setIsValidated(true);
+            }
+          } else {
+            setValidationError(data.error || "Feed validation failed.");
+          }
+        } else {
+          setValidationError("Could not connect to validation server.");
+        }
+      } catch (err) {
+        setValidationError("Could not connect to validation server.");
+      } finally {
+        setIsValidating(false);
+      }
+    }, 600);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [url, isUrlUnchanged]);
 
   useEffect(() => {
     if (source) {
@@ -42,7 +103,7 @@ export default function AddEditFeedModal({ isOpen, onOpenChange, source }: AddEd
       setBiasGroup("Centrist");
       setCoverageScope("National");
     }
-  }, [source, isOpen]);
+  }, [source?.id, isOpen]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,6 +111,21 @@ export default function AddEditFeedModal({ isOpen, onOpenChange, source }: AddEd
     if (!name.trim() || !url.trim() || !sourceCountry.trim()) {
       toast.error("Please fill in all required fields.");
       return;
+    }
+
+    if (!isUrlUnchanged) {
+      if (isValidating) {
+        toast.error("Please wait for feed URL validation to complete.");
+        return;
+      }
+      if (validationError) {
+        toast.error(`Cannot save feed: ${validationError}`);
+        return;
+      }
+      if (!isValidated) {
+        toast.error("Please enter a valid, reachable RSS feed URL.");
+        return;
+      }
     }
 
     startTransition(async () => {
@@ -111,6 +187,25 @@ export default function AddEditFeedModal({ isOpen, onOpenChange, source }: AddEd
               className="bg-muted/40 border-border rounded-xl focus:ring-primary focus:border-primary text-sm font-mono text-xs"
               required
             />
+            {url && !isUrlUnchanged && (
+              <div className="text-[10px] mt-1 font-medium transition-all duration-200">
+                {isValidating && (
+                  <span className="text-muted-foreground animate-pulse">
+                    🔍 Validating feed URL...
+                  </span>
+                )}
+                {validationError && (
+                  <span className="text-destructive font-semibold">
+                    ❌ {validationError}
+                  </span>
+                )}
+                {isValidated && (
+                  <span className="text-emerald-500 font-bold">
+                    ✅ Valid RSS feed detected.
+                  </span>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">

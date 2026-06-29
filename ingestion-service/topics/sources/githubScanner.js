@@ -1,4 +1,5 @@
 import { evaluateQuery } from "../utils/parseQuery.js";
+import { emitAdminNotification } from "../../notifications/emitter.js";
 
 const USER_AGENT = 'global-news-aggregator/1.0 (LockedTopics GitHub Monitor)';
 
@@ -79,7 +80,11 @@ async function scanSpecificRepo(topic, url, label, options) {
       if (response.status === 404) console.warn(`   ⚠️ [githubScanner] Repo not found: ${sourceName}`);
       else if (response.status === 403) {
         console.warn(`   ⚠️ [githubScanner] Rate limited`);
-        // TODO(notification): Admin - GitHub API 403 rate limit (no token or exhausted) → feeds into Source Health dashboard / admin alert
+        await emitAdminNotification("TOPIC_SOURCE_DEGRADED", {
+          topicName: topic.displayName,
+          sourceName: `GitHub (${sourceName})`,
+          error: "GitHub API 403 Rate Limit / Forbidden"
+        });
       }
       else console.warn(`   ⚠️ [githubScanner] Releases fetch failed: ${response.status}`);
     }

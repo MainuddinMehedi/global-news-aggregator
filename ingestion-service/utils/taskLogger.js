@@ -1,4 +1,5 @@
 import { prisma } from "../db/prisma.js";
+import { emitAdminNotification } from "../notifications/index.js";
 
 /**
  * Clean up tasks that have lost their heartbeat.
@@ -78,7 +79,7 @@ export async function updateTaskHeartbeat(taskId) {
 export async function completeTaskLogging(taskId, status, metadata = null, errorMessage = null) {
   if (!taskId) return;
   try {
-    await prisma.systemTask.update({
+    const updatedTask = await prisma.systemTask.update({
       where: { id: taskId },
       data: {
         status,
@@ -88,6 +89,14 @@ export async function completeTaskLogging(taskId, status, metadata = null, error
       },
     });
     console.log(`📊 [Telemetry] Completed task ${taskId} with status: ${status}`);
+
+    if (status === "FAILED") {
+      await emitAdminNotification("PIPELINE_FAILURE", {
+        taskName: updatedTask.taskName,
+        errorMessage,
+        metadata
+      });
+    }
   } catch (err) {
     console.error(`⚠️ Failed to complete SystemTask logging for task ${taskId}:`, err.message);
   }

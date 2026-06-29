@@ -2,12 +2,14 @@ import MobileNavDrawer from "@/components/layout/MobileNavDrawer";
 import { SearchBar } from "@/components/layout/SearchBar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { Bell, Globe } from "@hugeicons/core-free-icons";
+import { Globe } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import Link from "next/link";
 import { Suspense } from "react";
 import { auth } from "@/auth";
 import SuspensionWarning from "@/components/auth/SuspensionWarning";
+import NotificationBell from "@/components/notifications/NotificationBell";
+import LastIngestionTime from "@/components/layout/LastIngestionTime";
 
 export default async function Navbar() {
   const session = await auth();
@@ -36,10 +38,16 @@ export default async function Navbar() {
       </div>
 
       {/* Center: full search bar on desktop, empty space on mobile */}
-      <div className="flex-1 flex justify-center px-4">
+      <div className="flex-1 flex items-center px-4">
+        <div className="flex-1" />
         <div className="relative w-full max-w-md hidden md:block">
           <Suspense fallback={<Skeleton className="h-9 w-full rounded-lg" />}>
             <SearchBar />
+          </Suspense>
+        </div>
+        <div className="flex-1 hidden md:flex justify-center items-center">
+          <Suspense fallback={<Skeleton className="h-4 w-24 rounded" />}>
+            <LastIngestionTime />
           </Suspense>
         </div>
       </div>
@@ -52,11 +60,9 @@ export default async function Navbar() {
           </Suspense>
         </div>
 
-        {/* TODO: Notifications — wire bell to notification system (badge count, dropdown) */}
-        <button className="relative p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors">
-          <HugeiconsIcon icon={Bell} className="w-5 h-5" />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-destructive rounded-full animate-pulse" />
-        </button>
+        <Suspense fallback={<Skeleton className="h-9 w-9 rounded-lg" />}>
+          <NotificationBell />
+        </Suspense>
 
         {isSuspended && <SuspensionWarning />}
 

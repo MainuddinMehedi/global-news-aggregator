@@ -1,4 +1,5 @@
 import { prisma } from "../db/prisma.js";
+import { emitNotification, emitAdminNotification } from "../notifications/emitter.js";
 import { scanInternalDb } from "./sources/internalDb.js";
 import { scanRss } from "./sources/rssScanner.js";
 import { scanReddit } from "./sources/redditScanner.js";
@@ -103,6 +104,9 @@ export async function runScannersForTopic(topic, options = {}) {
       if (metadata.newHash) {
         sourceUpdates.push({ url: metadata.url, newHash: metadata.newHash });
       }
+      if (metadata.lastSucceededAt && sourceConfig.url) {
+        sourceUpdates.push({ url: sourceConfig.url, lastSucceededAt: metadata.lastSucceededAt });
+      }
     } catch (err) {
       console.error(
         `❌ [orchestrator] Scanner ${sourceConfig.type} failed:`,
@@ -114,7 +118,11 @@ export async function runScannersForTopic(topic, options = {}) {
 
   if (sourceErrors.length > 0) {
     console.warn(`⚠️ [orchestrator] ${sourceErrors.length}/${sources.filter(s => s.enabled).length} sources failed during scan for "${topic.displayName}": [${sourceErrors.join(', ')}]`);
-    // TODO(notification): Admin - Any source failure feeds into the Admin Source Health dashboard. Repeated failures across cycles trigger a direct admin alert.
+    await emitAdminNotification("TOPIC_SOURCE_DEGRADED", {
+      topicName: topic.displayName,
+      sourceName: "Orchestrator",
+      error: `Failed sources during scan: ${sourceErrors.join(', ')}`
+    });
   }
 
   // Apply metadata updates (summaries, hashes) to the topic record
@@ -124,9 +132,16 @@ export async function runScannersForTopic(topic, options = {}) {
     if (sourceUpdates.length > 0) {
       const updatedSources = sources.map((s) => {
         const update = sourceUpdates.find(
-          (u) => u.url === s.url && s.type === "webpage",
+          (u) => u.url && u.url === s.url,
         );
-        return update ? { ...s, lastSeenHash: update.newHash } : s;
+        if (update) {
+          return {
+            ...s,
+            ...(update.newHash ? { lastSeenHash: update.newHash } : {}),
+            ...(update.lastSucceededAt ? { lastSucceededAt: update.lastSucceededAt } : {}),
+          };
+        }
+        return s;
       });
       data.sources = updatedSources;
     }
@@ -247,7 +262,10 @@ export async function runScannersForTopic(topic, options = {}) {
       insertedCount = createResult.count;
     } catch (err) {
       console.error(`❌ [orchestrator] Bulk insert failed for "${topic.displayName}":`, err.message);
-      // TODO(notification): User - Topic shows stale data with no explanation → user-facing "scan partially failed" indicator
+      await emitAdminNotification("PIPELINE_FAILURE", {
+        topicName: topic.displayName,
+        error: `Database write failure during scan: ${err.message}`
+      });
     }
   }
 
@@ -276,7 +294,10 @@ export async function runScannersForTopic(topic, options = {}) {
         `⚠️ [orchestrator] Failed to trigger revalidation for topic ${topic.id}:`,
         e.message,
       );
-      // TODO(notification): Admin - Revalidation failure means stale configs or environment issues → direct admin message/alert.
+      await emitAdminNotification("REVALIDATION_FAILED", {
+        topicName: topic.displayName,
+        error: e.message
+      });
     }
   }
 

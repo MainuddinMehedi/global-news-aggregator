@@ -14,7 +14,7 @@ import {
 import { mapProcessedArticleToArticle } from "@/lib/article";
 
 import { Suspense } from "react";
-import StoryDetailsSkeleton from "@/components/stories/StorySkeleton";
+import StoryDetailsSkeleton from "@/components/stories/grid/StorySkeleton";
 
 interface StoryPageProps {
   params: Promise<{ slug: string }>;

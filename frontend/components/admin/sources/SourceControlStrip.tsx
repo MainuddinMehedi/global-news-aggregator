@@ -34,7 +34,7 @@ export default function SourceControlStrip({ onAddClick }: SourceControlStripPro
     startTransition(async () => {
       const res = await seedFeedSources();
       if (res.success) {
-        if (res.seeded > 0) {
+        if (res.seeded && res.seeded > 0) {
           toast.success(`Seeded ${res.seeded} new feed source(s).`);
         } else {
           toast.info("All defaults already present — nothing to seed.");

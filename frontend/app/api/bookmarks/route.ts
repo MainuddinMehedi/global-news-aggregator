@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 
 export async function GET(req: NextRequest) {
   const session = await auth();
+
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -25,12 +26,17 @@ export async function GET(req: NextRequest) {
     });
   } catch (error) {
     console.error("Error fetching bookmarks:", error);
-    return NextResponse.json({ error: "Failed to fetch bookmarks" }, { status: 500 });
+
+    return NextResponse.json(
+      { error: "Failed to fetch bookmarks" },
+      { status: 500 },
+    );
   }
 }
 
 export async function POST(req: NextRequest) {
   const session = await auth();
+
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -66,12 +72,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error adding bookmark:", error);
-    return NextResponse.json({ error: "Failed to add bookmark" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to add bookmark" },
+      { status: 500 },
+    );
   }
 }
 
 export async function DELETE(req: NextRequest) {
   const session = await auth();
+
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -81,22 +91,30 @@ export async function DELETE(req: NextRequest) {
     const { type, targetId } = body;
 
     if (type === "article") {
-      await prisma.articleBookmark.delete({
-        where: {
-          userId_articleId: { userId: session.user.id, articleId: targetId },
-        },
-      }).catch(() => {}); // Ignore if it doesn't exist
+      await prisma.articleBookmark
+        .delete({
+          where: {
+            userId_articleId: { userId: session.user.id, articleId: targetId },
+          },
+        })
+        .catch(() => {}); // Ignore if it doesn't exist
     } else if (type === "finding") {
-      await prisma.findingBookmark.delete({
-        where: {
-          userId_findingId: { userId: session.user.id, findingId: targetId },
-        },
-      }).catch(() => {});
+      await prisma.findingBookmark
+        .delete({
+          where: {
+            userId_findingId: { userId: session.user.id, findingId: targetId },
+          },
+        })
+        .catch(() => {});
     }
 
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error removing bookmark:", error);
-    return NextResponse.json({ error: "Failed to remove bookmark" }, { status: 500 });
+
+    return NextResponse.json(
+      { error: "Failed to remove bookmark" },
+      { status: 500 },
+    );
   }
 }

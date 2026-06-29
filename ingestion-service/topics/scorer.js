@@ -3,6 +3,7 @@
  */
 
 import { requestAI } from "../ai/requestAI.js";
+import { emitAdminNotification } from "../notifications/emitter.js";
 import { primaryConfig } from "../ai/aiConfig.js";
 import { logAiUsage } from "../utils/logAiUsage.js";
 import { SCANNER_CONFIG } from "./scannerConfig.js";
@@ -104,7 +105,11 @@ ${findingTitles.join("\n")}`;
       batch.forEach((finding) => {
         finding.relevanceScore = null;
       });
-      // TODO(notification): Admin - AI scoring failures feed into the Admin Source Health system. Consecutive LLM failures trigger a direct admin alert.
+      
+      await emitAdminNotification("AI_PROVIDER_DEGRADED", {
+        topicName,
+        error: err.message
+      });
     }
   }
 

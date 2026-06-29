@@ -3,6 +3,7 @@ import { getFindings } from "@/queries/topicFindings";
 import { FindingSource } from "@/types/lockedTopic";
 import prisma from "@/lib/prisma";
 import { revalidateTag } from "next/cache";
+import { requireTopicOwner } from "@/lib/auth/requireTopicOwner";
 
 export async function GET(
   req: NextRequest,
@@ -10,6 +11,9 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
+    const ownership = await requireTopicOwner(id);
+    if (!ownership.ok) return ownership.response;
+
     const { searchParams } = new URL(req.url);
 
     const source = searchParams.get("source") || "ALL";
@@ -43,6 +47,8 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
+    const ownership = await requireTopicOwner(id);
+    if (!ownership.ok) return ownership.response;
 
     // 1. Delete all findings for this topic
     await prisma.topicFinding.deleteMany({
@@ -60,6 +66,7 @@ export async function DELETE(
     });
 
     // 3. Revalidate cache
+    revalidateTag(`locked-topics-${ownership.userId}`, "max");
     revalidateTag(`locked-topic-${id}`, "max");
     revalidateTag(`topic-findings-${id}`, "max");
 

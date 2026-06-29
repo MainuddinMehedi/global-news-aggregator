@@ -4,18 +4,21 @@ import { useEffect, useState } from "react";
 import { useSettings, type SettingsState, type CustomSource } from "@/store";
 import { toast } from "sonner";
 import { updateSingleSettingAction } from "@/app/actions/settings";
-import NotificationsSection from "./NotificationsSection";
-import SourcesSection from "./SourcesSection";
-import GeneralSection from "./GeneralSection";
-import FeedSection from "./FeedSection";
-import AiSection from "./AiSection";
-import AdvancedCategoriesSection from "./AdvancedCategoriesSection";
-import DangerZoneSection from "./DangerZoneSection";
+import { useSession } from "next-auth/react";
+import { SignInPromptCard } from "@/components/ui/SignInPromptCard";
+import { Settings02Icon } from "@hugeicons/core-free-icons";
+import NotificationsSection from "@/components/settings/sections/NotificationsSection";
+import SourcesSection from "@/components/settings/sections/SourcesSection";
+import GeneralSection from "@/components/settings/sections/GeneralSection";
+import FeedSection from "@/components/settings/sections/FeedSection";
+// import AiSection from "@/components/settings/sections/AiSection";
+import AdvancedCategoriesSection from "@/components/settings/sections/AdvancedCategoriesSection";
+import DangerZoneSection from "@/components/settings/sections/DangerZoneSection";
 
 const SETTINGS_SECTIONS = [
   { id: "general", label: "General" },
   { id: "feed", label: "Feed Preferences" },
-  { id: "ai", label: "AI & Analysis" },
+  // { id: "ai", label: "AI & Analysis" },
   { id: "notifications", label: "Notifications" },
   { id: "advanced", label: "Advanced" },
 ];
@@ -30,17 +33,20 @@ export default function SettingsInterface({
   const [mounted, setMounted] = useState(false);
   const { settings, setSetting } = useSettings();
   const [activeSection, setActiveSection] = useState<string>("general");
+  const { status } = useSession();
 
   const handleSettingChange = <K extends keyof SettingsState>(
     key: K,
     value: SettingsState[K],
   ) => {
     setSetting(key, value);
-    // Persist to DB immediately
-    updateSingleSettingAction(key, value).catch(err => {
-      console.error(`Failed to sync setting ${key}:`, err);
-      toast.error("Failed to save setting");
-    });
+    // Persist to DB immediately if authenticated
+    if (status === "authenticated") {
+      updateSingleSettingAction(key, value).catch(err => {
+        console.error(`Failed to sync setting ${key}:`, err);
+        toast.error("Failed to save setting");
+      });
+    }
   };
 
   useEffect(() => {
@@ -139,9 +145,11 @@ export default function SettingsInterface({
         </section>
 
         {/* AI & Chat Settings */}
+        {/*
         <section id="ai" className="scroll-mt-32 space-y-6">
           <AiSection settings={settings} onSettingChange={handleSettingChange} />
         </section>
+        */}
 
         {/* Notifications Settings */}
         <section id="notifications" className="scroll-mt-32 space-y-6">
@@ -157,14 +165,22 @@ export default function SettingsInterface({
             </p>
           </div>
           
-          <div className="space-y-6">
-            <AdvancedCategoriesSection settings={settings} onSettingChange={handleSettingChange} />
-            <SourcesSection 
-              dbCustomSources={dbCustomSources} 
-              dbDisabledBuiltinSources={dbDisabledBuiltinSources} 
+          {status === "authenticated" ? (
+            <div className="space-y-6">
+              <AdvancedCategoriesSection settings={settings} onSettingChange={handleSettingChange} />
+              <SourcesSection 
+                dbCustomSources={dbCustomSources} 
+                dbDisabledBuiltinSources={dbDisabledBuiltinSources} 
+              />
+              <DangerZoneSection />
+            </div>
+          ) : (
+            <SignInPromptCard
+              icon={Settings02Icon}
+              title="Sign in to access Advanced Settings"
+              description="Manage category favorites, custom RSS sources, and your account settings."
             />
-            <DangerZoneSection />
-          </div>
+          )}
         </section>
       </div>
     </div>
