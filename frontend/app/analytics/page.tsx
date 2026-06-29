@@ -1,106 +1,24 @@
-import { getAnalyticsData } from "@/queries/analytics";
-import { cn } from "@/lib/utils";
+import {
+  getGlobalAnalyticsData,
+  getUserAnalyticsData,
+} from "@/queries/analytics";
+import { auth } from "@/auth";
 import { BiasDonutChart } from "@/components/widgets/charts/BiasDonutChart";
 import { SentimentBarChart } from "@/components/widgets/charts/SentimentBarChart";
 import { CategoryBarChart } from "@/components/widgets/charts/CategoryBarChart";
 import { AnalyticsTimeFilter } from "@/components/widgets/analytics/AnalyticsTimeFilter";
 import { TopicSourceDistributionChart } from "@/components/widgets/charts/TopicSourceDistributionChart";
 
-// ── Helpers ────────────────────────────────────────────────────────────────
-
-function formatNumber(n: number): string {
-  if (n >= 1000) return `${(n / 1000).toFixed(1)}K`;
-  return n.toString();
-}
-
-// ── Components ─────────────────────────────────────────────────────────────
-
-function ScanlineOverlay() {
-  return (
-    <div
-      className="pointer-events-none fixed inset-0 z-0 opacity-[0.03]"
-      style={{
-        backgroundImage:
-          "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.15) 2px, rgba(255,255,255,0.15) 4px)",
-      }}
-    />
-  );
-}
-
-function StatCard({
-  label,
-  value,
-  sub,
-  accent,
-}: {
-  label: string;
-  value: string;
-  sub?: string;
-  accent?: string;
-}) {
-  return (
-    <div className="relative overflow-hidden rounded-xl border border-border/40 bg-card/30 backdrop-blur-sm p-5 group hover:border-primary/40 transition-all duration-300">
-      <div className="absolute top-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
-      <p
-        className="text-[9px] font-black uppercase tracking-[0.3em] mb-3"
-        style={{ color: accent ?? "var(--muted-foreground)" }}
-      >
-        {label}
-      </p>
-      <p className="text-4xl font-black tracking-tighter text-foreground font-mono leading-none">
-        {value}
-      </p>
-      {sub && (
-        <p className="text-[10px] text-muted-foreground mt-2 font-medium">
-          {sub}
-        </p>
-      )}
-    </div>
-  );
-}
-
-function SectionHeader({ title, sub }: { title: string; sub?: string }) {
-  return (
-    <div className="flex items-center gap-4 mb-5">
-      <div className="flex items-center gap-2">
-        <div className="w-1 h-4 rounded-full bg-primary opacity-80" />
-        <h2 className="text-[10px] font-black uppercase tracking-[0.35em] text-muted-foreground">
-          {title}
-        </h2>
-      </div>
-      {sub && (
-        <span className="text-[9px] text-muted-foreground/50 font-mono">
-          {sub}
-        </span>
-      )}
-      <div className="flex-1 h-px bg-border/30" />
-    </div>
-  );
-}
-
-function PanelShell({
-  children,
-  className,
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <div
-      className={cn(
-        "relative overflow-hidden rounded-2xl border border-border/40 bg-card/20 backdrop-blur-sm p-6",
-        className,
-      )}
-    >
-      {/* Corner accents */}
-      <div className="absolute top-0 left-0 w-3 h-3 border-t border-l border-primary/30 rounded-tl-2xl" />
-      <div className="absolute top-0 right-0 w-3 h-3 border-t border-r border-primary/30 rounded-tr-2xl" />
-      <div className="absolute bottom-0 left-0 w-3 h-3 border-b border-l border-primary/30 rounded-bl-2xl" />
-      <div className="absolute bottom-0 right-0 w-3 h-3 border-b border-r border-primary/30 rounded-br-2xl" />
-      {children}
-    </div>
-  );
-}
+import {
+  formatCompactNumber,
+  getSentimentDisplayProps,
+} from "@/utils/analytics";
+import {
+  ScanlineOverlay,
+  StatCard,
+  SectionHeader,
+  PanelShell,
+} from "@/components/widgets/analytics/AnalyticsUI";
 
 // ── Page ───────────────────────────────────────────────────────────────────
 
@@ -109,32 +27,18 @@ interface AnalyticsProps {
 }
 
 export default async function AnalyticsPage(props: AnalyticsProps) {
-  return <AnalyticsPageContent searchParams={props.searchParams} />;
-}
-
-async function AnalyticsPageContent(props: AnalyticsProps) {
+  const session = await auth();
   const searchParams = await props.searchParams;
-  const timeRange = typeof searchParams.range === "string" ? searchParams.range : "7d";
-  
-  const data = await getAnalyticsData(timeRange);
+  const timeRange =
+    typeof searchParams.range === "string" ? searchParams.range : "7d";
 
-  const sentimentLabel =
-    data.avgSentiment == null
-  ? "No data"
-  : data.avgSentiment > 0.2
-    ? "Positive"
-    : data.avgSentiment < -0.2
-      ? "Negative"
-      : "Neutral";
+  const data = await getGlobalAnalyticsData(timeRange);
+  const userData = session?.user?.id
+    ? await getUserAnalyticsData(session.user.id, timeRange)
+    : null;
 
-  const sentimentColor =
-    data.avgSentiment == null
-  ? "#6b7280"
-  : data.avgSentiment > 0.2
-    ? "#10b981"
-    : data.avgSentiment < -0.2
-      ? "#ef4444"
-      : "#f59e0b";
+  const { label: sentimentLabel, color: sentimentColor } =
+    getSentimentDisplayProps(data.avgSentiment);
 
   const maxEntityCount = data.topEntities[0]?.count ?? 1;
   const maxCountryCount = data.topSourceCountries[0]?.count ?? 1;
@@ -160,22 +64,24 @@ async function AnalyticsPageContent(props: AnalyticsProps) {
                 Command Center Intelligence
               </span>
             </div>
+
             <h1 className="text-4xl md:text-5xl font-black tracking-tighter text-foreground mb-4">
               Analytics
               <span className="text-primary">.</span>
             </h1>
             <AnalyticsTimeFilter />
           </div>
+
           <div className="text-left md:text-right">
-            <div className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground/50 mb-1">
+            <p className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground/50 mb-1">
               Corpus Size
-            </div>
-            <div className="text-5xl font-black font-mono tracking-tighter text-foreground">
-              {formatNumber(data.totalArticles)}
-            </div>
-            <div className="text-[10px] text-muted-foreground font-mono mt-1">
+            </p>
+            <p className="text-5xl font-black font-mono tracking-tighter text-foreground">
+              {formatCompactNumber(data.totalArticles)}
+            </p>
+            <p className="text-[10px] text-muted-foreground font-mono mt-1">
               processed articles
-            </div>
+            </p>
           </div>
         </div>
 
@@ -183,35 +89,39 @@ async function AnalyticsPageContent(props: AnalyticsProps) {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <StatCard
             label="Story Clusters"
-            value={formatNumber(data.totalStories)}
+            value={formatCompactNumber(data.totalStories)}
             sub="Active narratives"
             accent="#3b82f6"
           />
-          <StatCard
-            label="Locked Topics"
-            value={formatNumber(data.totalTopics)}
-            sub="Surveillance ops"
-            accent="#10b981"
-          />
-          <StatCard
-            label="Total Findings"
-            value={formatNumber(data.totalFindings)}
-            sub="Across all trackers"
-            accent="#f59e0b"
-          />
+
+          {userData && (
+            <>
+              <StatCard
+                label="Locked Topics"
+                value={formatCompactNumber(userData.totalTopics)}
+                sub="Surveillance ops"
+                accent="#10b981"
+              />
+              <StatCard
+                label="Total Findings"
+                value={formatCompactNumber(userData.totalFindings)}
+                sub="Across all trackers"
+                accent="#f59e0b"
+              />
+            </>
+          )}
+
           <StatCard
             label="Avg. Sentiment"
             value={sentimentLabel}
             sub={
               data.avgSentiment != null
-            ? `Score: ${data.avgSentiment.toFixed(3)}`
-            : undefined
+                ? `Score: ${data.avgSentiment.toFixed(3)}`
+                : undefined
             }
             accent={sentimentColor}
           />
         </div>
-
-
 
         {/* ── Section: News Intelligence ───────────────────────────────── */}
         <section className="space-y-6">
@@ -227,9 +137,14 @@ async function AnalyticsPageContent(props: AnalyticsProps) {
                 title="Event Region Distribution"
                 sub="Interactive Donut Analysis"
               />
+
               {data.eventRegionDistribution.length > 0 ? (
                 <div className="flex flex-col md:flex-row items-center gap-6">
-                  <BiasDonutChart data={data.eventRegionDistribution} filterParam="region" />
+                  <BiasDonutChart
+                    data={data.eventRegionDistribution}
+                    filterParam="region"
+                  />
+
                   <div className="w-full md:w-48 space-y-2">
                     {data.eventRegionDistribution.map((item) => (
                       <div
@@ -253,7 +168,9 @@ async function AnalyticsPageContent(props: AnalyticsProps) {
                   </div>
                 </div>
               ) : (
-                <p className="text-xs text-muted-foreground/50 italic py-10 text-center">No event region data available.</p>
+                <p className="text-xs text-muted-foreground/50 italic py-10 text-center">
+                  No event region data available.
+                </p>
               )}
             </PanelShell>
 
@@ -263,6 +180,7 @@ async function AnalyticsPageContent(props: AnalyticsProps) {
                 title="Sentiment Spectrum"
                 sub="5-Bucket Distribution"
               />
+
               <SentimentBarChart data={data.sentimentDistribution} />
             </PanelShell>
           </div>
@@ -274,28 +192,43 @@ async function AnalyticsPageContent(props: AnalyticsProps) {
                 title="Bias Leaning Distribution"
                 sub="Publisher Ideological Lenses"
               />
+
               {data.biasGroupDistribution.length > 0 ? (
                 <div className="flex flex-col md:flex-row items-center gap-6">
                   <BiasDonutChart
                     filterParam="bias"
-                    data={data.biasGroupDistribution.map(item => ({
+                    data={data.biasGroupDistribution.map((item) => ({
                       label: item.label,
                       count: item.count,
                       percentage: item.percentage,
-                      color: item.label === "Centrist" ? "#10b981" :
-                             item.label === "Left-leaning" ? "#3b82f6" :
-                             item.label === "Right-leaning" ? "#ef4444" :
-                             item.label === "State-Aligned" ? "#f59e0b" :
-                             item.label === "State-Controlled" ? "#8b5cf6" : "#6b7280"
+                      color:
+                        item.label === "Centrist"
+                          ? "#10b981"
+                          : item.label === "Left-leaning"
+                            ? "#3b82f6"
+                            : item.label === "Right-leaning"
+                              ? "#ef4444"
+                              : item.label === "State-Aligned"
+                                ? "#f59e0b"
+                                : item.label === "State-Controlled"
+                                  ? "#8b5cf6"
+                                  : "#6b7280",
                     }))}
                   />
                   <div className="w-full md:w-48 space-y-2">
                     {data.biasGroupDistribution.map((item) => {
-                      const color = item.label === "Centrist" ? "#10b981" :
-                                    item.label === "Left-leaning" ? "#3b82f6" :
-                                    item.label === "Right-leaning" ? "#ef4444" :
-                                    item.label === "State-Aligned" ? "#f59e0b" :
-                                    item.label === "State-Controlled" ? "#8b5cf6" : "#6b7280";
+                      const color =
+                        item.label === "Centrist"
+                          ? "#10b981"
+                          : item.label === "Left-leaning"
+                            ? "#3b82f6"
+                            : item.label === "Right-leaning"
+                              ? "#ef4444"
+                              : item.label === "State-Aligned"
+                                ? "#f59e0b"
+                                : item.label === "State-Controlled"
+                                  ? "#8b5cf6"
+                                  : "#6b7280";
                       return (
                         <div
                           key={item.label}
@@ -319,7 +252,9 @@ async function AnalyticsPageContent(props: AnalyticsProps) {
                   </div>
                 </div>
               ) : (
-                <p className="text-xs text-muted-foreground/50 italic py-10 text-center">No bias leaning data available.</p>
+                <p className="text-xs text-muted-foreground/50 italic py-10 text-center">
+                  No bias leaning data available.
+                </p>
               )}
             </PanelShell>
 
@@ -329,24 +264,35 @@ async function AnalyticsPageContent(props: AnalyticsProps) {
                 title="Coverage Scope Distribution"
                 sub="Publisher Reporting Reach"
               />
+
               {data.coverageScopeDistribution.length > 0 ? (
                 <div className="flex flex-col md:flex-row items-center gap-6">
                   <BiasDonutChart
                     filterParam="scope"
-                    data={data.coverageScopeDistribution.map(item => ({
+                    data={data.coverageScopeDistribution.map((item) => ({
                       label: item.label,
                       count: item.count,
                       percentage: item.percentage,
-                      color: item.label === "Global" ? "#10b981" :
-                             item.label === "Regional" ? "#3b82f6" :
-                             item.label === "National" ? "#f59e0b" : "#6b7280"
+                      color:
+                        item.label === "Global"
+                          ? "#10b981"
+                          : item.label === "Regional"
+                            ? "#3b82f6"
+                            : item.label === "National"
+                              ? "#f59e0b"
+                              : "#6b7280",
                     }))}
                   />
                   <div className="w-full md:w-48 space-y-2">
                     {data.coverageScopeDistribution.map((item) => {
-                      const color = item.label === "Global" ? "#10b981" :
-                                    item.label === "Regional" ? "#3b82f6" :
-                                    item.label === "National" ? "#f59e0b" : "#6b7280";
+                      const color =
+                        item.label === "Global"
+                          ? "#10b981"
+                          : item.label === "Regional"
+                            ? "#3b82f6"
+                            : item.label === "National"
+                              ? "#f59e0b"
+                              : "#6b7280";
                       return (
                         <div
                           key={item.label}
@@ -370,7 +316,9 @@ async function AnalyticsPageContent(props: AnalyticsProps) {
                   </div>
                 </div>
               ) : (
-                <p className="text-xs text-muted-foreground/50 italic py-10 text-center">No coverage scope data available.</p>
+                <p className="text-xs text-muted-foreground/50 italic py-10 text-center">
+                  No coverage scope data available.
+                </p>
               )}
             </PanelShell>
           </div>
@@ -379,6 +327,7 @@ async function AnalyticsPageContent(props: AnalyticsProps) {
             {/* Source Countries */}
             <PanelShell>
               <SectionHeader title="Source Geography" />
+
               {data.topSourceCountries.length > 0 ? (
                 <div className="space-y-2.5">
                   {data.topSourceCountries.map((item, i) => (
@@ -386,6 +335,7 @@ async function AnalyticsPageContent(props: AnalyticsProps) {
                       <span className="text-[9px] font-black font-mono text-muted-foreground/40 w-4 text-right">
                         {String(i + 1).padStart(2, "0")}
                       </span>
+
                       <div className="flex-1">
                         <div className="flex items-center justify-between mb-1">
                           <span className="text-xs font-bold text-foreground/80">
@@ -395,6 +345,7 @@ async function AnalyticsPageContent(props: AnalyticsProps) {
                             {item.count.toLocaleString()}
                           </span>
                         </div>
+
                         <div className="h-1 w-full bg-border/20 rounded-full overflow-hidden">
                           <div
                             className="h-full rounded-full bg-primary/60 transition-all duration-1000"
@@ -411,7 +362,9 @@ async function AnalyticsPageContent(props: AnalyticsProps) {
                   ))}
                 </div>
               ) : (
-                <p className="text-xs text-muted-foreground/50 italic py-10 text-center">No geography data available.</p>
+                <p className="text-xs text-muted-foreground/50 italic py-10 text-center">
+                  No geography data available.
+                </p>
               )}
             </PanelShell>
 
@@ -421,10 +374,13 @@ async function AnalyticsPageContent(props: AnalyticsProps) {
                 title="Coverage by Category"
                 sub="Top 8 Categories"
               />
+
               {data.categoryBreakdown.length > 0 ? (
                 <CategoryBarChart data={data.categoryBreakdown} />
               ) : (
-                <p className="text-xs text-muted-foreground/50 italic py-10 text-center">No category data available.</p>
+                <p className="text-xs text-muted-foreground/50 italic py-10 text-center">
+                  No category data available.
+                </p>
               )}
             </PanelShell>
           </div>
@@ -436,14 +392,23 @@ async function AnalyticsPageContent(props: AnalyticsProps) {
             title="Topics & Narratives"
             sub="Entities, Sources & Impact"
           />
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <PanelShell className="lg:col-span-1">
-              <SectionHeader title="Topic Sources" />
-              <TopicSourceDistributionChart data={data.topicSourceDistribution} />
-            </PanelShell>
 
-            <PanelShell className="lg:col-span-2">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {userData && (
+              <PanelShell className="lg:col-span-1">
+                <SectionHeader title="Your Tracking Sources" />
+
+                <TopicSourceDistributionChart
+                  data={userData.topicSourceDistribution}
+                />
+              </PanelShell>
+            )}
+
+            <PanelShell
+              className={userData ? "lg:col-span-2" : "lg:col-span-3"}
+            >
               <SectionHeader title="Top Entities" />
+
               {data.topEntities.length > 0 ? (
                 <div className="flex flex-wrap gap-2">
                   {data.topEntities.map((item) => {
@@ -479,8 +444,6 @@ async function AnalyticsPageContent(props: AnalyticsProps) {
             </PanelShell>
           </div>
         </section>
-
-
 
         {/* ── Footer ───────────────────────────────────────────────────── */}
         <div className="flex items-center justify-center gap-4 pt-4">

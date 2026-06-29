@@ -1,6 +1,6 @@
 import { ProcessedArticle, RawArticle, Category } from "@news/db";
 import { Article } from "@/types/article";
-import { getPublisherRegion } from "@/lib/utils";
+import { getPublisherRegion } from "@/utils/analytics";
 
 export interface ProcessedArticleWithRaw extends ProcessedArticle {
   rawArticle: RawArticle;

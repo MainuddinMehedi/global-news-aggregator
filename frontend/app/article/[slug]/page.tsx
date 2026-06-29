@@ -2,7 +2,7 @@ import { getArticleById } from "@/queries/articles";
 import { notFound } from "next/navigation";
 import { SentimentBadge } from "@/components/articles/SentimentBadge";
 import { Badge } from "@/components/ui/badge";
-import { formatRelativeTime, getEventRegionBadgeVariant } from "@/lib/utils";
+import { getEventRegionBadgeVariant } from "@/utils/analytics";
 import Link from "next/link";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {

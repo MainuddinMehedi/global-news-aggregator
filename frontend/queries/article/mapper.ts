@@ -1,5 +1,5 @@
 import { Article } from "@/types/article";
-import { getPublisherRegion } from "@/lib/utils";
+import { getPublisherRegion } from "@/utils/analytics";
 
 export interface RawArticleData {
   id: string;

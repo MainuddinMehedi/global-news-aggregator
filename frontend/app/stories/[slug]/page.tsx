@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { getStoryDetail } from "@/queries/stories";
-import { getPublisherRegion } from "@/lib/utils";
+import { getPublisherRegion } from "@/utils/analytics";
 import Link from "next/link";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { ArrowLeft01Icon } from "@hugeicons/core-free-icons";

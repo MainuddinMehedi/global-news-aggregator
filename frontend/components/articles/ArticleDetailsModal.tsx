@@ -11,7 +11,7 @@ import {
 import { useRouter, useSearchParams } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { SentimentBadge } from "./SentimentBadge";
-import { getEventRegionBadgeVariant } from "@/lib/utils";
+import { getEventRegionBadgeVariant } from "@/utils/analytics";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { LinkSquare02Icon, Sparkles } from "@hugeicons/core-free-icons";
 import Link from "next/link";

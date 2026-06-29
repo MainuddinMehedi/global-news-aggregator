@@ -1,5 +1,5 @@
 import prisma from "@/lib/prisma";
-import { COUNTRY_TO_REGION } from "@/lib/utils";
+import { COUNTRY_TO_REGION } from "@/utils/analytics";
 import { mapArticle, RawArticleData } from "./mapper";
 
 export interface FilterParams {

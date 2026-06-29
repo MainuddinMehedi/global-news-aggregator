@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { formatRelativeTime } from "@/lib/utils";
+import { formatRelativeTime } from "@/utils/formatters";
 
 interface RelativeTimeProps {
   date: string | Date | null | undefined;
