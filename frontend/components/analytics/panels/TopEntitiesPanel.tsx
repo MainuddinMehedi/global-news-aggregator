@@ -12,10 +12,12 @@ export function TopEntitiesPanel({
   return (
     <PanelShell className={className}>
       <SectionHeader title="Top Entities" />
+
       {data.length > 0 ? (
         <div className="flex flex-wrap gap-2">
           {data.map((item) => {
             const intensity = Math.round((item.count / maxEntityCount) * 100);
+
             return (
               <div
                 key={item.entity}

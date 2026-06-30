@@ -1,18 +1,26 @@
+"use client";
+
+import { DonutChart } from "@/components/ui/charts/DonutChart";
+import { DEFAULT_CHART_COLOR, METADATA_COLORS } from "@/utils/colors";
+import { useRouter } from "next/navigation";
 import { PanelShell, SectionHeader } from "../AnalyticsUI";
-import { BiasDonutChart } from "../../widgets/charts/BiasDonutChart";
-import { METADATA_COLORS, DEFAULT_CHART_COLOR } from "@/utils/colors";
 
 export function CoverageScopePanel({ data }: { data: any[] }) {
+  const router = useRouter();
+
   return (
     <PanelShell>
       <SectionHeader
         title="Coverage Scope Distribution"
         sub="Publisher Reporting Reach"
       />
+
       {data.length > 0 ? (
         <div className="flex flex-col md:flex-row items-center gap-6">
-          <BiasDonutChart
-            filterParam="scope"
+          <DonutChart
+            onItemClick={(label) =>
+              router.push(`/?scope=${encodeURIComponent(label)}`)
+            }
             data={data.map((item) => ({
               label: item.label,
               count: item.count,
@@ -23,12 +31,14 @@ export function CoverageScopePanel({ data }: { data: any[] }) {
                 ] || DEFAULT_CHART_COLOR,
             }))}
           />
+
           <div className="w-full md:w-48 space-y-2">
             {data.map((item) => {
               const color =
                 METADATA_COLORS.scope[
                   item.label as keyof typeof METADATA_COLORS.scope
                 ] || DEFAULT_CHART_COLOR;
+
               return (
                 <div
                   key={item.label}

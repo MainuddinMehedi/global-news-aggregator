@@ -3,7 +3,12 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { METADATA_COLORS } from "@/utils/colors";
-import { getImpactHoverBorder, getImpactHoverGradient, getImpactHoverText, getImpactTextColor } from "@/utils/stories";
+import {
+  getImpactHoverBorder,
+  getImpactHoverGradient,
+  getImpactHoverText,
+  getImpactTextColor,
+} from "@/utils/stories";
 
 interface StoryCluster {
   id: string;
@@ -19,7 +24,9 @@ interface EventClustersListProps {
   clusters: StoryCluster[];
 }
 
-export default function EventClustersList({ clusters }: EventClustersListProps) {
+export default function EventClustersList({
+  clusters,
+}: EventClustersListProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const activeStory = searchParams.get("story") ?? "";
@@ -49,7 +56,7 @@ export default function EventClustersList({ clusters }: EventClustersListProps) 
       {clusters.map((cluster) => {
         const isActive = activeStory === cluster.slug;
         const sourceCount = cluster.topSources?.length || 0;
-        
+
         return (
           <button
             key={cluster.id}
@@ -59,30 +66,33 @@ export default function EventClustersList({ clusters }: EventClustersListProps) 
               isActive
                 ? "bg-secondary border-border/80 shadow-sm"
                 : "bg-muted/30 border-border",
-              !isActive && getImpactHoverBorder(cluster.impact)
+              !isActive && getImpactHoverBorder(cluster.impact),
             )}
           >
-            <div 
+            <div
               className={cn(
                 "pointer-events-none absolute inset-0 bg-linear-to-br opacity-0 transition-opacity duration-500 group-hover:opacity-100",
-                getImpactHoverGradient(cluster.impact)
-              )} 
+                getImpactHoverGradient(cluster.impact),
+              )}
             />
 
-            <h4 className={cn(
-              "relative z-10 text-xs font-semibold leading-snug mb-2 line-clamp-2 transition-colors",
-              isActive 
-                ? getImpactTextColor(cluster.impact) 
-                : `text-foreground ${getImpactHoverText(cluster.impact)}`
-            )}>
+            <h4
+              className={cn(
+                "relative z-10 text-xs font-semibold leading-snug mb-2 line-clamp-2 transition-colors",
+                isActive
+                  ? getImpactTextColor(cluster.impact)
+                  : `text-foreground ${getImpactHoverText(cluster.impact)}`,
+              )}
+            >
               {cluster.title}
             </h4>
-            
+
             <div className="relative z-10 flex items-center justify-between gap-2 mt-2">
               <div className="text-[10px] font-medium text-muted-foreground truncate">
-                {cluster.articleCount} articles • {sourceCount} {sourceCount === 1 ? "source" : "sources"}
+                {cluster.articleCount} articles • {sourceCount}{" "}
+                {sourceCount === 1 ? "source" : "sources"}
               </div>
-              
+
               <div className="flex items-center space-x-1.5 shrink-0">
                 {/* Origin Dots Pill */}
                 {cluster.origins && cluster.origins.length > 0 && (
@@ -102,7 +112,7 @@ export default function EventClustersList({ clusters }: EventClustersListProps) 
                     ))}
                   </div>
                 )}
-                
+
                 {/* Impact Indicator Dot */}
                 {cluster.impact && (
                   <div

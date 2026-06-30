@@ -9,16 +9,15 @@ import {
   Sector,
 } from "recharts";
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 
-interface BiasDonutChartProps {
+interface DonutChartProps {
   data: {
     label: string;
     count: number;
     color: string;
     percentage: number;
   }[];
-  filterParam?: "bias" | "scope" | "region" | "perspective";
+  onItemClick?: (label: string) => void;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -80,9 +79,11 @@ const renderActiveShape = (props: any) => {
   );
 };
 
-export function BiasDonutChart({ data, filterParam = "perspective" }: BiasDonutChartProps) {
+export function DonutChart({
+  data,
+  onItemClick,
+}: DonutChartProps) {
   const [mounted, setMounted] = useState(false);
-  const router = useRouter();
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -112,10 +113,12 @@ export function BiasDonutChart({ data, filterParam = "perspective" }: BiasDonutC
             dataKey="count"
             stroke="none"
             onClick={(data: any) => {
-              const label = data.payload?.label || data.label || "";
-              router.push(`/?${filterParam}=${encodeURIComponent(label)}`);
+              if (onItemClick) {
+                const label = data.payload?.label || data.label || "";
+                onItemClick(label);
+              }
             }}
-            className="cursor-pointer"
+            className={onItemClick ? "cursor-pointer" : ""}
           >
             {data.map((entry, index) => (
               <Cell
@@ -125,6 +128,7 @@ export function BiasDonutChart({ data, filterParam = "perspective" }: BiasDonutC
               />
             ))}
           </Pie>
+
           <Tooltip
             defaultIndex={0}
             content={({ active, payload }) => {

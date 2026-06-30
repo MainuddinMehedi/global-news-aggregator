@@ -1,7 +1,7 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useTransition } from "react";
 
 const ranges = [
@@ -20,11 +20,13 @@ export function AnalyticsTimeFilter() {
   const handleRangeChange = (rangeId: string) => {
     startTransition(() => {
       const params = new URLSearchParams(searchParams.toString());
+
       if (rangeId === "7d") {
         params.delete("range"); // default
       } else {
         params.set("range", rangeId);
       }
+
       router.push(`/analytics?${params.toString()}`);
     });
   };
@@ -33,6 +35,7 @@ export function AnalyticsTimeFilter() {
     <div className="inline-flex items-center rounded-lg border border-border/50 bg-card/40 p-1 backdrop-blur-md">
       {ranges.map((range) => {
         const isActive = currentRange === range.id;
+
         return (
           <button
             key={range.id}
@@ -43,7 +46,7 @@ export function AnalyticsTimeFilter() {
               isActive
                 ? "bg-primary text-primary-foreground shadow-sm"
                 : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
-              isPending && "opacity-50 cursor-not-allowed"
+              isPending && "opacity-50 cursor-not-allowed",
             )}
           >
             {range.label}

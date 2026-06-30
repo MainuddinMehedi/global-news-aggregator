@@ -145,7 +145,10 @@ export default async function AnalyticsPage(props: AnalyticsProps) {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <SourceGeographyPanel data={data.topSourceCountries} maxCountryCount={maxCountryCount} />
+            <SourceGeographyPanel
+              data={data.topSourceCountries}
+              maxCountryCount={maxCountryCount}
+            />
             <CategoryCoveragePanel data={data.categoryBreakdown} />
           </div>
         </section>
@@ -159,16 +162,16 @@ export default async function AnalyticsPage(props: AnalyticsProps) {
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {userData && (
-              <TopicSourcePanel 
-                data={userData.topicSourceDistribution} 
-                className="lg:col-span-1" 
+              <TopicSourcePanel
+                data={userData.topicSourceDistribution}
+                className="lg:col-span-1"
               />
             )}
 
-            <TopEntitiesPanel 
-              data={data.topEntities} 
-              maxEntityCount={maxEntityCount} 
-              className={userData ? "lg:col-span-2" : "lg:col-span-3"} 
+            <TopEntitiesPanel
+              data={data.topEntities}
+              maxEntityCount={maxEntityCount}
+              className={userData ? "lg:col-span-2" : "lg:col-span-3"}
             />
           </div>
         </section>

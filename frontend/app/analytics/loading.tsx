@@ -1,22 +1,11 @@
+import { ScanlineOverlay } from "@/components/analytics/AnalyticsUI";
 import { Skeleton } from "@/components/ui/skeleton";
-
-function ScanlineOverlay() {
-  return (
-    <div
-      className="pointer-events-none fixed inset-0 z-0 opacity-[0.03]"
-      style={{
-        backgroundImage:
-          "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.15) 2px, rgba(255,255,255,0.15) 4px)",
-      }}
-    />
-  );
-}
 
 export default function AnalyticsLoading() {
   return (
     <div className="relative min-h-full bg-background pb-20 overflow-hidden">
       <ScanlineOverlay />
-      
+
       {/* Ambient glow */}
       <div className="pointer-events-none fixed top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-primary/5 blur-[100px] rounded-full" />
 
@@ -35,7 +24,7 @@ export default function AnalyticsLoading() {
             <Skeleton className="h-12 w-64 rounded-xl" />
             <Skeleton className="h-8 w-48 rounded-md mt-2" />
           </div>
-          
+
           <div className="space-y-2 md:text-right">
             <Skeleton className="h-3 w-20 rounded md:ml-auto" />
             <Skeleton className="h-12 w-28 rounded md:ml-auto" />
@@ -46,7 +35,10 @@ export default function AnalyticsLoading() {
         {/* Summary Stats Cards (4 cards) */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="relative overflow-hidden rounded-xl border border-border/40 bg-card/30 p-5 space-y-3">
+            <div
+              key={i}
+              className="relative overflow-hidden rounded-xl border border-border/40 bg-card/30 p-5 space-y-3"
+            >
               <Skeleton className="h-3 w-20 rounded" />
               <Skeleton className="h-10 w-28 rounded-lg" />
               <Skeleton className="h-3 w-24 rounded" />
@@ -188,7 +180,11 @@ export default function AnalyticsLoading() {
               </div>
               <div className="h-[200px] flex items-end justify-between gap-3 pt-4">
                 {Array.from({ length: 8 }).map((_, j) => (
-                  <Skeleton key={j} className="w-full rounded-t-lg" style={{ height: `${20 + (j * 10) % 80}%` }} />
+                  <Skeleton
+                    key={j}
+                    className="w-full rounded-t-lg"
+                    style={{ height: `${20 + ((j * 10) % 80)}%` }}
+                  />
                 ))}
               </div>
             </div>
@@ -225,10 +221,10 @@ export default function AnalyticsLoading() {
               </div>
               <div className="flex flex-wrap gap-2.5 py-2">
                 {Array.from({ length: 24 }).map((_, j) => (
-                  <Skeleton 
-                    key={j} 
-                    className="h-8 rounded-full" 
-                    style={{ width: `${60 + (j * 7) % 80}px` }} 
+                  <Skeleton
+                    key={j}
+                    className="h-8 rounded-full"
+                    style={{ width: `${60 + ((j * 7) % 80)}px` }}
                   />
                 ))}
               </div>

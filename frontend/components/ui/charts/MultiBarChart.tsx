@@ -1,7 +1,8 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import {
-  BarChart,
+  BarChart as RechartsBarChart,
   Bar,
   XAxis,
   YAxis,
@@ -10,17 +11,22 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
-import { useState, useEffect } from "react";
 
-interface IngestionVolumeChartProps {
-  data: {
-    date: string;
-    raw: number;
-    processed: number;
+interface MultiBarChartProps {
+  data: any[];
+  xAxisKey?: string;
+  series: {
+    dataKey: string;
+    label: string;
+    color: string;
   }[];
 }
 
-export function IngestionVolumeChart({ data }: IngestionVolumeChartProps) {
+export function MultiBarChart({
+  data,
+  xAxisKey = "date",
+  series,
+}: MultiBarChartProps) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -40,7 +46,7 @@ export function IngestionVolumeChart({ data }: IngestionVolumeChartProps) {
         minWidth={0}
         minHeight={0}
       >
-        <BarChart
+        <RechartsBarChart
           data={data}
           margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
           barGap={4}
@@ -51,7 +57,7 @@ export function IngestionVolumeChart({ data }: IngestionVolumeChartProps) {
             stroke="rgba(255,255,255,0.05)"
           />
           <XAxis
-            dataKey="date"
+            dataKey={xAxisKey}
             axisLine={false}
             tickLine={false}
             tick={{
@@ -59,7 +65,12 @@ export function IngestionVolumeChart({ data }: IngestionVolumeChartProps) {
               fontSize: 9,
               fontWeight: 700,
             }}
-            tickFormatter={(val) => val.split("-").slice(1).join("/")}
+            tickFormatter={(val) => {
+              if (typeof val === "string" && val.includes("-")) {
+                return val.split("-").slice(1).join("/");
+              }
+              return val;
+            }}
           />
           <YAxis hide />
           <Tooltip
@@ -70,25 +81,28 @@ export function IngestionVolumeChart({ data }: IngestionVolumeChartProps) {
                 return (
                   <div className="bg-background/90 border border-border/50 backdrop-blur-md px-3 py-2 rounded-lg shadow-xl">
                     <p className="text-[10px] font-black uppercase tracking-widest text-primary mb-2">
-                      {item.date}
+                      {item[xAxisKey]}
                     </p>
                     <div className="space-y-1">
-                      <div className="flex items-center justify-between gap-4">
-                        <span className="text-[10px] text-muted-foreground uppercase font-bold">
-                          Raw Fetches
-                        </span>
-                        <span className="text-sm font-black font-mono text-foreground">
-                          {item.raw}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between gap-4">
-                        <span className="text-[10px] text-emerald-500 uppercase font-bold">
-                          Processed
-                        </span>
-                        <span className="text-sm font-black font-mono text-emerald-500">
-                          {item.processed}
-                        </span>
-                      </div>
+                      {series.map((s) => (
+                        <div
+                          key={s.dataKey}
+                          className="flex items-center justify-between gap-4"
+                        >
+                          <span
+                            className="text-[10px] uppercase font-bold"
+                            style={{ color: s.color }}
+                          >
+                            {s.label}
+                          </span>
+                          <span
+                            className="text-sm font-black font-mono"
+                            style={{ color: s.color }}
+                          >
+                            {item[s.dataKey]?.toLocaleString()}
+                          </span>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 );
@@ -108,19 +122,16 @@ export function IngestionVolumeChart({ data }: IngestionVolumeChartProps) {
               paddingBottom: "10px",
             }}
           />
-          <Bar
-            name="Raw"
-            dataKey="raw"
-            fill="rgba(255,255,255,0.1)"
-            radius={[4, 4, 0, 0]}
-          />
-          <Bar
-            name="Processed"
-            dataKey="processed"
-            fill="var(--primary)"
-            radius={[4, 4, 0, 0]}
-          />
-        </BarChart>
+          {series.map((s) => (
+            <Bar
+              key={s.dataKey}
+              name={s.label}
+              dataKey={s.dataKey}
+              fill={s.color}
+              radius={[4, 4, 0, 0]}
+            />
+          ))}
+        </RechartsBarChart>
       </ResponsiveContainer>
     </div>
   );

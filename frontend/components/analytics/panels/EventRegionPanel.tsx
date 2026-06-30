@@ -1,8 +1,14 @@
+"use client";
+
+import { DonutChart } from "@/components/ui/charts/DonutChart";
+import { DEFAULT_CHART_COLOR, METADATA_COLORS } from "@/utils/colors";
+import { useRouter } from "next/navigation";
 import { PanelShell, SectionHeader } from "../AnalyticsUI";
-import { BiasDonutChart } from "../../widgets/charts/BiasDonutChart";
-import { METADATA_COLORS, DEFAULT_CHART_COLOR } from "@/utils/colors";
 
 export function EventRegionPanel({ data }: { data: any[] }) {
+  const router = useRouter();
+  const total = data.reduce((acc, curr) => acc + curr.count, 0);
+
   return (
     <PanelShell>
       <SectionHeader
@@ -12,17 +18,18 @@ export function EventRegionPanel({ data }: { data: any[] }) {
 
       {data.length > 0 ? (
         <div className="flex flex-col md:flex-row items-center gap-6">
-          <BiasDonutChart
-            filterParam="region"
-            data={data.map((item) => ({
-              label: item.label,
-              count: item.count,
-              percentage: item.percentage,
+          <DonutChart
+            data={data.map((d) => ({
+              ...d,
+              percentage: Math.round((d.count / total) * 100),
               color:
                 METADATA_COLORS.region[
-                  item.label as keyof typeof METADATA_COLORS.region
+                  d.label as keyof typeof METADATA_COLORS.region
                 ] || DEFAULT_CHART_COLOR,
             }))}
+            onItemClick={(label) =>
+              router.push(`/?region=${encodeURIComponent(label)}`)
+            }
           />
 
           <div className="w-full md:w-48 space-y-2">
