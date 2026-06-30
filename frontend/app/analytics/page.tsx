@@ -15,14 +15,16 @@ import {
   SectionHeader,
 } from "@/components/analytics/AnalyticsUI";
 
-import { EventRegionPanel } from "@/components/analytics/panels/EventRegionPanel";
-import { SentimentSpectrumPanel } from "@/components/analytics/panels/SentimentSpectrumPanel";
-import { BiasLeaningPanel } from "@/components/analytics/panels/BiasLeaningPanel";
-import { CoverageScopePanel } from "@/components/analytics/panels/CoverageScopePanel";
-import { SourceGeographyPanel } from "@/components/analytics/panels/SourceGeographyPanel";
-import { CategoryCoveragePanel } from "@/components/analytics/panels/CategoryCoveragePanel";
-import { TopicSourcePanel } from "@/components/analytics/panels/TopicSourcePanel";
-import { TopEntitiesPanel } from "@/components/analytics/panels/TopEntitiesPanel";
+import {
+  EventRegionPanel,
+  SentimentSpectrumPanel,
+  BiasLeaningPanel,
+  CoverageScopePanel,
+  SourceGeographyPanel,
+  CategoryCoveragePanel,
+  TopicSourcePanel,
+  TopEntitiesPanel,
+} from "@/components/analytics/panels";
 
 // ── Page ───────────────────────────────────────────────────────────────────
 
