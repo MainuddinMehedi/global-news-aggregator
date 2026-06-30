@@ -1,5 +1,6 @@
 import { PanelShell, SectionHeader } from "../AnalyticsUI";
 import { BiasDonutChart } from "../../widgets/charts/BiasDonutChart";
+import { METADATA_COLORS, DEFAULT_CHART_COLOR } from "@/utils/colors";
 
 export function EventRegionPanel({ data }: { data: any[] }) {
   return (
@@ -8,6 +9,7 @@ export function EventRegionPanel({ data }: { data: any[] }) {
         title="Event Region Distribution"
         sub="Interactive Donut Analysis"
       />
+
       {data.length > 0 ? (
         <div className="flex flex-col md:flex-row items-center gap-6">
           <BiasDonutChart
@@ -17,29 +19,19 @@ export function EventRegionPanel({ data }: { data: any[] }) {
               count: item.count,
               percentage: item.percentage,
               color:
-                item.label === "North America"
-                  ? "#3b82f6"
-                  : item.label === "Middle East"
-                    ? "#ef4444"
-                    : item.label === "Europe"
-                      ? "#10b981"
-                      : item.label === "Asia-Pacific"
-                        ? "#f59e0b"
-                        : "#6b7280",
+                METADATA_COLORS.region[
+                  item.label as keyof typeof METADATA_COLORS.region
+                ] || DEFAULT_CHART_COLOR,
             }))}
           />
+
           <div className="w-full md:w-48 space-y-2">
             {data.map((item) => {
               const color =
-                item.label === "North America"
-                  ? "#3b82f6"
-                  : item.label === "Middle East"
-                    ? "#ef4444"
-                    : item.label === "Europe"
-                      ? "#10b981"
-                      : item.label === "Asia-Pacific"
-                        ? "#f59e0b"
-                        : "#6b7280";
+                METADATA_COLORS.region[
+                  item.label as keyof typeof METADATA_COLORS.region
+                ] || DEFAULT_CHART_COLOR;
+
               return (
                 <div
                   key={item.label}
@@ -54,6 +46,7 @@ export function EventRegionPanel({ data }: { data: any[] }) {
                       {item.label}
                     </span>
                   </div>
+
                   <span className="text-[10px] font-black font-mono text-foreground/80">
                     {item.percentage}%
                   </span>

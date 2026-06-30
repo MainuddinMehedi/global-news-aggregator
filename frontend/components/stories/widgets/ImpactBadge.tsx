@@ -1,29 +1,39 @@
 import { Badge } from "@/components/ui/badge";
+import { METADATA_COLORS } from "@/utils/colors";
 
 interface ImpactBadgeProps {
   impact?: string | null;
   className?: string;
 }
 
-export function getImpactColor(impact?: string | null): string {
+export function getImpactColorHex(impact?: string | null): string {
   switch (impact?.toUpperCase()) {
     case "CRITICAL":
-      return "bg-red-500/10 text-red-500 border-red-500/20";
+      return METADATA_COLORS.impact.CRITICAL;
     case "HIGH":
-      return "bg-orange-500/10 text-orange-500 border-orange-500/20";
+      return METADATA_COLORS.impact.HIGH;
     case "MEDIUM":
-      return "bg-yellow-500/10 text-yellow-500 border-yellow-500/20";
+      return METADATA_COLORS.impact.MEDIUM;
+    case "LOW":
+      return METADATA_COLORS.impact.LOW;
     default:
-      return "bg-primary/10 text-primary border-primary/20";
+      return "#3b82f6"; // default primary
   }
 }
 
 export function ImpactBadge({ impact, className = "" }: ImpactBadgeProps) {
   if (impact) {
+    const hex = getImpactColorHex(impact);
+
     return (
       <Badge
         variant="outline"
-        className={`text-[10px] font-bold uppercase tracking-widest ${getImpactColor(impact)} ${className}`}
+        className={`text-[10px] font-bold uppercase tracking-widest ${className}`}
+        style={{
+          color: hex,
+          backgroundColor: `${hex}1A`, // 10% opacity
+          borderColor: `${hex}33`, // 20% opacity
+        }}
       >
         {impact}
       </Badge>

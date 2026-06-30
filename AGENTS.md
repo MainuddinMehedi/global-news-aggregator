@@ -34,16 +34,15 @@ All background jobs run via **pg-boss** (defined in `ingestion-service/lib/boss.
 
 | Job                      | Schedule       | Purpose                                      |
 | ------------------------ | -------------- | -------------------------------------------- |
-| `rss-ingestion`          | `*/30 * * * *` | Main RSS ingestion + AI enrichment           |
-| `story-clustering`       | `45 * * * *`   | Story clustering (staggered from ingest)     |
-| `backlog-processing`     | `0 3 * * *`    | Daily backlog of unprocessed articles        |
-| `locked-topic-scan`      | `15 */2 * * *` | Surveillance scanning for Locked Topics      |
-| `notification-immediate` | Every 10s      | Deliver HIGH/CRITICAL priority notifications |
-| `notification-batch`     | Every 5min     | Deliver NORMAL/LOW priority notifications    |
-| `notification-digest`    | Every 15min    | Compile and send due digests                 |
-| `health-monitor`         | Every 15min    | System health checks, admin alerts           |
-| `notification-retention` | Daily 04:00    | Delete notifications per retention policy    |
-| `topic-summarizer`       | On-demand      | Generate topic summaries for archived topics |
+| `ingest-queue`           | `*/30 * * * *` | Main RSS ingestion + AI enrichment           |
+| `cluster-queue`          | `45 * * * *`   | Story clustering (staggered from ingest)     |
+| `backlog-queue`          | `0 3 * * *`    | Daily backlog of unprocessed articles        |
+| `topics-queue`           | `15 */2 * * *` | Surveillance scanning for Locked Topics      |
+| `notification-delivery`  | `* * * * *`    | Deliver pending notifications (all priorities) |
+| `health-monitor`         | `*/15 * * * *` | System health checks, admin alerts           |
+| `notification-retention` | `0 4 * * *`    | Delete notifications per retention policy    |
+
+> **Note:** `notification-immediate` and `notification-batch` from the original design were consolidated into a single `notification-delivery` worker. `topic-summarizer` (overview generation) is embedded inline in the topic scan flow, not a separate worker. `notification-digest` was schema-planned but never implemented — no worker exists.
 
 All workers: `node-version: "25"`, `npx prisma generate`, inject secrets + vars via env.
 

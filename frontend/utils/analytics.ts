@@ -1,6 +1,8 @@
+import { METADATA_COLORS } from "@/utils/colors";
+
 export function getEventRegionBadgeVariant(
   eventRegion: string | null | undefined,
-): "emerald" | "amber" | "blue" | "red" | "neutral" {
+): "emerald" | "amber" | "blue" | "red" | "purple" | "fuchsia" | "neutral" {
   if (!eventRegion) return "neutral";
   const lower = eventRegion.toLowerCase();
 
@@ -8,10 +10,9 @@ export function getEventRegionBadgeVariant(
   if (lower.includes("europe")) return "emerald";
   if (lower.includes("middle east")) return "red";
   if (lower.includes("asia-pacific")) return "amber";
-  if (lower.includes("south america")) return "emerald";
-  if (lower.includes("africa")) return "amber";
-  if (lower.includes("global")) return "neutral";
-
+  if (lower.includes("south america")) return "purple";
+  if (lower.includes("africa")) return "fuchsia";
+  
   return "neutral";
 }
 
@@ -56,9 +57,9 @@ export function getSentimentDisplayProps(score: number | null | undefined): {
   label: string;
   color: string;
 } {
-  if (score == null) return { label: "No data", color: "#6b7280" }; // Gray
-  if (score > 0.2) return { label: "Positive", color: "#10b981" }; // Green
-  if (score < -0.2) return { label: "Negative", color: "#ef4444" }; // Red
+  if (score == null) return { label: "No data", color: METADATA_COLORS.sentiment.neutral };
+  if (score > 0.2) return { label: "Positive", color: METADATA_COLORS.sentiment.positive };
+  if (score < -0.2) return { label: "Negative", color: METADATA_COLORS.sentiment.negative };
 
-  return { label: "Neutral", color: "#f59e0b" }; // Yellow
+  return { label: "Neutral", color: METADATA_COLORS.sentiment.neutral };
 }

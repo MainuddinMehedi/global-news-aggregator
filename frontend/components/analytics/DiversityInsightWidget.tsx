@@ -1,7 +1,7 @@
 import { getContentInsights, getIngestionStats } from "@/queries/analytics";
 import { PresentationBarChart01FreeIcons } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { cn } from "@/lib/utils";
+import { getSentimentDisplayProps } from "@/utils/analytics";
 
 export async function DiversityInsightWidget() {
   const [insights, ingestion] = await Promise.all([
@@ -11,16 +11,9 @@ export async function DiversityInsightWidget() {
 
   if (!insights || !ingestion) return null;
 
-  const sentiment = insights.sentiment.average || 0;
-  const sentimentLabel =
-    sentiment > 0.3 ? "Positive" : sentiment < -0.3 ? "Negative" : "Neutral";
-
-  const sentimentColor =
-    sentiment > 0.3
-      ? "text-emerald-500"
-      : sentiment < -0.3
-        ? "text-red-500"
-        : "text-blue-500";
+  const sentimentProps = getSentimentDisplayProps(
+    insights.sentiment.average || 0,
+  );
 
   return (
     <div className="bg-primary/5 border border-primary/10 rounded-2xl p-4 flex flex-col justify-between h-full">
@@ -40,12 +33,16 @@ export async function DiversityInsightWidget() {
             <p className="text-[10px] font-bold text-muted-foreground uppercase mb-1">
               Global Sentiment
             </p>
+
             <div className="flex items-baseline space-x-2">
-              <span className={cn("text-2xl font-bold", sentimentColor)}>
-                {sentimentLabel}
+              <span
+                className="text-2xl font-bold"
+                style={{ color: sentimentProps.color }}
+              >
+                {sentimentProps.label}
               </span>
               <span className="text-xs text-muted-foreground font-mono">
-                ({sentiment.toFixed(2)})
+                ({(insights.sentiment.average || 0).toFixed(2)})
               </span>
             </div>
           </div>
@@ -54,6 +51,7 @@ export async function DiversityInsightWidget() {
             <p className="text-[10px] font-bold text-muted-foreground uppercase mb-1">
               Ingestion Volume (7d)
             </p>
+
             <div className="flex items-baseline space-x-2">
               <span className="text-2xl font-bold text-foreground">
                 {ingestion.processedCount}
@@ -62,6 +60,7 @@ export async function DiversityInsightWidget() {
                 articles processed
               </span>
             </div>
+
             <p className="text-[10px] text-muted-foreground mt-1">
               From {ingestion.rawCount} raw fetches
             </p>

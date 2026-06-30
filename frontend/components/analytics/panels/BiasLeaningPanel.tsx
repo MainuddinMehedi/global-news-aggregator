@@ -1,5 +1,6 @@
 import { PanelShell, SectionHeader } from "../AnalyticsUI";
 import { BiasDonutChart } from "../../widgets/charts/BiasDonutChart";
+import { METADATA_COLORS, DEFAULT_CHART_COLOR } from "@/utils/colors";
 
 export function BiasLeaningPanel({ data }: { data: any[] }) {
   return (
@@ -17,33 +18,17 @@ export function BiasLeaningPanel({ data }: { data: any[] }) {
               count: item.count,
               percentage: item.percentage,
               color:
-                item.label === "Centrist"
-                  ? "#10b981"
-                  : item.label === "Left-leaning"
-                    ? "#3b82f6"
-                    : item.label === "Right-leaning"
-                      ? "#ef4444"
-                      : item.label === "State-Aligned"
-                        ? "#f59e0b"
-                        : item.label === "State-Controlled"
-                          ? "#8b5cf6"
-                          : "#6b7280",
+                METADATA_COLORS.bias[
+                  item.label as keyof typeof METADATA_COLORS.bias
+                ] || DEFAULT_CHART_COLOR,
             }))}
           />
           <div className="w-full md:w-48 space-y-2">
             {data.map((item) => {
               const color =
-                item.label === "Centrist"
-                  ? "#10b981"
-                  : item.label === "Left-leaning"
-                    ? "#3b82f6"
-                    : item.label === "Right-leaning"
-                      ? "#ef4444"
-                      : item.label === "State-Aligned"
-                        ? "#f59e0b"
-                        : item.label === "State-Controlled"
-                          ? "#8b5cf6"
-                          : "#6b7280";
+                METADATA_COLORS.bias[
+                  item.label as keyof typeof METADATA_COLORS.bias
+                ] || DEFAULT_CHART_COLOR;
               return (
                 <div
                   key={item.label}

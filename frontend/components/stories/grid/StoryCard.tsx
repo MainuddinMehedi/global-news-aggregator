@@ -5,6 +5,7 @@ import Link from "next/link";
 import { SourceAvatarStack } from "@/components/ui/SourceAvatar";
 import { formatTimeWindow } from "@/utils/formatters";
 import KeyDevelopmentsTimeline from "@/components/stories/timeline/KeyDevelopmentsTimeline";
+import { getImpactHoverBorder, getImpactHoverGradient, getImpactHoverText } from "@/utils/stories";
 
 interface KeyDevelopment {
   title: string;
@@ -36,8 +37,8 @@ interface StoryCardProps {
 
 export default function StoryCard({ story }: StoryCardProps) {
   return (
-    <article className="break-inside-avoid group max-h-fit relative flex flex-col overflow-hidden rounded-[2rem] border border-border bg-card/50 text-card-foreground shadow-sm backdrop-blur-xl transition-all duration-300 hover:border-primary/20 hover:shadow-lg">
-      <div className="absolute inset-0 -z-10 bg-linear-to-br from-primary/5 via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+    <article className={`break-inside-avoid group max-h-fit relative flex flex-col overflow-hidden rounded-[2rem] border border-border bg-card/50 text-card-foreground shadow-sm backdrop-blur-xl transition-all duration-300 ${getImpactHoverBorder(story.impact)}`}>
+      <div className={`absolute inset-0 -z-10 bg-linear-to-br opacity-0 transition-opacity duration-500 group-hover:opacity-100 ${getImpactHoverGradient(story.impact)}`} />
 
       <div className="flex-1 space-y-4 border-b border-border/40 bg-muted/20 px-6 py-6 sm:px-8">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-2 w-full">
@@ -78,7 +79,7 @@ export default function StoryCard({ story }: StoryCardProps) {
           <h2 className="text-xl sm:text-2xl md:text-[28px] xl:text-3xl 2xl:text-4xl font-extrabold leading-tight text-foreground tracking-tight">
             <Link
               href={`/stories/${story.slug}`}
-              className="hover:text-primary transition-colors"
+              className={`transition-colors ${getImpactHoverText(story.impact)}`}
             >
               {story.title}
             </Link>

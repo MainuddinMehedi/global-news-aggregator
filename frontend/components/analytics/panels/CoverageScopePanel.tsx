@@ -1,5 +1,6 @@
 import { PanelShell, SectionHeader } from "../AnalyticsUI";
 import { BiasDonutChart } from "../../widgets/charts/BiasDonutChart";
+import { METADATA_COLORS, DEFAULT_CHART_COLOR } from "@/utils/colors";
 
 export function CoverageScopePanel({ data }: { data: any[] }) {
   return (
@@ -17,25 +18,17 @@ export function CoverageScopePanel({ data }: { data: any[] }) {
               count: item.count,
               percentage: item.percentage,
               color:
-                item.label === "Global"
-                  ? "#10b981"
-                  : item.label === "Regional"
-                    ? "#3b82f6"
-                    : item.label === "National"
-                      ? "#f59e0b"
-                      : "#6b7280",
+                METADATA_COLORS.scope[
+                  item.label as keyof typeof METADATA_COLORS.scope
+                ] || DEFAULT_CHART_COLOR,
             }))}
           />
           <div className="w-full md:w-48 space-y-2">
             {data.map((item) => {
               const color =
-                item.label === "Global"
-                  ? "#10b981"
-                  : item.label === "Regional"
-                    ? "#3b82f6"
-                    : item.label === "National"
-                      ? "#f59e0b"
-                      : "#6b7280";
+                METADATA_COLORS.scope[
+                  item.label as keyof typeof METADATA_COLORS.scope
+                ] || DEFAULT_CHART_COLOR;
               return (
                 <div
                   key={item.label}
