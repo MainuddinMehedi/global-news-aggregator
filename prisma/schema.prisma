@@ -39,6 +39,7 @@ model User {
   notificationPreference NotificationPreference?
   
   lockedTopics     LockedTopic[]
+  chatSessions     ChatSession[]
 }
 
 
@@ -100,6 +101,7 @@ model AiUsage {
 model ChatSession {
   id           String   @id @default(uuid())
   userId       String?
+  user         User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
   title        String   @default("New Chat")
   model        String   @default("groq/compound-mini")
   responseMode String   @default("descriptive")

@@ -18,24 +18,33 @@
 
 import { useCallback, useEffect, useState } from "react";
 
-import { useRouter, useSearchParams } from "next/navigation";
-import { useSetSidebarCollapsed } from "@/store";
-import ChatInput from "@/components/chat/input/ChatInput";
-import { WelcomeScreen } from "@/components/chat/messages/WelcomeScreen";
-import ContextPanel, { ContextPills } from "@/components/chat/context/ContextPanel";
-import MessageList from "@/components/chat/messages/MessageList";
-import { getActiveModels, MODEL_REGISTRY } from "@/lib/ai/modelRegistry";
-import VoiceSession from "@/components/chat/input/VoiceSession";
+import ContextPanel, {
+  ContextPills,
+} from "@/components/chat/context/ContextPanel";
 import ContextPickerModal from "@/components/chat/context/ContextPickerModal";
-import { useChatContext } from "@/hooks/useChatContext";
-import { useChatSessions } from "@/hooks/useChatSessions";
-import { useChatFlow } from "@/hooks/useChatFlow";
+import ChatInput from "@/components/chat/input/ChatInput";
+import VoiceSession from "@/components/chat/input/VoiceSession";
 import ChatHeader from "@/components/chat/layout/ChatHeader";
+import MessageList from "@/components/chat/messages/MessageList";
+import { WelcomeScreen } from "@/components/chat/messages/WelcomeScreen";
+import { useChatContext } from "@/hooks/useChatContext";
+import { useChatFlow } from "@/hooks/useChatFlow";
+import { useChatSessions } from "@/hooks/useChatSessions";
+import { getActiveModels, MODEL_REGISTRY } from "@/lib/ai/modelRegistry";
+import { useSetLoginModalOpen, useSetSidebarCollapsed } from "@/store";
+import { Alert02Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { useSession } from "next-auth/react";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export default function ChatInterface() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const activeSessionId = searchParams.get("session") ?? undefined;
+
+  const { status: authStatus } = useSession();
+  const isGuest = authStatus === "unauthenticated";
+  const setLoginModalOpen = useSetLoginModalOpen();
 
   const {
     contexts,
@@ -54,31 +63,26 @@ export default function ChatInterface() {
     "concise",
   );
 
-  const {
-    messages,
-    sendMessage,
-    status,
-    setMessages,
-    stop,
-    handleSend,
-  } = useChatFlow({
-    sessionId: activeSessionId,
-    onSessionCreated: (id, newSession) => {
-      router.replace(`/chat?session=${id}`, { scroll: false });
-      if (newSession) {
-        setSessions((prev) => {
-          if (prev.some((s) => s.id === id)) return prev;
-          return [{ ...newSession, messageCount: 0 }, ...prev];
-        });
-      } else {
-        loadSessions();
-      }
-    },
-    contexts,
-    selectedModel,
-    adaptiveThinking,
-    responseMode,
-  });
+  const { messages, sendMessage, status, setMessages, stop, handleSend } =
+    useChatFlow({
+      sessionId: activeSessionId,
+      onSessionCreated: (id, newSession) => {
+        router.replace(`/chat?session=${id}`, { scroll: false });
+
+        if (newSession) {
+          setSessions((prev) => {
+            if (prev.some((s) => s.id === id)) return prev;
+            return [{ ...newSession, messageCount: 0 }, ...prev];
+          });
+        } else {
+          loadSessions();
+        }
+      },
+      contexts,
+      selectedModel,
+      adaptiveThinking,
+      responseMode,
+    });
 
   const {
     sessions,
@@ -135,6 +139,8 @@ export default function ChatInterface() {
           onNewChat={handleNewChat}
           onSelectSession={selectSession}
           onDeleteSession={handleDeleteSession}
+          isGuest={isGuest}
+          onLoginClick={() => setLoginModalOpen(true)}
         />
 
         <div className="flex-1 overflow-hidden relative pt-14">
@@ -178,13 +184,13 @@ export default function ChatInterface() {
           }
         />
       </div>
-
       {/* ── Floating context panel (desktop) ──────────────────────────────── */}
       <ContextPanel
         items={contexts}
         onRemove={removeContext}
         onAdd={addContext}
-      />      <ContextPickerModal
+      />{" "}
+      <ContextPickerModal
         isOpen={contextPickerOpen}
         onClose={() => setContextPickerOpen(false)}
         onAdd={handleAddContexts}

@@ -1,11 +1,18 @@
-import { NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
+import { auth } from "@/auth";
 import { normalizeContextForDb } from "@/lib/chat/contexts";
+import prisma from "@/lib/prisma";
+import { NextResponse } from "next/server";
 
 export async function GET() {
   try {
+    const authSession = await auth();
+
+    if (!authSession?.user?.id) {
+      return NextResponse.json({ sessions: [] });
+    }
+
     const sessions = await prisma.chatSession.findMany({
-      where: { isArchived: false },
+      where: { isArchived: false, userId: authSession.user.id },
       orderBy: { updatedAt: "desc" },
       take: 50,
       select: {
@@ -53,6 +60,7 @@ export async function GET() {
     });
   } catch (error) {
     console.error("Failed to list chat sessions:", error);
+
     return NextResponse.json(
       { error: "Failed to list chat sessions" },
       { status: 500 },
@@ -62,6 +70,9 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
+    const authSession = await auth();
+    const userId = authSession?.user?.id || null;
+
     const {
       title = "New Chat",
       model = "gemini-3.1-flash-lite",
@@ -70,7 +81,7 @@ export async function POST(req: Request) {
     } = await req.json();
 
     const session = await prisma.chatSession.create({
-      data: { title, model, responseMode },
+      data: { title, model, responseMode, userId },
     });
 
     if (Array.isArray(contexts) && contexts.length > 0) {
@@ -99,6 +110,7 @@ export async function POST(req: Request) {
     );
   } catch (error) {
     console.error("Failed to create chat session:", error);
+
     return NextResponse.json(
       { error: "Failed to create chat session" },
       { status: 500 },

@@ -8,6 +8,7 @@ import {
   type ModelMessage,
   type UIMessage,
 } from "ai";
+import { auth } from "@/auth";
 import { Prisma } from "../../../../shared/prisma-client";
 import prisma from "@/lib/prisma";
 import { normalizeContextForDb } from "@/lib/chat/contexts";
@@ -15,7 +16,11 @@ import { createSessionTitle, getMessageText } from "@/lib/chat/messages";
 import type { ContextItem } from "@/types/chat";
 import { getModel } from "@/lib/ai/modelRegistry";
 import { createProviderClient } from "@/lib/ai/providers";
-import { webSearchTool, fetchUrlTool, searchArticlesTool } from "@/lib/ai/tools";
+import {
+  webSearchTool,
+  fetchUrlTool,
+  searchArticlesTool,
+} from "@/lib/ai/tools";
 
 export const maxDuration = 120;
 
@@ -184,7 +189,7 @@ export async function POST(req: Request) {
     const {
       messages,
       contexts,
-      model = "gemini-3.1-flash-lite",
+      model = "ministral-8b-2512",
       adaptiveThinking = false,
       sessionId,
       responseMode = "concise",
@@ -205,20 +210,25 @@ export async function POST(req: Request) {
       ? getMessageText(latestUserMessage as unknown as UIMessage)
       : "";
 
+    const authSession = await auth();
+    const isGuest = !authSession?.user?.id;
+    const effectiveModel = isGuest ? "ministral-8b-2512" : model;
+
     let activeSessionId = sessionId;
     if (!activeSessionId) {
       const session = await prisma.chatSession.create({
         data: {
           title: createSessionTitle(latestUserText),
-          model,
+          model: effectiveModel,
           responseMode,
+          userId: isGuest ? null : authSession.user.id,
         },
       });
       activeSessionId = session.id;
     } else {
       await prisma.chatSession.update({
         where: { id: activeSessionId },
-        data: { model, responseMode },
+        data: { model: effectiveModel, responseMode },
       });
     }
 
@@ -258,6 +268,45 @@ export async function POST(req: Request) {
       });
     }
 
+    if (isGuest) {
+      const userMessageCount = messages.filter((m) => m.role === "user").length;
+
+      if (userMessageCount > 10) {
+        const encoder = new TextEncoder();
+        const limitMessage =
+          "You've reached the 10-message limit for guest sessions. We rely on limited free-tier AI APIs to keep this platform accessible, and capping unauthenticated chats helps us manage API quotas and prevent database bloat. Please sign in to continue this conversation and help us prevent abuse.";
+
+        // Also save this rejection message to the DB so it persists on reload
+        if (activeSessionId) {
+          const responseId = `msg-${Date.now().toString(36)}`;
+          await prisma.chatMessage.create({
+            data: {
+              id: responseId,
+              sessionId: activeSessionId,
+              role: "assistant",
+              text: limitMessage,
+              parts: [{ type: "text", text: limitMessage }],
+            },
+          });
+        }
+
+        const stream = new ReadableStream({
+          start(controller) {
+            controller.enqueue(
+              encoder.encode(`0:${JSON.stringify(limitMessage)}\n`),
+            );
+            controller.close();
+          },
+        });
+        return new Response(stream, {
+          headers: {
+            "X-Vercel-AI-Data-Stream": "v1",
+            "Content-Type": "text/plain; charset=utf-8",
+          },
+        });
+      }
+    }
+
     let systemPrompt = SYSTEM_PROMPT;
     if (responseMode === "concise") {
       systemPrompt +=
@@ -293,24 +342,27 @@ export async function POST(req: Request) {
       systemPrompt += `\n\nThe user has attached the following context items for this conversation:\n${contextBlock}\nUse these to ground your analysis.`;
     }
 
-    const modelConfig = getModel(model);
+    const modelConfig = getModel(effectiveModel);
     if (!modelConfig) {
       return new Response(
-        JSON.stringify({ error: `Model ${model} is not supported.` }),
+        JSON.stringify({ error: `Model ${effectiveModel} is not supported.` }),
         { status: 400, headers: { "Content-Type": "application/json" } },
       );
     }
 
     const provider = createProviderClient(modelConfig.provider);
     const aiModel = provider.chat(
-      modelConfig.provider === "github" ? model.slice("github:".length) : model,
+      modelConfig.provider === "github"
+        ? effectiveModel.slice("github:".length)
+        : effectiveModel,
     );
 
     // DeepSeek R1 models on GitHub use <think> tags for reasoning.
     // Wrap the model with reasoning extraction middleware to handle this.
     // We only apply this to R1 (reasoning) models, not general V3 models.
-    const effectiveModel =
-      model.includes("deepseek") && model.toLowerCase().includes("r1")
+    const effectiveModelInstance =
+      effectiveModel.includes("deepseek") &&
+      effectiveModel.toLowerCase().includes("r1")
         ? wrapLanguageModel({
             model: aiModel,
             middleware: extractReasoningMiddleware({ tagName: "think" }),
@@ -385,7 +437,7 @@ export async function POST(req: Request) {
     });
 
     const result = streamText({
-      model: effectiveModel,
+      model: effectiveModelInstance,
       system: `${systemPrompt}\n\nCurrent Date: ${today}`,
       messages: coreMessages,
       tools,
@@ -401,7 +453,7 @@ export async function POST(req: Request) {
       temperature: modelConfig.provider === "groq" ? 0 : undefined,
       stopWhen: stepCountIs(modelConfig.provider === "groq" ? 6 : 10),
       providerOptions: {
-        ...(adaptiveThinking && model.startsWith("openai/gpt-oss")
+        ...(adaptiveThinking && effectiveModel.startsWith("openai/gpt-oss")
           ? {
               openai: {
                 reasoningEffort: responseMode === "concise" ? "low" : "medium",
@@ -426,7 +478,10 @@ export async function POST(req: Request) {
 
     return result.toUIMessageStreamResponse({
       originalMessages: messages as UIMessage[],
-      messageMetadata: () => ({ model, sessionId: activeSessionId }),
+      messageMetadata: () => ({
+        model: effectiveModel,
+        sessionId: activeSessionId,
+      }),
       sendSources: true,
       headers: {
         "Cache-Control": "no-cache, no-transform",
@@ -454,7 +509,7 @@ export async function POST(req: Request) {
           if (!assistantText && !hasToolCalls && !hasReasoning) {
             console.warn("Skipping empty assistant response", {
               sessionId: activeSessionId,
-              model,
+              model: effectiveModel,
               parts: responseMessage.parts,
             });
             return;
@@ -474,7 +529,7 @@ export async function POST(req: Request) {
               "Synthesis failed for session:",
               activeSessionId,
               "Model:",
-              model,
+              effectiveModel,
             );
             finalParts.push({ type: "text", text: fallbackText });
           }
@@ -503,7 +558,7 @@ export async function POST(req: Request) {
           await prisma.chatSession.update({
             where: { id: activeSessionId },
             data: {
-              model,
+              model: effectiveModel,
               responseMode,
               title: latestUserText
                 ? createSessionTitle(latestUserText)

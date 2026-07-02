@@ -6,6 +6,7 @@ import { scanTopicsLogic } from "./scanTopics.js";
 import { processDeliveryBatch } from "./notifications/deliveryWorker.js";
 import { runHealthMonitor } from "./health/monitor.js";
 import { cleanupNotifications } from "./notifications/retention.js";
+import { cleanupAnonymousChats } from "./cleanup/guestSessionsCleanup.js";
 
 /**
  * Factors out the queue creation, scheduling, array checking, and try/catch error handling boilerplate for pg-boss.
@@ -46,6 +47,7 @@ async function runMasterWorker() {
   await registerWorker(boss, "notification-delivery", "* * * * *", () => processDeliveryBatch());
   await registerWorker(boss, "health-monitor", "*/15 * * * *", () => runHealthMonitor());
   await registerWorker(boss, "notification-retention", "0 4 * * *", () => cleanupNotifications());
+  await registerWorker(boss, "anonymous-chat-cleanup", "0 4 * * *", () => cleanupAnonymousChats());
 
   console.log("🕒 [Master Worker] Cron schedules active in pg-boss.");
   console.log("🎧 [Master Worker] Listening for jobs across all queues...");

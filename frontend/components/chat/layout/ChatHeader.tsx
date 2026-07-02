@@ -5,6 +5,7 @@ import {
   Robot01Icon,
   PlusSignIcon,
   Time02Icon,
+  Alert02Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -14,7 +15,9 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import ChatHistoryPanel, { type ChatSessionListItem } from "@/components/chat/layout/ChatHistoryPanel";
+import ChatHistoryPanel, {
+  type ChatSessionListItem,
+} from "@/components/chat/layout/ChatHistoryPanel";
 
 interface ChatHeaderProps {
   activeSessionId?: string;
@@ -23,6 +26,8 @@ interface ChatHeaderProps {
   onNewChat: () => void;
   onSelectSession: (id: string) => void;
   onDeleteSession: (id: string) => void;
+  isGuest?: boolean;
+  onLoginClick?: () => void;
 }
 
 export default function ChatHeader({
@@ -32,6 +37,8 @@ export default function ChatHeader({
   onNewChat,
   onSelectSession,
   onDeleteSession,
+  isGuest,
+  onLoginClick,
 }: ChatHeaderProps) {
   const [historyOpen, setHistoryOpen] = useState(false);
 
@@ -47,7 +54,7 @@ export default function ChatHeader({
 
   return (
     <div className="absolute top-3 inset-x-0 z-20 flex justify-center pointer-events-none">
-      <div className="w-full max-w-3xl flex items-center justify-between px-4 pointer-events-auto">
+      <div className="w-full max-w-3xl flex items-center justify-between pointer-events-auto">
         {/* AI Analyst Badge */}
         <div className="inline-flex items-center gap-2 h-9 px-3 rounded-full bg-background/80 backdrop-blur-md border border-border shadow-sm">
           <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center">
@@ -56,11 +63,28 @@ export default function ChatHeader({
               className="w-3 h-3 text-primary"
             />
           </div>
-          <span className="text-sm font-semibold leading-none">
-            AI Analyst
-          </span>
+          <span className="text-sm font-semibold leading-none">AI Analyst</span>
           <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
         </div>
+
+        {/* Guest Banner */}
+        {isGuest && (
+          <div className="hidden md:flex bg-orange-500/10 border border-orange-500/20 text-orange-500/90 text-xs px-3 py-1.5 rounded-full backdrop-blur-md items-center gap-1.5 shadow-sm">
+            <HugeiconsIcon
+              icon={Alert02Icon}
+              className="w-3.5 h-3.5 shrink-0"
+            />
+            <span className="whitespace-nowrap">
+              Guest Session: Limited to Mistral 8B model and 10 messages per chat.
+            </span>
+            <button
+              onClick={onLoginClick}
+              className="underline hover:text-orange-500 ml-1 font-medium whitespace-nowrap"
+            >
+              Sign in
+            </button>
+          </div>
+        )}
 
         {/* Action Buttons */}
         <div className="inline-flex items-center gap-0.5 h-9 px-1.5 rounded-full bg-background/80 backdrop-blur-md border border-border shadow-sm">
@@ -83,6 +107,7 @@ export default function ChatHeader({
                 <HugeiconsIcon icon={Time02Icon} className="w-4 h-4" />
               </button>
             </SheetTrigger>
+
             <SheetContent
               side="right"
               className="p-0 w-full sm:max-w-md"

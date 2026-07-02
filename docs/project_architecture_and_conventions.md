@@ -132,7 +132,7 @@ docs/                 ← Phase documentation and architecture notes
 
 ### Frontend
 - `cd frontend && npm run dev`: Start Next.js development server.
-- `cd frontend && npx prisma migrate dev`: Apply database migrations.
+- `npx prisma migrate dev`: Apply database migrations (run from root or frontend). **Note**: Use the automated wrapper `npm run db:drop-indexes && npx prisma migrate dev && npm run db:restore-indexes` to bypass pgvector database drift warnings.
 
 ## 📝 Development Conventions
 
@@ -140,6 +140,7 @@ docs/                 ← Phase documentation and architecture notes
 - **Deduplication**: Multi-layer dedup using URL normalization and content hashing (`title + snippet`).
 - **AI Pacing**: Use the custom sliding-window rate limiter in `ingestion-service/ai/rateLimiter.js`. Do not parallelize AI batches (keep concurrency = 1). Adhere to model assignments in `docs/AI_MODELS.md`.
 - **Type Safety**: Maintain synchronization between the root Prisma schema and both service clients.
+- **Prisma & pgvector Drift**: Because Prisma lacks full declarative index support for `Unsupported("vector")`, the custom HNSW indexes cause "database drift" during local `prisma migrate dev`. The established convention is to drop the indexes, generate the migration, and restore them using the provided scripts (`npm run db:drop-indexes` and `npm run db:restore-indexes`). Do NOT reset the database.
 - **Perspective Transparency**: Bias detection is for informational transparency (Perspective Badges), not automated "correction".
 - **URL-Driven Filters**: Category, sort, and search are all stored as URL query params. This enables server-side rendering, shareable URLs, and browser back/forward navigation.
 - **Zustand Selectors**: Always use the exported selector hooks (`useArticleCount`, `useSetArticleCount`, etc.) — never `useAppStore` directly. Selectors prevent re-renders from unrelated state changes.

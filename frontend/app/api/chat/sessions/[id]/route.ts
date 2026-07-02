@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { UIMessage } from "ai";
+import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
 import { normalizeContextForDb } from "@/lib/chat/contexts";
 import type { ContextItem } from "@/types/chat";
@@ -45,6 +46,11 @@ export async function GET(
 
     if (!session) {
       return NextResponse.json({ error: "Session not found" }, { status: 404 });
+    }
+
+    const authSession = await auth();
+    if (session.userId !== null && session.userId !== authSession?.user?.id) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     return NextResponse.json({
@@ -108,6 +114,11 @@ export async function PATCH(
       return NextResponse.json({ error: "Session not found" }, { status: 404 });
     }
 
+    const authSession = await auth();
+    if (session.userId !== null && session.userId !== authSession?.user?.id) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     if (Object.keys(updateData).length > 0) {
       session = await prisma.chatSession.update({
         where: { id },
@@ -166,6 +177,17 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
+    const session = await prisma.chatSession.findUnique({ where: { id } });
+    
+    if (!session) {
+      return NextResponse.json({ error: "Session not found" }, { status: 404 });
+    }
+
+    const authSession = await auth();
+    if (session.userId !== null && session.userId !== authSession?.user?.id) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     await prisma.chatSession.update({
       where: { id },
       data: { isArchived: true },

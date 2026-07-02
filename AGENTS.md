@@ -58,6 +58,7 @@ All workers: `node-version: "25"`, `npx prisma generate`, inject secrets + vars 
 ## Common Gotchas
 
 - Prisma client generated to `shared/prisma-client` — run `npx prisma generate` after schema changes
+- **pgvector/HNSW Indexes Drift**: Because Prisma does not fully support declarative indexing for `Unsupported("vector(768)")` types, custom HNSW indexes were added manually via raw SQL. When running `npx prisma migrate dev` locally to create new migrations, Prisma will complain about "database drift" (indexes exist in DB but not in schema). **Fix**: Run `npm run db:drop-indexes` -> `npx prisma migrate dev` -> `npm run db:restore-indexes`. Do not reset the database!
 - Ingestion uses `--skip-ai` or `--ai-limit=N` flags; clustering/topic scanners have no CLI flags
 - Revalidation secret (`REVALIDATE_SECRET`) required for cache invalidation
 - Next.js 16: Server Components default, wrap dynamic bits in `<Suspense>`, use `"use cache"` granularly
