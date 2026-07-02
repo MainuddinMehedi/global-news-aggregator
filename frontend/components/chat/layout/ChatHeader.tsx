@@ -54,7 +54,7 @@ export default function ChatHeader({
 
   return (
     <div className="absolute top-3 inset-x-0 z-20 flex justify-center pointer-events-none">
-      <div className="w-full max-w-3xl flex items-center justify-between pointer-events-auto">
+      <div className="w-full max-w-3xl flex items-center justify-between pointer-events-auto px-4">
         {/* AI Analyst Badge */}
         <div className="inline-flex items-center gap-2 h-9 px-3 rounded-full bg-background/80 backdrop-blur-md border border-border shadow-sm">
           <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center">
@@ -75,7 +75,8 @@ export default function ChatHeader({
               className="w-3.5 h-3.5 shrink-0"
             />
             <span className="whitespace-nowrap">
-              Guest Session: Limited to Mistral 8B model and 10 messages per chat.
+              Guest Session: Limited to Mistral 8B model and 10 messages per
+              chat.
             </span>
             <button
               onClick={onLoginClick}

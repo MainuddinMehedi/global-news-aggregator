@@ -75,16 +75,16 @@ export default function ChatInput({
           className={cn(
             "flex bg-muted/30 border border-border rounded-2xl p-2 transition-all duration-200",
             "focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/20",
-            isCompact ? "flex-row items-center gap-2" : "flex-col gap-1",
+            isCompact ? "flex-col sm:flex-row sm:items-center gap-1 sm:gap-2" : "flex-col gap-1",
           )}
         >
-          {/* Attachment before textarea in compact mode */}
+          {/* Attachment before textarea in compact mode (Desktop only) */}
           {isCompact && (
             <button
               onClick={onAddContext}
               title="Add context"
               aria-label="Add context"
-              className="p-1.5 rounded-xl hover:bg-accent text-muted-foreground hover:text-primary transition-colors shrink-0"
+              className="hidden sm:flex p-1.5 rounded-xl hover:bg-accent text-muted-foreground hover:text-primary transition-colors shrink-0"
             >
               <HugeiconsIcon icon={Attachment01Icon} className="w-5 h-5" />
             </button>
@@ -101,20 +101,21 @@ export default function ChatInput({
           <div
             className={cn(
               "flex items-center",
-              isCompact ? "gap-1 shrink-0" : "justify-between gap-1",
+              isCompact ? "justify-between sm:justify-end gap-1 shrink-0" : "justify-between gap-1",
             )}
           >
-            {/* Attachment in expanded mode (bottom row, left side) */}
-            {!isCompact && (
-              <button
-                onClick={onAddContext}
-                title="Add context"
-                aria-label="Add context"
-                className="p-2 rounded-xl hover:bg-accent text-muted-foreground hover:text-primary transition-colors shrink-0"
-              >
-                <HugeiconsIcon icon={Attachment01Icon} className="w-5 h-5" />
-              </button>
-            )}
+            {/* Attachment in expanded mode or mobile compact (bottom row, left side) */}
+            <button
+              onClick={onAddContext}
+              title="Add context"
+              aria-label="Add context"
+              className={cn(
+                "p-1.5 sm:p-2 rounded-xl hover:bg-accent text-muted-foreground hover:text-primary transition-colors shrink-0",
+                isCompact ? "flex sm:hidden" : "flex"
+              )}
+            >
+              <HugeiconsIcon icon={Attachment01Icon} className="w-4 h-4 sm:w-5 sm:h-5" />
+            </button>
 
             {/* Actions */}
             <div className="flex items-center gap-1.5 shrink-0">
@@ -144,7 +145,7 @@ export default function ChatInput({
                 }
                 aria-pressed={!isLoading && !hasText ? isVoiceMode : undefined}
                 className={cn(
-                  "p-2 rounded-xl transition-all shrink-0",
+                  "p-1.5 sm:p-2 rounded-xl transition-all shrink-0",
                   isLoading || hasText
                     ? "bg-primary text-primary-foreground hover:bg-primary/90 shadow-md"
                     : isVoiceMode
@@ -155,7 +156,7 @@ export default function ChatInput({
               >
                 <HugeiconsIcon
                   icon={isLoading ? StopIcon : hasText ? SentIcon : Mic01Icon}
-                  className="w-[18px] h-[18px]"
+                  className="w-[16px] h-[16px] sm:w-[18px] sm:h-[18px]"
                 />
               </button>
             </div>

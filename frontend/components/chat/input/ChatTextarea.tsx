@@ -24,7 +24,7 @@ export function ChatTextarea({
 
     if (!el) return;
     if (isCompact) {
-      el.style.height = "2.25rem"; // Explicitly set to 36px (h-9)
+      el.style.height = ""; // Let Tailwind handle the base height
       return;
     }
 
@@ -35,7 +35,7 @@ export function ChatTextarea({
   // Reset height when submitted via Enter
   useEffect(() => {
     if (value === "" && textareaRef.current) {
-      textareaRef.current.style.height = isCompact ? "2.25rem" : "3rem";
+      textareaRef.current.style.height = "";
     }
   }, [value, isCompact]);
 
@@ -56,8 +56,10 @@ export function ChatTextarea({
       placeholder="Ask about geopolitical events, trends, or analysis…"
       rows={1}
       className={cn(
-        "w-full bg-transparent resize-none outline-none px-2 text-sm placeholder:text-muted-foreground/70 disabled:opacity-50 scrollbar-sleek",
-        isCompact ? "h-9 py-1.5 flex-1" : "min-h-[48px] max-h-32 py-2",
+        "w-full bg-transparent resize-none outline-none px-2 text-[13px] sm:text-sm placeholder:text-muted-foreground/70 disabled:opacity-50 scrollbar-sleek leading-relaxed",
+        isCompact
+          ? "h-11 py-2 sm:h-9 sm:py-1.5 flex-1"
+          : "min-h-[48px] max-h-32 py-2",
       )}
     />
   );

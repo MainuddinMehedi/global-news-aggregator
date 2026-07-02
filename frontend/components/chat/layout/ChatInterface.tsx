@@ -121,7 +121,7 @@ export default function ChatInterface() {
   }, []);
 
   return (
-    <div className="flex h-full w-full overflow-hidden min-h-0">
+    <div className="flex relative h-full w-full overflow-hidden min-h-0">
       {/* ── Main chat column ────────────────────────────────────────────── */}
       <div className="flex-1 flex flex-col relative h-full min-w-0 min-h-0">
         <ChatHeader

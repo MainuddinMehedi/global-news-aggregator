@@ -59,13 +59,13 @@ export function ModelPicker({
         <button
           type="button"
           aria-label="Choose model"
-          className="h-8.5 max-w-[180px] inline-flex items-center gap-2 rounded-xl bg-background text-foreground px-3 text-xs font-medium hover:bg-accent transition-colors border border-border/70"
+          className="h-8 sm:h-8.5 max-w-[130px] sm:max-w-[180px] inline-flex items-center gap-1.5 sm:gap-2 rounded-xl bg-background text-foreground px-2 sm:px-3 text-[11px] sm:text-xs font-medium hover:bg-accent transition-colors border border-border/70"
         >
           <span className="truncate">{activeModel?.label}</span>
           <HugeiconsIcon
             icon={ArrowDown01Icon}
             className={cn(
-              "w-3.5 h-3.5 text-muted-foreground transition-transform",
+              "w-3 h-3 sm:w-3.5 sm:h-3.5 text-muted-foreground transition-transform shrink-0",
               modelPickerOpen && "rotate-180",
             )}
           />
