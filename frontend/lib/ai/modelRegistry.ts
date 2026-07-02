@@ -278,3 +278,16 @@ export function getModel(modelId: string): ModelMetadata | undefined {
 export function getActiveModels(): ModelMetadata[] {
   return MODEL_REGISTRY.filter((m) => m.isActive);
 }
+
+export const DEFAULT_USER_MODEL = MODEL_REGISTRY[0].id;
+export const DEFAULT_GUEST_MODEL = "ministral-8b-2512";
+
+export const GUEST_ALLOWED_MODELS = [
+  DEFAULT_GUEST_MODEL,
+  "github:openai/gpt-4o-mini",
+  "github:meta/Llama-4-Scout-17B-16E-Instruct",
+];
+
+export function getDefaultModel(isGuest: boolean): string {
+  return isGuest ? DEFAULT_GUEST_MODEL : DEFAULT_USER_MODEL;
+}

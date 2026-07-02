@@ -1,7 +1,16 @@
 import { auth } from "@/auth";
-import { normalizeContextForDb } from "@/lib/chat/contexts";
-import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import {
+  DEFAULT_USER_MODEL,
+  DEFAULT_GUEST_MODEL,
+  GUEST_ALLOWED_MODELS,
+} from "@/lib/ai/modelRegistry";
+import {
+  listUserChatSessions,
+  createChatSession,
+  saveChatContexts,
+} from "@/lib/chat/db";
+import type { ContextItem } from "@/types/chat";
 
 export async function GET() {
   try {
@@ -11,31 +20,7 @@ export async function GET() {
       return NextResponse.json({ sessions: [] });
     }
 
-    const sessions = await prisma.chatSession.findMany({
-      where: { isArchived: false, userId: authSession.user.id },
-      orderBy: { updatedAt: "desc" },
-      take: 50,
-      select: {
-        id: true,
-        title: true,
-        model: true,
-        responseMode: true,
-        createdAt: true,
-        updatedAt: true,
-        contexts: {
-          orderBy: { createdAt: "asc" },
-          select: {
-            id: true,
-            sourceType: true,
-            sourceId: true,
-            title: true,
-            url: true,
-            snapshot: true,
-          },
-        },
-        _count: { select: { messages: true } },
-      },
-    });
+    const sessions = await listUserChatSessions(authSession.user.id);
 
     return NextResponse.json({
       sessions: sessions.map((session) => ({
@@ -60,7 +45,6 @@ export async function GET() {
     });
   } catch (error) {
     console.error("Failed to list chat sessions:", error);
-
     return NextResponse.json(
       { error: "Failed to list chat sessions" },
       { status: 500 },
@@ -71,27 +55,30 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const authSession = await auth();
+    const isGuest = !authSession?.user?.id;
     const userId = authSession?.user?.id || null;
 
     const {
       title = "New Chat",
-      model = "gemini-3.1-flash-lite",
+      model,
       responseMode = "concise",
       contexts = [],
     } = await req.json();
 
-    const session = await prisma.chatSession.create({
-      data: { title, model, responseMode, userId },
+    let effectiveModel = model || DEFAULT_USER_MODEL;
+    if (isGuest && !GUEST_ALLOWED_MODELS.includes(effectiveModel)) {
+      effectiveModel = DEFAULT_GUEST_MODEL;
+    }
+
+    const session = await createChatSession({
+      title,
+      model: effectiveModel,
+      responseMode,
+      userId,
     });
 
     if (Array.isArray(contexts) && contexts.length > 0) {
-      await prisma.chatContext.createMany({
-        data: contexts.map((context) => ({
-          sessionId: session.id,
-          ...normalizeContextForDb(context),
-        })),
-        skipDuplicates: true,
-      });
+      await saveChatContexts(session.id, contexts as ContextItem[]);
     }
 
     return NextResponse.json(
@@ -110,7 +97,6 @@ export async function POST(req: Request) {
     );
   } catch (error) {
     console.error("Failed to create chat session:", error);
-
     return NextResponse.json(
       { error: "Failed to create chat session" },
       { status: 500 },

@@ -1,9 +1,13 @@
 import { NextResponse } from "next/server";
 import type { UIMessage } from "ai";
 import { auth } from "@/auth";
-import prisma from "@/lib/prisma";
-import { normalizeContextForDb } from "@/lib/chat/contexts";
 import type { ContextItem } from "@/types/chat";
+import {
+  getChatSessionById,
+  updateChatSession,
+  archiveChatSession,
+  overwriteChatContexts,
+} from "@/lib/chat/db";
 
 function toUiMessage(message: {
   id: string;
@@ -36,13 +40,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const session = await prisma.chatSession.findFirst({
-      where: { id, isArchived: false },
-      include: {
-        messages: { orderBy: { createdAt: "asc" } },
-        contexts: { orderBy: { createdAt: "asc" } },
-      },
-    });
+    const session = await getChatSessionById(id);
 
     if (!session) {
       return NextResponse.json({ error: "Session not found" }, { status: 404 });
@@ -97,6 +95,7 @@ export async function PATCH(
       model?: string;
       responseMode?: string;
       isArchived?: boolean;
+      updatedAt?: Date;
     } = {};
 
     if (typeof body.title === "string") updateData.title = body.title;
@@ -108,7 +107,7 @@ export async function PATCH(
       updateData.isArchived = body.isArchived;
     }
 
-    let session = await prisma.chatSession.findUnique({ where: { id } });
+    let session = await getChatSessionById(id);
 
     if (!session) {
       return NextResponse.json({ error: "Session not found" }, { status: 404 });
@@ -120,46 +119,26 @@ export async function PATCH(
     }
 
     if (Object.keys(updateData).length > 0) {
-      session = await prisma.chatSession.update({
-        where: { id },
-        data: updateData,
-      });
+      session = await updateChatSession(id, updateData) as any;
     }
 
     if (Array.isArray(body.contexts)) {
-      await prisma.$transaction([
-        prisma.chatContext.deleteMany({
-          where: { sessionId: id },
-        }),
-        ...(body.contexts.length > 0
-          ? [
-              prisma.chatContext.createMany({
-                data: (body.contexts as ContextItem[]).map((context) => ({
-                  sessionId: id,
-                  ...normalizeContextForDb(context),
-                })),
-              }),
-            ]
-          : []),
-      ]);
+      await overwriteChatContexts(id, body.contexts as ContextItem[]);
 
       // Bump updatedAt to move the session to the top of the history list
       if (Object.keys(updateData).length === 0) {
-        session = await prisma.chatSession.update({
-          where: { id },
-          data: { updatedAt: new Date() },
-        });
+        session = await updateChatSession(id, { updatedAt: new Date() }) as any;
       }
     }
 
     return NextResponse.json({
       session: {
-        id: session.id,
-        title: session.title,
-        model: session.model,
-        responseMode: session.responseMode,
-        createdAt: session.createdAt.toISOString(),
-        updatedAt: session.updatedAt.toISOString(),
+        id: session!.id,
+        title: session!.title,
+        model: session!.model,
+        responseMode: session!.responseMode,
+        createdAt: session!.createdAt.toISOString(),
+        updatedAt: session!.updatedAt.toISOString(),
       },
     });
   } catch (error) {
@@ -177,7 +156,7 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const session = await prisma.chatSession.findUnique({ where: { id } });
+    const session = await getChatSessionById(id);
     
     if (!session) {
       return NextResponse.json({ error: "Session not found" }, { status: 404 });
@@ -188,10 +167,7 @@ export async function DELETE(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    await prisma.chatSession.update({
-      where: { id },
-      data: { isArchived: true },
-    });
+    await archiveChatSession(id);
 
     return NextResponse.json({ success: true });
   } catch (error) {

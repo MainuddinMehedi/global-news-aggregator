@@ -10,10 +10,19 @@ import type { ContextItem } from "@/types/chat";
 
 interface UseChatFlowProps {
   sessionId?: string;
-  onSessionCreated?: (id: string, session?: { id: string; title: string; model: string; responseMode: string; createdAt: string; updatedAt: string }) => void;
+  onSessionCreated?: (
+    id: string,
+    session?: {
+      id: string;
+      title: string;
+      model: string;
+      responseMode: string;
+      createdAt: string;
+      updatedAt: string;
+    },
+  ) => void;
   contexts: ContextItem[];
   selectedModel: string;
-  adaptiveThinking: boolean;
   responseMode: "concise" | "descriptive";
 }
 
@@ -22,7 +31,6 @@ export function useChatFlow({
   onSessionCreated,
   contexts,
   selectedModel,
-  adaptiveThinking,
   responseMode,
 }: UseChatFlowProps) {
   const sendingRef = useRef(false);
@@ -124,7 +132,6 @@ export function useChatFlow({
           {
             body: {
               model: selectedModel,
-              adaptiveThinking,
               sessionId: targetSessionId,
               responseMode,
               contexts,
@@ -138,14 +145,7 @@ export function useChatFlow({
         sendingRef.current = false;
       }
     },
-    [
-      adaptiveThinking,
-      contexts,
-      ensureSession,
-      responseMode,
-      selectedModel,
-      sendMessage,
-    ],
+    [contexts, ensureSession, responseMode, selectedModel, sendMessage],
   );
 
   return {

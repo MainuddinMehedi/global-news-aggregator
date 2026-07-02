@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
-import { MODEL_REGISTRY } from "@/lib/ai/modelRegistry";
+import { MODEL_REGISTRY, getDefaultModel } from "@/lib/ai/modelRegistry";
 import type { ChatSessionListItem } from "@/components/chat/layout/ChatHistoryPanel";
 import type { UIMessage } from "ai";
 import type { ContextItem } from "@/types/chat";
@@ -27,6 +27,7 @@ interface UseChatSessionsProps {
   selectedModel: string;
   responseMode: "concise" | "descriptive";
   contexts: ContextItem[];
+  isGuest: boolean;
 }
 
 export function useChatSessions({
@@ -36,6 +37,7 @@ export function useChatSessions({
   selectedModel,
   responseMode,
   contexts,
+  isGuest,
 }: UseChatSessionsProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -96,7 +98,7 @@ export function useChatSessions({
     if (!activeSessionId) {
       setMessages([]);
       setContexts([]);
-      setSelectedModel(MODEL_REGISTRY[0].id);
+      setSelectedModel(getDefaultModel(isGuest));
       return;
     }
 
@@ -118,7 +120,7 @@ export function useChatSessions({
         const session = data.session as ChatSessionPayload;
 
         if (isMounted) {
-          setSelectedModel(session.model || MODEL_REGISTRY[0].id);
+          setSelectedModel(session.model || getDefaultModel(isGuest));
           setContexts(session.contexts ?? []);
           setMessages(session.messages && session.messages.length > 0 ? session.messages : []);
         }
@@ -133,7 +135,7 @@ export function useChatSessions({
     return () => {
       isMounted = false;
     };
-  }, [activeSessionId, router, setContexts, setMessages, setSelectedModel]);
+  }, [activeSessionId, router, setContexts, setMessages, setSelectedModel, isGuest]);
 
   // Initial load
   useEffect(() => {

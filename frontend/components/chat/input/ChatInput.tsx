@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   ArrowDown01Icon,
@@ -10,6 +10,7 @@ import {
   SentIcon,
   StopIcon,
   TextFontIcon,
+  LockIcon,
 } from "@hugeicons/core-free-icons";
 import { cn } from "@/lib/utils";
 import {
@@ -17,8 +18,17 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Switch } from "@/components/ui/switch";
-import type { ModelMetadata } from "@/lib/ai/modelRegistry";
+
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
+  GUEST_ALLOWED_MODELS,
+  type ModelMetadata,
+} from "@/lib/ai/modelRegistry";
 
 interface ChatInputProps {
   /** Called with the trimmed message text when the user submits */
@@ -38,13 +48,12 @@ interface ChatInputProps {
   onModelChange: (model: string) => void;
   responseMode: "concise" | "descriptive";
   onResponseModeChange: (mode: "concise" | "descriptive") => void;
-  adaptiveThinking: boolean;
-  onAdaptiveThinkingChange: (enabled: boolean) => void;
   /** Render context pills above the input (passed as a slot) */
   contextPillsSlot?: React.ReactNode;
   disabled?: boolean;
   /** When true, collapses to a single row when unfocused and empty */
   compact?: boolean;
+  isGuest?: boolean;
 }
 
 export default function ChatInput({
@@ -59,11 +68,10 @@ export default function ChatInput({
   onModelChange,
   responseMode,
   onResponseModeChange,
-  adaptiveThinking,
-  onAdaptiveThinkingChange,
   contextPillsSlot,
   disabled = false,
   compact = false,
+  isGuest = false,
 }: ChatInputProps) {
   const [value, setValue] = useState("");
   const [modelPickerOpen, setModelPickerOpen] = useState(false);
@@ -74,23 +82,41 @@ export default function ChatInput({
   const hasText = value.trim().length > 0;
   const isCompact = compact && !hasText;
 
+  const displayModels = useMemo(() => {
+    if (!isGuest) return models;
+
+    return [...models].sort((a, b) => {
+      const aAllowed = GUEST_ALLOWED_MODELS.includes(a.id);
+      const bAllowed = GUEST_ALLOWED_MODELS.includes(b.id);
+
+      if (aAllowed && !bAllowed) return -1;
+      if (!aAllowed && bAllowed) return 1;
+
+      return 0;
+    });
+  }, [models, isGuest]);
+
   // Auto-resize textarea as the user types
   useEffect(() => {
     const el = textareaRef.current;
+
     if (!el) return;
     if (isCompact) {
       el.style.height = "2.25rem"; // Explicitly set to 36px (h-9)
       return;
     }
+
     el.style.height = "auto";
     el.style.height = `${Math.min(el.scrollHeight, 128)}px`;
   }, [value, isCompact]);
 
   const handleSend = useCallback(() => {
     const trimmed = value.trim();
+
     if (!trimmed || disabled) return;
     onSend(trimmed);
     setValue("");
+
     // Ensure height reset after send
     if (textareaRef.current) {
       textareaRef.current.style.height = isCompact ? "2.25rem" : "3rem";
@@ -269,44 +295,72 @@ export default function ChatInput({
                   sideOffset={8}
                   className="w-[245px] gap-0 rounded-xl border border-border/80 bg-popover p-1 shadow-2xl"
                 >
-                  <div className="max-h-[320px] overflow-y-auto scrollbar-sleek">
-                    {models.map((model) => {
-                      const isSelected = model.id === selectedModel;
-                      return (
-                        <button
-                          key={model.id}
-                          type="button"
-                          onClick={() => {
-                            onModelChange(model.id);
-                            setModelPickerOpen(false);
-                          }}
-                          className={cn(
-                            "flex w-full items-start gap-3 rounded-lg px-3 py-2.5 text-left transition-colors",
-                            isSelected
-                              ? "bg-accent/70 text-foreground"
-                              : "hover:bg-accent/60",
-                          )}
-                        >
-                          <span className="min-w-0 flex-1">
-                            <span className="block truncate text-sm font-medium leading-5">
-                              {model.label}
-                            </span>
-                            <span className="block truncate text-xs text-muted-foreground">
-                              {model.description}
-                            </span>
-                          </span>
-                          {isSelected && (
-                            <HugeiconsIcon
-                              icon={CheckmarkCircle02Icon}
-                              className="mt-0.5 h-4 w-4 shrink-0 text-primary"
-                            />
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
+                  <TooltipProvider delayDuration={150}>
+                    <div className="max-h-[320px] overflow-y-auto scrollbar-sleek">
+                      {displayModels.map((model) => {
+                        const isSelected = model.id === selectedModel;
+                        const isRestricted =
+                          isGuest && !GUEST_ALLOWED_MODELS.includes(model.id);
 
+                        const btn = (
+                          <button
+                            key={model.id}
+                            type="button"
+                            disabled={isRestricted}
+                            onClick={() => {
+                              if (isRestricted) return;
+                              onModelChange(model.id);
+                              setModelPickerOpen(false);
+                            }}
+                            className={cn(
+                              "flex w-full items-start gap-3 rounded-lg px-3 py-2.5 text-left transition-colors",
+                              isSelected
+                                ? "bg-accent/70 text-foreground"
+                                : "hover:bg-accent/60",
+                              isRestricted &&
+                                "opacity-50 cursor-help hover:bg-transparent",
+                            )}
+                          >
+                            <span className="min-w-0 flex-1">
+                              <span className="flex items-center gap-1.5 truncate text-sm font-medium leading-5">
+                                {model.label}
+                                {isRestricted && (
+                                  <HugeiconsIcon
+                                    icon={LockIcon}
+                                    className="w-3.5 h-3.5 text-muted-foreground shrink-0"
+                                  />
+                                )}
+                              </span>
+                              <span className="block truncate text-xs text-muted-foreground">
+                                {model.description}
+                              </span>
+                            </span>
+                            {isSelected && (
+                              <HugeiconsIcon
+                                icon={CheckmarkCircle02Icon}
+                                className="mt-0.5 h-4 w-4 shrink-0 text-primary"
+                              />
+                            )}
+                          </button>
+                        );
 
+                        if (isRestricted) {
+                          return (
+                            <Tooltip key={model.id}>
+                              <TooltipTrigger asChild>
+                                <div className="cursor-help">{btn}</div>
+                              </TooltipTrigger>
+                              <TooltipContent side="right" className="text-xs">
+                                Sign in to access all models
+                              </TooltipContent>
+                            </Tooltip>
+                          );
+                        }
+
+                        return btn;
+                      })}
+                    </div>
+                  </TooltipProvider>
                 </PopoverContent>
               </Popover>
 

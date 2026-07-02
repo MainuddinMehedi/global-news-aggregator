@@ -30,10 +30,8 @@ import { WelcomeScreen } from "@/components/chat/messages/WelcomeScreen";
 import { useChatContext } from "@/hooks/useChatContext";
 import { useChatFlow } from "@/hooks/useChatFlow";
 import { useChatSessions } from "@/hooks/useChatSessions";
-import { getActiveModels, MODEL_REGISTRY } from "@/lib/ai/modelRegistry";
+import { getActiveModels, getDefaultModel } from "@/lib/ai/modelRegistry";
 import { useSetLoginModalOpen, useSetSidebarCollapsed } from "@/store";
-import { Alert02Icon } from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
 import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -41,11 +39,9 @@ export default function ChatInterface() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const activeSessionId = searchParams.get("session") ?? undefined;
-
   const { status: authStatus } = useSession();
   const isGuest = authStatus === "unauthenticated";
   const setLoginModalOpen = useSetLoginModalOpen();
-
   const {
     contexts,
     setContexts,
@@ -55,14 +51,11 @@ export default function ChatInterface() {
     handleAddContexts,
     removeContext,
   } = useChatContext(activeSessionId);
-
   const [isVoiceMode, setIsVoiceMode] = useState(false);
-  const [selectedModel, setSelectedModel] = useState(MODEL_REGISTRY[0].id);
-  const [adaptiveThinking, setAdaptiveThinking] = useState(false);
+  const [selectedModel, setSelectedModel] = useState(getDefaultModel(isGuest));
   const [responseMode, setResponseMode] = useState<"concise" | "descriptive">(
     "concise",
   );
-
   const { messages, sendMessage, status, setMessages, stop, handleSend } =
     useChatFlow({
       sessionId: activeSessionId,
@@ -80,10 +73,8 @@ export default function ChatInterface() {
       },
       contexts,
       selectedModel,
-      adaptiveThinking,
       responseMode,
     });
-
   const {
     sessions,
     sessionsLoading,
@@ -99,6 +90,7 @@ export default function ChatInterface() {
     selectedModel,
     responseMode,
     contexts,
+    isGuest,
   });
 
   const isLoading = status === "submitted" || status === "streaming";
@@ -169,12 +161,11 @@ export default function ChatInterface() {
           isVoiceMode={isVoiceMode}
           onAddContext={addContext}
           models={getActiveModels()}
+          isGuest={isGuest}
           selectedModel={selectedModel}
           onModelChange={setSelectedModel}
           responseMode={responseMode}
           onResponseModeChange={setResponseMode}
-          adaptiveThinking={adaptiveThinking}
-          onAdaptiveThinkingChange={setAdaptiveThinking}
           contextPillsSlot={
             <ContextPills
               items={contexts}
