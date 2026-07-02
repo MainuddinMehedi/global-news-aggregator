@@ -16,12 +16,10 @@
  *   - Manage session lifecycle and routing sync (→ useChatSessions)
  */
 
-import { useCallback, useEffect, useState } from "react";
-
-import ContextPanel, {
-  ContextPills,
-} from "@/components/chat/context/ContextPanel";
+import { ContextDetailsModal } from "@/components/chat/context/ContextDetailsModal";
+import ContextPanel from "@/components/chat/context/ContextPanel";
 import ContextPickerModal from "@/components/chat/context/ContextPickerModal";
+import { ContextPills } from "@/components/chat/context/ContextPills";
 import ChatInput from "@/components/chat/input/ChatInput";
 import VoiceSession from "@/components/chat/input/VoiceSession";
 import ChatHeader from "@/components/chat/layout/ChatHeader";
@@ -32,8 +30,10 @@ import { useChatFlow } from "@/hooks/useChatFlow";
 import { useChatSessions } from "@/hooks/useChatSessions";
 import { getActiveModels, getDefaultModel } from "@/lib/ai/modelRegistry";
 import { useSetLoginModalOpen, useSetSidebarCollapsed } from "@/store";
+import type { ContextItem } from "@/types/chat";
 import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
 
 export default function ChatInterface() {
   const router = useRouter();
@@ -55,6 +55,9 @@ export default function ChatInterface() {
   const [selectedModel, setSelectedModel] = useState(getDefaultModel(isGuest));
   const [responseMode, setResponseMode] = useState<"concise" | "descriptive">(
     "concise",
+  );
+  const [viewingContext, setViewingContext] = useState<ContextItem | null>(
+    null,
   );
   const { messages, sendMessage, status, setMessages, stop, handleSend } =
     useChatFlow({
@@ -170,6 +173,7 @@ export default function ChatInterface() {
             <ContextPills
               items={contexts}
               onRemove={removeContext}
+              onViewContext={setViewingContext}
               className="lg:hidden"
             />
           }
@@ -180,12 +184,17 @@ export default function ChatInterface() {
         items={contexts}
         onRemove={removeContext}
         onAdd={addContext}
-      />{" "}
+        onViewContext={setViewingContext}
+      />
       <ContextPickerModal
         isOpen={contextPickerOpen}
         onClose={() => setContextPickerOpen(false)}
         onAdd={handleAddContexts}
         existingItems={contexts}
+      />
+      <ContextDetailsModal
+        contextItem={viewingContext}
+        onClose={() => setViewingContext(null)}
       />
     </div>
   );

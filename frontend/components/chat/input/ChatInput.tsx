@@ -1,19 +1,18 @@
 "use client";
 
-import { useState, useCallback } from "react";
-import { HugeiconsIcon } from "@hugeicons/react";
+import type { ModelMetadata } from "@/lib/ai/modelRegistry";
+import { cn } from "@/lib/utils";
 import {
   Attachment01Icon,
   Mic01Icon,
   SentIcon,
   StopIcon,
 } from "@hugeicons/core-free-icons";
-import { cn } from "@/lib/utils";
-import type { ModelMetadata } from "@/lib/ai/modelRegistry";
-
+import { HugeiconsIcon } from "@hugeicons/react";
+import { useCallback, useState } from "react";
+import { ChatTextarea } from "./ChatTextarea";
 import { ModelPicker } from "./ModelPicker";
 import { ResponseModePicker } from "./ResponseModePicker";
-import { ChatTextarea } from "./ChatTextarea";
 
 interface ChatInputProps {
   onSend: (
@@ -33,6 +32,7 @@ interface ChatInputProps {
   disabled?: boolean;
   compact?: boolean; /** When true, collapses to a single row when unfocused and empty */
   isGuest?: boolean;
+  className?: string;
 }
 
 export default function ChatInput({
@@ -51,6 +51,7 @@ export default function ChatInput({
   disabled = false,
   compact = false,
   isGuest = false,
+  className,
 }: ChatInputProps) {
   const [value, setValue] = useState("");
   const hasText = value.trim().length > 0;
@@ -65,17 +66,21 @@ export default function ChatInput({
   }, [value, disabled, onSend]);
 
   return (
-    <div className="px-4 pb-4 shrink-0 z-10">
-      <div className="max-w-3xl mx-auto flex flex-col gap-1.5">
+    <div className={cn("px-4 pb-4 shrink-0 z-10", className)}>
+      <div className="max-w-3xl mx-auto flex flex-col relative">
         {/* Mobile context pills slot */}
-        {contextPillsSlot}
+        <div className="absolute bottom-full left-0 right-0 mb-0.5 w-full">
+          {contextPillsSlot}
+        </div>
 
         {/* Input row */}
         <div
           className={cn(
             "flex bg-muted/30 border border-border rounded-2xl p-2 transition-all duration-200",
             "focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/20",
-            isCompact ? "flex-col sm:flex-row sm:items-center gap-1 sm:gap-2" : "flex-col gap-1",
+            isCompact
+              ? "flex-col sm:flex-row sm:items-center gap-1 sm:gap-2"
+              : "flex-col gap-1",
           )}
         >
           {/* Attachment before textarea in compact mode (Desktop only) */}
@@ -101,7 +106,9 @@ export default function ChatInput({
           <div
             className={cn(
               "flex items-center",
-              isCompact ? "justify-between sm:justify-end gap-1 shrink-0" : "justify-between gap-1",
+              isCompact
+                ? "justify-between sm:justify-end gap-1 shrink-0"
+                : "justify-between gap-1",
             )}
           >
             {/* Attachment in expanded mode or mobile compact (bottom row, left side) */}
@@ -111,10 +118,13 @@ export default function ChatInput({
               aria-label="Add context"
               className={cn(
                 "p-1.5 sm:p-2 rounded-xl hover:bg-accent text-muted-foreground hover:text-primary transition-colors shrink-0",
-                isCompact ? "flex sm:hidden" : "flex"
+                isCompact ? "flex sm:hidden" : "flex",
               )}
             >
-              <HugeiconsIcon icon={Attachment01Icon} className="w-4 h-4 sm:w-5 sm:h-5" />
+              <HugeiconsIcon
+                icon={Attachment01Icon}
+                className="w-4 h-4 sm:w-5 sm:h-5"
+              />
             </button>
 
             {/* Actions */}
