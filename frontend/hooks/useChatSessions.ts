@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { toast } from "sonner";
-import { MODEL_REGISTRY, getDefaultModel } from "@/lib/ai/modelRegistry";
 import type { ChatSessionListItem } from "@/components/chat/layout/ChatHistoryPanel";
-import type { UIMessage } from "ai";
+import { getDefaultModel } from "@/lib/ai/modelRegistry";
 import type { ContextItem } from "@/types/chat";
+import type { UIMessage } from "ai";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
 
 type ChatSessionPayload = {
   id: string;
@@ -24,9 +24,6 @@ interface UseChatSessionsProps {
   setMessages: (messages: UIMessage[]) => void;
   setContexts: (contexts: ContextItem[]) => void;
   setSelectedModel: (model: string) => void;
-  selectedModel: string;
-  responseMode: "concise" | "descriptive";
-  contexts: ContextItem[];
   isGuest: boolean;
 }
 
@@ -34,9 +31,6 @@ export function useChatSessions({
   setMessages,
   setContexts,
   setSelectedModel,
-  selectedModel,
-  responseMode,
-  contexts,
   isGuest,
 }: UseChatSessionsProps) {
   const router = useRouter();
@@ -53,6 +47,7 @@ export function useChatSessions({
     try {
       const res = await fetch("/api/chat/sessions");
       if (!res.ok) throw new Error("Failed to load chat sessions");
+
       const data = await res.json();
       setSessions(data.sessions ?? []);
     } catch (error) {
@@ -81,7 +76,9 @@ export function useChatSessions({
           method: "DELETE",
         });
         if (!res.ok) throw new Error("Failed to delete chat");
+
         setSessions((prev) => prev.filter((session) => session.id !== id));
+
         if (id === activeSessionId) {
           router.replace("/chat", { scroll: false });
         }
@@ -122,7 +119,11 @@ export function useChatSessions({
         if (isMounted) {
           setSelectedModel(session.model || getDefaultModel(isGuest));
           setContexts(session.contexts ?? []);
-          setMessages(session.messages && session.messages.length > 0 ? session.messages : []);
+          setMessages(
+            session.messages && session.messages.length > 0
+              ? session.messages
+              : [],
+          );
         }
       } catch (error) {
         console.error(error);
@@ -135,7 +136,14 @@ export function useChatSessions({
     return () => {
       isMounted = false;
     };
-  }, [activeSessionId, router, setContexts, setMessages, setSelectedModel, isGuest]);
+  }, [
+    activeSessionId,
+    router,
+    setContexts,
+    setMessages,
+    setSelectedModel,
+    isGuest,
+  ]);
 
   // Initial load
   useEffect(() => {

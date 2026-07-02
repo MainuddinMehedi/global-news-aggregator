@@ -90,9 +90,6 @@ export default function ChatInterface() {
     setMessages,
     setContexts,
     setSelectedModel,
-    selectedModel,
-    responseMode,
-    contexts,
     isGuest,
   });
 
