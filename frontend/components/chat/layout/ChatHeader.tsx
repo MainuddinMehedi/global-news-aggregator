@@ -176,6 +176,7 @@ export default function ChatHeader({
                   loading={sessionsLoading}
                   onSelectSession={handleSelectSession}
                   onDeleteSession={onDeleteSession}
+                  isGuest={isGuest}
                 />
               </SheetContent>
             </Sheet>
