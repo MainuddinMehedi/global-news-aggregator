@@ -1,9 +1,9 @@
 "use client";
 
-import { Article } from "@/types/article";
-import { useSettings } from "@/store";
 import ContinuousFeed from "@/components/Feed/layouts/ContinuousFeed";
 import DailyFeed from "@/components/Feed/layouts/DailyFeed";
+import { useSettings } from "@/store";
+import { Article } from "@/types/article";
 
 export interface ArticleFeedProps {
   initialArticles: Article[];
