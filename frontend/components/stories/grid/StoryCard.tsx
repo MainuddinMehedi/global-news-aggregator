@@ -93,7 +93,7 @@ export default function StoryCard({ story }: StoryCardProps) {
             </Link>
           </h2>
 
-          <div className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-x-4 gap-y-2 text-[10px] 2xl:text-xs font-bold uppercase tracking-widest text-muted-foreground pt-1">
+          <div className="flex flex-col items-start gap-y-3 text-[10px] 2xl:text-xs font-bold uppercase tracking-widest text-muted-foreground pt-1">
             {story.regions && story.regions.length > 0 && (
               <div className="flex items-center gap-2">
                 <span className="text-foreground/40 font-black">/</span>
