@@ -1,13 +1,26 @@
+import { WidgetListSkeleton } from "@/components/skeletons/home/WidgetListSkeleton";
+import EventClustersList from "@/components/widgets/events/EventClustersList";
 import {
   getClusterStats,
   getStoryClustersWithOrigins,
 } from "@/queries/analytics";
-import EventClustersList from "@/components/widgets/events/EventClustersList";
-import { Suspense } from "react";
-import { Skeleton } from "@/components/ui/skeleton";
 import { METADATA_COLORS } from "@/utils/colors";
+import { Suspense } from "react";
 
-export async function EventClustersWidget() {
+export function EventClustersWidget() {
+  return (
+    <div className="bg-card border border-border rounded-2xl p-4 shadow-sm">
+      <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest mb-4 px-1">
+        Active Event Clusters
+      </h3>
+      <Suspense fallback={<WidgetListSkeleton count={4} />}>
+        <EventClustersContent />
+      </Suspense>
+    </div>
+  );
+}
+
+async function EventClustersContent() {
   const [stats, clusters] = await Promise.all([
     getClusterStats(),
     getStoryClustersWithOrigins(),
@@ -16,11 +29,7 @@ export async function EventClustersWidget() {
   if (!stats) return null;
 
   return (
-    <div className="bg-card border border-border rounded-2xl p-4 shadow-sm">
-      <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest mb-4 px-1">
-        Active Event Clusters ({stats.activeCount})
-      </h3>
-
+    <>
       {/* Impact distribution header - 4 square items in one line */}
       <div className="grid grid-cols-4 gap-1 mb-5">
         {["CRITICAL", "HIGH", "MEDIUM", "LOW"].map((impact) => {
@@ -63,20 +72,8 @@ export async function EventClustersWidget() {
         <p className="text-[10px] font-bold text-muted-foreground uppercase px-1 mb-1">
           Top Stories
         </p>
-        <Suspense fallback={<EventClustersListSkeleton />}>
-          <EventClustersList clusters={clusters} />
-        </Suspense>
+        <EventClustersList clusters={clusters} />
       </div>
-    </div>
-  );
-}
-
-function EventClustersListSkeleton() {
-  return (
-    <div className="space-y-2">
-      {Array.from({ length: 3 }).map((_, i) => (
-        <Skeleton key={i} className="h-20 w-full rounded-xl" />
-      ))}
-    </div>
+    </>
   );
 }

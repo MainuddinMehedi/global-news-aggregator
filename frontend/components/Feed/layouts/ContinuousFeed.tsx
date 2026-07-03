@@ -1,14 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { useIntersectionObserver } from "@/hooks/useIntersectionObserver";
 import ArticleCard from "@/components/articles/ArticleCard";
-import { ArticleFeedLoadingGrid } from "@/components/Feed/FeedSkeleton";
-import { Article } from "@/types/article";
-import { useSetArticleCount } from "@/store";
-import { getGroupingKey, formatGroupingKey } from "@/lib/helpers/dateUtils";
-import { buildFeedQueryParams } from "@/lib/helpers/feedUtils";
 import { PaginationError } from "@/components/Feed/PaginationError";
+import { ArticleFeedLoadingGrid } from "@/components/skeletons/home/ArticleFeedSkeleton";
+import { useIntersectionObserver } from "@/hooks/useIntersectionObserver";
+import { formatGroupingKey, getGroupingKey } from "@/lib/helpers/dateUtils";
+import { buildFeedQueryParams } from "@/lib/helpers/feedUtils";
+import { useSetArticleCount } from "@/store";
+import { Article } from "@/types/article";
+import { useCallback, useEffect, useState } from "react";
 
 interface ContinuousFeedProps {
   initialArticles: Article[];

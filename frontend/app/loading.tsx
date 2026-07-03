@@ -1,5 +1,5 @@
-import FeedSkeleton from "@/components/Feed/FeedSkeleton";
+import { GlobalSpinner } from "@/components/skeletons/global/GlobalSpinner";
 
 export default function Loading() {
-  return <FeedSkeleton />;
+  return <GlobalSpinner />;
 }

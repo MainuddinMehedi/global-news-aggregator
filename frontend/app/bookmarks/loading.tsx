@@ -1,5 +1,5 @@
+import { ArticleCardSkeleton } from "@/components/skeletons/home/ArticleCardSkeleton";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArticleCardSkeleton } from "@/components/Feed/FeedSkeleton";
 
 export default function BookmarksLoading() {
   return (
