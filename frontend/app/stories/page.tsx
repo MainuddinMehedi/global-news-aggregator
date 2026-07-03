@@ -1,5 +1,6 @@
 import { Suspense } from "react";
-import { StoryClustersContainer, StoriesGridSkeleton } from "@/components/stories";
+import { StoryClustersContainer } from "@/components/stories";
+import { StoriesGridSkeleton } from "@/components/skeletons/stories/StoriesGridSkeleton";
 
 interface PageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -23,6 +24,7 @@ export default function Page({ searchParams }: PageProps) {
           </p>
         </div>
 
+        {/* TODO: Some sorting options can be wired up here. */}
         <div className="inline-flex items-center gap-2 rounded-2xl border border-border bg-card/60 px-4 py-2 text-sm font-medium text-muted-foreground shadow-sm backdrop-blur-md">
           <span className="relative flex h-2.5 w-2.5">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75"></span>

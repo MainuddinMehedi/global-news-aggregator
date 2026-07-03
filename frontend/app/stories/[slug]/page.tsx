@@ -1,4 +1,4 @@
-import StoryDetailsSkeleton from "@/components/stories/grid/StorySkeleton";
+import StoryDetailsSkeleton from "@/components/skeletons/stories/StoryDetailsSkeleton";
 import { StoryDetailView } from "@/components/stories/StoryDetailView";
 import { getStoryDetail } from "@/queries/stories";
 import { getPublisherRegion } from "@/utils/analytics";

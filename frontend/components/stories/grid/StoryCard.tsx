@@ -1,11 +1,15 @@
 import { ImpactBadge } from "@/components/stories/ImpactBadge";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { Clock01Icon, Earth, TradeUpIcon } from "@hugeicons/core-free-icons";
-import Link from "next/link";
+import KeyDevelopmentsTimeline from "@/components/stories/timeline/KeyDevelopmentsTimeline";
 import { SourceAvatarStack } from "@/components/ui/SourceAvatar";
 import { formatTimeWindow } from "@/utils/formatters";
-import KeyDevelopmentsTimeline from "@/components/stories/timeline/KeyDevelopmentsTimeline";
-import { getImpactHoverBorder, getImpactHoverGradient, getImpactHoverText } from "@/utils/stories";
+import {
+  getImpactHoverBorder,
+  getImpactHoverGradient,
+  getImpactHoverText,
+} from "@/utils/stories";
+import { Clock01Icon, Earth, TradeUpIcon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
+import Link from "next/link";
 
 interface KeyDevelopment {
   title: string;
@@ -37,8 +41,12 @@ interface StoryCardProps {
 
 export default function StoryCard({ story }: StoryCardProps) {
   return (
-    <article className={`break-inside-avoid group max-h-fit relative flex flex-col overflow-hidden rounded-[2rem] border border-border bg-card/50 text-card-foreground shadow-sm backdrop-blur-xl transition-all duration-300 ${getImpactHoverBorder(story.impact)}`}>
-      <div className={`absolute inset-0 -z-10 bg-linear-to-br opacity-0 transition-opacity duration-500 group-hover:opacity-100 ${getImpactHoverGradient(story.impact)}`} />
+    <article
+      className={`break-inside-avoid group max-h-fit relative flex flex-col overflow-hidden rounded-[2rem] border border-border bg-card/50 text-card-foreground shadow-sm backdrop-blur-xl transition-all duration-300 ${getImpactHoverBorder(story.impact)}`}
+    >
+      <div
+        className={`absolute inset-0 -z-10 bg-linear-to-br opacity-0 transition-opacity duration-500 group-hover:opacity-100 ${getImpactHoverGradient(story.impact)}`}
+      />
 
       <div className="flex-1 space-y-4 border-b border-border/40 bg-muted/20 px-6 py-6 sm:px-8">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-2 w-full">

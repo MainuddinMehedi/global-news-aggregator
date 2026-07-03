@@ -6,7 +6,4 @@ export { PerspectiveWidget } from "@/components/stories/PerspectiveWidget";
 export { StoryAnalysis } from "@/components/stories/StoryAnalysis";
 export { StoryTimelineSidebar } from "@/components/stories/timeline/StoryTimelineSidebar";
 export { StoryArticlesGrid } from "@/components/stories/grid/StoryArticlesGrid";
-export {
-  StoryClustersContainer,
-  StoriesGridSkeleton,
-} from "@/components/stories/grid/StoryClustersContainer";
+export { StoryClustersContainer } from "@/components/stories/grid/StoryClustersContainer";
