@@ -5,7 +5,7 @@ import { processBacklogLogic } from "./processBacklog.js";
 import { scanTopicsLogic } from "./scanTopics.js";
 import { processDeliveryBatch } from "./notifications/deliveryWorker.js";
 import { runHealthMonitor } from "./health/monitor.js";
-import { cleanupNotifications } from "./notifications/retention.js";
+import { cleanupNotifications } from "./cleanup/notificationRetention.js";
 import { cleanupAnonymousChats } from "./cleanup/guestSessionsCleanup.js";
 
 /**

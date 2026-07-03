@@ -14,7 +14,7 @@ import { prisma } from "./db/prisma.js";
 import { enrichWithStage1 } from "./newsPipeline/stage1.js";
 import { createArticleProcessor } from "./newsPipeline/enrichmentPipeline.js";
 import formatDuration from "./utils/formatDuration.js";
-import cleanupOldSkippedArticles from "./utils/cleanupOldSkippedArticles.js";
+import cleanupOldSkippedArticles from "./cleanup/skippedArticlesCleanup.js";
 import revalidateCache from "./utils/revalidateCache.js";
 import { startTaskLogging, updateTaskHeartbeat, completeTaskLogging } from "./utils/taskLogger.js";
 import { loadConfigOverrides } from "./ai/aiConfig.js";
