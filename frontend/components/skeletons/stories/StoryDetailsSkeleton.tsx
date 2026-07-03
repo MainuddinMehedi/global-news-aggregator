@@ -2,12 +2,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function StoryDetailsSkeleton() {
   return (
-    <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-8 animate-pulse">
-      {/* Back button link skeleton */}
-      <div className="flex items-center gap-2">
-        <Skeleton className="h-5 w-28 rounded" />
-      </div>
-
+    <div className="w-full space-y-8 animate-pulse">
       {/* Story Hero Skeleton */}
       <div className="rounded-[2.5rem] border border-border bg-card/40 backdrop-blur-xl p-6 md:p-8 shadow-sm space-y-4">
         <div className="flex flex-wrap items-center gap-2">
@@ -67,10 +62,13 @@ export default function StoryDetailsSkeleton() {
               <Skeleton className="h-8 w-52 rounded" />
               <Skeleton className="h-6 w-20 rounded-full" />
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="bg-card border border-border rounded-xl p-4 flex flex-col gap-3">
+                <div
+                  key={i}
+                  className="bg-card border border-border rounded-xl p-4 flex flex-col gap-3"
+                >
                   <div className="flex-1 space-y-2">
                     <Skeleton className="h-5 w-full" />
                     <Skeleton className="h-5 w-5/6" />
@@ -97,7 +95,7 @@ export default function StoryDetailsSkeleton() {
               <Skeleton className="h-4 w-40 rounded" />
               <div className="h-[1px] bg-border/50 w-full" />
             </div>
-            
+
             {/* Timeline Steps Skeletons */}
             <div className="space-y-8 relative pl-4 border-l border-border/50 ml-2">
               {Array.from({ length: 4 }).map((_, i) => (

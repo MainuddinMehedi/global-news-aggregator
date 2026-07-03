@@ -4,9 +4,6 @@ import { PerspectiveWidget } from "@/components/stories/PerspectiveWidget";
 import { StoryAnalysis } from "@/components/stories/StoryAnalysis";
 import { StoryTimelineSidebar } from "@/components/stories/timeline/StoryTimelineSidebar";
 import { mapProcessedArticleToArticle } from "@/lib/article";
-import { ArrowLeft01Icon } from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
-import Link from "next/link";
 
 interface StoryDetailViewProps {
   story: any; // Using any for now, or you can import the specific type if available
@@ -24,19 +21,7 @@ export function StoryDetailView({
   isModal,
 }: StoryDetailViewProps) {
   return (
-    <div
-      className={`w-full space-y-8 ${!isModal ? "mx-auto max-w-7xl 2xl:max-w-[1400px] px-4 py-8 sm:px-6 lg:px-8" : ""}`}
-    >
-      {!isModal && (
-        <Link
-          href="/stories"
-          className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <HugeiconsIcon icon={ArrowLeft01Icon} className="mr-2 h-4 w-4" />
-          Back to Stories
-        </Link>
-      )}
-
+    <div className="w-full space-y-8">
       <StoryHero story={story} sources={sources} origins={origins} />
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
