@@ -1,40 +1,69 @@
 import { prisma } from "../db/prisma.js";
 import { emitNotification } from "./emitter.js";
+import { calculateDigestWindow } from "./timeUtils.js";
 
 /**
- * Worker that runs periodically (e.g. daily) to send digests for Locked Topics.
+ * Worker that runs periodically (hourly) to send digests for Locked Topics.
  */
 export async function processNotificationDigests() {
-  console.log(`[Digest Worker] Starting daily digest generation...`);
+  console.log(`[Topics Digest Worker] Starting digest generation...`);
 
-  // 1. Fetch all active topics that have digest mode enabled
+  // 1. Fetch all active topics that have digest mode enabled, including user preferences
   const topics = await prisma.lockedTopic.findMany({
     where: {
       isActive: true,
       notifyEnabled: true,
       notifyMode: "DIGEST",
     },
+    include: {
+      user: {
+        include: {
+          notificationPreference: true,
+        },
+      },
+    },
   });
 
   if (topics.length === 0) {
-    console.log(`[Digest Worker] No topics configured for digests.`);
+    console.log(`[Topics Digest Worker] No topics configured for digests.`);
     return;
   }
 
-  // 24 hours ago
-  const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
   let digestsSent = 0;
 
   for (const topic of topics) {
-    if (!topic.userId) continue;
+    if (!topic.userId || !topic.user?.notificationPreference) continue;
 
-    // 2. Fetch unread findings from the last 24 hours for this topic
+    const pref = topic.user.notificationPreference;
+
+    // Determine the last time a digest was sent for this specific topic
+    // We check the notification history for this topic's digest payload
+    const lastNotif = await prisma.notification.findFirst({
+      where: {
+        userId: topic.userId,
+        type: "TOPIC_FINDING_DIGEST",
+        payload: {
+          path: ["topicId"],
+          equals: topic.id,
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    const lastDigestAt = lastNotif ? lastNotif.createdAt : null;
+    const window = calculateDigestWindow(pref.digestFrequency, lastDigestAt);
+
+    if (!window.isDue) {
+      continue; // Not time for a digest yet based on the user's frequency
+    }
+
+    // 2. Fetch unread findings from the calculated cutoff date
     const recentFindings = await prisma.topicFinding.findMany({
       where: {
         topicId: topic.id,
         isRead: false,
         foundAt: {
-          gte: oneDayAgo,
+          gte: window.cutoffDate,
         },
       },
       orderBy: {
@@ -59,7 +88,7 @@ export async function processNotificationDigests() {
       }
     } catch (e) {
       console.warn(
-        `[Digest Worker] Failed to parse notifyChannels for topic ${topic.id}`,
+        `[Topics Digest Worker] Failed to parse notifyChannels for topic ${topic.id}`,
       );
     }
 
@@ -87,13 +116,13 @@ export async function processNotificationDigests() {
       digestsSent++;
     } catch (err) {
       console.error(
-        `[Digest Worker] Failed to emit digest for topic ${topic.id}:`,
+        `[Topics Digest Worker] Failed to emit digest for topic ${topic.id}:`,
         err.message,
       );
     }
   }
 
   console.log(
-    `[Digest Worker] Finished. Sent ${digestsSent} digest notifications.`,
+    `[Topics Digest Worker] Finished. Sent ${digestsSent} digest notifications.`,
   );
 }

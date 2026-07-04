@@ -61,6 +61,19 @@ export function formatTopicFindingDigest(payload) {
   };
 }
 
+export function formatSystemNewsDigest(payload) {
+  const { newStoriesCount, topStoryTitle, topStorySummary, storySlug } =
+    payload || {};
+  // Assuming a generic domain for the link; update if domain is different
+  const storyUrl = storySlug
+    ? `https://globalnews.example.com/story/${storySlug}`
+    : "#";
+  return {
+    title: `🌍 Global News Daily Digest`,
+    message: `We tracked **${newStoriesCount} major stories** in the last 24 hours.\n\n**Top Story:** ${topStoryTitle || "Unknown"}\n${topStorySummary ? `*${topStorySummary}*\n` : ""}**Link:** ${storyUrl}`,
+  };
+}
+
 export function formatTopicSourceDegraded(payload) {
   const { topicName, sourceName, failureCount, error } = payload || {};
   const failText =

@@ -44,6 +44,9 @@ export async function emitNotification({
         case "TOPIC_FINDING_DIGEST":
           formatted = templates.formatTopicFindingDigest(payload);
           break;
+        case "SYSTEM_NEWS_DIGEST":
+          formatted = templates.formatSystemNewsDigest(payload);
+          break;
         case "TOPIC_SOURCE_DEGRADED":
           formatted = templates.formatTopicSourceDegraded(payload);
           break;

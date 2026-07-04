@@ -193,6 +193,29 @@ export default function Step3Launch({
                   })
                 }
               />
+
+              <div className="pt-2 px-1">
+                <p className="text-[11px] text-muted-foreground leading-relaxed flex gap-2 p-3 bg-muted/40 rounded-xl border border-border">
+                  <HugeiconsIcon
+                    icon={Notification03Icon}
+                    size={14}
+                    className="shrink-0 mt-0.5 text-primary"
+                  />
+                  <span>
+                    <strong>Note:</strong> You must configure your actual
+                    Discord Webhook URL and Telegram Chat ID in the global{" "}
+                    <a
+                      href="/settings#notifications"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="underline hover:text-primary transition-colors"
+                    >
+                      Settings page
+                    </a>{" "}
+                    for these channels to work.
+                  </span>
+                </p>
+              </div>
             </div>
           )}
         </div>

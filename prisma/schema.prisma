@@ -19,29 +19,28 @@ model Category {
 }
 
 model User {
-  id            String      @id @default(uuid())
+  id            String    @id @default(uuid())
   name          String?
-  email         String?     @unique
+  email         String?   @unique
   emailVerified DateTime?
   image         String?
-  
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-  role          UserRole    @default(USER)
-  suspended     Boolean     @default(false)
-  settings      Json?
 
-  accounts      Account[]
-  sessions      Session[]
-  articleBookmarks ArticleBookmark[]
-  findingBookmarks FindingBookmark[]
-  notifications    Notification[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  role      UserRole @default(USER)
+  suspended Boolean  @default(false)
+  settings  Json?
+
+  accounts               Account[]
+  sessions               Session[]
+  articleBookmarks       ArticleBookmark[]
+  findingBookmarks       FindingBookmark[]
+  notifications          Notification[]
   notificationPreference NotificationPreference?
-  
-  lockedTopics     LockedTopic[]
-  chatSessions     ChatSession[]
-}
 
+  lockedTopics LockedTopic[]
+  chatSessions ChatSession[]
+}
 
 model RawArticle {
   id               String   @id @default(uuid())
@@ -67,21 +66,21 @@ model RawArticle {
 }
 
 model ProcessedArticle {
-  id                   String     @id @default(uuid())
-  rawArticleId         String     @unique
-  rawArticle           RawArticle @relation(fields: [rawArticleId], references: [id], onDelete: Cascade)
-  categories           Category[] @relation("ProcessedArticleCategories")
-  entities             String[]
-  sentimentScore       Float?
-  biasNote             String?
-  eventRegion          String?
-  model                String?
-  processedAt          DateTime   @default(now())
-  clusteredAt          DateTime?
-  clusterStatus        String     @default("HOLDING")
-  embedding            Unsupported("vector(768)")?
-  storyClusters StoryCluster[] @relation("ArticleStoryClusters")
-  bookmarkedBy  ArticleBookmark[]
+  id             String                      @id @default(uuid())
+  rawArticleId   String                      @unique
+  rawArticle     RawArticle                  @relation(fields: [rawArticleId], references: [id], onDelete: Cascade)
+  categories     Category[]                  @relation("ProcessedArticleCategories")
+  entities       String[]
+  sentimentScore Float?
+  biasNote       String?
+  eventRegion    String?
+  model          String?
+  processedAt    DateTime                    @default(now())
+  clusteredAt    DateTime?
+  clusterStatus  String                      @default("HOLDING")
+  embedding      Unsupported("vector(768)")?
+  storyClusters  StoryCluster[]              @relation("ArticleStoryClusters")
+  bookmarkedBy   ArticleBookmark[]
 }
 
 model AiUsage {
@@ -171,11 +170,11 @@ model StoryCluster {
   isActive        Boolean @default(true)
 
   // Intelligence
-  impact       String?
-  impactScore  Float?
-  status       String? @default("DEVELOPING")
-  momentumScore Float @default(0)
-  whyItMatters String? @db.Text
+  impact        String?
+  impactScore   Float?
+  status        String? @default("DEVELOPING")
+  momentumScore Float   @default(0)
+  whyItMatters  String? @db.Text
 
   regions String[]
   themes  String[]
@@ -197,29 +196,29 @@ model StoryCluster {
 }
 
 model LockedTopic {
-  id                  String     @id @default(uuid())
-  userId              String
-  user                User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  displayName         String
-  userContext         String     @db.Text
-  aiRefinedQuery      String     @db.Text
-  aiQuerySummary      String     @db.Text
-  queryEmbedding      Unsupported("vector(768)")? // [NEW] Semantic representation of the topic
-  conceptualKeywords  Json? // Array of keyword groups for broad pre-filtering
-  liveWebSummary      String?    @db.Text
-  liveSummary         String?    @db.Text // AI-generated findings overview (distinct from liveWebSummary)
-  sources             Json // SourceConfig[]
-  isActive            Boolean    @default(true)
-  notifyEnabled       Boolean    @default(false)
-  notifyMode          NotifyMode @default(DIGEST)
-  notifyThreshold     Float      @default(0.8)
-  notifyChannels      Json // { discord: bool, telegram: bool }
-  matchCount          Int        @default(0)
-  lastMatchedAt       DateTime?
-  lastViewedAt        DateTime?
-  lastScannedAt       DateTime? // null = initial scan not yet run (scanning state)
-  createdAt           DateTime   @default(now())
-  updatedAt           DateTime   @updatedAt
+  id                 String                      @id @default(uuid())
+  userId             String
+  user               User                        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  displayName        String
+  userContext        String                      @db.Text
+  aiRefinedQuery     String                      @db.Text
+  aiQuerySummary     String                      @db.Text
+  queryEmbedding     Unsupported("vector(768)")? // [NEW] Semantic representation of the topic
+  conceptualKeywords Json? // Array of keyword groups for broad pre-filtering
+  liveWebSummary     String?                     @db.Text
+  liveSummary        String?                     @db.Text // AI-generated findings overview (distinct from liveWebSummary)
+  sources            Json // SourceConfig[]
+  isActive           Boolean                     @default(true)
+  notifyEnabled      Boolean                     @default(false)
+  notifyMode         NotifyMode                  @default(DIGEST)
+  notifyThreshold    Float                       @default(0.8)
+  notifyChannels     Json // { discord: bool, telegram: bool }
+  matchCount         Int                         @default(0)
+  lastMatchedAt      DateTime?
+  lastViewedAt       DateTime?
+  lastScannedAt      DateTime? // null = initial scan not yet run (scanning state)
+  createdAt          DateTime                    @default(now())
+  updatedAt          DateTime                    @updatedAt
 
   findings TopicFinding[]
 }
@@ -239,7 +238,7 @@ model TopicFinding {
   foundAt        DateTime      @default(now())
   metadata       Json? // { location, salary, company, etc. }
 
-  bookmarkedBy   FindingBookmark[]
+  bookmarkedBy FindingBookmark[]
 
   @@unique([topicId, sourceUrl]) // deduplication constraint
   @@index([topicId, foundAt])
@@ -268,18 +267,18 @@ enum FindingSource {
 // --- NextAuth Models ---
 
 model Account {
-  id                 String  @id @default(uuid())
-  userId             String
-  type               String
-  provider           String
-  providerAccountId  String
-  refresh_token      String?  @db.Text
-  access_token       String?  @db.Text
-  expires_at         Int?
-  token_type         String?
-  scope              String?
-  id_token           String?  @db.Text
-  session_state      String?
+  id                String  @id @default(uuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -305,24 +304,24 @@ model VerificationToken {
 // --- Bookmarking Models ---
 
 model ArticleBookmark {
-  id        String   @id @default(uuid())
+  id        String           @id @default(uuid())
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   articleId String
   article   ProcessedArticle @relation(fields: [articleId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
+  createdAt DateTime         @default(now())
 
   @@unique([userId, articleId])
   @@index([userId])
 }
 
 model FindingBookmark {
-  id        String   @id @default(uuid())
+  id        String       @id @default(uuid())
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   findingId String
   finding   TopicFinding @relation(fields: [findingId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
+  createdAt DateTime     @default(now())
 
   @@unique([userId, findingId])
   @@index([userId])
@@ -333,9 +332,9 @@ model FeedSource {
   name          String    @unique
   url           String    @unique
   sourceCountry String
-  sourceType    String    // e.g. "Commercial Publisher", "State Media"
-  biasGroup     String    // e.g. "Centrist", "State-Aligned"
-  coverageScope String    // e.g. "National", "Global"
+  sourceType    String // e.g. "Commercial Publisher", "State Media"
+  biasGroup     String // e.g. "Centrist", "State-Aligned"
+  coverageScope String // e.g. "National", "Global"
   enabled       Boolean   @default(true)
   fetchFailures Int       @default(0)
   lastFetchedAt DateTime?
@@ -345,21 +344,21 @@ model FeedSource {
 
 model SystemSetting {
   key         String   @id
-  value       Json     // Arbitrary configuration object
+  value       Json // Arbitrary configuration object
   description String?
   updatedAt   DateTime @updatedAt
 }
 
 model SystemTask {
   id           String    @id @default(uuid())
-  taskName     String    // e.g., "rss-ingestion", "story-clustering", "locked-topic-scan", "backlog-processing"
-  status       String    // "RUNNING" | "SUCCESS" | "FAILED"
+  taskName     String // e.g., "rss-ingestion", "story-clustering", "locked-topic-scan", "backlog-processing"
+  status       String // "RUNNING" | "SUCCESS" | "FAILED"
   startedAt    DateTime  @default(now())
   completedAt  DateTime?
   heartbeatAt  DateTime  @default(now())
   errorMessage String?   @db.Text
-  metadata     Json?     // Statistics: { fetchedCount: Int, insertedCount: Int, dupeCount: Int, cost: Float }
-  
+  metadata     Json? // Statistics: { fetchedCount: Int, insertedCount: Int, dupeCount: Int, cost: Float }
+
   @@index([taskName, status])
   @@index([startedAt])
 }
@@ -368,6 +367,7 @@ enum NotificationType {
   // User-facing (defined now, wired later)
   TOPIC_FINDING_ALERT
   TOPIC_FINDING_DIGEST
+  SYSTEM_NEWS_DIGEST
   TOPIC_SCAN_DEGRADED
   STORY_BREAKING
   STORY_ESCALATING
@@ -397,17 +397,17 @@ enum NotificationChannel {
 }
 
 model Notification {
-  id         String               @id @default(uuid())
-  userId     String
-  type       NotificationType
-  title      String
-  message    String               @db.Text
-  priority   NotificationPriority @default(NORMAL)
-  payload    Json?
-  readAt     DateTime?
-  createdAt  DateTime             @default(now())
+  id        String               @id @default(uuid())
+  userId    String
+  type      NotificationType
+  title     String
+  message   String               @db.Text
+  priority  NotificationPriority @default(NORMAL)
+  payload   Json?
+  readAt    DateTime?
+  createdAt DateTime             @default(now())
 
-  user       User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user       User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
   deliveries NotificationDelivery[]
 
   @@index([userId, readAt])
@@ -424,47 +424,47 @@ model NotificationDelivery {
   retryCount     Int                 @default(0)
   createdAt      DateTime            @default(now())
 
-  notification   Notification        @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  notification Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
 
   @@unique([notificationId, channel])
   @@index([deliveredAt])
 }
 
 model NotificationPreference {
-  id              String   @id @default(uuid())
-  userId          String   @unique
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     String @id @default(uuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  inAppEnabled    Boolean  @default(true)
-  discordEnabled  Boolean  @default(false)
-  telegramEnabled Boolean  @default(false)
+  inAppEnabled    Boolean @default(true)
+  discordEnabled  Boolean @default(false)
+  telegramEnabled Boolean @default(false)
   discordWebhook  String?
   telegramChatId  String?
 
-  typePreferences Json     @default("{}")
+  typePreferences Json @default("{}")
 
-  digestEnabled     Boolean @default(false)
-  digestFrequency   String  @default("12h")
-  digestTime        String? @default("08:00")
-  digestTimezone    String  @default("UTC")
+  digestEnabled   Boolean @default(false)
+  digestFrequency String  @default("12h")
+  digestTime      String? @default("08:00")
+  digestTimezone  String  @default("UTC")
 
   quietHoursEnabled Boolean @default(false)
   quietHoursStart   String?
   quietHoursEnd     String?
   quietTimezone     String  @default("UTC")
 
-  lastDigestAt    DateTime?
-  updatedAt       DateTime @updatedAt
+  lastDigestAt DateTime?
+  updatedAt    DateTime  @updatedAt
 }
 
 model AdminNotificationConfig {
-  id                     String           @id @default(uuid())
-  type                   NotificationType @unique
-  inAppEnabled           Boolean          @default(true)
-  discordEnabled         Boolean          @default(false)
-  telegramEnabled        Boolean          @default(false)
-  discordWebhook         String?
-  telegramChatId         String?
-  cooldownMinutes        Int              @default(60)
-  updatedAt              DateTime         @updatedAt
+  id              String           @id @default(uuid())
+  type            NotificationType @unique
+  inAppEnabled    Boolean          @default(true)
+  discordEnabled  Boolean          @default(false)
+  telegramEnabled Boolean          @default(false)
+  discordWebhook  String?
+  telegramChatId  String?
+  cooldownMinutes Int              @default(60)
+  updatedAt       DateTime         @updatedAt
 }
