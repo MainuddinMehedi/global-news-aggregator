@@ -1,30 +1,17 @@
-import {
-  getGlobalAnalyticsData,
-  getUserAnalyticsData,
-} from "@/queries/analytics";
-import { auth } from "@/auth";
 import { AnalyticsTimeFilter } from "@/components/analytics/AnalyticsTimeFilter";
-
-import {
-  formatCompactNumber,
-  getSentimentDisplayProps,
-} from "@/utils/analytics";
 import {
   ScanlineOverlay,
-  StatCard,
   SectionHeader,
 } from "@/components/analytics/AnalyticsUI";
-
-import {
-  EventRegionPanel,
-  SentimentSpectrumPanel,
-  BiasLeaningPanel,
-  CoverageScopePanel,
-  SourceGeographyPanel,
-  CategoryCoveragePanel,
-  TopicSourcePanel,
-  TopEntitiesPanel,
-} from "@/components/analytics/panels";
+import { CorpusSizeContainer } from "@/components/analytics/containers/CorpusSizeContainer";
+import { NewsIntelligenceContainer } from "@/components/analytics/containers/NewsIntelligenceContainer";
+import { SummaryStatsContainer } from "@/components/analytics/containers/SummaryStatsContainer";
+import { TopicsNarrativesContainer } from "@/components/analytics/containers/TopicsNarrativesContainer";
+import { CorpusSizeSkeleton } from "@/components/skeletons/analytics/CorpusSizeSkeleton";
+import { NewsIntelligenceSkeleton } from "@/components/skeletons/analytics/NewsIntelligenceSkeleton";
+import { SummaryStatsSkeleton } from "@/components/skeletons/analytics/SummaryStatsSkeleton";
+import { TopicsNarrativesSkeleton } from "@/components/skeletons/analytics/TopicsNarrativesSkeleton";
+import { Suspense } from "react";
 
 // ── Page ───────────────────────────────────────────────────────────────────
 
@@ -32,23 +19,7 @@ interface AnalyticsProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
-export default async function AnalyticsPage(props: AnalyticsProps) {
-  const session = await auth();
-  const searchParams = await props.searchParams;
-  const timeRange =
-    typeof searchParams.range === "string" ? searchParams.range : "7d";
-
-  const data = await getGlobalAnalyticsData(timeRange);
-  const userData = session?.user?.id
-    ? await getUserAnalyticsData(session.user.id, timeRange)
-    : null;
-
-  const { label: sentimentLabel, color: sentimentColor } =
-    getSentimentDisplayProps(data.avgSentiment);
-
-  const maxEntityCount = data.topEntities[0]?.count ?? 1;
-  const maxCountryCount = data.topSourceCountries[0]?.count ?? 1;
-
+export default function AnalyticsPage(props: AnalyticsProps) {
   return (
     <div className="relative min-h-full bg-background pb-20">
       <ScanlineOverlay />
@@ -79,55 +50,16 @@ export default async function AnalyticsPage(props: AnalyticsProps) {
           </div>
 
           <div className="text-left md:text-right">
-            <p className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground/50 mb-1">
-              Corpus Size
-            </p>
-            <p className="text-5xl font-black font-mono tracking-tighter text-foreground">
-              {formatCompactNumber(data.totalArticles)}
-            </p>
-            <p className="text-[10px] text-muted-foreground font-mono mt-1">
-              processed articles
-            </p>
+            <Suspense fallback={<CorpusSizeSkeleton />}>
+              <CorpusSizeContainer searchParams={props.searchParams} />
+            </Suspense>
           </div>
         </div>
 
         {/* ── Summary stats ────────────────────────────────────────────── */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <StatCard
-            label="Story Clusters"
-            value={formatCompactNumber(data.totalStories)}
-            sub="Active narratives"
-            accent="#3b82f6"
-          />
-
-          {userData && (
-            <>
-              <StatCard
-                label="Locked Topics"
-                value={formatCompactNumber(userData.totalTopics)}
-                sub="Surveillance ops"
-                accent="#10b981"
-              />
-              <StatCard
-                label="Total Findings"
-                value={formatCompactNumber(userData.totalFindings)}
-                sub="Across all trackers"
-                accent="#f59e0b"
-              />
-            </>
-          )}
-
-          <StatCard
-            label="Avg. Sentiment"
-            value={sentimentLabel}
-            sub={
-              data.avgSentiment != null
-                ? `Score: ${data.avgSentiment.toFixed(3)}`
-                : undefined
-            }
-            accent={sentimentColor}
-          />
-        </div>
+        <Suspense fallback={<SummaryStatsSkeleton />}>
+          <SummaryStatsContainer searchParams={props.searchParams} />
+        </Suspense>
 
         {/* ── Section: News Intelligence ───────────────────────────────── */}
         <section className="space-y-6">
@@ -136,23 +68,9 @@ export default async function AnalyticsPage(props: AnalyticsProps) {
             sub="Bias & Coverage Distribution"
           />
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <EventRegionPanel data={data.eventRegionDistribution} />
-            <SentimentSpectrumPanel data={data.sentimentDistribution} />
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <BiasLeaningPanel data={data.biasGroupDistribution} />
-            <CoverageScopePanel data={data.coverageScopeDistribution} />
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <SourceGeographyPanel
-              data={data.topSourceCountries}
-              maxCountryCount={maxCountryCount}
-            />
-            <CategoryCoveragePanel data={data.categoryBreakdown} />
-          </div>
+          <Suspense fallback={<NewsIntelligenceSkeleton />}>
+            <NewsIntelligenceContainer searchParams={props.searchParams} />
+          </Suspense>
         </section>
 
         {/* ── Section: Topics & Narratives ───────────────────────────────── */}
@@ -162,20 +80,9 @@ export default async function AnalyticsPage(props: AnalyticsProps) {
             sub="Entities, Sources & Impact"
           />
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {userData && (
-              <TopicSourcePanel
-                data={userData.topicSourceDistribution}
-                className="lg:col-span-1"
-              />
-            )}
-
-            <TopEntitiesPanel
-              data={data.topEntities}
-              maxEntityCount={maxEntityCount}
-              className={userData ? "lg:col-span-2" : "lg:col-span-3"}
-            />
-          </div>
+          <Suspense fallback={<TopicsNarrativesSkeleton />}>
+            <TopicsNarrativesContainer searchParams={props.searchParams} />
+          </Suspense>
         </section>
 
         {/* ── Footer ───────────────────────────────────────────────────── */}
