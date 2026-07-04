@@ -1,12 +1,13 @@
-import { startBoss } from "./lib/boss.js";
-import { runIngestionPipeline } from "./runIngest.js";
-import { runClusteringLogic } from "./runClustering.js";
-import { processBacklogLogic } from "./processBacklog.js";
-import { scanTopicsLogic } from "./scanTopics.js";
-import { processDeliveryBatch } from "./notifications/deliveryWorker.js";
-import { runHealthMonitor } from "./health/monitor.js";
-import { cleanupNotifications } from "./cleanup/notificationRetention.js";
 import { cleanupAnonymousChats } from "./cleanup/guestSessionsCleanup.js";
+import { cleanupNotifications } from "./cleanup/notificationRetention.js";
+import { runHealthMonitor } from "./health/monitor.js";
+import { startBoss } from "./lib/boss.js";
+import { processDeliveryBatch } from "./notifications/deliveryWorker.js";
+import { processNotificationDigests } from "./notifications/digestWorker.js";
+import { processBacklogLogic } from "./processBacklog.js";
+import { runClusteringLogic } from "./runClustering.js";
+import { runIngestionPipeline } from "./runIngest.js";
+import { scanTopicsLogic } from "./scanTopics.js";
 
 /**
  * Factors out the queue creation, scheduling, array checking, and try/catch error handling boilerplate for pg-boss.
@@ -45,6 +46,7 @@ async function runMasterWorker() {
   await registerWorker(boss, "backlog-queue", "0 3 * * *", () => processBacklogLogic());
   await registerWorker(boss, "topics-queue", "15 */2 * * *", (job) => scanTopicsLogic(job.data?.topicId), { concurrency: 4 });
   await registerWorker(boss, "notification-delivery", "* * * * *", () => processDeliveryBatch());
+  await registerWorker(boss, "notification-digest", "0 8 * * *", () => processNotificationDigests()); // Runs every day at 8:00 AM
   await registerWorker(boss, "health-monitor", "*/15 * * * *", () => runHealthMonitor());
   await registerWorker(boss, "notification-retention", "0 4 * * *", () => cleanupNotifications());
   await registerWorker(boss, "anonymous-chat-cleanup", "0 4 * * *", () => cleanupAnonymousChats());
