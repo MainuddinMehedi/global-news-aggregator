@@ -1,32 +1,32 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { TopicFinding } from "@/types/lockedTopic";
-import { readGoogleCache, writeGoogleCache } from "@/lib/locked-topics";
 import { ContentSkeleton } from "@/components/locked-topics/sources/ContentSkeleton";
+import { readGoogleCache, writeGoogleCache } from "@/lib/locked-topics/api";
+import { TopicFinding } from "@/types/lockedTopic";
+import { useEffect, useState } from "react";
 
 interface GoogleNewsContentProps {
   finding: TopicFinding;
 }
 
 export function GoogleNewsContent({ finding }: GoogleNewsContentProps) {
-  const [content, setContent] = useState<string | null>(() => {
-    if (typeof window === "undefined") return null;
-    return readGoogleCache(finding.title)?.content ?? null;
-  });
-  const [articleUrl, setArticleUrl] = useState<string | null>(() => {
-    if (typeof window === "undefined") return null;
-    return readGoogleCache(finding.title)?.url ?? null;
-  });
-  const [loading, setLoading] = useState(!content);
+  const [content, setContent] = useState<string | null>(null);
+  const [articleUrl, setArticleUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const mountedRef = useRef(true);
 
   useEffect(() => {
-    if (content) return;
+    // 1. Try to load from cache on client side to avoid hydration mismatch
+    const cached = readGoogleCache(finding.title);
+    if (cached) {
+      setContent(cached.content);
+      setArticleUrl(cached.url);
+      setLoading(false);
+      return;
+    }
 
-    mountedRef.current = true;
-    let cancelled = false;
+    // 2. Fetch with AbortController for clean cancellation
+    const controller = new AbortController();
 
     async function resolve() {
       setLoading(true);
@@ -37,9 +37,8 @@ export function GoogleNewsContent({ finding }: GoogleNewsContentProps) {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ title: finding.title }),
+          signal: controller.signal,
         });
-
-        if (cancelled) return;
 
         if (res.ok) {
           const data = await res.json();
@@ -49,24 +48,20 @@ export function GoogleNewsContent({ finding }: GoogleNewsContentProps) {
         } else {
           setError("Could not fetch article. Open the original link to read.");
         }
-      } catch {
-        if (!cancelled) {
-          setError("Could not fetch article. Open the original link to read.");
-        }
+      } catch (err: any) {
+        if (err.name === "AbortError") return;
+        setError("Could not fetch article. Open the original link to read.");
       } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
+        setLoading(false);
       }
     }
 
     resolve();
 
     return () => {
-      cancelled = true;
-      mountedRef.current = false;
+      controller.abort();
     };
-  }, [finding.title, content]);
+  }, [finding.title]);
 
   return (
     <div className="space-y-4">

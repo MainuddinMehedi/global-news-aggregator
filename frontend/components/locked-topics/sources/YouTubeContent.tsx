@@ -1,9 +1,9 @@
 "use client";
 
-import { TopicFinding } from "@/types/lockedTopic";
-import { useExtractedContent } from "@/hooks/useExtractedContent";
-import { getYouTubeVideoId } from "@/lib/locked-topics";
 import { ContentSkeleton } from "@/components/locked-topics/sources/ContentSkeleton";
+import { useExtractedContent } from "@/hooks/useExtractedContent";
+import { getYouTubeVideoId } from "@/lib/locked-topics/api";
+import { TopicFinding } from "@/types/lockedTopic";
 
 interface YouTubeContentProps {
   finding: TopicFinding;

@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { detectSourceType } from "@/lib/sourceDetection";
+import { detectSourceType } from "@/lib/locked-topics/sourceDetection";
 import { SourceConfig } from "@/types/lockedTopic";
 import {
   ArrowUpRight01Icon,

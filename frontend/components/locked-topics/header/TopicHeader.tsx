@@ -1,5 +1,5 @@
 import { ScanNowButton } from "@/components/locked-topics/header/ScanNowButton";
-import { TopicActions } from "@/components/locked-topics/header/TopicActions";
+import TopicActiveToggle from "@/components/locked-topics/header/TopicActiveToggle";
 import { ClearFindingsModal } from "@/components/locked-topics/modals/ClearFindingsModal";
 import CreateTopicModal from "@/components/locked-topics/modals/CreateTopicModal/CreateTopicModal";
 import { DeleteTopicModal } from "@/components/locked-topics/modals/DeleteTopicModal";
@@ -24,6 +24,12 @@ export default function TopicHeader({ topic }: { topic: LockedTopic }) {
     aiQuerySummary: topic.aiQuerySummary,
     conceptualKeywords: topic.conceptualKeywords,
     suggestedSources: [],
+    notifyEnabled: topic.notifyEnabled,
+    notifyMode: topic.notifyMode,
+    notifyChannels: topic.notifyChannels as {
+      discord: boolean;
+      telegram: boolean;
+    },
   };
 
   return (
@@ -70,7 +76,7 @@ export default function TopicHeader({ topic }: { topic: LockedTopic }) {
 
         <div className="flex items-center gap-4">
           {/*notification icon and on/off switch*/}
-          <TopicActions id={topic.id} initialActive={topic.isActive} />
+          <TopicActiveToggle topic={topic} />
 
           <div className="h-6 w-px bg-border hidden md:block" />
 

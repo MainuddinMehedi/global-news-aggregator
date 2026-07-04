@@ -72,6 +72,9 @@ export interface CreateTopicData {
   aiQuerySummary: string;
   conceptualKeywords?: string[][];
   suggestedSources: unknown[];
+  notifyEnabled: boolean;
+  notifyMode: NotifyMode;
+  notifyChannels: { discord: boolean; telegram: boolean };
 }
 
 export interface TopicFinding {

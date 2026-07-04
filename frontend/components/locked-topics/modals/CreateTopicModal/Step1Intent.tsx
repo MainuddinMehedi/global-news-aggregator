@@ -9,6 +9,7 @@ import { RefreshIcon, SparklesIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
+import { ConceptBucketsList } from "./ConceptBucketsList";
 
 interface Step1Props {
   data: CreateTopicData;
@@ -209,28 +210,7 @@ export default function Step1Intent({ data, setData, onNext }: Step1Props) {
               <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">
                 Semantic Concept Buckets
               </label>
-              <div className="flex flex-wrap gap-2">
-                {data.conceptualKeywords.map((group, i) => (
-                  <div
-                    key={i}
-                    className="px-3 py-1.5 rounded-lg bg-primary/10 border border-primary/20 flex flex-wrap gap-1 items-center"
-                  >
-                    {group.map((term, j) => (
-                      <span
-                        key={j}
-                        className="text-[10px] font-bold text-primary"
-                      >
-                        {term}
-                        {j < group.length - 1 && (
-                          <span className="ml-1 text-muted-foreground/50">
-                            +
-                          </span>
-                        )}
-                      </span>
-                    ))}
-                  </div>
-                ))}
-              </div>
+              <ConceptBucketsList buckets={data.conceptualKeywords} />
             </div>
           )}
 

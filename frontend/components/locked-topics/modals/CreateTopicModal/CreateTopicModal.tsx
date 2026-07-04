@@ -39,12 +39,6 @@ export default function CreateTopicModal({
     setOpen(next);
   };
   const [step, setStep] = useState(1);
-  const [notifyEnabled, setNotifyEnabled] = useState(true);
-  const [notifyMode, setNotifyMode] = useState<"DIGEST" | "ALERT">("DIGEST");
-  const [notifyChannels, setNotifyChannels] = useState({
-    discord: false,
-    telegram: false,
-  });
   const [data, setData] = useState<CreateTopicData>(
     initialData || {
       displayName: "",
@@ -61,6 +55,9 @@ export default function CreateTopicModal({
       aiQuerySummary: "",
       conceptualKeywords: [] as string[][],
       suggestedSources: [] as unknown[],
+      notifyEnabled: true,
+      notifyMode: "DIGEST",
+      notifyChannels: { discord: false, telegram: false },
     },
   );
 
@@ -71,9 +68,6 @@ export default function CreateTopicModal({
     // Use a small timeout to let the modal finish closing animation before resetting state
     setTimeout(() => {
       setStep(1);
-      setNotifyEnabled(true);
-      setNotifyMode("DIGEST");
-      setNotifyChannels({ discord: false, telegram: false });
       if (!initialData) {
         setData({
           displayName: "",
@@ -90,11 +84,14 @@ export default function CreateTopicModal({
           aiQuerySummary: "",
           conceptualKeywords: [],
           suggestedSources: [],
+          notifyEnabled: true,
+          notifyMode: "DIGEST",
+          notifyChannels: { discord: false, telegram: false },
         });
       } else {
         setData(initialData);
       }
-    }, 3000);
+    }, 300);
   };
 
   const isEdit = !!topicId;
@@ -149,12 +146,7 @@ export default function CreateTopicModal({
           {step === 3 && (
             <Step3Launch
               data={data}
-              notifyEnabled={notifyEnabled}
-              notifyMode={notifyMode}
-              notifyChannels={notifyChannels}
-              setNotifyEnabled={setNotifyEnabled}
-              setNotifyMode={setNotifyMode}
-              setNotifyChannels={setNotifyChannels}
+              setData={setData}
               onPrev={prevStep}
               onComplete={reset}
               topicId={topicId}

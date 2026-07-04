@@ -1,17 +1,18 @@
+import { auth } from "@/auth";
 import LockedTopicGrid from "@/components/locked-topics/grid/LockedTopicGrid";
 import { getLockedTopics, getUnreadFindingCount } from "@/queries/lockedTopics";
 import { getInitialFindings } from "@/queries/topicFindings";
 import { TopicFinding } from "@/types/lockedTopic";
 
 interface LockedTopicsContainerProps {
-  userId: string | undefined;
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
 export async function LockedTopicsContainer({
-  userId,
   searchParams,
 }: LockedTopicsContainerProps) {
+  const session = await auth();
+  const userId = session?.user?.id;
   const params = await searchParams;
   const search = typeof params.search === "string" ? params.search : "";
   const topics = userId
