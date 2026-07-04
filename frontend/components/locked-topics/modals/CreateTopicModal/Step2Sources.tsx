@@ -1,21 +1,21 @@
 "use client";
 
-import { useState } from "react";
-import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { HugeiconsIcon } from "@hugeicons/react";
+import { Switch } from "@/components/ui/switch";
+import { detectSourceType } from "@/lib/sourceDetection";
+import { CreateTopicData, SourceConfig } from "@/types/lockedTopic";
 import {
   DatabaseIcon,
-  GoogleIcon,
-  Search01Icon,
-  RedditIcon,
   Github01Icon,
+  GoogleIcon,
+  RedditIcon,
+  Search01Icon,
   YoutubeIcon,
 } from "@hugeicons/core-free-icons";
-import { detectSourceType } from "@/lib/sourceDetection";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { useState } from "react";
 import { toast } from "sonner";
-import { CreateTopicData, SourceConfig } from "@/types/lockedTopic";
 import CustomSourceInput from "./CustomSourceInput";
 import SuggestedSourcesList from "./SuggestedSourcesList";
 
@@ -43,27 +43,33 @@ export default function Step2Sources({
   const [githubUrl, setGithubUrl] = useState(existingGithub?.url || "");
   const [githubUrlError, setGithubUrlError] = useState("");
 
-  const isGithubEnabled = data.sources.some(
-    (s) => s.type === "github",
-  );
+  const isGithubEnabled = data.sources.some((s) => s.type === "github");
 
   const existingYoutube = data.sources.find((s) => s.type === "youtube");
   const [youtubeUrl, setYoutubeUrl] = useState(existingYoutube?.url || "");
   const [youtubeUrlError, setYoutubeUrlError] = useState("");
 
-  const isYoutubeEnabled = data.sources.some(
-    (s) => s.type === "youtube",
-  );
+  const isYoutubeEnabled = data.sources.some((s) => s.type === "youtube");
 
   function getGithubUrlError(url: string): string | null {
     if (!url) return null;
-    try { new URL(url); } catch { return "Enter a valid URL."; }
+    try {
+      new URL(url);
+    } catch {
+      return "Enter a valid URL.";
+    }
 
-    if (detectSourceType(url) === "rss") return "This looks like a feed URL. Paste it in the custom sources input below.";
-    if (detectSourceType(url) !== "github") return "Enter a GitHub repo URL like https://github.com/owner/repo";
+    if (detectSourceType(url) === "rss")
+      return "This looks like a feed URL. Paste it in the custom sources input below.";
+    if (detectSourceType(url) !== "github")
+      return "Enter a GitHub repo URL like https://github.com/owner/repo";
 
-    const path = new URL(url).pathname.replace(/\/$/, "").split("/").filter(Boolean);
-    if (path.length < 2) return "Enter a full repo URL like https://github.com/owner/repo";
+    const path = new URL(url).pathname
+      .replace(/\/$/, "")
+      .split("/")
+      .filter(Boolean);
+    if (path.length < 2)
+      return "Enter a full repo URL like https://github.com/owner/repo";
     if (path.length > 2) return "Enter a repo URL without extra path segments.";
 
     return null;
@@ -71,7 +77,10 @@ export default function Step2Sources({
 
   function getYoutubeUrlError(input: string): string | null {
     if (!input) return null;
-    const parts = input.split(",").map((p) => p.trim()).filter(Boolean);
+    const parts = input
+      .split(",")
+      .map((p) => p.trim())
+      .filter(Boolean);
 
     for (const part of parts) {
       try {
@@ -88,6 +97,7 @@ export default function Step2Sources({
 
   const toggleGithub = (enabled: boolean) => {
     setGithubUrlError("");
+
     if (enabled) {
       setData({
         ...data,
@@ -113,6 +123,7 @@ export default function Step2Sources({
   const updateGithubUrl = (url: string) => {
     setGithubUrl(url);
     setGithubUrlError(getGithubUrlError(url) || "");
+
     if (isGithubEnabled) {
       setData({
         ...data,
@@ -125,6 +136,7 @@ export default function Step2Sources({
 
   const toggleYoutube = (enabled: boolean) => {
     setYoutubeUrlError("");
+
     if (enabled) {
       setData({
         ...data,
@@ -150,6 +162,7 @@ export default function Step2Sources({
   const updateYoutubeUrl = (url: string) => {
     setYoutubeUrl(url);
     setYoutubeUrlError(getYoutubeUrlError(url) || "");
+
     if (isYoutubeEnabled) {
       setData({
         ...data,
@@ -162,6 +175,7 @@ export default function Step2Sources({
 
   const toggleSource = (type: SourceConfig["type"], label: string) => {
     const exists = data.sources.find((s) => s.type === type && !s.url);
+
     if (exists) {
       setData({
         ...data,
@@ -178,8 +192,13 @@ export default function Step2Sources({
   const isSourceEnabled = (type: SourceConfig["type"]) =>
     data.sources.some((s) => s.type === type && !s.url);
 
-  const handleAddCustomSource = (source: { url: string; type: SourceConfig["type"]; label: string }) => {
+  const handleAddCustomSource = (source: {
+    url: string;
+    type: SourceConfig["type"];
+    label: string;
+  }) => {
     const exists = data.sources.find((s) => s.url === source.url);
+
     if (!exists) {
       let siteRestriction;
       if (source.type === "search") {
@@ -209,7 +228,11 @@ export default function Step2Sources({
     }
   };
 
-  const handleAddSuggestedSource = (source: { url: string; type: SourceConfig["type"]; label: string }) => {
+  const handleAddSuggestedSource = (source: {
+    url: string;
+    type: SourceConfig["type"];
+    label: string;
+  }) => {
     setData({
       ...data,
       sources: [
@@ -247,9 +270,7 @@ export default function Step2Sources({
             label="Internal Article DB"
             icon={DatabaseIcon}
             enabled={isSourceEnabled("internal_db")}
-            onToggle={() =>
-              toggleSource("internal_db", "Internal Article DB")
-            }
+            onToggle={() => toggleSource("internal_db", "Internal Article DB")}
           />
           <SourceToggle
             label="Google News RSS"
@@ -284,8 +305,13 @@ export default function Step2Sources({
                 className="bg-secondary/10 border-secondary rounded-xl"
               />
               <p className="text-[10px] text-muted-foreground/70 leading-relaxed">
-                Enter names like <span className="font-mono text-primary/80">Bloomberg, ColdFusion</span> or direct URLs to prioritize specific channels.{" "}
-                The system will discover videos from these channels and others related to your topic.
+                Enter names like{" "}
+                <span className="font-mono text-primary/80">
+                  Bloomberg, ColdFusion
+                </span>{" "}
+                or direct URLs to prioritize specific channels. The system will
+                discover videos from these channels and others related to your
+                topic.
               </p>
               {youtubeUrlError && (
                 <p className="text-[10px] text-destructive/90 font-semibold">
@@ -309,8 +335,13 @@ export default function Step2Sources({
                 className="bg-secondary/10 border-secondary rounded-xl"
               />
               <p className="text-[10px] text-muted-foreground/70 leading-relaxed">
-                Enter a URL like <span className="font-mono text-primary/80">https://github.com/facebook/react</span> to track that repo&apos;s releases and merged PRs.{" "}
-                Leave blank to search GitHub broadly for repos and merged PRs matching your topic.
+                Enter a URL like{" "}
+                <span className="font-mono text-primary/80">
+                  https://github.com/facebook/react
+                </span>{" "}
+                to track that repo&apos;s releases and merged PRs. Leave blank
+                to search GitHub broadly for repos and merged PRs matching your
+                topic.
               </p>
               {githubUrlError && (
                 <p className="text-[10px] text-destructive/90 font-semibold">
@@ -336,6 +367,7 @@ export default function Step2Sources({
 
       <div className="flex gap-4">
         <Button
+          type="button"
           variant="outline"
           onClick={onPrev}
           className="flex-1 rounded-xl py-7 border-secondary hover:bg-secondary/20"
@@ -343,6 +375,7 @@ export default function Step2Sources({
           Back
         </Button>
         <Button
+          type="button"
           onClick={onNext}
           className="flex-2 rounded-xl py-7 font-bold text-lg shadow-xl shadow-primary/20 hover:scale-[1.02] transition-transform"
         >

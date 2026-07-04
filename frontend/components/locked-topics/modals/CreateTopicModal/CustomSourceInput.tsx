@@ -1,16 +1,20 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { Add01Icon, LinkSquare01Icon } from "@hugeicons/core-free-icons";
 import { detectSourceType, generateSourceLabel } from "@/lib/sourceDetection";
-import { toast } from "sonner";
 import { SourceConfig } from "@/types/lockedTopic";
+import { Add01Icon, LinkSquare01Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 interface CustomSourceInputProps {
-  onAddSource: (source: { url: string; type: SourceConfig["type"]; label: string }) => void;
+  onAddSource: (source: {
+    url: string;
+    type: SourceConfig["type"];
+    label: string;
+  }) => void;
   customSources: SourceConfig[];
   onRemoveSource: (url: string) => void;
 }
@@ -24,7 +28,9 @@ export default function CustomSourceInput({
   const [isValidating, setIsValidating] = useState(false);
   const [isValidated, setIsValidated] = useState(false);
   const [validationError, setValidationError] = useState("");
-  const [detectedType, setDetectedType] = useState<SourceConfig["type"] | "">("");
+  const [detectedType, setDetectedType] = useState<SourceConfig["type"] | "">(
+    "",
+  );
 
   useEffect(() => {
     if (!customUrl.trim()) {
@@ -40,7 +46,9 @@ export default function CustomSourceInput({
     } catch {
       setIsValidating(false);
       setIsValidated(false);
-      setValidationError("Invalid URL format. Make sure to include http:// or https://");
+      setValidationError(
+        "Invalid URL format. Make sure to include http:// or https://",
+      );
       setDetectedType("");
       return;
     }
@@ -54,9 +62,12 @@ export default function CustomSourceInput({
 
     const delayDebounceFn = setTimeout(async () => {
       try {
-        const res = await fetch(`/api/locked-topics/check-source?url=${encodeURIComponent(customUrl)}`, {
-          signal: controller.signal,
-        });
+        const res = await fetch(
+          `/api/locked-topics/check-source?url=${encodeURIComponent(customUrl)}`,
+          {
+            signal: controller.signal,
+          },
+        );
         if (res.ok) {
           const json = await res.json();
           if (json.valid) {
@@ -97,7 +108,8 @@ export default function CustomSourceInput({
       return;
     }
 
-    const type = (detectedType || detectSourceType(customUrl)) as SourceConfig["type"];
+    const type = (detectedType ||
+      detectSourceType(customUrl)) as SourceConfig["type"];
     const label = generateSourceLabel(customUrl, type);
 
     onAddSource({ url: customUrl, type, label });
@@ -118,6 +130,7 @@ export default function CustomSourceInput({
           onKeyDown={(e) => e.key === "Enter" && handleAdd()}
         />
         <Button
+          type="button"
           onClick={handleAdd}
           variant="outline"
           className="rounded-xl border-secondary text-primary"
@@ -169,6 +182,7 @@ export default function CustomSourceInput({
                 </div>
               </div>
               <Button
+                type="button"
                 variant="ghost"
                 size="sm"
                 onClick={() => source.url && onRemoveSource(source.url)}

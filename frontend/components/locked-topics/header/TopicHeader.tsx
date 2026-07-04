@@ -1,25 +1,21 @@
-import { LockedTopic, CreateTopicData } from "@/types/lockedTopic";
+import { ScanNowButton } from "@/components/locked-topics/header/ScanNowButton";
+import { TopicActions } from "@/components/locked-topics/header/TopicActions";
+import { ClearFindingsModal } from "@/components/locked-topics/modals/ClearFindingsModal";
+import CreateTopicModal from "@/components/locked-topics/modals/CreateTopicModal/CreateTopicModal";
+import { DeleteTopicModal } from "@/components/locked-topics/modals/DeleteTopicModal";
 import { Badge } from "@/components/ui/badge";
-import { HugeiconsIcon } from "@hugeicons/react";
+import { Button } from "@/components/ui/button";
+import { RelativeTime } from "@/components/ui/RelativeTime";
+import { CreateTopicData, LockedTopic } from "@/types/lockedTopic";
 import {
-  Settings01Icon,
   Search01Icon,
+  Settings01Icon,
   SparklesIcon,
 } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { TopicActions } from "@/components/locked-topics/header/TopicActions";
-import { DeleteTopicModal } from "@/components/locked-topics/modals/DeleteTopicModal";
-import { ClearFindingsModal } from "@/components/locked-topics/modals/ClearFindingsModal";
-import { RelativeTime } from "@/components/ui/RelativeTime";
-import { ScanNowButton } from "@/components/locked-topics/header/ScanNowButton";
-import CreateTopicModal from "@/components/locked-topics/modals/CreateTopicModal";
 
-export default function TopicHeader({
-  topic,
-}: {
-  topic: LockedTopic;
-}) {
+export default function TopicHeader({ topic }: { topic: LockedTopic }) {
   const initialData: CreateTopicData = {
     displayName: topic.displayName,
     userContext: topic.userContext,
@@ -74,10 +70,7 @@ export default function TopicHeader({
 
         <div className="flex items-center gap-4">
           {/*notification icon and on/off switch*/}
-          <TopicActions
-            id={topic.id}
-            initialActive={topic.isActive}
-          />
+          <TopicActions id={topic.id} initialActive={topic.isActive} />
 
           <div className="h-6 w-px bg-border hidden md:block" />
 

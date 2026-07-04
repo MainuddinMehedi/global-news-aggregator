@@ -1,20 +1,20 @@
 "use client";
 
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { HugeiconsIcon } from "@hugeicons/react";
-import {
-  Tick01Icon,
-  Notification03Icon,
-  AlertCircleIcon,
-  SparklesIcon,
-  Search01Icon,
-} from "@hugeicons/core-free-icons";
-import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { toast } from "sonner";
-import { useRouter } from "next/navigation";
+import { Switch } from "@/components/ui/switch";
 import { CreateTopicData } from "@/types/lockedTopic";
+import {
+  AlertCircleIcon,
+  Notification03Icon,
+  Search01Icon,
+  SparklesIcon,
+  Tick01Icon,
+} from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { toast } from "sonner";
 
 interface Step3Props {
   data: CreateTopicData;
@@ -147,15 +147,10 @@ export default function Step3Launch({
                   className="px-2 py-1 rounded-lg bg-primary/10 border border-primary/20 flex flex-wrap gap-1 items-center"
                 >
                   {group.map((term, j) => (
-                    <span
-                      key={j}
-                      className="text-[9px] font-bold text-primary"
-                    >
+                    <span key={j} className="text-[9px] font-bold text-primary">
                       {term}
                       {j < group.length - 1 && (
-                        <span className="ml-1 text-muted-foreground/50">
-                          +
-                        </span>
+                        <span className="ml-1 text-muted-foreground/50">+</span>
                       )}
                     </span>
                   ))}
@@ -339,6 +334,7 @@ export default function Step3Launch({
 
       <div className="flex gap-4 pt-2">
         <Button
+          type="button"
           variant="outline"
           onClick={onPrev}
           className="flex-1 rounded-xl py-7 border-secondary hover:bg-secondary/20"
@@ -347,6 +343,7 @@ export default function Step3Launch({
           Back
         </Button>
         <Button
+          type="button"
           onClick={handleActivate}
           className="flex-2 rounded-xl py-7 font-bold text-lg shadow-2xl shadow-primary/30 hover:scale-[1.02] active:scale-95 transition-all bg-primary hover:bg-primary/90"
           disabled={loading}

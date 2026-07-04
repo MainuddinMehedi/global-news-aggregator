@@ -1,17 +1,14 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { HugeiconsIcon } from "@hugeicons/react";
-import {
-  SparklesIcon,
-  RefreshIcon,
-} from "@hugeicons/core-free-icons";
-import { toast } from "sonner";
+import { Textarea } from "@/components/ui/textarea";
 import { CreateTopicData } from "@/types/lockedTopic";
+import { RefreshIcon, SparklesIcon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { useCallback, useState } from "react";
+import { toast } from "sonner";
 
 interface Step1Props {
   data: CreateTopicData;
@@ -22,15 +19,11 @@ interface Step1Props {
 export default function Step1Intent({ data, setData, onNext }: Step1Props) {
   const [analyzing, setAnalyzing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [analyzed, setAnalyzed] = useState(false);
+  const [analyzed, setAnalyzed] = useState(
+    !!(data.aiRefinedQuery && data.aiQuerySummary),
+  );
 
   const isValid = data.displayName.trim() && data.userContext.trim();
-
-  useEffect(() => {
-    if (data.aiRefinedQuery && data.aiQuerySummary) {
-      setAnalyzed(true);
-    }
-  }, []);
 
   const handleAnalyze = useCallback(
     async (isRegenerate = false) => {
@@ -59,8 +52,10 @@ export default function Step1Intent({ data, setData, onNext }: Step1Props) {
           conceptualKeywords: result.conceptualKeywords,
           suggestedSources: result.suggestedSources,
         });
+
         setAnalyzed(true);
         setAnalyzing(false);
+
         if (isRegenerate) {
           toast.success("Topic re-analyzed successfully.");
         }
@@ -104,6 +99,7 @@ export default function Step1Intent({ data, setData, onNext }: Step1Props) {
         <p className="text-destructive font-bold text-lg">{error}</p>
         <div className="flex justify-center gap-4">
           <Button
+            type="button"
             onClick={() => handleAnalyze(true)}
             className="rounded-xl px-8"
           >
@@ -156,6 +152,7 @@ export default function Step1Intent({ data, setData, onNext }: Step1Props) {
 
       {!analyzed && (
         <Button
+          type="button"
           disabled={!isValid}
           onClick={() => handleAnalyze()}
           className="w-full rounded-xl py-7 font-bold text-lg shadow-xl shadow-primary/20 hover:scale-[1.02] transition-transform"
@@ -176,6 +173,7 @@ export default function Step1Intent({ data, setData, onNext }: Step1Props) {
                 </span>
               </div>
               <Button
+                type="button"
                 variant="ghost"
                 size="sm"
                 onClick={() => handleAnalyze(true)}
@@ -224,7 +222,9 @@ export default function Step1Intent({ data, setData, onNext }: Step1Props) {
                       >
                         {term}
                         {j < group.length - 1 && (
-                          <span className="ml-1 text-muted-foreground/50">+</span>
+                          <span className="ml-1 text-muted-foreground/50">
+                            +
+                          </span>
                         )}
                       </span>
                     ))}
@@ -235,6 +235,7 @@ export default function Step1Intent({ data, setData, onNext }: Step1Props) {
           )}
 
           <Button
+            type="button"
             onClick={onNext}
             className="w-full rounded-xl py-7 font-bold text-lg shadow-xl shadow-primary/20 hover:scale-[1.02] transition-transform"
           >

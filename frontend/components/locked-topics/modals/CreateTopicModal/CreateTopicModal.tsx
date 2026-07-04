@@ -1,8 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { useSession } from "next-auth/react";
-import { useSetLoginModalOpen } from "@/store";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -10,13 +8,15 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { HugeiconsIcon } from "@hugeicons/react";
+import { useSetLoginModalOpen } from "@/store";
+import { CreateTopicData, SourceConfig } from "@/types/lockedTopic";
 import { Add01Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { useSession } from "next-auth/react";
+import { useState } from "react";
 import Step1Intent from "./Step1Intent";
 import Step2Sources from "./Step2Sources";
 import Step3Launch from "./Step3Launch";
-import { SourceConfig, CreateTopicData } from "@/types/lockedTopic";
 
 export default function CreateTopicModal({
   trigger,
@@ -50,7 +50,12 @@ export default function CreateTopicModal({
       displayName: "",
       userContext: "",
       sources: [
-        { id: "internal_db", type: "internal_db", label: "Internal Article DB", enabled: true }
+        {
+          id: "internal_db",
+          type: "internal_db",
+          label: "Internal Article DB",
+          enabled: true,
+        },
       ] as SourceConfig[],
       aiRefinedQuery: "",
       aiQuerySummary: "",
@@ -74,7 +79,12 @@ export default function CreateTopicModal({
           displayName: "",
           userContext: "",
           sources: [
-            { id: "internal_db", type: "internal_db", label: "Internal Article DB", enabled: true }
+            {
+              id: "internal_db",
+              type: "internal_db",
+              label: "Internal Article DB",
+              enabled: true,
+            },
           ],
           aiRefinedQuery: "",
           aiQuerySummary: "",

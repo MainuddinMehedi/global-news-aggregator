@@ -1,14 +1,14 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { HugeiconsIcon } from "@hugeicons/react";
+import { detectSourceType } from "@/lib/sourceDetection";
+import { SourceConfig } from "@/types/lockedTopic";
 import {
   ArrowUpRight01Icon,
   InformationCircleIcon,
 } from "@hugeicons/core-free-icons";
-import { detectSourceType } from "@/lib/sourceDetection";
-import { SourceConfig } from "@/types/lockedTopic";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { useEffect, useRef, useState } from "react";
 
 interface SuggestedSourcesListProps {
   suggestedSources: {
@@ -17,7 +17,11 @@ interface SuggestedSourcesListProps {
     url: string;
   }[];
   sources: SourceConfig[];
-  onAddSource: (source: { url: string; type: SourceConfig["type"]; label: string }) => void;
+  onAddSource: (source: {
+    url: string;
+    type: SourceConfig["type"];
+    label: string;
+  }) => void;
 }
 
 export default function SuggestedSourcesList({
@@ -25,11 +29,16 @@ export default function SuggestedSourcesList({
   sources,
   onAddSource,
 }: SuggestedSourcesListProps) {
-  const [suggestionStatuses, setSuggestionStatuses] = useState<Record<string, {
-    isValidating: boolean;
-    isValidated: boolean;
-    error?: string;
-  }>>({});
+  const [suggestionStatuses, setSuggestionStatuses] = useState<
+    Record<
+      string,
+      {
+        isValidating: boolean;
+        isValidated: boolean;
+        error?: string;
+      }
+    >
+  >({});
 
   const validatedRef = useRef(new Set<string>());
 
@@ -40,9 +49,10 @@ export default function SuggestedSourcesList({
     // 1. Are already in the validatedRef
     // 2. Are already added in data.sources
     const toValidate = suggestedSources.filter(
-      (source) => source.url && 
-                  !validatedRef.current.has(source.url) && 
-                  !sources.some((s) => s.url === source.url)
+      (source) =>
+        source.url &&
+        !validatedRef.current.has(source.url) &&
+        !sources.some((s) => s.url === source.url),
     );
 
     if (toValidate.length === 0) return;
@@ -69,9 +79,12 @@ export default function SuggestedSourcesList({
 
       (async (url: string) => {
         try {
-          const res = await fetch(`/api/locked-topics/check-source?url=${encodeURIComponent(url)}`, {
-            signal: controller.signal
-          });
+          const res = await fetch(
+            `/api/locked-topics/check-source?url=${encodeURIComponent(url)}`,
+            {
+              signal: controller.signal,
+            },
+          );
           if (res.ok) {
             const json = await res.json();
             setSuggestionStatuses((prev) => ({
@@ -79,8 +92,10 @@ export default function SuggestedSourcesList({
               [url]: {
                 isValidating: false,
                 isValidated: json.valid,
-                error: json.valid ? undefined : (json.error || "Source is unreachable or invalid.")
-              }
+                error: json.valid
+                  ? undefined
+                  : json.error || "Source is unreachable or invalid.",
+              },
             }));
           } else {
             setSuggestionStatuses((prev) => ({
@@ -88,19 +103,19 @@ export default function SuggestedSourcesList({
               [url]: {
                 isValidating: false,
                 isValidated: false,
-                error: "Could not connect to validation server."
-              }
+                error: "Could not connect to validation server.",
+              },
             }));
           }
         } catch (err: any) {
-          if (err.name === 'AbortError') return;
+          if (err.name === "AbortError") return;
           setSuggestionStatuses((prev) => ({
             ...prev,
             [url]: {
               isValidating: false,
               isValidated: false,
-              error: err.message || "Connection failed."
-            }
+              error: err.message || "Connection failed.",
+            },
           }));
         }
       })(source.url);
@@ -134,15 +149,14 @@ export default function SuggestedSourcesList({
       </div>
       <div className="space-y-2">
         {suggestedSources.map((source, idx) => {
-          const alreadyAdded = sources.some(
-            (s) => s.url === source.url,
-          );
+          const alreadyAdded = sources.some((s) => s.url === source.url);
           const status = suggestionStatuses[source.url];
           const isValidating = status?.isValidating;
           const isValidated = status?.isValidated;
           const validationError = status?.error;
 
-          const isAddDisabled = alreadyAdded || isValidating || (status && !isValidated);
+          const isAddDisabled =
+            alreadyAdded || isValidating || (status && !isValidated);
           let buttonText = "Add";
           if (alreadyAdded) {
             buttonText = "Added";
@@ -169,10 +183,7 @@ export default function SuggestedSourcesList({
                     className="text-muted-foreground hover:text-primary transition-colors"
                     title="Open URL to verify"
                   >
-                    <HugeiconsIcon
-                      icon={ArrowUpRight01Icon}
-                      size={12}
-                    />
+                    <HugeiconsIcon icon={ArrowUpRight01Icon} size={12} />
                   </a>
                 </div>
                 <span className="text-[10px] text-muted-foreground truncate italic">
@@ -199,12 +210,13 @@ export default function SuggestedSourcesList({
                 )}
               </div>
               <Button
+                type="button"
                 size="sm"
                 variant="ghost"
                 disabled={isAddDisabled}
                 onClick={() => {
-                  const type =
-                    (source.type || detectSourceType(source.url)) as SourceConfig["type"];
+                  const type = (source.type ||
+                    detectSourceType(source.url)) as SourceConfig["type"];
                   onAddSource({ url: source.url, type, label: source.label });
                 }}
                 className="h-8 px-4 text-[10px] font-black uppercase tracking-widest text-primary hover:bg-primary/10"
