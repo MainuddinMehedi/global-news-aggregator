@@ -4,7 +4,7 @@ import type { ChatSessionListItem } from "@/components/chat/layout/ChatHistoryPa
 import { getDefaultModel } from "@/lib/ai/modelRegistry";
 import type { ContextItem } from "@/types/chat";
 import type { UIMessage } from "ai";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -25,6 +25,7 @@ interface UseChatSessionsProps {
   setContexts: (contexts: ContextItem[]) => void;
   setSelectedModel: (model: string) => void;
   isGuest: boolean;
+  activeSessionId?: string;
 }
 
 export function useChatSessions({
@@ -32,12 +33,9 @@ export function useChatSessions({
   setContexts,
   setSelectedModel,
   isGuest,
+  activeSessionId,
 }: UseChatSessionsProps) {
   const router = useRouter();
-  const searchParams = useSearchParams();
-
-  // Single Source of Truth
-  const activeSessionId = searchParams.get("session") ?? undefined;
 
   const [sessions, setSessions] = useState<ChatSessionListItem[]>([]);
   const [sessionsLoading, setSessionsLoading] = useState(true);
