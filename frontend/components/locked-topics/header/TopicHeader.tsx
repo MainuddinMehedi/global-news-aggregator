@@ -4,14 +4,9 @@ import { ClearFindingsModal } from "@/components/locked-topics/modals/ClearFindi
 import CreateTopicModal from "@/components/locked-topics/modals/CreateTopicModal/CreateTopicModal";
 import { DeleteTopicModal } from "@/components/locked-topics/modals/DeleteTopicModal";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { RelativeTime } from "@/components/ui/RelativeTime";
 import { CreateTopicData, LockedTopic } from "@/types/lockedTopic";
-import {
-  Search01Icon,
-  Settings01Icon,
-  SparklesIcon,
-} from "@hugeicons/core-free-icons";
+import { Search01Icon, SparklesIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import Link from "next/link";
 
@@ -92,20 +87,7 @@ export default function TopicHeader({ topic }: { topic: LockedTopic }) {
             />
           </div>
 
-          <CreateTopicModal
-            topicId={topic.id}
-            initialData={initialData}
-            trigger={
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-2 rounded-xl border-secondary h-10 px-4"
-              >
-                <HugeiconsIcon icon={Settings01Icon} size={16} />
-                <span className="hidden sm:inline">Edit Tracker</span>
-              </Button>
-            }
-          />
+          <CreateTopicModal topicId={topic.id} initialData={initialData} />
 
           <ScanNowButton topicId={topic.id} />
         </div>

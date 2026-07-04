@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { useSetLoginModalOpen } from "@/store";
 import { CreateTopicData, SourceConfig } from "@/types/lockedTopic";
-import { Add01Icon } from "@hugeicons/core-free-icons";
+import { Add01Icon, Settings01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useSession } from "next-auth/react";
 import { useState } from "react";
@@ -99,7 +99,18 @@ export default function CreateTopicModal({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        {trigger || (
+        {trigger ? (
+          trigger
+        ) : isEdit ? (
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2 rounded-xl border-secondary h-10 px-4"
+          >
+            <HugeiconsIcon icon={Settings01Icon} size={16} />
+            <span className="hidden sm:inline">Edit Tracker</span>
+          </Button>
+        ) : (
           <Button
             size="lg"
             className="gap-2 rounded-xl px-6 shadow-xl shadow-primary/20 hover:scale-105 transition-all"

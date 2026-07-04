@@ -32,13 +32,15 @@ import { getActiveModels, getDefaultModel } from "@/lib/ai/modelRegistry";
 import { useSetLoginModalOpen, useSetSidebarCollapsed } from "@/store";
 import type { ContextItem } from "@/types/chat";
 import { useSession } from "next-auth/react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
-export default function ChatInterface() {
+export default function ChatInterface({
+  activeSessionId,
+}: {
+  activeSessionId?: string;
+}) {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const activeSessionId = searchParams.get("session") ?? undefined;
   const { status: authStatus } = useSession();
   const isGuest = authStatus === "unauthenticated";
   const setLoginModalOpen = useSetLoginModalOpen();
@@ -91,6 +93,7 @@ export default function ChatInterface() {
     setContexts,
     setSelectedModel,
     isGuest,
+    activeSessionId,
   });
 
   const isLoading = status === "submitted" || status === "streaming";
