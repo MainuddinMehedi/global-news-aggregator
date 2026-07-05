@@ -1,7 +1,7 @@
 "use client";
 
-import { useTheme } from "next-themes";
-import { Separator } from "@/components/ui/separator";
+import ProfileSection from "@/components/settings/sections/ProfileSection";
+import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -10,11 +10,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Card, CardContent } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import type { ColorTheme, HomePageMode, SettingsState, Theme } from "@/store";
 import { Check } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import type { ColorTheme, HomePageMode, SettingsState } from "@/store";
-import ProfileSection from "@/components/settings/sections/ProfileSection";
+import { useTheme } from "next-themes";
 
 const COLOR_THEMES: { id: ColorTheme; label: string; swatch: string }[] = [
   { id: "maia", label: "Maia", swatch: "bg-[oklch(0.55_0.15_200)]" },
@@ -29,10 +29,16 @@ interface GeneralSectionProps {
     colorTheme: ColorTheme;
     homePageMode: HomePageMode;
   };
-  onSettingChange: <K extends keyof SettingsState>(key: K, value: SettingsState[K]) => void;
+  onSettingChange: <K extends keyof SettingsState>(
+    key: K,
+    value: SettingsState[K],
+  ) => void;
 }
 
-export default function GeneralSection({ settings, onSettingChange }: GeneralSectionProps) {
+export default function GeneralSection({
+  settings,
+  onSettingChange,
+}: GeneralSectionProps) {
   const { theme, setTheme } = useTheme();
   const { colorTheme } = settings;
 
@@ -55,7 +61,13 @@ export default function GeneralSection({ settings, onSettingChange }: GeneralSec
                 Switch between light and dark themes.
               </p>
             </div>
-            <Select value={theme} onValueChange={(v) => setTheme(v)}>
+            <Select
+              value={theme}
+              onValueChange={(v: Theme) => {
+                setTheme(v);
+                onSettingChange("theme", v);
+              }}
+            >
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Select theme" />
               </SelectTrigger>
@@ -76,13 +88,20 @@ export default function GeneralSection({ settings, onSettingChange }: GeneralSec
                 Choose how the home page presents news to you.
               </p>
             </div>
-            <Select value={settings.homePageMode} onValueChange={(v: HomePageMode) => onSettingChange("homePageMode", v)}>
+            <Select
+              value={settings.homePageMode}
+              onValueChange={(v: HomePageMode) =>
+                onSettingChange("homePageMode", v)
+              }
+            >
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Select view mode" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="continuous">Continuous Feed</SelectItem>
-                <SelectItem value="daily">Daily View (Today&apos;s News)</SelectItem>
+                <SelectItem value="daily">
+                  Daily View (Today&apos;s News)
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -103,12 +122,16 @@ export default function GeneralSection({ settings, onSettingChange }: GeneralSec
                   onClick={() => onSettingChange("colorTheme", id)}
                   className="group flex flex-col items-center gap-1.5"
                 >
-                  <div className={`relative w-10 h-10 rounded-full border-2 transition-all duration-200 hover:scale-110 ${
-                    colorTheme === id
-                      ? "border-foreground shadow-md"
-                      : "border-transparent hover:border-muted-foreground/30"
-                  }`}>
-                    <div className={`absolute inset-1 rounded-full ${swatch}`} />
+                  <div
+                    className={`relative w-10 h-10 rounded-full border-2 transition-all duration-200 hover:scale-110 ${
+                      colorTheme === id
+                        ? "border-foreground shadow-md"
+                        : "border-transparent hover:border-muted-foreground/30"
+                    }`}
+                  >
+                    <div
+                      className={`absolute inset-1 rounded-full ${swatch}`}
+                    />
                     {colorTheme === id && (
                       <div className="absolute inset-0 flex items-center justify-center">
                         <HugeiconsIcon
