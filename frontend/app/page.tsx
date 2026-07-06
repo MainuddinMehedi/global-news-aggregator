@@ -9,6 +9,7 @@ import { SourceOriginWidget } from "@/components/widgets/sources/SourceOriginWid
 import { BUILTIN_SOURCES } from "@/lib/constants";
 import prisma from "@/lib/prisma";
 import { getArticleById, getArticles } from "@/queries/articles";
+import { StoreHydrator } from "@/components/providers/StoreHydrator";
 import { Article } from "@/types/article";
 import { Suspense } from "react";
 
@@ -150,19 +151,22 @@ async function MainFeedLoader({ searchParams }: MainFeedLoaderProps) {
   }
 
   return (
-    <ArticleFeed
-      key={`${category}|${sort}|${search}|${region}|${srcOrigin}|${type}|${story}|${bias}|${scope}|${enabledSources?.join(",")}`}
-      initialArticles={articles}
-      initialCursor={nextCursor}
-      category={category}
-      sort={sort}
-      search={search}
-      region={region}
-      srcOrigin={srcOrigin}
-      type={type}
-      story={story}
-      bias={bias}
-      scope={scope}
-    />
+    <>
+      <StoreHydrator dbSettings={userSettings} />
+      <ArticleFeed
+        key={`${category}|${sort}|${search}|${region}|${srcOrigin}|${type}|${story}|${bias}|${scope}|${enabledSources?.join(",")}`}
+        initialArticles={articles}
+        initialCursor={nextCursor}
+        category={category}
+        sort={sort}
+        search={search}
+        region={region}
+        srcOrigin={srcOrigin}
+        type={type}
+        story={story}
+        bias={bias}
+        scope={scope}
+      />
+    </>
   );
 }

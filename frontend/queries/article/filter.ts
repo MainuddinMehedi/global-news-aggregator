@@ -47,7 +47,8 @@ export async function executeFilterQuery(
       category !== "all" ? [{ categories: { some: { name: category } } }] : [];
 
     let regionFilter: Record<string, unknown>[] = [];
-    if (region && region !== "all") regionFilter = [{ eventRegion: region }];
+    if (region && region !== "all")
+      regionFilter = [{ eventRegion: { equals: region, mode: "insensitive" } }];
 
     let srcOriginFilter: Record<string, unknown>[] = [];
     if (srcOrigin && srcOrigin !== "all") {
@@ -63,15 +64,15 @@ export async function executeFilterQuery(
 
     let typeFilter: Record<string, unknown>[] = [];
     if (type && type !== "all")
-      typeFilter = [{ rawArticle: { sourceType: type } }];
+      typeFilter = [{ rawArticle: { sourceType: { equals: type, mode: "insensitive" } } }];
 
     let biasFilter: Record<string, unknown>[] = [];
     if (bias && bias !== "all")
-      biasFilter = [{ rawArticle: { biasGroup: bias } }];
+      biasFilter = [{ rawArticle: { biasGroup: { equals: bias, mode: "insensitive" } } }];
 
     let scopeFilter: Record<string, unknown>[] = [];
     if (scope && scope !== "all")
-      scopeFilter = [{ rawArticle: { coverageScope: scope } }];
+      scopeFilter = [{ rawArticle: { coverageScope: { equals: scope, mode: "insensitive" } } }];
 
     let sourcesFilter: Record<string, unknown>[] = [];
     if (enabledSources)
