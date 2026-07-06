@@ -12,12 +12,11 @@ export interface ArticleFeedProps {
   sort: string;
   search: string;
   region: string;
-  origin: string;
+  srcOrigin: string;
   type: string;
   story: string;
   bias: string;
   scope: string;
-  activeStoryTitle?: string;
 }
 
 export default function ArticleFeed(props: ArticleFeedProps) {

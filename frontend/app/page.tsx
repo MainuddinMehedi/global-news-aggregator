@@ -16,19 +16,7 @@ interface HomeProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
-export default async function Home({ searchParams }: HomeProps) {
-  const params = await searchParams;
-  const category =
-    typeof params.category === "string" ? params.category : "all";
-  const sort = typeof params.sort === "string" ? params.sort : "latest";
-  const search = typeof params.search === "string" ? params.search : "";
-  const region = typeof params.region === "string" ? params.region : "all";
-  const origin = typeof params.origin === "string" ? params.origin : "all";
-  const type = typeof params.type === "string" ? params.type : "all";
-  const story = typeof params.story === "string" ? params.story : "all";
-  const bias = typeof params.bias === "string" ? params.bias : "all";
-  const scope = typeof params.scope === "string" ? params.scope : "all";
-
+export default function Home({ searchParams }: HomeProps) {
   // Note: activeStoryTitle requires a DB fetch.
   // We can pass `story` to Filters, and Filters will show "Story Mode"
   // without needing the exact title instantly, or we can just pass it as undefined for the initial shell.
@@ -39,32 +27,10 @@ export default async function Home({ searchParams }: HomeProps) {
     <div className="flex flex-1 w-full">
       {/* Feed: Main content area */}
       <div className="flex-1 min-w-0 px-4 py-6 sm:px-6 lg:px-8 space-y-6">
-        <Filters
-          category={category}
-          region={region}
-          origin={origin}
-          type={type}
-          story={story}
-          bias={bias}
-          scope={scope}
-          activeStoryTitle={undefined} // We'll let the feed handle the story title display or it will pop in
-        />
+        <Filters searchParams={searchParams} />
 
         <Suspense fallback={<ArticleFeedSkeleton />}>
-          <MainFeedLoader
-            category={category}
-            sort={sort}
-            search={search}
-            region={region}
-            origin={origin}
-            type={type}
-            story={story}
-            bias={bias}
-            scope={scope}
-            articleId={
-              typeof params.article === "string" ? params.article : undefined
-            }
-          />
+          <MainFeedLoader searchParams={searchParams} />
         </Suspense>
       </div>
 
@@ -81,97 +47,96 @@ export default async function Home({ searchParams }: HomeProps) {
 }
 
 interface MainFeedLoaderProps {
-  category: string;
-  sort: string;
-  search: string;
-  region: string;
-  origin: string;
-  type: string;
-  story: string;
-  bias: string;
-  scope: string;
-  articleId?: string;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
-async function MainFeedLoader({
-  category,
-  sort,
-  search,
-  region,
-  origin,
-  type,
-  story,
-  bias,
-  scope,
-  articleId,
-}: MainFeedLoaderProps) {
+async function MainFeedLoader({ searchParams }: MainFeedLoaderProps) {
+  const params = await searchParams;
+
+  let userSettings: any = {};
+  let enabledSources: string[] | undefined = undefined;
+  let hiddenCategories: string[] | undefined = undefined;
+
+  const session = await auth();
+
+  if (session?.user?.email) {
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
+      select: { settings: true },
+    });
+
+    if (user) {
+      userSettings = (user.settings || {}) as any;
+
+      const customSources = userSettings.customSources || [];
+      const disabledBuiltins = userSettings.disabledBuiltinSources || [];
+
+      hiddenCategories = userSettings.hiddenCategories || [];
+
+      const enabledCustomNames = customSources
+        .filter((s: any) => s.enabled)
+        .map((s: any) => s.name);
+
+      const enabledBuiltinNames = BUILTIN_SOURCES.filter(
+        (s) => !disabledBuiltins.includes(s.url),
+      ).map((s) => s.name);
+
+      enabledSources = [...enabledCustomNames, ...enabledBuiltinNames];
+    }
+  }
+
+  const category =
+    typeof params.category === "string"
+      ? params.category
+      : userSettings.feedDefaultCategory || "all";
+
+  let normalizedSort = userSettings.feedDefaultSort || "latest";
+  if (normalizedSort === "newest") normalizedSort = "latest";
+  const sort = typeof params.sort === "string" ? params.sort : normalizedSort;
+
+  const search = typeof params.search === "string" ? params.search : "";
+  const region =
+    typeof params.region === "string"
+      ? params.region
+      : userSettings.feedDefaultRegion || "all";
+  const srcOrigin =
+    typeof params.srcOrigin === "string" ? params.srcOrigin : "all";
+  const type = typeof params.type === "string" ? params.type : "all";
+  const story = typeof params.story === "string" ? params.story : "all";
+  const bias = typeof params.bias === "string" ? params.bias : "all";
+  const scope = typeof params.scope === "string" ? params.scope : "all";
+  const articleId =
+    typeof params.article === "string" ? params.article : undefined;
+  const take = userSettings.articlesPerPage || 20;
+
   let articles: Article[] = [];
   let nextCursor = null;
   let selectedArticle = null;
   let error: string | null = null;
-  let activeStoryTitle: string | undefined = undefined;
-
-  let enabledSources: string[] | undefined = undefined;
-  let hiddenCategories: string[] | undefined = undefined;
 
   try {
-    const session = await auth();
-
-    if (session?.user?.email) {
-      const user = await prisma.user.findUnique({
-        where: { email: session.user.email },
-        select: { settings: true },
-      });
-
-      if (user) {
-        const settings = (user.settings || {}) as any;
-        const customSources = settings.customSources || [];
-        const disabledBuiltins = settings.disabledBuiltinSources || [];
-
-        hiddenCategories = settings.hiddenCategories || [];
-
-        const enabledCustomNames = customSources
-          .filter((s: any) => s.enabled)
-          .map((s: any) => s.name);
-
-        const enabledBuiltinNames = BUILTIN_SOURCES.filter(
-          (s) => !disabledBuiltins.includes(s.url),
-        ).map((s) => s.name);
-
-        enabledSources = [...enabledCustomNames, ...enabledBuiltinNames];
-      }
-    }
-
-    // Fetch articles, selected article, and story cluster title if active, in parallel
-    const [result, selected, storyCluster] = await Promise.all([
+    // Fetch articles and selected article in parallel
+    const [result, selected] = await Promise.all([
       getArticles({
         category,
         sort,
         search,
         region,
-        origin,
+        srcOrigin,
         type,
         story,
         bias,
         scope,
         enabledSources,
         hiddenCategories,
+        take,
       }),
       articleId ? getArticleById(articleId) : Promise.resolve(null),
-      story !== "all"
-        ? prisma.storyCluster.findUnique({
-            where: { slug: story },
-            select: { title: true },
-          })
-        : Promise.resolve(null),
     ]);
 
     articles = result.articles;
     nextCursor = result.nextCursor;
     selectedArticle = selected;
-    if (storyCluster) {
-      activeStoryTitle = storyCluster.title;
-    }
   } catch (e) {
     console.error("Home Page Fetch Error:", e);
     error =
@@ -186,19 +151,18 @@ async function MainFeedLoader({
 
   return (
     <ArticleFeed
-      key={`${category}|${sort}|${search}|${region}|${origin}|${type}|${story}|${bias}|${scope}|${enabledSources?.join(",")}`}
+      key={`${category}|${sort}|${search}|${region}|${srcOrigin}|${type}|${story}|${bias}|${scope}|${enabledSources?.join(",")}`}
       initialArticles={articles}
       initialCursor={nextCursor}
       category={category}
       sort={sort}
       search={search}
       region={region}
-      origin={origin}
+      srcOrigin={srcOrigin}
       type={type}
       story={story}
       bias={bias}
       scope={scope}
-      activeStoryTitle={activeStoryTitle}
     />
   );
 }

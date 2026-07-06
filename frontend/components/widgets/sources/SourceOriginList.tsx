@@ -11,7 +11,7 @@ interface SourceOriginListProps {
   };
 }
 
-const ORIGIN_COLORS: Record<string, string> = {
+const SRC_ORIGIN_COLORS: Record<string, string> = {
   "North America": "bg-blue-500",
   "Middle East": "bg-amber-500",
   "Asia-Pacific": "bg-emerald-500",
@@ -27,14 +27,14 @@ export default function SourceOriginList({
 }: SourceOriginListProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const activeOrigin = searchParams.get("origin") ?? "all";
+  const activeSrcOrigin = searchParams.get("srcOrigin") ?? "all";
 
   // Create items list from canonical regions, sorted by count
-  const originItems = CANONICAL_REGIONS.map((origin) => ({
+  const srcOriginItems = CANONICAL_REGIONS.map((origin) => ({
     id: origin,
     label: origin,
     count: countsData.counts[origin] || 0,
-    dotColor: ORIGIN_COLORS[origin] || "bg-slate-400 dark:bg-slate-500",
+    dotColor: SRC_ORIGIN_COLORS[origin] || "bg-slate-400 dark:bg-slate-500",
   })).sort((a, b) => b.count - a.count);
 
   const items = [
@@ -44,15 +44,15 @@ export default function SourceOriginList({
       count: countsData.all,
       dotColor: "bg-slate-400 dark:bg-slate-500",
     },
-    ...originItems,
+    ...srcOriginItems,
   ];
 
   const handleSelect = (id: string) => {
     const params = new URLSearchParams(searchParams.toString());
     if (id === "all") {
-      params.delete("origin");
+      params.delete("srcOrigin");
     } else {
-      params.set("origin", id);
+      params.set("srcOrigin", id);
     }
     // Reset page cursor when filter changes
     params.delete("cursor");
@@ -62,7 +62,7 @@ export default function SourceOriginList({
   return (
     <div className="space-y-1">
       {items.map((item) => {
-        const isActive = activeOrigin === item.id;
+        const isActive = activeSrcOrigin === item.id;
         return (
           <button
             key={item.id}

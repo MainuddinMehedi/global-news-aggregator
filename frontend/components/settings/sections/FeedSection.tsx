@@ -2,7 +2,6 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
 import {
   Select,
   SelectContent,
@@ -10,31 +9,92 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { CANONICAL_CATEGORIES } from "@/lib/constants";
-import type { SettingsState } from "@/store";
+import { Separator } from "@/components/ui/separator";
+import { CANONICAL_CATEGORIES, CANONICAL_REGIONS } from "@/lib/constants";
+import type { HomePageMode, SettingsState } from "@/store";
 
 interface FeedSectionProps {
   settings: {
+    homePageMode: HomePageMode;
+    feedDefaultRegion: string;
     feedDefaultCategory: string;
     feedDefaultSort: string;
     articlesPerPage: number;
   };
-  onSettingChange: <K extends keyof SettingsState>(key: K, value: SettingsState[K]) => void;
+  onSettingChange: <K extends keyof SettingsState>(
+    key: K,
+    value: SettingsState[K],
+  ) => void;
 }
 
-export default function FeedSection({ settings, onSettingChange }: FeedSectionProps) {
+export default function FeedSection({
+  settings,
+  onSettingChange,
+}: FeedSectionProps) {
   return (
     <>
       <div>
-        <h2 className="text-2xl font-bold tracking-tight">
-          Feed Preferences
-        </h2>
+        <h2 className="text-2xl font-bold tracking-tight">Feed Preferences</h2>
         <p className="text-sm text-muted-foreground mt-1">
           Control how news articles are displayed and sorted.
         </p>
       </div>
       <Card>
         <CardContent className="p-6 space-y-6">
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <Label>Home Page View</Label>
+              <p className="text-sm text-muted-foreground">
+                Choose how the home page presents news to you.
+              </p>
+            </div>
+            <Select
+              value={settings.homePageMode}
+              onValueChange={(v: HomePageMode) =>
+                onSettingChange("homePageMode", v)
+              }
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Select view mode" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="continuous">Continuous Feed</SelectItem>
+                <SelectItem value="daily">
+                  Daily View (Today&apos;s News)
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <Separator />
+
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <Label>Default Region</Label>
+              <p className="text-sm text-muted-foreground">
+                Choose which region loads by default.
+              </p>
+            </div>
+            <Select
+              value={settings.feedDefaultRegion}
+              onValueChange={(v) => onSettingChange("feedDefaultRegion", v)}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Select region" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Regions</SelectItem>
+                {CANONICAL_REGIONS.map((region) => (
+                  <SelectItem key={region} value={region}>
+                    {region}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <Separator />
+
           <div className="flex items-center justify-between">
             <div className="space-y-1">
               <Label>Default Category</Label>
@@ -78,9 +138,9 @@ export default function FeedSection({ settings, onSettingChange }: FeedSectionPr
                 <SelectValue placeholder="Select sort" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="newest">Newest First</SelectItem>
+                <SelectItem value="latest">Latest First</SelectItem>
                 <SelectItem value="oldest">Oldest First</SelectItem>
-                <SelectItem value="impact">Highest Impact</SelectItem>
+                <SelectItem value="bias">Most Biased</SelectItem>
               </SelectContent>
             </Select>
           </div>

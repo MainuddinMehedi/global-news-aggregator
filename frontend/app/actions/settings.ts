@@ -2,8 +2,7 @@
 
 import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
-import { updateTag } from "next/cache";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 
 async function getUserSettings() {
   const session = await auth();
@@ -41,7 +40,17 @@ export async function updateSingleSettingAction(key: string, value: any) {
     data: { settings },
   });
 
-  if (["hiddenCategories", "extraCategories", "feedDefaultCategory", "feedDefaultSort", "showBiasBadges"].includes(key)) {
+  if (
+    [
+      "hiddenCategories",
+      "extraCategories",
+      "feedDefaultCategory",
+      "feedDefaultSort",
+      "feedDefaultRegion",
+      "homePageMode",
+      "articlesPerPage",
+    ].includes(key)
+  ) {
     updateTag("articles");
     revalidatePath("/", "layout");
   }
@@ -82,7 +91,7 @@ export async function toggleCustomSourceAction(id: string, enabled: boolean) {
 
   const customSources = settings.customSources || [];
   settings.customSources = customSources.map((s: any) =>
-    s.id === id ? { ...s, enabled } : s
+    s.id === id ? { ...s, enabled } : s,
   );
 
   await prisma.user.update({
@@ -98,9 +107,11 @@ export async function toggleBuiltinSourceAction(url: string, enabled: boolean) {
   const { email, settings } = await getUserSettings();
 
   let disabledBuiltinSources = settings.disabledBuiltinSources || [];
-  
+
   if (enabled) {
-    disabledBuiltinSources = disabledBuiltinSources.filter((u: string) => u !== url);
+    disabledBuiltinSources = disabledBuiltinSources.filter(
+      (u: string) => u !== url,
+    );
   } else {
     if (!disabledBuiltinSources.includes(url)) {
       disabledBuiltinSources.push(url);

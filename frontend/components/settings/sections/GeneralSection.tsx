@@ -10,8 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
-import type { ColorTheme, HomePageMode, SettingsState, Theme } from "@/store";
+import type { ColorTheme, SettingsState, Theme } from "@/store";
 import { Check } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useTheme } from "next-themes";
@@ -27,7 +26,6 @@ const COLOR_THEMES: { id: ColorTheme; label: string; swatch: string }[] = [
 interface GeneralSectionProps {
   settings: {
     colorTheme: ColorTheme;
-    homePageMode: HomePageMode;
   };
   onSettingChange: <K extends keyof SettingsState>(
     key: K,
@@ -78,35 +76,6 @@ export default function GeneralSection({
               </SelectContent>
             </Select>
           </div>
-
-          <Separator />
-
-          <div className="flex items-center justify-between">
-            <div className="space-y-1">
-              <Label>Home Page View</Label>
-              <p className="text-sm text-muted-foreground">
-                Choose how the home page presents news to you.
-              </p>
-            </div>
-            <Select
-              value={settings.homePageMode}
-              onValueChange={(v: HomePageMode) =>
-                onSettingChange("homePageMode", v)
-              }
-            >
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Select view mode" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="continuous">Continuous Feed</SelectItem>
-                <SelectItem value="daily">
-                  Daily View (Today&apos;s News)
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <Separator />
 
           <div className="space-y-3">
             <div className="space-y-1">

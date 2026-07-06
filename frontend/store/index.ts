@@ -1,7 +1,7 @@
-import { create } from "zustand";
-import { persist, createJSONStorage } from "zustand/middleware";
-import { useShallow } from "zustand/shallow";
 import type { Article } from "@/types/article";
+import { create } from "zustand";
+import { createJSONStorage, persist } from "zustand/middleware";
+import { useShallow } from "zustand/shallow";
 
 // ─── Feed slice ───────────────────────────────────────────────────────────────
 interface FeedSlice {
@@ -77,11 +77,9 @@ export interface SettingsState {
   colorTheme: ColorTheme;
   isSidebarCollapsed: boolean;
   feedDefaultCategory: string;
+  feedDefaultRegion: string;
   feedDefaultSort: string;
   articlesPerPage: number;
-  compactMode: boolean;
-  showBiasBadges: boolean;
-  showSentiment: boolean;
   defaultAiModel: string;
   responseStyle: ResponseStyle;
   favoriteCategories: string[];
@@ -154,11 +152,9 @@ export const useAppStore = create<AppStore>()(
       colorTheme: "maia",
       isSidebarCollapsed: false,
       feedDefaultCategory: "all",
-      feedDefaultSort: "newest",
+      feedDefaultRegion: "all",
+      feedDefaultSort: "latest",
       articlesPerPage: 20,
-      compactMode: false,
-      showBiasBadges: true,
-      showSentiment: true,
       defaultAiModel: "groq/compound",
       responseStyle: "concise",
       favoriteCategories: [],
@@ -177,11 +173,9 @@ export const useAppStore = create<AppStore>()(
         colorTheme: state.colorTheme,
         isSidebarCollapsed: state.isSidebarCollapsed,
         feedDefaultCategory: state.feedDefaultCategory,
+        feedDefaultRegion: state.feedDefaultRegion,
         feedDefaultSort: state.feedDefaultSort,
         articlesPerPage: state.articlesPerPage,
-        compactMode: state.compactMode,
-        showBiasBadges: state.showBiasBadges,
-        showSentiment: state.showSentiment,
         defaultAiModel: state.defaultAiModel,
         responseStyle: state.responseStyle,
         favoriteCategories: state.favoriteCategories,
@@ -230,11 +224,9 @@ export const useSettings = () => {
       colorTheme: s.colorTheme,
       isSidebarCollapsed: s.isSidebarCollapsed,
       feedDefaultCategory: s.feedDefaultCategory,
+      feedDefaultRegion: s.feedDefaultRegion,
       feedDefaultSort: s.feedDefaultSort,
       articlesPerPage: s.articlesPerPage,
-      compactMode: s.compactMode,
-      showBiasBadges: s.showBiasBadges,
-      showSentiment: s.showSentiment,
       defaultAiModel: s.defaultAiModel,
       responseStyle: s.responseStyle,
       favoriteCategories: s.favoriteCategories,

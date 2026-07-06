@@ -1,41 +1,26 @@
-import { Suspense } from "react";
-import { getCategories } from "@/queries/categories";
-import CategoryFilter from "@/components/Feed/filters/CategoryFilter";
-import Sort from "@/components/Feed/Sort";
 import { ArticleCount } from "@/components/Feed/ArticleCount";
 import ActiveFilters from "@/components/Feed/filters/ActiveFilters";
+import CategoryFilter from "@/components/Feed/filters/CategoryFilter";
 import FilterPopover from "@/components/Feed/filters/FilterPopover";
-
-// TODO: After the new ingestion with the updated category list, make sure if they fit in without scroll. If overflowed, implement scrolling without holding down shift key. So when the user scrolls with the mouse wheel, it should scroll right away.
-// TODO: Also Make sure the "all" button is at the first position and the "Others" button is at the last position.
+import Sort from "@/components/Feed/filters/Sort";
+import prisma from "@/lib/prisma";
+import { Suspense } from "react";
 
 interface FiltersProps {
-  category?: string;
-  region?: string;
-  origin?: string;
-  type?: string;
-  story?: string;
-  bias?: string;
-  scope?: string;
-  activeStoryTitle?: string;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
-export default async function Filters({
-  category = "all",
-  region = "all",
-  origin = "all",
-  type = "all",
-  story = "all",
-  bias = "all",
-  scope = "all",
-  activeStoryTitle,
-}: FiltersProps) {
-  const categories = await getCategories();
-
+export default function Filters({ searchParams }: FiltersProps) {
   return (
     <div className="space-y-5 w-full">
       {/* Category filter pills */}
-      <CategoryFilter categories={categories} />
+      <Suspense
+        fallback={
+          <div className="h-8 w-full animate-pulse bg-muted rounded-md" />
+        }
+      >
+        <CategoryFilter searchParams={searchParams} />
+      </Suspense>
 
       {/* Sort control + active filters + live article count */}
       <div className="flex items-start sm:items-center justify-between gap-4">
@@ -45,26 +30,30 @@ export default async function Filters({
 
         <div className="flex-1 min-w-0 flex justify-center">
           <Suspense fallback={null}>
-            <ActiveFilters
-              category={category}
-              region={region}
-              origin={origin}
-              type={type}
-              story={story}
-              bias={bias}
-              scope={scope}
-              activeStoryTitle={activeStoryTitle}
-            />
+            <ActiveFiltersLoader searchParams={searchParams} />
           </Suspense>
         </div>
 
         <div className="flex items-center gap-3 shrink-0">
           <ArticleCount />
-          <Suspense fallback={null}>
-            <FilterPopover />
-          </Suspense>
+          <FilterPopover />
         </div>
       </div>
     </div>
   );
+}
+
+async function ActiveFiltersLoader({ searchParams }: FiltersProps) {
+  const params = await searchParams;
+  let activeStoryTitle: string | undefined = undefined;
+
+  if (typeof params.story === "string" && params.story !== "all") {
+    const cluster = await prisma.storyCluster.findUnique({
+      where: { slug: params.story },
+      select: { title: true },
+    });
+    if (cluster) activeStoryTitle = cluster.title;
+  }
+
+  return <ActiveFilters activeStoryTitle={activeStoryTitle} />;
 }

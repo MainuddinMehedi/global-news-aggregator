@@ -7,7 +7,7 @@ export interface FilterParams {
   sort: string;
   search: string;
   region?: string;
-  origin?: string;
+  srcOrigin?: string;
   type?: string;
   story?: string;
   bias?: string;
@@ -22,14 +22,14 @@ import { Article } from "@/types/article";
 
 export async function executeFilterQuery(
   params: FilterParams,
-  take: number
+  take: number,
 ): Promise<{ articles: Article[]; nextCursor: string | null }> {
   const {
     category,
     sort,
     search,
     region,
-    origin,
+    srcOrigin,
     type,
     story,
     bias,
@@ -43,36 +43,44 @@ export async function executeFilterQuery(
   const words = search.trim().split(/\s+/).filter(Boolean);
 
   try {
-    const categoryFilter = category !== "all"
-      ? [{ categories: { some: { name: category } } }]
-      : [];
+    const categoryFilter =
+      category !== "all" ? [{ categories: { some: { name: category } } }] : [];
 
     let regionFilter: Record<string, unknown>[] = [];
     if (region && region !== "all") regionFilter = [{ eventRegion: region }];
 
-    let originFilter: Record<string, unknown>[] = [];
-    if (origin && origin !== "all") {
+    let srcOriginFilter: Record<string, unknown>[] = [];
+    if (srcOrigin && srcOrigin !== "all") {
       const matchingCountries = Object.entries(COUNTRY_TO_REGION)
-        .filter(([, regionVal]) => regionVal.toLowerCase() === origin.toLowerCase())
+        .filter(
+          ([, regionVal]) => regionVal.toLowerCase() === srcOrigin.toLowerCase(),
+        )
         .map(([country]) => country);
-      originFilter = [{ rawArticle: { sourceCountry: { in: matchingCountries } } }];
+      srcOriginFilter = [
+        { rawArticle: { sourceCountry: { in: matchingCountries } } },
+      ];
     }
 
     let typeFilter: Record<string, unknown>[] = [];
-    if (type && type !== "all") typeFilter = [{ rawArticle: { sourceType: type } }];
+    if (type && type !== "all")
+      typeFilter = [{ rawArticle: { sourceType: type } }];
 
     let biasFilter: Record<string, unknown>[] = [];
-    if (bias && bias !== "all") biasFilter = [{ rawArticle: { biasGroup: bias } }];
+    if (bias && bias !== "all")
+      biasFilter = [{ rawArticle: { biasGroup: bias } }];
 
     let scopeFilter: Record<string, unknown>[] = [];
-    if (scope && scope !== "all") scopeFilter = [{ rawArticle: { coverageScope: scope } }];
+    if (scope && scope !== "all")
+      scopeFilter = [{ rawArticle: { coverageScope: scope } }];
 
     let sourcesFilter: Record<string, unknown>[] = [];
-    if (enabledSources) sourcesFilter = [{ rawArticle: { source: { in: enabledSources } } }];
+    if (enabledSources)
+      sourcesFilter = [{ rawArticle: { source: { in: enabledSources } } }];
 
-    const storyFilter = story && story !== "all"
-      ? [{ storyClusters: { some: { slug: story } } }]
-      : [];
+    const storyFilter =
+      story && story !== "all"
+        ? [{ storyClusters: { some: { slug: story } } }]
+        : [];
 
     let dateFilter: Record<string, unknown>[] = [];
     if (date) {
@@ -80,33 +88,61 @@ export async function executeFilterQuery(
       if (!isNaN(parsedDate.getTime())) {
         const startOfDay = new Date(parsedDate);
         startOfDay.setUTCHours(0, 0, 0, 0);
-        
+
         const endOfDay = new Date(parsedDate);
         endOfDay.setUTCHours(23, 59, 59, 999);
-        
-        dateFilter = [{ rawArticle: { publishedAt: { gte: startOfDay, lte: endOfDay } } }];
+
+        dateFilter = [
+          { rawArticle: { publishedAt: { gte: startOfDay, lte: endOfDay } } },
+        ];
       }
     }
 
     const notSkippedFilter = [{ clusterStatus: { not: "SKIPPED" } }];
 
-    const notHiddenFilter = hiddenCategories && hiddenCategories.length > 0
-      ? [{ categories: { none: { name: { in: hiddenCategories } } } }]
-      : [];
+    const notHiddenFilter =
+      hiddenCategories && hiddenCategories.length > 0
+        ? [{ categories: { none: { name: { in: hiddenCategories } } } }]
+        : [];
 
-    const searchFilter = words.length > 0
-      ? words.map((word) => ({
-          OR: [
-            { rawArticle: { title: { contains: word, mode: "insensitive" as const } } },
-            { rawArticle: { contentSnippet: { contains: word, mode: "insensitive" as const } } },
-            { rawArticle: { source: { contains: word, mode: "insensitive" as const } } },
-          ],
-        }))
-      : [];
+    const searchFilter =
+      words.length > 0
+        ? words.map((word) => ({
+            OR: [
+              {
+                rawArticle: {
+                  title: { contains: word, mode: "insensitive" as const },
+                },
+              },
+              {
+                rawArticle: {
+                  contentSnippet: {
+                    contains: word,
+                    mode: "insensitive" as const,
+                  },
+                },
+              },
+              {
+                rawArticle: {
+                  source: { contains: word, mode: "insensitive" as const },
+                },
+              },
+            ],
+          }))
+        : [];
 
-    const orderBy = sort === "bias"
-      ? [{ sentimentScore: "desc" as const }, { id: "asc" as const }]
-      : [{ rawArticle: { publishedAt: "desc" as const } }, { id: "asc" as const }];
+    const orderBy =
+      sort === "bias"
+        ? [{ sentimentScore: "desc" as const }, { id: "asc" as const }]
+        : sort === "oldest"
+          ? [
+              { rawArticle: { publishedAt: "asc" as const } },
+              { id: "asc" as const },
+            ]
+          : [
+              { rawArticle: { publishedAt: "desc" as const } },
+              { id: "asc" as const },
+            ];
 
     const raw = await prisma.processedArticle.findMany({
       take: take + 1,
@@ -118,7 +154,7 @@ export async function executeFilterQuery(
           ...notSkippedFilter,
           ...notHiddenFilter,
           ...regionFilter,
-          ...originFilter,
+          ...srcOriginFilter,
           ...typeFilter,
           ...biasFilter,
           ...scopeFilter,
@@ -137,7 +173,7 @@ export async function executeFilterQuery(
 
     return {
       articles: trimmed.map((a) => mapArticle(a as unknown as RawArticleData)),
-      nextCursor
+      nextCursor,
     };
   } catch (error) {
     console.log("executeFilterQuery error:", error);

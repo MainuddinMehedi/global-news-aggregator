@@ -16,7 +16,7 @@ interface ContinuousFeedProps {
   sort: string;
   search: string;
   region: string;
-  origin: string;
+  srcOrigin: string;
   type: string;
   story: string;
   bias: string;
@@ -30,7 +30,7 @@ export default function ContinuousFeed({
   sort,
   search,
   region,
-  origin,
+  srcOrigin,
   type,
   story,
   bias,
@@ -50,7 +50,7 @@ export default function ContinuousFeed({
       sort,
       search,
       region,
-      origin,
+      srcOrigin,
       type,
       story,
       bias,
@@ -64,7 +64,7 @@ export default function ContinuousFeed({
       sort,
       search,
       region,
-      origin,
+      srcOrigin,
       type,
       story,
       bias,
