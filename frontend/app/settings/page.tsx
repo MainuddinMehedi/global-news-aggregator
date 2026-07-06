@@ -30,8 +30,7 @@ export default function SettingsPage() {
 async function SettingsLoader() {
   const session = await auth();
   
-  let customSources = [];
-  let disabledBuiltinSources = [];
+  let settingsObj = {};
 
   if (session?.user?.email) {
     const user = await prisma.user.findUnique({
@@ -40,16 +39,11 @@ async function SettingsLoader() {
     });
     
     if (user?.settings) {
-      const settings = user.settings as any;
-      customSources = settings.customSources || [];
-      disabledBuiltinSources = settings.disabledBuiltinSources || [];
+      settingsObj = user.settings;
     }
   }
 
   return (
-    <SettingsInterface 
-      dbCustomSources={customSources} 
-      dbDisabledBuiltinSources={disabledBuiltinSources} 
-    />
+    <SettingsInterface dbSettings={settingsObj} />
   );
 }

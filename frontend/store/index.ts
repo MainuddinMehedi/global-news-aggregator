@@ -72,10 +72,7 @@ export interface CustomSource {
   enabled: boolean;
 }
 
-export interface SettingsState {
-  theme: Theme;
-  colorTheme: ColorTheme;
-  isSidebarCollapsed: boolean;
+export interface DbSettings {
   feedDefaultCategory: string;
   feedDefaultRegion: string;
   feedDefaultSort: string;
@@ -88,6 +85,14 @@ export interface SettingsState {
   homePageMode: HomePageMode;
   hasOnboardedSources: boolean;
 }
+
+export interface SettingsState {
+  theme: Theme;
+  colorTheme: ColorTheme;
+  isSidebarCollapsed: boolean;
+}
+
+export type AllSettings = SettingsState & DbSettings;
 
 interface SettingsActions {
   setSetting: <K extends keyof SettingsState>(
@@ -151,17 +156,6 @@ export const useAppStore = create<AppStore>()(
       theme: "system",
       colorTheme: "maia",
       isSidebarCollapsed: false,
-      feedDefaultCategory: "all",
-      feedDefaultRegion: "all",
-      feedDefaultSort: "latest",
-      articlesPerPage: 20,
-      defaultAiModel: "groq/compound",
-      responseStyle: "concise",
-      favoriteCategories: [],
-      hiddenCategories: [],
-      extraCategories: [],
-      homePageMode: "continuous",
-      hasOnboardedSources: false,
       setSetting: (key, value) => set((state) => ({ ...state, [key]: value })),
     }),
     {
@@ -172,17 +166,6 @@ export const useAppStore = create<AppStore>()(
         theme: state.theme,
         colorTheme: state.colorTheme,
         isSidebarCollapsed: state.isSidebarCollapsed,
-        feedDefaultCategory: state.feedDefaultCategory,
-        feedDefaultRegion: state.feedDefaultRegion,
-        feedDefaultSort: state.feedDefaultSort,
-        articlesPerPage: state.articlesPerPage,
-        defaultAiModel: state.defaultAiModel,
-        responseStyle: state.responseStyle,
-        favoriteCategories: state.favoriteCategories,
-        hiddenCategories: state.hiddenCategories,
-        extraCategories: state.extraCategories,
-        homePageMode: state.homePageMode,
-        hasOnboardedSources: state.hasOnboardedSources,
       }),
     },
   ),
@@ -223,17 +206,6 @@ export const useSettings = () => {
       theme: s.theme,
       colorTheme: s.colorTheme,
       isSidebarCollapsed: s.isSidebarCollapsed,
-      feedDefaultCategory: s.feedDefaultCategory,
-      feedDefaultRegion: s.feedDefaultRegion,
-      feedDefaultSort: s.feedDefaultSort,
-      articlesPerPage: s.articlesPerPage,
-      defaultAiModel: s.defaultAiModel,
-      responseStyle: s.responseStyle,
-      favoriteCategories: s.favoriteCategories,
-      hiddenCategories: s.hiddenCategories,
-      extraCategories: s.extraCategories,
-      homePageMode: s.homePageMode,
-      hasOnboardedSources: s.hasOnboardedSources,
     })),
   );
   const setSetting = useAppStore((s) => s.setSetting);

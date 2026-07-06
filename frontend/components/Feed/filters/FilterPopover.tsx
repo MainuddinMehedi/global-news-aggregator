@@ -11,7 +11,11 @@ import { Filter } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Suspense } from "react";
 
-export default function FilterPopover() {
+export default function FilterPopover({
+  defaultRegion = "all",
+}: {
+  defaultRegion?: string;
+}) {
   return (
     <TooltipProvider>
       <Popover>
@@ -42,6 +46,7 @@ export default function FilterPopover() {
                 <FilterDropdown
                   label="Region"
                   paramKey="region"
+                  defaultValue={defaultRegion}
                   options={[
                     { label: "North America", value: "North America" },
                     { label: "Europe", value: "Europe" },

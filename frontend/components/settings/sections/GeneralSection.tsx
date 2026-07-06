@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { ColorTheme, SettingsState, Theme } from "@/store";
+import type { ColorTheme, AllSettings, Theme } from "@/store";
 import { Check } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useTheme } from "next-themes";
@@ -27,9 +27,9 @@ interface GeneralSectionProps {
   settings: {
     colorTheme: ColorTheme;
   };
-  onSettingChange: <K extends keyof SettingsState>(
+  onSettingChange: <K extends keyof AllSettings>(
     key: K,
-    value: SettingsState[K],
+    value: AllSettings[K],
   ) => void;
 }
 

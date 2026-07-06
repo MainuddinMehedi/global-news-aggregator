@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { CANONICAL_CATEGORIES, EXTRA_CATEGORIES } from "@/lib/constants";
-import type { SettingsState } from "@/store";
+import type { AllSettings } from "@/store";
 
 interface AdvancedCategoriesSectionProps {
   settings: {
@@ -12,7 +12,7 @@ interface AdvancedCategoriesSectionProps {
     hiddenCategories: string[];
     extraCategories: string[];
   };
-  onSettingChange: <K extends keyof SettingsState>(key: K, value: SettingsState[K]) => void;
+  onSettingChange: <K extends keyof AllSettings>(key: K, value: AllSettings[K]) => void;
 }
 
 export default function AdvancedCategoriesSection({ settings, onSettingChange }: AdvancedCategoriesSectionProps) {

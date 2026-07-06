@@ -2,37 +2,40 @@
 
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
-import { useSettings } from "@/store";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { BUILTIN_SOURCES } from "@/lib/constants";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { saveUserSettingsAction } from "@/app/actions/settings";
+import { getUserSettings, saveUserSettingsAction } from "@/app/actions/settings";
 import { CheckListIcon, Settings02Icon } from "@hugeicons/core-free-icons";
 import { toast } from "sonner";
 
 export default function OnboardingModal() {
   const { data: session, status } = useSession();
-  const { settings, setSetting } = useSettings();
   const [isOpen, setIsOpen] = useState(false);
+  const [currentSettings, setCurrentSettings] = useState<any>(null);
 
   // Open the modal if the user is authenticated and hasn't onboarded yet
   useEffect(() => {
-    if (status === "authenticated" && !settings.hasOnboardedSources) {
-      setIsOpen(true);
+    if (status === "authenticated") {
+      getUserSettings().then(({ settings }) => {
+        setCurrentSettings(settings);
+        if (!settings.hasOnboardedSources) {
+          setIsOpen(true);
+        }
+      }).catch(err => console.error("Failed to fetch settings for onboarding:", err));
     }
-  }, [status, settings.hasOnboardedSources]);
+  }, [status]);
 
   const handleChoice = (useDefaults: boolean) => {
-    const newSettings = { ...settings, hasOnboardedSources: true } as any;
+    if (!currentSettings) return;
+
+    const newSettings = { ...currentSettings, hasOnboardedSources: true };
     if (useDefaults) {
-      newSettings.hasOnboardedSources = true;
-      setSetting("hasOnboardedSources", true);
       toast.success("Global news sources active in your pipeline.");
     } else {
       const allBuiltinUrls = BUILTIN_SOURCES.map((s) => s.url);
       newSettings.disabledBuiltinSources = allBuiltinUrls;
-      setSetting("hasOnboardedSources", true);
       toast.success("Ready for you to add your own sources.");
     }
 

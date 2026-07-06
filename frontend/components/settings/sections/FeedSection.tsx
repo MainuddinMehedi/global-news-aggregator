@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { CANONICAL_CATEGORIES, CANONICAL_REGIONS } from "@/lib/constants";
-import type { HomePageMode, SettingsState } from "@/store";
+import type { HomePageMode, AllSettings } from "@/store";
 
 interface FeedSectionProps {
   settings: {
@@ -21,9 +21,9 @@ interface FeedSectionProps {
     feedDefaultSort: string;
     articlesPerPage: number;
   };
-  onSettingChange: <K extends keyof SettingsState>(
+  onSettingChange: <K extends keyof AllSettings>(
     key: K,
-    value: SettingsState[K],
+    value: AllSettings[K],
   ) => void;
 }
 

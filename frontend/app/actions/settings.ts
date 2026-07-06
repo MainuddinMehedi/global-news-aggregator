@@ -4,7 +4,7 @@ import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
 import { revalidatePath, updateTag } from "next/cache";
 
-async function getUserSettings() {
+export async function getUserSettings() {
   const session = await auth();
   if (!session?.user?.email) {
     throw new Error("Unauthorized");

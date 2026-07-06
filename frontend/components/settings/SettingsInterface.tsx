@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSettings, type SettingsState, type CustomSource } from "@/store";
+import { useSettings, type AllSettings, type CustomSource, type DbSettings } from "@/store";
 import { toast } from "sonner";
 import { updateSingleSettingAction } from "@/app/actions/settings";
 import { useSession } from "next-auth/react";
@@ -24,9 +24,11 @@ const SETTINGS_SECTIONS = [
 ];
 
 export default function SettingsInterface({ 
+  dbSettings = {},
   dbCustomSources = [], 
   dbDisabledBuiltinSources = [] 
 }: { 
+  dbSettings?: Partial<DbSettings>,
   dbCustomSources?: CustomSource[], 
   dbDisabledBuiltinSources?: string[] 
 }) {
@@ -35,11 +37,21 @@ export default function SettingsInterface({
   const [activeSection, setActiveSection] = useState<string>("general");
   const { status } = useSession();
 
-  const handleSettingChange = <K extends keyof SettingsState>(
+  const [localSettings, setLocalSettings] = useState<Partial<DbSettings>>(dbSettings);
+  const combinedSettings = { ...localSettings, ...settings } as AllSettings;
+
+  const handleSettingChange = <K extends keyof AllSettings>(
     key: K,
-    value: SettingsState[K],
+    value: AllSettings[K],
   ) => {
-    setSetting(key, value);
+    // If it's a UI setting, update Zustand
+    if (["theme", "colorTheme", "isSidebarCollapsed"].includes(key)) {
+      setSetting(key as any, value);
+    } else {
+      // Update local DB settings state
+      setLocalSettings((prev) => ({ ...prev, [key]: value }));
+    }
+
     // Persist to DB immediately if authenticated
     if (status === "authenticated") {
       updateSingleSettingAction(key, value).catch(err => {
@@ -136,12 +148,12 @@ export default function SettingsInterface({
       <div className="flex-1 space-y-16 pb-24 w-full max-w-2xl">
         {/* General Settings */}
         <section id="general" className="scroll-mt-32 space-y-6">
-          <GeneralSection settings={settings} onSettingChange={handleSettingChange} />
+          <GeneralSection settings={combinedSettings} onSettingChange={handleSettingChange} />
         </section>
 
         {/* Feed Settings */}
         <section id="feed" className="scroll-mt-32 space-y-6">
-          <FeedSection settings={settings} onSettingChange={handleSettingChange} />
+          <FeedSection settings={combinedSettings} onSettingChange={handleSettingChange} />
         </section>
 
         {/* AI & Chat Settings */}
@@ -167,7 +179,7 @@ export default function SettingsInterface({
           
           {status === "authenticated" ? (
             <div className="space-y-6">
-              <AdvancedCategoriesSection settings={settings} onSettingChange={handleSettingChange} />
+              <AdvancedCategoriesSection settings={combinedSettings} onSettingChange={handleSettingChange} />
               <SourcesSection 
                 dbCustomSources={dbCustomSources} 
                 dbDisabledBuiltinSources={dbDisabledBuiltinSources} 

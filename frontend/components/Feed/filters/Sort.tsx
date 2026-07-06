@@ -1,7 +1,7 @@
 import FilterDropdown from "@/components/Feed/filters/FilterDropdown";
 import { Suspense } from "react";
 
-export default function Sort() {
+export default function Sort({ defaultSort = "latest" }: { defaultSort?: string }) {
   return (
     <div className="flex items-center space-x-2">
       <span className="text-sm text-muted-foreground font-medium">Sort:</span>
@@ -15,6 +15,7 @@ export default function Sort() {
           label="Sort"
           paramKey="sort"
           hasAllOption={false}
+          defaultValue={defaultSort}
           options={[
             { label: "Latest", value: "latest" },
             { label: "Oldest", value: "oldest" },

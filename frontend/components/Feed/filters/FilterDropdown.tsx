@@ -7,13 +7,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useSettings } from "@/store";
 import { useRouter, useSearchParams } from "next/navigation";
 
 interface FilterDropdownProps {
   label: string;
   paramKey: string;
   options: { label: string; value: string }[];
+  defaultValue?: string;
   showLabel?: boolean;
   hasAllOption?: boolean;
 }
@@ -22,18 +22,12 @@ export default function FilterDropdown({
   label,
   paramKey,
   options,
+  defaultValue = "all",
   showLabel = false,
   hasAllOption = true,
 }: FilterDropdownProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { settings } = useSettings();
-
-  // Handle dynamic default values from Zustand
-  let defaultValue = "all";
-  if (paramKey === "region")
-    defaultValue = settings?.feedDefaultRegion || "all";
-  if (paramKey === "sort") defaultValue = settings?.feedDefaultSort || "latest";
 
   const currentValue = searchParams.get(paramKey) ?? defaultValue;
 

@@ -8,9 +8,15 @@ import { Suspense } from "react";
 
 interface FiltersProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+  defaultRegion?: string;
+  defaultSort?: string;
 }
 
-export default function Filters({ searchParams }: FiltersProps) {
+export default function Filters({
+  searchParams,
+  defaultRegion = "all",
+  defaultSort = "latest",
+}: FiltersProps) {
   return (
     <div className="space-y-5 w-full">
       {/* Category filter pills */}
@@ -25,7 +31,7 @@ export default function Filters({ searchParams }: FiltersProps) {
       {/* Sort control + active filters + live article count */}
       <div className="flex items-start sm:items-center justify-between gap-4">
         <div className="shrink-0">
-          <Sort />
+          <Sort defaultSort={defaultSort} />
         </div>
 
         <div className="flex-1 min-w-0 flex justify-center">
@@ -36,7 +42,7 @@ export default function Filters({ searchParams }: FiltersProps) {
 
         <div className="flex items-center gap-3 shrink-0">
           <ArticleCount />
-          <FilterPopover />
+          <FilterPopover defaultRegion={defaultRegion} />
         </div>
       </div>
     </div>

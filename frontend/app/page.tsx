@@ -3,7 +3,6 @@ import { DiversityInsightWidget } from "@/components/analytics/DiversityInsightW
 import FeedError from "@/components/Feed/FeedError";
 import Filters from "@/components/Feed/filters/Filters";
 import ArticleFeed from "@/components/Feed/layouts/ArticleFeed";
-import { StoreHydrator } from "@/components/providers/StoreHydrator";
 import { ArticleFeedSkeleton } from "@/components/skeletons/home/ArticleFeedSkeleton";
 import { EventClustersWidget } from "@/components/widgets/events/EventClustersWidget";
 import { SourceOriginWidget } from "@/components/widgets/sources/SourceOriginWidget";
@@ -28,8 +27,6 @@ export default function Home({ searchParams }: HomeProps) {
     <div className="flex flex-1 w-full">
       {/* Feed: Main content area */}
       <div className="flex-1 min-w-0 px-4 py-6 sm:px-6 lg:px-8 space-y-6">
-        <Filters searchParams={searchParams} />
-
         <Suspense fallback={<ArticleFeedSkeleton />}>
           <MainFeedLoader searchParams={searchParams} />
         </Suspense>
@@ -161,11 +158,11 @@ async function MainFeedLoader({ searchParams }: MainFeedLoaderProps) {
 
   return (
     <>
-      <StoreHydrator
-        dbSettings={userSettings}
-        isAuthenticated={!!session?.user?.email}
+      <Filters 
+        searchParams={searchParams} 
+        defaultRegion={userSettings.feedDefaultRegion || "all"} 
+        defaultSort={normalizedSort} 
       />
-
       <ArticleFeed
         mode={mode}
         key={`${category}|${sort}|${search}|${region}|${srcOrigin}|${type}|${story}|${bias}|${scope}|${feedDate}|${enabledSources?.join(",")}`}
