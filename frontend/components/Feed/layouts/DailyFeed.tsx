@@ -5,7 +5,7 @@ import { PaginationError } from "@/components/Feed/PaginationError";
 import { ArticleFeedLoadingGrid } from "@/components/skeletons/home/ArticleFeedSkeleton";
 import { Button } from "@/components/ui/button";
 import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
-import { formatGroupingKey, getGroupingKey } from "@/lib/helpers/dateUtils";
+import { formatGroupingKey } from "@/lib/helpers/dateUtils";
 import { buildFeedQueryParams } from "@/lib/helpers/feedUtils";
 import { useSetArticleCount } from "@/store";
 import { Article } from "@/types/article";
@@ -14,6 +14,7 @@ import { useEffect, useState } from "react";
 interface DailyFeedProps {
   initialArticles: Article[];
   initialCursor: string | null;
+  initialDate?: string;
   category: string;
   sort: string;
   search: string;
@@ -28,6 +29,7 @@ interface DailyFeedProps {
 export default function DailyFeed({
   initialArticles,
   initialCursor,
+  initialDate,
   category,
   sort,
   search,
@@ -40,39 +42,9 @@ export default function DailyFeed({
 }: DailyFeedProps) {
   const setArticleCount = useSetArticleCount();
 
-  // Initialize state based on the newest date in the initial articles
-  const [{ currentDate, initialDateArticles, initialDateCursor }] = useState(
-    () => {
-      if (initialArticles.length === 0) {
-        return {
-          currentDate: new Date().toISOString().split("T")[0],
-          initialDateArticles: [],
-          initialDateCursor: null,
-        };
-      }
-
-      // Find the grouping key (YYYY-MM-DD) of the very first (newest) article
-      const firstArticleKey = getGroupingKey(initialArticles[0].publishedAt);
-
-      // Filter to keep ONLY the articles from this newest date
-      const dateArticles = initialArticles.filter(
-        (a) => getGroupingKey(a.publishedAt) === firstArticleKey,
-      );
-
-      // If we kept all 20, there might be more for this day, so use initialCursor.
-      // If we kept less than 20, the rest were older days, meaning this day is fully exhausted.
-      const dateCursor =
-        dateArticles.length === initialArticles.length ? initialCursor : null;
-
-      return {
-        currentDate: firstArticleKey,
-        initialDateArticles: dateArticles,
-        initialDateCursor: dateCursor,
-      };
-    },
+  const [activeDate, setActiveDate] = useState(
+    () => initialDate || new Date().toISOString().split("T")[0],
   );
-
-  const [activeDate, setActiveDate] = useState(currentDate);
 
   const {
     items: articles,
@@ -99,8 +71,8 @@ export default function DailyFeed({
       scope,
       date: activeDate,
     },
-    initialItems: initialDateArticles,
-    initialCursor: initialDateCursor,
+    initialItems: initialArticles,
+    initialCursor: initialCursor,
     dataKey: "articles",
     fetchDependencies: [
       category,

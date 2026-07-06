@@ -3,13 +3,13 @@ import { DiversityInsightWidget } from "@/components/analytics/DiversityInsightW
 import FeedError from "@/components/Feed/FeedError";
 import Filters from "@/components/Feed/filters/Filters";
 import ArticleFeed from "@/components/Feed/layouts/ArticleFeed";
+import { StoreHydrator } from "@/components/providers/StoreHydrator";
 import { ArticleFeedSkeleton } from "@/components/skeletons/home/ArticleFeedSkeleton";
 import { EventClustersWidget } from "@/components/widgets/events/EventClustersWidget";
 import { SourceOriginWidget } from "@/components/widgets/sources/SourceOriginWidget";
 import { BUILTIN_SOURCES } from "@/lib/constants";
 import prisma from "@/lib/prisma";
 import { getArticleById, getArticles } from "@/queries/articles";
-import { StoreHydrator } from "@/components/providers/StoreHydrator";
 import { Article } from "@/types/article";
 import { Suspense } from "react";
 
@@ -110,6 +110,14 @@ async function MainFeedLoader({ searchParams }: MainFeedLoaderProps) {
     typeof params.article === "string" ? params.article : undefined;
   const take = userSettings.articlesPerPage || 20;
 
+  const mode = userSettings.homePageMode || "daily";
+  const feedDate =
+    mode === "daily"
+      ? typeof params.date === "string"
+        ? params.date
+        : new Date().toISOString().split("T")[0]
+      : undefined;
+
   let articles: Article[] = [];
   let nextCursor = null;
   let selectedArticle = null;
@@ -128,6 +136,7 @@ async function MainFeedLoader({ searchParams }: MainFeedLoaderProps) {
         story,
         bias,
         scope,
+        date: feedDate,
         enabledSources,
         hiddenCategories,
         take,
@@ -152,11 +161,17 @@ async function MainFeedLoader({ searchParams }: MainFeedLoaderProps) {
 
   return (
     <>
-      <StoreHydrator dbSettings={userSettings} />
+      <StoreHydrator
+        dbSettings={userSettings}
+        isAuthenticated={!!session?.user?.email}
+      />
+
       <ArticleFeed
-        key={`${category}|${sort}|${search}|${region}|${srcOrigin}|${type}|${story}|${bias}|${scope}|${enabledSources?.join(",")}`}
+        mode={mode}
+        key={`${category}|${sort}|${search}|${region}|${srcOrigin}|${type}|${story}|${bias}|${scope}|${feedDate}|${enabledSources?.join(",")}`}
         initialArticles={articles}
         initialCursor={nextCursor}
+        initialDate={feedDate}
         category={category}
         sort={sort}
         search={search}
