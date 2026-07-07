@@ -1,6 +1,7 @@
 "use client";
 
-import { getArticleDetails, getStoryDetails } from "@/app/actions/details";
+import { getArticleDetails } from "@/app/actions/articleActions";
+import { getStoryDetails } from "@/app/actions/storyActions";
 import { ArticleDetailView } from "@/components/articles/ArticleDetailView";
 import { StoryDetailView } from "@/components/stories/StoryDetailView";
 import {

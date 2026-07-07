@@ -1,7 +1,7 @@
 import StoryDetailsSkeleton from "@/components/skeletons/stories/StoryDetailsSkeleton";
 import { StoryDetailView } from "@/components/stories/StoryDetailView";
 import { getStoryDetail } from "@/queries/stories";
-import { getPublisherRegion } from "@/utils/analytics";
+import { getPublisherRegion } from "@/utils/regions";
 import { ArrowLeft01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import Link from "next/link";

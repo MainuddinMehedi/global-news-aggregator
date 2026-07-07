@@ -1,6 +1,8 @@
 import prisma from "@/lib/prisma";
-import { COUNTRY_TO_REGION } from "@/utils/analytics";
-import { mapArticle, RawArticleData } from "./mapper";
+import { Article } from "@/types/article";
+import { REGION_TO_COUNTRIES } from "@/utils/regions";
+import { Prisma } from "@news/db/client";
+import { mapArticle } from "./mapper";
 
 export interface FilterParams {
   category: string;
@@ -17,8 +19,6 @@ export interface FilterParams {
   enabledSources?: string[];
   hiddenCategories?: string[];
 }
-
-import { Article } from "@/types/article";
 
 export async function executeFilterQuery(
   params: FilterParams,
@@ -46,44 +46,66 @@ export async function executeFilterQuery(
     const categoryFilter =
       category !== "all" ? [{ categories: { some: { name: category } } }] : [];
 
-    let regionFilter: Record<string, unknown>[] = [];
+    let regionFilter: Prisma.ProcessedArticleWhereInput[] = [];
     if (region && region !== "all")
       regionFilter = [{ eventRegion: { equals: region, mode: "insensitive" } }];
 
-    let srcOriginFilter: Record<string, unknown>[] = [];
+    let srcOriginFilter: Prisma.ProcessedArticleWhereInput[] = [];
     if (srcOrigin && srcOrigin !== "all") {
-      const matchingCountries = Object.entries(COUNTRY_TO_REGION)
-        .filter(
-          ([, regionVal]) => regionVal.toLowerCase() === srcOrigin.toLowerCase(),
-        )
-        .map(([country]) => country);
-      srcOriginFilter = [
-        { rawArticle: { sourceCountry: { in: matchingCountries } } },
-      ];
+      const matchingCountries =
+        REGION_TO_COUNTRIES[srcOrigin.toLowerCase()] || [];
+      if (matchingCountries.length > 0) {
+        srcOriginFilter = [
+          { rawArticle: { is: { sourceCountry: { in: matchingCountries } } } },
+        ];
+      } else {
+        // If no countries match the region, return a filter that matches nothing
+        srcOriginFilter = [{ id: "NOT_FOUND" }];
+      }
     }
 
-    let typeFilter: Record<string, unknown>[] = [];
+    let typeFilter: Prisma.ProcessedArticleWhereInput[] = [];
     if (type && type !== "all")
-      typeFilter = [{ rawArticle: { sourceType: { equals: type, mode: "insensitive" } } }];
+      typeFilter = [
+        {
+          rawArticle: {
+            is: { sourceType: { equals: type, mode: "insensitive" } },
+          },
+        },
+      ];
 
-    let biasFilter: Record<string, unknown>[] = [];
+    let biasFilter: Prisma.ProcessedArticleWhereInput[] = [];
     if (bias && bias !== "all")
-      biasFilter = [{ rawArticle: { biasGroup: { equals: bias, mode: "insensitive" } } }];
+      biasFilter = [
+        {
+          rawArticle: {
+            is: { biasGroup: { equals: bias, mode: "insensitive" } },
+          },
+        },
+      ];
 
-    let scopeFilter: Record<string, unknown>[] = [];
+    let scopeFilter: Prisma.ProcessedArticleWhereInput[] = [];
     if (scope && scope !== "all")
-      scopeFilter = [{ rawArticle: { coverageScope: { equals: scope, mode: "insensitive" } } }];
+      scopeFilter = [
+        {
+          rawArticle: {
+            is: { coverageScope: { equals: scope, mode: "insensitive" } },
+          },
+        },
+      ];
 
-    let sourcesFilter: Record<string, unknown>[] = [];
+    let sourcesFilter: Prisma.ProcessedArticleWhereInput[] = [];
     if (enabledSources)
-      sourcesFilter = [{ rawArticle: { source: { in: enabledSources } } }];
+      sourcesFilter = [
+        { rawArticle: { is: { source: { in: enabledSources } } } },
+      ];
 
-    const storyFilter =
+    const storyFilter: Prisma.ProcessedArticleWhereInput[] =
       story && story !== "all"
         ? [{ storyClusters: { some: { slug: story } } }]
         : [];
 
-    let dateFilter: Record<string, unknown>[] = [];
+    let dateFilter: Prisma.ProcessedArticleWhereInput[] = [];
     if (date) {
       const parsedDate = new Date(date);
       if (!isNaN(parsedDate.getTime())) {
@@ -94,7 +116,11 @@ export async function executeFilterQuery(
         endOfDay.setUTCHours(23, 59, 59, 999);
 
         dateFilter = [
-          { rawArticle: { publishedAt: { gte: startOfDay, lte: endOfDay } } },
+          {
+            rawArticle: {
+              is: { publishedAt: { gte: startOfDay, lte: endOfDay } },
+            },
+          },
         ];
       }
     }
@@ -106,26 +132,32 @@ export async function executeFilterQuery(
         ? [{ categories: { none: { name: { in: hiddenCategories } } } }]
         : [];
 
-    const searchFilter =
+    const searchFilter: Prisma.ProcessedArticleWhereInput[] =
       words.length > 0
         ? words.map((word) => ({
             OR: [
               {
                 rawArticle: {
-                  title: { contains: word, mode: "insensitive" as const },
-                },
-              },
-              {
-                rawArticle: {
-                  contentSnippet: {
-                    contains: word,
-                    mode: "insensitive" as const,
+                  is: {
+                    title: { contains: word, mode: "insensitive" as const },
                   },
                 },
               },
               {
                 rawArticle: {
-                  source: { contains: word, mode: "insensitive" as const },
+                  is: {
+                    contentSnippet: {
+                      contains: word,
+                      mode: "insensitive" as const,
+                    },
+                  },
+                },
+              },
+              {
+                rawArticle: {
+                  is: {
+                    source: { contains: word, mode: "insensitive" as const },
+                  },
                 },
               },
             ],
@@ -173,11 +205,11 @@ export async function executeFilterQuery(
     const nextCursor = hasMore ? trimmed[trimmed.length - 1].id : null;
 
     return {
-      articles: trimmed.map((a) => mapArticle(a as unknown as RawArticleData)),
+      articles: trimmed.map((a) => mapArticle(a)),
       nextCursor,
     };
   } catch (error) {
-    console.log("executeFilterQuery error:", error);
-    return { articles: [], nextCursor: null };
+    console.error("executeFilterQuery error:", error);
+    throw new Error("Failed to execute filter query");
   }
 }

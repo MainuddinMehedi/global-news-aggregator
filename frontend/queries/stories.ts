@@ -1,6 +1,6 @@
 import prisma from "@/lib/prisma";
+import { getPublisherRegion } from "@/utils/regions";
 import { cacheLife, cacheTag } from "next/cache";
-import { getPublisherRegion } from "@/utils/analytics";
 
 const DEFAULT_STORY_LIMIT = 30;
 const IMPACT_RANK: Record<string, number> = {

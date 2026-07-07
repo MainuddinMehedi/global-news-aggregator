@@ -16,32 +16,6 @@ export function getEventRegionBadgeVariant(
   return "neutral";
 }
 
-export const COUNTRY_TO_REGION: Record<string, string> = {
-  Bangladesh: "Asia-Pacific",
-  India: "Asia-Pacific",
-  China: "Asia-Pacific",
-  Japan: "Asia-Pacific",
-  USA: "North America",
-  Canada: "North America",
-  UK: "Europe",
-  France: "Europe",
-  Germany: "Europe",
-  Russia: "Europe",
-  Qatar: "Middle East",
-  "Saudi Arabia": "Middle East",
-  Israel: "Middle East",
-  Egypt: "Middle East",
-  Global: "Global",
-};
-
-export function getPublisherRegion(country: string | null | undefined): string {
-  if (!country || country.trim() === "" || country === "Global") {
-    return "Global";
-  }
-
-  return COUNTRY_TO_REGION[country] || "Global";
-}
-
 /**
  * Converts large metrics (like Corpus Size on the Analytics dashboard) into a compact shorthand (e.g., 1500 -> 1.5K)
  */

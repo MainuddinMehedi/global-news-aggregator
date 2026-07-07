@@ -1,27 +1,10 @@
 import { Article } from "@/types/article";
-import { getPublisherRegion } from "@/utils/analytics";
+import { getPublisherRegion } from "@/utils/regions";
+import { Prisma } from "@news/db/client";
 
-export interface RawArticleData {
-  id: string;
-  rawArticle: {
-    title: string;
-    source: string;
-    publishedAt: Date;
-    contentSnippet: string | null;
-    extractedContent: string | null;
-    url: string;
-    sourceCountry: string | null;
-    sourceType: string | null;
-    biasGroup: string | null;
-    coverageScope: string | null;
-    slug: string | null;
-  };
-  biasNote: string | null;
-  eventRegion: string | null;
-  sentimentScore: number | null;
-  categories: { id: string; name: string }[];
-  entities: string[];
-}
+export type RawArticleData = Prisma.ProcessedArticleGetPayload<{
+  include: { rawArticle: true; categories: true };
+}>;
 
 export function mapArticle(raw: RawArticleData): Article {
   return {
@@ -36,8 +19,8 @@ export function mapArticle(raw: RawArticleData): Article {
     sentimentScore: raw.sentimentScore,
     url: raw.rawArticle.url,
     categories: raw.categories,
-    entities: raw.entities,
-    sourceCountry: raw.rawArticle.sourceCountry,
+    entities: [], // entities is not fetched in this include block
+    sourceCountry: raw.rawArticle?.sourceCountry || null,
     sourceOrigin: getPublisherRegion(raw.rawArticle.sourceCountry),
     sourceType: raw.rawArticle.sourceType,
     biasGroup: raw.rawArticle.biasGroup,

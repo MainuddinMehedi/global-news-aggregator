@@ -1,6 +1,6 @@
-import { cacheLife, cacheTag } from "next/cache";
 import prisma from "@/lib/prisma";
-import { getPublisherRegion } from "@/utils/analytics";
+import { getPublisherRegion } from "@/utils/regions";
+import { cacheLife, cacheTag } from "next/cache";
 
 export interface GlobalAnalyticsData {
   eventRegionDistribution: {
