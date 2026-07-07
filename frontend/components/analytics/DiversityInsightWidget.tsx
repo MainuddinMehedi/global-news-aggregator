@@ -4,9 +4,14 @@ import { getContentInsights } from "@/queries/analytics/widgets";
 import { getSentimentDisplayProps } from "@/utils/analytics";
 import { PresentationBarChart01FreeIcons } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
+import { Prisma } from "@news/db/client";
 import { Suspense } from "react";
 
-export function DiversityInsightWidget() {
+export function DiversityInsightWidget({
+  where,
+}: {
+  where?: Prisma.ProcessedArticleWhereInput;
+}) {
   return (
     <div className="bg-primary/5 border border-primary/10 rounded-2xl p-4 flex flex-col justify-between h-full">
       <div>
@@ -21,16 +26,20 @@ export function DiversityInsightWidget() {
         </div>
 
         <Suspense fallback={<WidgetListSkeleton count={2} />}>
-          <DiversityInsightContent />
+          <DiversityInsightContent where={where} />
         </Suspense>
       </div>
     </div>
   );
 }
 
-async function DiversityInsightContent() {
+async function DiversityInsightContent({
+  where,
+}: {
+  where?: Prisma.ProcessedArticleWhereInput;
+}) {
   const [insights, ingestion] = await Promise.all([
-    getContentInsights(),
+    getContentInsights(where),
     getIngestionStats(),
   ]);
 

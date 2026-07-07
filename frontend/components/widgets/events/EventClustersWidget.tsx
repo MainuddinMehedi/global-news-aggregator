@@ -5,25 +5,34 @@ import {
   getStoryClustersWithOrigins,
 } from "@/queries/analytics/widgets";
 import { METADATA_COLORS } from "@/utils/colors";
+import { Prisma } from "@news/db/client";
 import { Suspense } from "react";
 
-export function EventClustersWidget() {
+export function EventClustersWidget({
+  where,
+}: {
+  where?: Prisma.ProcessedArticleWhereInput;
+}) {
   return (
     <div className="bg-card border border-border rounded-2xl p-4 shadow-sm">
       <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest mb-4 px-1">
         Active Event Clusters
       </h3>
       <Suspense fallback={<WidgetListSkeleton count={4} />}>
-        <EventClustersContent />
+        <EventClustersContent where={where} />
       </Suspense>
     </div>
   );
 }
 
-async function EventClustersContent() {
+async function EventClustersContent({
+  where,
+}: {
+  where?: Prisma.ProcessedArticleWhereInput;
+}) {
   const [stats, clusters] = await Promise.all([
-    getClusterStats(),
-    getStoryClustersWithOrigins(),
+    getClusterStats(where),
+    getStoryClustersWithOrigins(where),
   ]);
 
   if (!stats) return null;

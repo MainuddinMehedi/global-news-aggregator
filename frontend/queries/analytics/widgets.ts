@@ -1,25 +1,33 @@
 import prisma from "@/lib/prisma";
 import { getPublisherRegion } from "@/utils/regions";
+import { Prisma } from "@news/db/client";
 import { cacheLife, cacheTag } from "next/cache";
 
-export async function getContentInsights() {
+export async function getContentInsights(
+  baseWhere?: Prisma.ProcessedArticleWhereInput,
+) {
   "use cache";
   cacheTag("articles");
   cacheLife("hours");
 
   try {
+    const combinedWhere = {
+      clusterStatus: { not: "SKIPPED" },
+      ...baseWhere,
+    };
+
     const [regionStats, categoryStats, sentimentStats] = await Promise.all([
       prisma.processedArticle.groupBy({
         by: ["eventRegion"],
         _count: { _all: true },
-        where: { clusterStatus: { not: "SKIPPED" } },
+        where: combinedWhere,
       }),
       prisma.category.findMany({
         include: {
           _count: {
             select: {
               articles: {
-                where: { clusterStatus: { not: "SKIPPED" } },
+                where: combinedWhere,
               },
             },
           },
@@ -28,7 +36,7 @@ export async function getContentInsights() {
       prisma.processedArticle.aggregate({
         _avg: { sentimentScore: true },
         _count: { sentimentScore: true },
-        where: { clusterStatus: { not: "SKIPPED" } },
+        where: combinedWhere,
       }),
     ]);
 
@@ -52,20 +60,27 @@ export async function getContentInsights() {
   }
 }
 
-export async function getClusterStats() {
+export async function getClusterStats(
+  baseWhere?: Prisma.ProcessedArticleWhereInput,
+) {
   "use cache";
   cacheTag("stories");
   cacheLife("minutes");
 
   try {
+    const clusterWhere: Prisma.StoryClusterWhereInput = {
+      isActive: true,
+      ...(baseWhere ? { articles: { some: baseWhere } } : {}),
+    };
+
     const clusters = await prisma.storyCluster.groupBy({
       by: ["impact"],
       _count: { _all: true },
-      where: { isActive: true },
+      where: clusterWhere,
     });
 
     const activeCount = await prisma.storyCluster.count({
-      where: { isActive: true },
+      where: clusterWhere,
     });
 
     return {
@@ -81,7 +96,9 @@ export async function getClusterStats() {
   }
 }
 
-export async function getSourceOriginCounts() {
+export async function getSourceOriginCounts(
+  baseWhere?: Prisma.ProcessedArticleWhereInput,
+) {
   "use cache";
   cacheTag("articles");
   cacheLife("minutes");
@@ -94,6 +111,7 @@ export async function getSourceOriginCounts() {
         processedArticle: {
           is: {
             clusterStatus: { not: "SKIPPED" },
+            ...baseWhere,
           },
         },
       },
@@ -123,7 +141,9 @@ export async function getSourceOriginCounts() {
   }
 }
 
-export async function getBiasGroupCounts() {
+export async function getBiasGroupCounts(
+  baseWhere?: Prisma.ProcessedArticleWhereInput,
+) {
   "use cache";
   cacheTag("articles");
   cacheLife("minutes");
@@ -136,6 +156,7 @@ export async function getBiasGroupCounts() {
         processedArticle: {
           is: {
             clusterStatus: { not: "SKIPPED" },
+            ...baseWhere,
           },
         },
       },
@@ -162,7 +183,9 @@ export async function getBiasGroupCounts() {
   }
 }
 
-export async function getStoryClustersWithOrigins() {
+export async function getStoryClustersWithOrigins(
+  baseWhere?: Prisma.ProcessedArticleWhereInput,
+) {
   "use cache";
   cacheTag("stories");
   cacheTag("articles");
@@ -170,7 +193,10 @@ export async function getStoryClustersWithOrigins() {
 
   try {
     const clusters = await prisma.storyCluster.findMany({
-      where: { isActive: true },
+      where: {
+        isActive: true,
+        ...(baseWhere ? { articles: { some: baseWhere } } : {}),
+      },
       orderBy: { articleCount: "desc" },
       take: 5,
       include: {

@@ -20,13 +20,11 @@ export interface FilterParams {
   hiddenCategories?: string[];
 }
 
-export async function executeFilterQuery(
+export function buildArticleWhereClause(
   params: FilterParams,
-  take: number,
-): Promise<{ articles: Article[]; nextCursor: string | null }> {
+): Prisma.ProcessedArticleWhereInput {
   const {
     category,
-    sort,
     search,
     region,
     srcOrigin,
@@ -34,135 +32,132 @@ export async function executeFilterQuery(
     story,
     bias,
     scope,
-    cursor,
     date,
     enabledSources,
     hiddenCategories,
   } = params;
 
-  const words = search.trim().split(/\s+/).filter(Boolean);
+  const AND: Prisma.ProcessedArticleWhereInput[] = [
+    // 1. Default System Filters
+    // Always exclude articles marked as SKIPPED by the clustering engine
+    { clusterStatus: { not: "SKIPPED" } },
+  ];
 
-  try {
-    const categoryFilter =
-      category !== "all" ? [{ categories: { some: { name: category } } }] : [];
+  // 2. User Preferences (Settings)
+  // Hide categories the user has explicitly muted in their settings
+  if (hiddenCategories && hiddenCategories.length > 0) {
+    AND.push({ categories: { none: { name: { in: hiddenCategories } } } });
+  }
 
-    let regionFilter: Prisma.ProcessedArticleWhereInput[] = [];
-    if (region && region !== "all")
-      regionFilter = [{ eventRegion: { equals: region, mode: "insensitive" } }];
+  // Only show articles from sources the user has enabled (builtin + custom)
+  if (enabledSources && enabledSources.length > 0) {
+    AND.push({ rawArticle: { is: { source: { in: enabledSources } } } });
+  }
 
-    let srcOriginFilter: Prisma.ProcessedArticleWhereInput[] = [];
-    if (srcOrigin && srcOrigin !== "all") {
-      const matchingCountries =
-        REGION_TO_COUNTRIES[srcOrigin.toLowerCase()] || [];
-      if (matchingCountries.length > 0) {
-        srcOriginFilter = [
-          { rawArticle: { is: { sourceCountry: { in: matchingCountries } } } },
-        ];
-      } else {
-        // If no countries match the region, return a filter that matches nothing
-        srcOriginFilter = [{ id: "NOT_FOUND" }];
-      }
-    }
-
-    let typeFilter: Prisma.ProcessedArticleWhereInput[] = [];
-    if (type && type !== "all")
-      typeFilter = [
-        {
-          rawArticle: {
-            is: { sourceType: { equals: type, mode: "insensitive" } },
-          },
-        },
-      ];
-
-    let biasFilter: Prisma.ProcessedArticleWhereInput[] = [];
-    if (bias && bias !== "all")
-      biasFilter = [
-        {
-          rawArticle: {
-            is: { biasGroup: { equals: bias, mode: "insensitive" } },
-          },
-        },
-      ];
-
-    let scopeFilter: Prisma.ProcessedArticleWhereInput[] = [];
-    if (scope && scope !== "all")
-      scopeFilter = [
-        {
-          rawArticle: {
-            is: { coverageScope: { equals: scope, mode: "insensitive" } },
-          },
-        },
-      ];
-
-    let sourcesFilter: Prisma.ProcessedArticleWhereInput[] = [];
-    if (enabledSources)
-      sourcesFilter = [
-        { rawArticle: { is: { source: { in: enabledSources } } } },
-      ];
-
-    const storyFilter: Prisma.ProcessedArticleWhereInput[] =
-      story && story !== "all"
-        ? [{ storyClusters: { some: { slug: story } } }]
-        : [];
-
-    let dateFilter: Prisma.ProcessedArticleWhereInput[] = [];
-    if (date) {
-      const parsedDate = new Date(date);
-      if (!isNaN(parsedDate.getTime())) {
-        const startOfDay = new Date(parsedDate);
-        startOfDay.setUTCHours(0, 0, 0, 0);
-
-        const endOfDay = new Date(parsedDate);
-        endOfDay.setUTCHours(23, 59, 59, 999);
-
-        dateFilter = [
+  // 3. Search Keyword Matching
+  // Split search string by whitespace and require every word to match (AND array of OR clauses)
+  const words = search?.trim().split(/\s+/).filter(Boolean) || [];
+  if (words.length > 0) {
+    words.forEach((word) => {
+      AND.push({
+        OR: [
           {
             rawArticle: {
-              is: { publishedAt: { gte: startOfDay, lte: endOfDay } },
+              is: { title: { contains: word, mode: "insensitive" } },
             },
           },
-        ];
-      }
+          {
+            rawArticle: {
+              is: { contentSnippet: { contains: word, mode: "insensitive" } },
+            },
+          },
+          {
+            rawArticle: {
+              is: { source: { contains: word, mode: "insensitive" } },
+            },
+          },
+        ],
+      });
+    });
+  }
+
+  // 4. Exact Match Filters (Dropdowns)
+  if (category && category !== "all") {
+    AND.push({ categories: { some: { name: category } } });
+  }
+
+  if (region && region !== "all") {
+    AND.push({ eventRegion: { equals: region, mode: "insensitive" } });
+  }
+
+  if (type && type !== "all") {
+    AND.push({
+      rawArticle: { is: { sourceType: { equals: type, mode: "insensitive" } } },
+    });
+  }
+
+  if (bias && bias !== "all") {
+    AND.push({
+      rawArticle: { is: { biasGroup: { equals: bias, mode: "insensitive" } } },
+    });
+  }
+
+  if (scope && scope !== "all") {
+    AND.push({
+      rawArticle: {
+        is: { coverageScope: { equals: scope, mode: "insensitive" } },
+      },
+    });
+  }
+
+  if (story && story !== "all") {
+    AND.push({ storyClusters: { some: { slug: story } } });
+  }
+
+  // 5. Source Origin Country Mapping
+  // The UI passes a "region" (e.g., "Europe"), but the DB stores exact ISO countries
+  if (srcOrigin && srcOrigin !== "all") {
+    const matchingCountries =
+      REGION_TO_COUNTRIES[srcOrigin.toLowerCase()] || [];
+    if (matchingCountries.length > 0) {
+      AND.push({
+        rawArticle: { is: { sourceCountry: { in: matchingCountries } } },
+      });
+    } else {
+      // If no countries match the mapped region, force a failure condition
+      AND.push({ id: "NOT_FOUND" });
     }
+  }
 
-    const notSkippedFilter = [{ clusterStatus: { not: "SKIPPED" } }];
+  // 6. Time Range Bounding (Daily Mode)
+  if (date) {
+    const parsedDate = new Date(date);
+    if (!isNaN(parsedDate.getTime())) {
+      const startOfDay = new Date(parsedDate);
+      startOfDay.setUTCHours(0, 0, 0, 0);
 
-    const notHiddenFilter =
-      hiddenCategories && hiddenCategories.length > 0
-        ? [{ categories: { none: { name: { in: hiddenCategories } } } }]
-        : [];
+      const endOfDay = new Date(parsedDate);
+      endOfDay.setUTCHours(23, 59, 59, 999);
 
-    const searchFilter: Prisma.ProcessedArticleWhereInput[] =
-      words.length > 0
-        ? words.map((word) => ({
-            OR: [
-              {
-                rawArticle: {
-                  is: {
-                    title: { contains: word, mode: "insensitive" as const },
-                  },
-                },
-              },
-              {
-                rawArticle: {
-                  is: {
-                    contentSnippet: {
-                      contains: word,
-                      mode: "insensitive" as const,
-                    },
-                  },
-                },
-              },
-              {
-                rawArticle: {
-                  is: {
-                    source: { contains: word, mode: "insensitive" as const },
-                  },
-                },
-              },
-            ],
-          }))
-        : [];
+      AND.push({
+        rawArticle: {
+          is: { publishedAt: { gte: startOfDay, lte: endOfDay } },
+        },
+      });
+    }
+  }
+
+  return { AND };
+}
+
+export async function executeFilterQuery(
+  params: FilterParams,
+  take: number,
+): Promise<{ articles: Article[]; nextCursor: string | null }> {
+  const { sort, cursor } = params;
+
+  try {
+    const where = buildArticleWhereClause(params);
 
     const orderBy =
       sort === "bias"
@@ -180,22 +175,7 @@ export async function executeFilterQuery(
     const raw = await prisma.processedArticle.findMany({
       take: take + 1,
       ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
-      where: {
-        AND: [
-          ...categoryFilter,
-          ...searchFilter,
-          ...notSkippedFilter,
-          ...notHiddenFilter,
-          ...regionFilter,
-          ...srcOriginFilter,
-          ...typeFilter,
-          ...biasFilter,
-          ...scopeFilter,
-          ...storyFilter,
-          ...dateFilter,
-          ...sourcesFilter,
-        ],
-      },
+      where,
       orderBy,
       include: { rawArticle: true, categories: true },
     });
