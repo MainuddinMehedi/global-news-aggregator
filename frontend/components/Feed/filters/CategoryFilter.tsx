@@ -1,35 +1,18 @@
-import Link from "next/link";
 import { getCategories } from "@/queries/categories";
-import { auth } from "@/auth";
-import prisma from "@/lib/prisma";
+import Link from "next/link";
 
 export default async function CategoryFilter({
   searchParams,
+  defaultCategory = "all",
+  activeCategory = "all",
+  hiddenCategories = [],
 }: {
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+  searchParams: { [key: string]: string | string[] | undefined };
+  defaultCategory?: string;
+  activeCategory?: string;
+  hiddenCategories?: string[];
 }) {
-  const params = await searchParams;
   const categories = await getCategories();
-  const session = await auth();
-
-  let defaultCategory = "all";
-  let hiddenCategories: string[] = [];
-
-  if (session?.user?.email) {
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-      select: { settings: true },
-    });
-    if (user && user.settings) {
-      const settings = user.settings as any;
-
-      defaultCategory = settings.feedDefaultCategory || "all";
-      hiddenCategories = settings.hiddenCategories || [];
-    }
-  }
-
-  const activeCategory =
-    typeof params.category === "string" ? params.category : defaultCategory;
 
   const visibleCategories = categories.filter(
     (cat) => !hiddenCategories.includes(cat),
@@ -38,7 +21,7 @@ export default async function CategoryFilter({
   // Safely construct searchParams string
   const currentParams = new URLSearchParams();
 
-  Object.entries(params).forEach(([key, value]) => {
+  Object.entries(searchParams).forEach(([key, value]) => {
     if (value !== undefined) {
       if (Array.isArray(value))
         value.forEach((v) => currentParams.append(key, v));

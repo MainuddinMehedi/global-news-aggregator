@@ -6,7 +6,7 @@ import { ArticleFeedLoadingGrid } from "@/components/skeletons/home/ArticleFeedS
 import { Button } from "@/components/ui/button";
 import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
 import { formatGroupingKey } from "@/lib/helpers/dateUtils";
-import { buildFeedQueryParams } from "@/lib/helpers/feedUtils";
+import { buildFeedQueryParams } from "@/lib/helpers/feedQueryBuilder";
 import { useSetArticleCount } from "@/store";
 import { Article } from "@/types/article";
 import { useEffect, useState } from "react";
