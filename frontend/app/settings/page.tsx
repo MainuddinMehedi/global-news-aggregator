@@ -1,9 +1,8 @@
-import { Metadata } from "next";
-import { Suspense } from "react";
 import SettingsInterface from "@/components/settings/SettingsInterface";
 import SettingsSkeleton from "@/components/settings/SettingsSkeleton";
-import { auth } from "@/auth";
-import prisma from "@/lib/prisma";
+import { getCachedUserSettings } from "@/queries/userSettings";
+import { Metadata } from "next";
+import { Suspense } from "react";
 
 export const metadata: Metadata = {
   title: "Settings | Global News Aggregator",
@@ -28,22 +27,13 @@ export default function SettingsPage() {
 }
 
 async function SettingsLoader() {
-  const session = await auth();
-  
-  let settingsObj = {};
-
-  if (session?.user?.email) {
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-      select: { settings: true },
-    });
-    
-    if (user?.settings) {
-      settingsObj = user.settings;
-    }
-  }
+  const settingsObj = await getCachedUserSettings();
 
   return (
-    <SettingsInterface dbSettings={settingsObj} />
+    <SettingsInterface
+      dbSettings={settingsObj}
+      dbCustomSources={settingsObj.customSources || []}
+      dbDisabledBuiltinSources={settingsObj.disabledBuiltinSources || []}
+    />
   );
 }

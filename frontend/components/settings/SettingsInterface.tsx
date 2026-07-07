@@ -1,16 +1,21 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useSettings, type AllSettings, type CustomSource, type DbSettings } from "@/store";
-import { toast } from "sonner";
 import { updateSingleSettingAction } from "@/app/actions/settings";
-import { useSession } from "next-auth/react";
-import { SignInPromptCard } from "@/components/ui/SignInPromptCard";
-import { Settings02Icon } from "@hugeicons/core-free-icons";
+import FeedSection from "@/components/settings/sections/FeedSection";
+import GeneralSection from "@/components/settings/sections/GeneralSection";
 import NotificationsSection from "@/components/settings/sections/NotificationsSection";
 import SourcesSection from "@/components/settings/sections/SourcesSection";
-import GeneralSection from "@/components/settings/sections/GeneralSection";
-import FeedSection from "@/components/settings/sections/FeedSection";
+import { SignInPromptCard } from "@/components/ui/SignInPromptCard";
+import {
+  useSettings,
+  type AllSettings,
+  type CustomSource,
+  type DbSettings,
+} from "@/store";
+import { Settings02Icon } from "@hugeicons/core-free-icons";
+import { useSession } from "next-auth/react";
+import { startTransition, useEffect, useOptimistic, useState } from "react";
+import { toast } from "sonner";
 // import AiSection from "@/components/settings/sections/AiSection";
 import AdvancedCategoriesSection from "@/components/settings/sections/AdvancedCategoriesSection";
 import DangerZoneSection from "@/components/settings/sections/DangerZoneSection";
@@ -23,22 +28,29 @@ const SETTINGS_SECTIONS = [
   { id: "advanced", label: "Advanced" },
 ];
 
-export default function SettingsInterface({ 
+export default function SettingsInterface({
   dbSettings = {},
-  dbCustomSources = [], 
-  dbDisabledBuiltinSources = [] 
-}: { 
-  dbSettings?: Partial<DbSettings>,
-  dbCustomSources?: CustomSource[], 
-  dbDisabledBuiltinSources?: string[] 
+  dbCustomSources = [],
+  dbDisabledBuiltinSources = [],
+}: {
+  dbSettings?: Partial<DbSettings>;
+  dbCustomSources?: CustomSource[];
+  dbDisabledBuiltinSources?: string[];
 }) {
   const [mounted, setMounted] = useState(false);
   const { settings, setSetting } = useSettings();
   const [activeSection, setActiveSection] = useState<string>("general");
   const { status } = useSession();
 
-  const [localSettings, setLocalSettings] = useState<Partial<DbSettings>>(dbSettings);
-  const combinedSettings = { ...localSettings, ...settings } as AllSettings;
+  const [optimisticSettings, setOptimisticSetting] = useOptimistic(
+    dbSettings,
+    (state, update: Partial<DbSettings>) => ({ ...state, ...update }),
+  );
+
+  const combinedSettings = {
+    ...optimisticSettings,
+    ...settings,
+  } as AllSettings;
 
   const handleSettingChange = <K extends keyof AllSettings>(
     key: K,
@@ -48,15 +60,17 @@ export default function SettingsInterface({
     if (["theme", "colorTheme", "isSidebarCollapsed"].includes(key)) {
       setSetting(key as any, value);
     } else {
-      // Update local DB settings state
-      setLocalSettings((prev) => ({ ...prev, [key]: value }));
-    }
+      startTransition(() => {
+        // Update optimistic DB settings state
+        setOptimisticSetting({ [key]: value });
 
-    // Persist to DB immediately if authenticated
-    if (status === "authenticated") {
-      updateSingleSettingAction(key, value).catch(err => {
-        console.error(`Failed to sync setting ${key}:`, err);
-        toast.error("Failed to save setting");
+        // Persist to DB immediately if authenticated
+        if (status === "authenticated") {
+          updateSingleSettingAction(key, value).catch((err) => {
+            console.error(`Failed to sync setting ${key}:`, err);
+            toast.error("Failed to save setting");
+          });
+        }
       });
     }
   };
@@ -81,10 +95,14 @@ export default function SettingsInterface({
       setActiveSection(currentSection);
     };
 
-    window.addEventListener("scroll", handleScroll, { capture: true, passive: true });
+    window.addEventListener("scroll", handleScroll, {
+      capture: true,
+      passive: true,
+    });
     handleScroll();
 
-    return () => window.removeEventListener("scroll", handleScroll, { capture: true });
+    return () =>
+      window.removeEventListener("scroll", handleScroll, { capture: true });
   }, []);
 
   if (!mounted) {
@@ -92,10 +110,7 @@ export default function SettingsInterface({
       <div className="flex flex-col md:flex-row gap-10 animate-pulse">
         <div className="w-full md:w-56 shrink-0 space-y-2">
           {[1, 2, 3, 4, 5].map((i) => (
-            <div
-              key={i}
-              className="h-9 w-full bg-muted rounded-md"
-            />
+            <div key={i} className="h-9 w-full bg-muted rounded-md" />
           ))}
         </div>
         <div className="flex-1 space-y-6">
@@ -108,8 +123,10 @@ export default function SettingsInterface({
 
   const scrollToSection = (id: string) => {
     const el = document.getElementById(id);
+
     if (el) {
-      const scrollContainer = el.closest('.overflow-y-auto') || window;
+      const scrollContainer = el.closest(".overflow-y-auto") || window;
+
       if (scrollContainer === window) {
         const y = el.getBoundingClientRect().top + window.scrollY - 120;
         window.scrollTo({ top: y, behavior: "smooth" });
@@ -117,7 +134,8 @@ export default function SettingsInterface({
         const container = scrollContainer as HTMLElement;
         const containerRect = container.getBoundingClientRect();
         const elRect = el.getBoundingClientRect();
-        const scrollTop = container.scrollTop + (elRect.top - containerRect.top) - 32;
+        const scrollTop =
+          container.scrollTop + (elRect.top - containerRect.top) - 32;
         container.scrollTo({ top: scrollTop, behavior: "smooth" });
       }
     }
@@ -148,12 +166,18 @@ export default function SettingsInterface({
       <div className="flex-1 space-y-16 pb-24 w-full max-w-2xl">
         {/* General Settings */}
         <section id="general" className="scroll-mt-32 space-y-6">
-          <GeneralSection settings={combinedSettings} onSettingChange={handleSettingChange} />
+          <GeneralSection
+            settings={combinedSettings}
+            onSettingChange={handleSettingChange}
+          />
         </section>
 
         {/* Feed Settings */}
         <section id="feed" className="scroll-mt-32 space-y-6">
-          <FeedSection settings={combinedSettings} onSettingChange={handleSettingChange} />
+          <FeedSection
+            settings={combinedSettings}
+            onSettingChange={handleSettingChange}
+          />
         </section>
 
         {/* AI & Chat Settings */}
@@ -176,13 +200,16 @@ export default function SettingsInterface({
               Manage categories, custom RSS sources, and account deletion.
             </p>
           </div>
-          
+
           {status === "authenticated" ? (
             <div className="space-y-6">
-              <AdvancedCategoriesSection settings={combinedSettings} onSettingChange={handleSettingChange} />
-              <SourcesSection 
-                dbCustomSources={dbCustomSources} 
-                dbDisabledBuiltinSources={dbDisabledBuiltinSources} 
+              <AdvancedCategoriesSection
+                settings={combinedSettings}
+                onSettingChange={handleSettingChange}
+              />
+              <SourcesSection
+                dbCustomSources={dbCustomSources}
+                dbDisabledBuiltinSources={dbDisabledBuiltinSources}
               />
               <DangerZoneSection />
             </div>
