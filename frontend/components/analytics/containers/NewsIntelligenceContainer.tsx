@@ -1,4 +1,4 @@
-import { getGlobalAnalyticsData } from "@/queries/analytics";
+import { getGlobalAnalyticsData } from "@/queries/analytics/global";
 import {
   BiasLeaningPanel,
   CategoryCoveragePanel,

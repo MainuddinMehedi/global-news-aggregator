@@ -1,5 +1,6 @@
 import { WidgetListSkeleton } from "@/components/skeletons/home/WidgetListSkeleton";
-import { getContentInsights, getIngestionStats } from "@/queries/analytics";
+import { getIngestionStats } from "@/queries/analytics/admin/system";
+import { getContentInsights } from "@/queries/analytics/widgets";
 import { getSentimentDisplayProps } from "@/utils/analytics";
 import { PresentationBarChart01FreeIcons } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";

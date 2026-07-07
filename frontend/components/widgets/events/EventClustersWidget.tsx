@@ -3,7 +3,7 @@ import EventClustersList from "@/components/widgets/events/EventClustersList";
 import {
   getClusterStats,
   getStoryClustersWithOrigins,
-} from "@/queries/analytics";
+} from "@/queries/analytics/widgets";
 import { METADATA_COLORS } from "@/utils/colors";
 import { Suspense } from "react";
 

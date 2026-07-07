@@ -1,4 +1,4 @@
-import { getGlobalAnalyticsData } from "@/queries/analytics";
+import { getGlobalAnalyticsData } from "@/queries/analytics/global";
 import { formatCompactNumber } from "@/utils/analytics";
 
 interface Props {

@@ -1,5 +1,5 @@
-import { getContentInsights } from "@/queries/analytics";
 import EventRegionList from "@/components/widgets/events/EventRegionList";
+import { getContentInsights } from "@/queries/analytics/widgets";
 
 export async function EventRegionWidget() {
   const insights = await getContentInsights();
@@ -16,7 +16,10 @@ export async function EventRegionWidget() {
       <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest mb-4 px-1">
         Event Region
       </h3>
-      <EventRegionList distribution={insights.eventRegionDistribution} total={total} />
+      <EventRegionList
+        distribution={insights.eventRegionDistribution}
+        total={total}
+      />
     </div>
   );
 }

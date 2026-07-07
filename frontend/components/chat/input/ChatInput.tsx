@@ -28,6 +28,8 @@ interface ChatInputProps {
   onModelChange: (model: string) => void;
   responseMode: "concise" | "descriptive";
   onResponseModeChange: (mode: "concise" | "descriptive") => void;
+  adaptiveThinking?: boolean;
+  onAdaptiveThinkingChange?: (val: boolean) => void;
   contextPillsSlot?: React.ReactNode; /** Render context pills above the input (passed as a slot) */
   disabled?: boolean;
   compact?: boolean; /** When true, collapses to a single row when unfocused and empty */

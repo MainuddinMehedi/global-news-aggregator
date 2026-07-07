@@ -1,5 +1,5 @@
-import { getAiUsageStats } from "@/queries/analytics";
 import { cn } from "@/lib/utils";
+import { getAiUsageStats } from "@/queries/analytics/admin/system";
 
 export async function AiUsageStats() {
   const stats = await getAiUsageStats();

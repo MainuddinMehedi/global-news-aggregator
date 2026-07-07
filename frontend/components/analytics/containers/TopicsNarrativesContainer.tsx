@@ -1,8 +1,6 @@
 import { auth } from "@/auth";
-import {
-  getGlobalAnalyticsData,
-  getUserAnalyticsData,
-} from "@/queries/analytics";
+import { getGlobalAnalyticsData } from "@/queries/analytics/global";
+import { getUserAnalyticsData } from "@/queries/analytics/user";
 import { TopEntitiesPanel, TopicSourcePanel } from "../panels";
 
 interface Props {

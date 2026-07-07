@@ -1,6 +1,6 @@
 import { WidgetListSkeleton } from "@/components/skeletons/home/WidgetListSkeleton";
 import SourceOriginList from "@/components/widgets/sources/SourceOriginList";
-import { getSourceOriginCounts } from "@/queries/analytics";
+import { getSourceOriginCounts } from "@/queries/analytics/widgets";
 import { Suspense } from "react";
 
 export function SourceOriginWidget() {
