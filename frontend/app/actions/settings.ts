@@ -56,53 +56,6 @@ export async function updateSingleSettingAction(key: string, value: any) {
   }
 }
 
-export async function addCustomSourceAction(source: any) {
-  const { email, settings } = await getUserSettings();
-
-  const customSources = settings.customSources || [];
-  settings.customSources = [...customSources, source];
-
-  await prisma.user.update({
-    where: { email },
-    data: { settings },
-  });
-
-  updateTag("articles");
-  revalidatePath("/", "layout");
-}
-
-export async function removeCustomSourceAction(id: string) {
-  const { email, settings } = await getUserSettings();
-
-  const customSources = settings.customSources || [];
-  settings.customSources = customSources.filter((s: any) => s.id !== id);
-
-  await prisma.user.update({
-    where: { email },
-    data: { settings },
-  });
-
-  updateTag("articles");
-  revalidatePath("/", "layout");
-}
-
-export async function toggleCustomSourceAction(id: string, enabled: boolean) {
-  const { email, settings } = await getUserSettings();
-
-  const customSources = settings.customSources || [];
-  settings.customSources = customSources.map((s: any) =>
-    s.id === id ? { ...s, enabled } : s,
-  );
-
-  await prisma.user.update({
-    where: { email },
-    data: { settings },
-  });
-
-  updateTag("articles");
-  revalidatePath("/", "layout");
-}
-
 export async function toggleBuiltinSourceAction(url: string, enabled: boolean) {
   const { email, settings } = await getUserSettings();
 

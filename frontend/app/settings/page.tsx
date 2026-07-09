@@ -1,5 +1,6 @@
 import SettingsInterface from "@/components/settings/SettingsInterface";
 import SettingsSkeleton from "@/components/settings/SettingsSkeleton";
+import { getCachedFeedSources } from "@/queries/feedSources";
 import { getCachedUserSettings } from "@/queries/userSettings";
 import { Metadata } from "next";
 import { Suspense } from "react";
@@ -28,11 +29,12 @@ export default function SettingsPage() {
 
 async function SettingsLoader() {
   const settingsObj = await getCachedUserSettings();
+  const feedSources = await getCachedFeedSources();
 
   return (
     <SettingsInterface
       dbSettings={settingsObj}
-      dbCustomSources={settingsObj.customSources || []}
+      dbFeedSources={feedSources}
       dbDisabledBuiltinSources={settingsObj.disabledBuiltinSources || []}
     />
   );

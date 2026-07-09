@@ -48,6 +48,7 @@ export default function GeneralSection({
           Basic interface and profile preferences.
         </p>
       </div>
+
       <Card>
         <CardContent className="p-6 space-y-6">
           <ProfileSection />

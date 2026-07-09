@@ -12,46 +12,65 @@ interface AdvancedCategoriesSectionProps {
     hiddenCategories: string[];
     extraCategories: string[];
   };
-  onSettingChange: <K extends keyof AllSettings>(key: K, value: AllSettings[K]) => void;
+  onSettingChange: <K extends keyof AllSettings>(
+    key: K,
+    value: AllSettings[K],
+  ) => void;
 }
 
-export default function AdvancedCategoriesSection({ settings, onSettingChange }: AdvancedCategoriesSectionProps) {
+export default function AdvancedCategoriesSection({
+  settings,
+  onSettingChange,
+}: AdvancedCategoriesSectionProps) {
+  const favoriteCategories = settings.favoriteCategories || [];
+  const hiddenCategories = settings.hiddenCategories || [];
+  const extraCategories = settings.extraCategories || [];
+
   const toggleCategoryFavorite = (cat: string) => {
-    const isFav = settings.favoriteCategories.includes(cat);
-    const updated = isFav 
-      ? settings.favoriteCategories.filter(c => c !== cat)
-      : [...settings.favoriteCategories, cat];
+    const isFav = favoriteCategories.includes(cat);
+    const updated = isFav
+      ? favoriteCategories.filter((c) => c !== cat)
+      : [...favoriteCategories, cat];
     onSettingChange("favoriteCategories", updated);
   };
 
   const disableCategory = (cat: string) => {
     if (EXTRA_CATEGORIES.includes(cat)) {
-      onSettingChange("extraCategories", (settings.extraCategories || []).filter(c => c !== cat));
+      onSettingChange(
+        "extraCategories",
+        extraCategories.filter((c) => c !== cat),
+      );
     } else {
-      onSettingChange("hiddenCategories", [...settings.hiddenCategories, cat]);
+      onSettingChange("hiddenCategories", [...hiddenCategories, cat]);
     }
-    if (settings.favoriteCategories.includes(cat)) {
-      onSettingChange("favoriteCategories", settings.favoriteCategories.filter(c => c !== cat));
+    if (favoriteCategories.includes(cat)) {
+      onSettingChange(
+        "favoriteCategories",
+        favoriteCategories.filter((c) => c !== cat),
+      );
     }
   };
 
   const enableCategory = (cat: string) => {
     if (EXTRA_CATEGORIES.includes(cat)) {
-      onSettingChange("extraCategories", [...(settings.extraCategories || []), cat]);
+      onSettingChange("extraCategories", [...extraCategories, cat]);
     } else {
-      onSettingChange("hiddenCategories", settings.hiddenCategories.filter(c => c !== cat));
+      onSettingChange(
+        "hiddenCategories",
+        hiddenCategories.filter((c) => c !== cat),
+      );
     }
   };
 
   const enabledCategories = [
-    ...CANONICAL_CATEGORIES.filter(cat => !settings.hiddenCategories.includes(cat)),
+    ...CANONICAL_CATEGORIES.filter((cat) => !hiddenCategories.includes(cat)),
     // TODO: Enable once NLP/ML categorization is added to the ingestion service
-    // ...EXTRA_CATEGORIES.filter(cat => (settings.extraCategories || []).includes(cat))
+    // ...EXTRA_CATEGORIES.filter(cat => extraCategories.includes(cat))
   ];
   const disabledCategories = [
-    ...CANONICAL_CATEGORIES.filter(cat => settings.hiddenCategories.includes(cat)),
+    ...CANONICAL_CATEGORIES.filter((cat) => hiddenCategories.includes(cat)),
     // TODO: Enable once NLP/ML categorization is added to the ingestion service
-    // ...EXTRA_CATEGORIES.filter(cat => !(settings.extraCategories || []).includes(cat))
+    // ...EXTRA_CATEGORIES.filter(cat => !extraCategories.includes(cat))
   ];
 
   return (
@@ -60,25 +79,30 @@ export default function AdvancedCategoriesSection({ settings, onSettingChange }:
         <div className="space-y-1">
           <Label className="text-base">Active Categories</Label>
           <p className="text-sm text-muted-foreground">
-            Click a category to toggle favorite status. <span className="font-medium text-primary">Primary</span> = Favorite. <span className="text-muted-foreground">Gray</span> = Neutral.
+            Click a category to toggle favorite status.{" "}
+            <span className="font-medium text-primary">Primary</span> =
+            Favorite. <span className="text-muted-foreground">Gray</span> =
+            Neutral.
           </p>
         </div>
         <div className="flex flex-wrap gap-2 pt-2">
-          {enabledCategories.map(cat => {
-            const isFav = settings.favoriteCategories.includes(cat);
-            
+          {enabledCategories.map((cat) => {
+            const isFav = favoriteCategories.includes(cat);
+
             let pillStyle = "bg-muted text-muted-foreground hover:bg-muted/80";
-            if (isFav) pillStyle = "bg-primary text-primary-foreground shadow-sm hover:bg-primary/90";
-            
+            if (isFav)
+              pillStyle =
+                "bg-primary text-primary-foreground shadow-sm hover:bg-primary/90";
+
             return (
               <div key={cat} className="flex items-center">
-                <button 
-                  onClick={() => toggleCategoryFavorite(cat)} 
+                <button
+                  onClick={() => toggleCategoryFavorite(cat)}
                   className={`px-4 py-1.5 rounded-l-full text-sm font-medium transition-colors ${pillStyle}`}
                 >
                   {cat.charAt(0).toUpperCase() + cat.slice(1)}
                 </button>
-                <button 
+                <button
                   onClick={() => disableCategory(cat)}
                   className="px-2.5 py-1.5 rounded-r-full bg-muted/60 text-muted-foreground hover:bg-destructive hover:text-destructive-foreground transition-colors"
                   title="Hide Category"
@@ -86,10 +110,12 @@ export default function AdvancedCategoriesSection({ settings, onSettingChange }:
                   &times;
                 </button>
               </div>
-            )
+            );
           })}
           {enabledCategories.length === 0 && (
-            <span className="text-sm text-muted-foreground italic">All categories are hidden.</span>
+            <span className="text-sm text-muted-foreground italic">
+              All categories are hidden.
+            </span>
           )}
         </div>
 
@@ -103,10 +129,10 @@ export default function AdvancedCategoriesSection({ settings, onSettingChange }:
               </p>
             </div>
             <div className="flex flex-wrap gap-2 pt-2">
-              {disabledCategories.map(cat => (
-                <button 
+              {disabledCategories.map((cat) => (
+                <button
                   key={cat}
-                  onClick={() => enableCategory(cat)} 
+                  onClick={() => enableCategory(cat)}
                   className="px-4 py-1.5 rounded-full text-sm font-medium border border-dashed border-muted-foreground/40 text-muted-foreground hover:text-foreground hover:border-foreground transition-colors"
                 >
                   + {cat.charAt(0).toUpperCase() + cat.slice(1)}

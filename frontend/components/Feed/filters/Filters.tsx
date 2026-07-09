@@ -20,7 +20,7 @@ export default async function Filters({ searchParams }: FiltersProps) {
     defaultCategory,
     category,
     hiddenCategories,
-  } = resolveFeedParams(params, settings);
+  } = await resolveFeedParams(params, settings);
 
   return (
     <div className="space-y-5 w-full">

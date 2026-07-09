@@ -13,7 +13,7 @@ export async function SidebarWidgetsLoader({
   const params = await searchParams;
   const userSettings = await getCachedUserSettings();
 
-  const feedParams = resolveFeedParams(params, userSettings);
+  const feedParams = await resolveFeedParams(params, userSettings);
   const where = buildArticleWhereClause(feedParams);
 
   return (

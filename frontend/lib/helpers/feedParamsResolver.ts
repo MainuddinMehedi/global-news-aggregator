@@ -1,4 +1,4 @@
-import { BUILTIN_SOURCES } from "@/lib/constants";
+import { getCachedFeedSources } from "@/queries/feedSources";
 
 /**
  * Resolves the active feed parameters by merging the URL search parameters
@@ -11,24 +11,22 @@ import { BUILTIN_SOURCES } from "@/lib/constants";
  * @param userSettings - The user's settings object fetched from the database
  * @returns An object containing all fully resolved filter parameters.
  */
-export function resolveFeedParams(searchParams: any, userSettings: any) {
+export async function resolveFeedParams(searchParams: any, userSettings: any) {
   let enabledSources: string[] | undefined = undefined;
   let hiddenCategories: string[] | undefined = undefined;
 
   // 1. Resolve Sources and Hidden Categories
   if (userSettings && Object.keys(userSettings).length > 0) {
-    const customSources = userSettings.customSources || [];
     const disabledBuiltins = userSettings.disabledBuiltinSources || [];
 
-    const enabledCustomNames = customSources
-      .filter((s: any) => s.enabled)
+    // Fetch global DB sources instead of just relying on BUILTIN_SOURCES constant
+    const globalSources = await getCachedFeedSources();
+
+    const enabledBuiltinNames = globalSources
+      .filter((s: any) => !disabledBuiltins.includes(s.url))
       .map((s: any) => s.name);
 
-    const enabledBuiltinNames = BUILTIN_SOURCES.filter(
-      (s) => !disabledBuiltins.includes(s.url),
-    ).map((s) => s.name);
-
-    enabledSources = [...enabledCustomNames, ...enabledBuiltinNames];
+    enabledSources = [...enabledBuiltinNames];
     hiddenCategories = userSettings.hiddenCategories || [];
   }
 

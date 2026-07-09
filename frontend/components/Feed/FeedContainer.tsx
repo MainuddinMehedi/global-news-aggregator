@@ -28,7 +28,7 @@ export async function FeedContainer({ searchParams }: FeedContainerProps) {
     mode,
     enabledSources,
     hiddenCategories,
-  } = resolveFeedParams(params, userSettings);
+  } = await resolveFeedParams(params, userSettings);
 
   const take = userSettings.articlesPerPage || 20;
 

@@ -6,13 +6,9 @@ import GeneralSection from "@/components/settings/sections/GeneralSection";
 import NotificationsSection from "@/components/settings/sections/NotificationsSection";
 import SourcesSection from "@/components/settings/sections/SourcesSection";
 import { SignInPromptCard } from "@/components/ui/SignInPromptCard";
-import {
-  useSettings,
-  type AllSettings,
-  type CustomSource,
-  type DbSettings,
-} from "@/store";
+import { useSettings, type AllSettings, type DbSettings } from "@/store";
 import { Settings02Icon } from "@hugeicons/core-free-icons";
+import { FeedSource } from "@news/db";
 import { useSession } from "next-auth/react";
 import { startTransition, useEffect, useOptimistic, useState } from "react";
 import { toast } from "sonner";
@@ -30,11 +26,11 @@ const SETTINGS_SECTIONS = [
 
 export default function SettingsInterface({
   dbSettings = {},
-  dbCustomSources = [],
+  dbFeedSources = [],
   dbDisabledBuiltinSources = [],
 }: {
   dbSettings?: Partial<DbSettings>;
-  dbCustomSources?: CustomSource[];
+  dbFeedSources?: FeedSource[];
   dbDisabledBuiltinSources?: string[];
 }) {
   const [mounted, setMounted] = useState(false);
@@ -75,14 +71,17 @@ export default function SettingsInterface({
     }
   };
 
+  // Scroll listener for automatic tab/section highlight.
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
 
     const handleScroll = () => {
       let currentSection = SETTINGS_SECTIONS[0].id;
+
       for (const section of SETTINGS_SECTIONS) {
         const el = document.getElementById(section.id);
+
         if (el) {
           const rect = el.getBoundingClientRect();
           if (rect.top <= 300) {
@@ -92,6 +91,7 @@ export default function SettingsInterface({
           }
         }
       }
+
       setActiveSection(currentSection);
     };
 
@@ -208,7 +208,7 @@ export default function SettingsInterface({
                 onSettingChange={handleSettingChange}
               />
               <SourcesSection
-                dbCustomSources={dbCustomSources}
+                dbFeedSources={dbFeedSources}
                 dbDisabledBuiltinSources={dbDisabledBuiltinSources}
               />
               <DangerZoneSection />
