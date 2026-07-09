@@ -1,76 +1,70 @@
 "use client";
 
+import { updateSingleSettingAction } from "@/app/actions/settings";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { CANONICAL_CATEGORIES, EXTRA_CATEGORIES } from "@/lib/constants";
-import type { AllSettings } from "@/store";
+import { CANONICAL_CATEGORIES } from "@/lib/constants";
+import { DbSettings } from "@/store";
+import { startTransition, useOptimistic } from "react";
 
 interface AdvancedCategoriesSectionProps {
-  settings: {
-    favoriteCategories: string[];
-    hiddenCategories: string[];
-    extraCategories: string[];
-  };
-  onSettingChange: <K extends keyof AllSettings>(
-    key: K,
-    value: AllSettings[K],
-  ) => void;
+  dbSettings: Partial<DbSettings>;
 }
 
 export default function AdvancedCategoriesSection({
-  settings,
-  onSettingChange,
+  dbSettings,
 }: AdvancedCategoriesSectionProps) {
-  const favoriteCategories = settings.favoriteCategories || [];
-  const hiddenCategories = settings.hiddenCategories || [];
-  const extraCategories = settings.extraCategories || [];
+  const initialFavoriteCategories = dbSettings.favoriteCategories || [];
+  const initialHiddenCategories = dbSettings.hiddenCategories || [];
+
+  const [favoriteCategories, setFavoriteCategories] = useOptimistic(
+    initialFavoriteCategories,
+    (_, updated: string[]) => updated,
+  );
+  const [hiddenCategories, setHiddenCategories] = useOptimistic(
+    initialHiddenCategories,
+    (_, updated: string[]) => updated,
+  );
 
   const toggleCategoryFavorite = (cat: string) => {
-    const isFav = favoriteCategories.includes(cat);
-    const updated = isFav
-      ? favoriteCategories.filter((c) => c !== cat)
-      : [...favoriteCategories, cat];
-    onSettingChange("favoriteCategories", updated);
+    startTransition(() => {
+      const isFav = favoriteCategories.includes(cat);
+      const updated = isFav
+        ? favoriteCategories.filter((c) => c !== cat)
+        : [...favoriteCategories, cat];
+      setFavoriteCategories(updated);
+      updateSingleSettingAction("favoriteCategories", updated);
+    });
   };
 
   const disableCategory = (cat: string) => {
-    if (EXTRA_CATEGORIES.includes(cat)) {
-      onSettingChange(
-        "extraCategories",
-        extraCategories.filter((c) => c !== cat),
-      );
-    } else {
-      onSettingChange("hiddenCategories", [...hiddenCategories, cat]);
-    }
-    if (favoriteCategories.includes(cat)) {
-      onSettingChange(
-        "favoriteCategories",
-        favoriteCategories.filter((c) => c !== cat),
-      );
-    }
+    startTransition(() => {
+      const updated = [...hiddenCategories, cat];
+      setHiddenCategories(updated);
+      updateSingleSettingAction("hiddenCategories", updated);
+
+      if (favoriteCategories.includes(cat)) {
+        const updatedFav = favoriteCategories.filter((c) => c !== cat);
+        setFavoriteCategories(updatedFav);
+        updateSingleSettingAction("favoriteCategories", updatedFav);
+      }
+    });
   };
 
   const enableCategory = (cat: string) => {
-    if (EXTRA_CATEGORIES.includes(cat)) {
-      onSettingChange("extraCategories", [...extraCategories, cat]);
-    } else {
-      onSettingChange(
-        "hiddenCategories",
-        hiddenCategories.filter((c) => c !== cat),
-      );
-    }
+    startTransition(() => {
+      const updated = hiddenCategories.filter((c) => c !== cat);
+      setHiddenCategories(updated);
+      updateSingleSettingAction("hiddenCategories", updated);
+    });
   };
 
   const enabledCategories = [
     ...CANONICAL_CATEGORIES.filter((cat) => !hiddenCategories.includes(cat)),
-    // TODO: Enable once NLP/ML categorization is added to the ingestion service
-    // ...EXTRA_CATEGORIES.filter(cat => extraCategories.includes(cat))
   ];
   const disabledCategories = [
     ...CANONICAL_CATEGORIES.filter((cat) => hiddenCategories.includes(cat)),
-    // TODO: Enable once NLP/ML categorization is added to the ingestion service
-    // ...EXTRA_CATEGORIES.filter(cat => !extraCategories.includes(cat))
   ];
 
   return (

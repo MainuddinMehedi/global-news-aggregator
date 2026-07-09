@@ -19,14 +19,14 @@ export async function resolveFeedParams(searchParams: any, userSettings: any) {
   if (userSettings && Object.keys(userSettings).length > 0) {
     const disabledBuiltins = userSettings.disabledBuiltinSources || [];
 
-    // Fetch global DB sources instead of just relying on BUILTIN_SOURCES constant
+    // Fetch global DB sources
     const globalSources = await getCachedFeedSources();
 
-    const enabledBuiltinNames = globalSources
+    const enabledGlobalNames = globalSources
       .filter((s: any) => !disabledBuiltins.includes(s.url))
       .map((s: any) => s.name);
 
-    enabledSources = [...enabledBuiltinNames];
+    enabledSources = [...enabledGlobalNames];
     hiddenCategories = userSettings.hiddenCategories || [];
   }
 

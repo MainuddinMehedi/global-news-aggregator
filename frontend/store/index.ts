@@ -81,7 +81,6 @@ export interface DbSettings {
   responseStyle: ResponseStyle;
   favoriteCategories: string[];
   hiddenCategories: string[];
-  extraCategories: string[];
   homePageMode: HomePageMode;
   hasOnboardedSources: boolean;
 }

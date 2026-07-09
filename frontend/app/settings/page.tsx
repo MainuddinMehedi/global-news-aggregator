@@ -1,9 +1,6 @@
 import SettingsInterface from "@/components/settings/SettingsInterface";
-import SettingsSkeleton from "@/components/settings/SettingsSkeleton";
-import { getCachedFeedSources } from "@/queries/feedSources";
-import { getCachedUserSettings } from "@/queries/userSettings";
+
 import { Metadata } from "next";
-import { Suspense } from "react";
 
 export const metadata: Metadata = {
   title: "Settings | Global News Aggregator",
@@ -20,22 +17,7 @@ export default function SettingsPage() {
         </p>
       </div>
 
-      <Suspense fallback={<SettingsSkeleton />}>
-        <SettingsLoader />
-      </Suspense>
+      <SettingsInterface />
     </div>
-  );
-}
-
-async function SettingsLoader() {
-  const settingsObj = await getCachedUserSettings();
-  const feedSources = await getCachedFeedSources();
-
-  return (
-    <SettingsInterface
-      dbSettings={settingsObj}
-      dbFeedSources={feedSources}
-      dbDisabledBuiltinSources={settingsObj.disabledBuiltinSources || []}
-    />
   );
 }

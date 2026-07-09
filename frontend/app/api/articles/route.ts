@@ -1,7 +1,7 @@
 import { auth } from "@/auth";
-import { BUILTIN_SOURCES } from "@/lib/constants";
 import prisma from "@/lib/prisma";
 import { getArticles } from "@/queries/articles";
+import { getCachedFeedSources } from "@/queries/feedSources";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
@@ -34,11 +34,13 @@ export async function GET(req: NextRequest) {
           .filter((s: any) => s.enabled)
           .map((s: any) => s.name);
 
-        const enabledBuiltinNames = BUILTIN_SOURCES.filter(
-          (s) => !disabledBuiltins.includes(s.url),
-        ).map((s) => s.name);
+        const globalSources = await getCachedFeedSources();
 
-        enabledSources = [...enabledCustomNames, ...enabledBuiltinNames];
+        const enabledGlobalNames = globalSources
+          .filter((s: any) => !disabledBuiltins.includes(s.url))
+          .map((s: any) => s.name);
+
+        enabledSources = [...enabledCustomNames, ...enabledGlobalNames];
       }
     }
 

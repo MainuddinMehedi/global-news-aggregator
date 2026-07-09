@@ -42,8 +42,8 @@ export async function updateSingleSettingAction(key: string, value: any) {
 
   if (
     [
+      "favoriteCategories",
       "hiddenCategories",
-      "extraCategories",
       "feedDefaultCategory",
       "feedDefaultSort",
       "feedDefaultRegion",
