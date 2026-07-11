@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getArticles } from "@/queries/articles";
 import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
-import { BUILTIN_SOURCES } from "@/lib/constants";
+import { getArticles } from "@/queries/articles";
+import { getCachedFeedSources } from "@/queries/feedSources";
+import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;
@@ -10,6 +10,7 @@ export async function GET(req: NextRequest) {
   try {
     let enabledSources: string[] | undefined = undefined;
     let hiddenCategories: string[] | undefined = undefined;
+    let take = 20;
 
     const session = await auth();
 
@@ -25,16 +26,21 @@ export async function GET(req: NextRequest) {
         const disabledBuiltins = settings.disabledBuiltinSources || [];
 
         hiddenCategories = settings.hiddenCategories || [];
+        if (settings.articlesPerPage) {
+          take = settings.articlesPerPage;
+        }
 
         const enabledCustomNames = customSources
           .filter((s: any) => s.enabled)
           .map((s: any) => s.name);
 
-        const enabledBuiltinNames = BUILTIN_SOURCES.filter(
-          (s) => !disabledBuiltins.includes(s.url),
-        ).map((s) => s.name);
+        const globalSources = await getCachedFeedSources();
 
-        enabledSources = [...enabledCustomNames, ...enabledBuiltinNames];
+        const enabledGlobalNames = globalSources
+          .filter((s: any) => !disabledBuiltins.includes(s.url))
+          .map((s: any) => s.name);
+
+        enabledSources = [...enabledCustomNames, ...enabledGlobalNames];
       }
     }
 
@@ -45,7 +51,7 @@ export async function GET(req: NextRequest) {
       sort: searchParams.get("sort") ?? "latest",
       search: searchParams.get("search") ?? "",
       region: searchParams.get("region") ?? undefined,
-      origin: searchParams.get("origin") ?? undefined,
+      srcOrigin: searchParams.get("srcOrigin") ?? undefined,
       type: searchParams.get("type") ?? undefined,
       story: searchParams.get("story") ?? undefined,
       bias: searchParams.get("bias") ?? undefined,
@@ -55,6 +61,7 @@ export async function GET(req: NextRequest) {
       page: pageParam ? parseInt(pageParam) : undefined,
       enabledSources,
       hiddenCategories,
+      take,
     });
 
     return NextResponse.json(data);

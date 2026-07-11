@@ -1,19 +1,16 @@
-import { cacheLife, cacheTag } from "next/cache";
 import prisma from "@/lib/prisma";
 import { Article } from "@/types/article";
-import { executeSearchQuery } from "./article/search";
+import { cacheLife, cacheTag } from "next/cache";
 import { executeFilterQuery, FilterParams } from "./article/filter";
 import { mapArticle, RawArticleData } from "./article/mapper";
+import { executeSearchQuery } from "./article/search";
 
 interface getArticlesParams extends FilterParams {
   page?: number;
+  take?: number;
 }
 
-const TAKE = 20;
-
-export async function getArticles(
-  params: getArticlesParams
-): Promise<{
+export async function getArticles(params: getArticlesParams): Promise<{
   articles: Article[];
   nextCursor: string | null;
 }> {
@@ -21,14 +18,14 @@ export async function getArticles(
   cacheTag("articles");
   cacheLife("minutes");
 
-  const { search = "", page = 0 } = params;
+  const { search = "", page = 0, take = 20 } = params;
   const words = search.trim().split(/\s+/).filter(Boolean);
 
   if (words.length > 0) {
-    return executeSearchQuery(search, page, TAKE);
+    return executeSearchQuery(search, page, take);
   }
 
-  return executeFilterQuery(params, TAKE);
+  return executeFilterQuery(params, take);
 }
 
 export async function getArticleById(id: string): Promise<Article | null> {

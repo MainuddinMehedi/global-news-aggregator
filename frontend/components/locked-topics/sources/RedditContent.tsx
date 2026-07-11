@@ -1,8 +1,8 @@
 "use client";
 
-import { TopicFinding } from "@/types/lockedTopic";
-import { autoFormatPlainText } from "@/lib/locked-topics";
 import { ExtractableContent } from "@/components/locked-topics/findings/ExtractableContent";
+import { autoFormatPlainText } from "@/lib/locked-topics/api";
+import { TopicFinding } from "@/types/lockedTopic";
 
 interface RedditContentProps {
   finding: TopicFinding;
@@ -19,7 +19,10 @@ export function RedditContent({ finding }: RedditContentProps) {
   const isSelfPost = meta?.isSelfPost !== false;
 
   if (isSelfPost) {
-    const htmlContent = meta?.contentHtml || autoFormatPlainText(finding.title, finding.summary || "");
+    const htmlContent =
+      meta?.contentHtml ||
+      autoFormatPlainText(finding.title, finding.summary || "");
+
     return (
       <div className="space-y-4">
         <div className="article-prose max-w-none p-6 rounded-xl border border-secondary bg-secondary/5">
@@ -43,7 +46,8 @@ export function RedditContent({ finding }: RedditContentProps) {
             Reddit Link Post
           </p>
           <p className="text-sm text-muted-foreground truncate max-w-[320px] sm:max-w-[450px]">
-            Links directly to: <span className="font-semibold text-foreground">{externalUrl}</span>
+            Links directly to:{" "}
+            <span className="font-semibold text-foreground">{externalUrl}</span>
           </p>
         </div>
         <a

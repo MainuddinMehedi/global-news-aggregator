@@ -1,70 +1,70 @@
-import { Suspense } from "react";
-import { getCategories } from "@/queries/categories";
-import CategoryFilter from "@/components/Feed/filters/CategoryFilter";
-import Sort from "@/components/Feed/Sort";
 import { ArticleCount } from "@/components/Feed/ArticleCount";
 import ActiveFilters from "@/components/Feed/filters/ActiveFilters";
+import CategoryFilter from "@/components/Feed/filters/CategoryFilter";
 import FilterPopover from "@/components/Feed/filters/FilterPopover";
-
-// TODO: After the new ingestion with the updated category list, make sure if they fit in without scroll. If overflowed, implement scrolling without holding down shift key. So when the user scrolls with the mouse wheel, it should scroll right away.
-// TODO: Also Make sure the "all" button is at the first position and the "Others" button is at the last position.
+import Sort from "@/components/Feed/filters/Sort";
+import { resolveFeedParams } from "@/lib/helpers/feedParamsResolver";
+import prisma from "@/lib/prisma";
+import { getCachedUserSettings } from "@/queries/userSettings";
 
 interface FiltersProps {
-  category?: string;
-  region?: string;
-  origin?: string;
-  type?: string;
-  story?: string;
-  bias?: string;
-  scope?: string;
-  activeStoryTitle?: string;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
-export default async function Filters({
-  category = "all",
-  region = "all",
-  origin = "all",
-  type = "all",
-  story = "all",
-  bias = "all",
-  scope = "all",
-  activeStoryTitle,
-}: FiltersProps) {
-  const categories = await getCategories();
+export default async function Filters({ searchParams }: FiltersProps) {
+  const params = await searchParams;
+  const settings = await getCachedUserSettings();
+  const {
+    defaultRegion,
+    defaultSort,
+    defaultCategory,
+    category,
+    hiddenCategories,
+  } = await resolveFeedParams(params, settings);
 
   return (
     <div className="space-y-5 w-full">
       {/* Category filter pills */}
-      <CategoryFilter categories={categories} />
+      <CategoryFilter
+        searchParams={params}
+        defaultCategory={defaultCategory}
+        activeCategory={category}
+        hiddenCategories={hiddenCategories}
+      />
 
       {/* Sort control + active filters + live article count */}
       <div className="flex items-start sm:items-center justify-between gap-4">
         <div className="shrink-0">
-          <Sort />
+          <Sort defaultSort={defaultSort} />
         </div>
 
         <div className="flex-1 min-w-0 flex justify-center">
-          <Suspense fallback={null}>
-            <ActiveFilters
-              category={category}
-              region={region}
-              origin={origin}
-              type={type}
-              story={story}
-              bias={bias}
-              scope={scope}
-              activeStoryTitle={activeStoryTitle}
-            />
-          </Suspense>
+          <ActiveFiltersLoader searchParams={params} />
         </div>
 
         <div className="flex items-center gap-3 shrink-0">
           <ArticleCount />
-          <Suspense fallback={null}>
-            <FilterPopover />
-          </Suspense>
+          <FilterPopover defaultRegion={defaultRegion} />
         </div>
       </div>
     </div>
   );
+}
+
+async function ActiveFiltersLoader({
+  searchParams,
+}: {
+  searchParams: { [key: string]: string | string[] | undefined };
+}) {
+  let activeStoryTitle: string | undefined = undefined;
+
+  if (typeof searchParams.story === "string" && searchParams.story !== "all") {
+    const cluster = await prisma.storyCluster.findUnique({
+      where: { slug: searchParams.story },
+      select: { title: true },
+    });
+    if (cluster) activeStoryTitle = cluster.title;
+  }
+
+  return <ActiveFilters activeStoryTitle={activeStoryTitle} />;
 }

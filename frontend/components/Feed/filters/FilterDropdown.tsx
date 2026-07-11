@@ -1,29 +1,40 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
 import {
   Select,
-  SelectTrigger,
-  SelectValue,
   SelectContent,
   SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
+import { useRouter, useSearchParams } from "next/navigation";
 
 interface FilterDropdownProps {
   label: string;
   paramKey: string;
   options: { label: string; value: string }[];
+  defaultValue?: string;
   showLabel?: boolean;
+  hasAllOption?: boolean;
 }
 
-export default function FilterDropdown({ label, paramKey, options, showLabel = false }: FilterDropdownProps) {
+export default function FilterDropdown({
+  label,
+  paramKey,
+  options,
+  defaultValue = "all",
+  showLabel = false,
+  hasAllOption = true,
+}: FilterDropdownProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const currentValue = searchParams.get(paramKey) ?? "all";
+
+  const currentValue = searchParams.get(paramKey) ?? defaultValue;
 
   const handleChange = (value: string) => {
     const params = new URLSearchParams(searchParams.toString());
-    if (value === "all") {
+
+    if (value === defaultValue) {
       params.delete(paramKey);
     } else {
       params.set(paramKey, value);
@@ -34,18 +45,24 @@ export default function FilterDropdown({ label, paramKey, options, showLabel = f
   };
 
   return (
-    <div className={`flex items-center ${showLabel ? 'space-x-3' : 'space-x-1'}`}>
+    <div
+      className={`flex items-center ${showLabel ? "space-x-3" : "space-x-1"}`}
+    >
       {showLabel && (
         <span className="text-xs text-muted-foreground uppercase font-bold tracking-widest w-16">
           {label}:
         </span>
       )}
       <Select value={currentValue} onValueChange={handleChange}>
-        <SelectTrigger className={showLabel ? "w-[140px] h-8 text-xs" : "w-[115px] h-8 text-xs"}>
+        <SelectTrigger
+          className={
+            showLabel ? "w-[140px] h-8 text-xs" : "w-[115px] h-8 text-xs"
+          }
+        >
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">All {label}s</SelectItem>
+          {hasAllOption && <SelectItem value="all">All {label}s</SelectItem>}
           {options.map((option) => (
             <SelectItem key={option.value} value={option.value}>
               {option.label}

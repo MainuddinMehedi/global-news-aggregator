@@ -1,17 +1,15 @@
-import {
-  getLockedTopicById,
-} from "@/queries/lockedTopics";
-import { getFindings, getFindingCounts } from "@/queries/topicFindings";
-import { notFound } from "next/navigation";
 import { auth } from "@/auth";
-import TopicHeader from "@/components/locked-topics/header/TopicHeader";
 import FindingsFilter from "@/components/locked-topics/findings/FindingsFilter";
 import FindingsList from "@/components/locked-topics/findings/FindingsList";
 import { MarkAsRead } from "@/components/locked-topics/header/MarkAsRead";
+import TopicHeader from "@/components/locked-topics/header/TopicHeader";
+import FindingsSectionSkeleton from "@/components/skeletons/locked-topics/FindingsSectionSkeleton";
+import TopicHeaderSkeleton from "@/components/skeletons/locked-topics/TopicHeaderSkeleton";
+import { getLockedTopicById } from "@/queries/lockedTopics";
+import { getFindingCounts, getFindings } from "@/queries/topicFindings";
 import { FindingSource } from "@/types/lockedTopic";
-
+import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import TopicDetailLoading from "./loading";
 
 interface TopicDetailPageProps {
   params: Promise<{ id: string }>;
@@ -21,21 +19,46 @@ interface TopicDetailPageProps {
   }>;
 }
 
-export default function TopicDetailPage({ params, searchParams }: TopicDetailPageProps) {
-  return (
-    <Suspense fallback={<TopicDetailLoading />}>
-      <TopicDetailContent params={params} searchParams={searchParams} />
-    </Suspense>
-  );
-}
-
-async function TopicDetailContent({
+export default function TopicDetailPage({
   params,
   searchParams,
 }: TopicDetailPageProps) {
+  return (
+    <div className="mx-auto w-full max-w-7xl 2xl:max-w-[1400px] px-4 py-8 sm:px-6 lg:px-8 space-y-8">
+      <Suspense fallback={<TopicHeaderSkeleton />}>
+        <TopicHeaderSection params={params} />
+      </Suspense>
+
+      <Suspense fallback={<FindingsSectionSkeleton />}>
+        <FindingsSection params={params} searchParams={searchParams} />
+      </Suspense>
+    </div>
+  );
+}
+
+async function TopicHeaderSection({
+  params,
+}: {
+  params: TopicDetailPageProps["params"];
+}) {
   const session = await auth();
   const userId = session?.user?.id;
+  const { id } = await params;
 
+  const topic = await getLockedTopicById(id);
+  if (!topic || topic.userId !== userId) notFound();
+
+  return (
+    <>
+      <MarkAsRead topicId={id} />
+      <TopicHeader topic={topic} />
+    </>
+  );
+}
+
+async function FindingsSection({ params, searchParams }: TopicDetailPageProps) {
+  const session = await auth();
+  const userId = session?.user?.id;
   const { id } = await params;
   const { source = "ALL", sort = "newest" } = await searchParams;
 
@@ -52,27 +75,22 @@ async function TopicDetailContent({
   });
 
   return (
-    <div className="mx-auto w-full max-w-7xl 2xl:max-w-[1400px] px-4 py-8 sm:px-6 lg:px-8 space-y-8">
-      <MarkAsRead topicId={id} />
-      <TopicHeader topic={topic} />
+    <div className="space-y-8">
+      <FindingsFilter
+        currentSource={source}
+        currentSort={sort}
+        sources={topic.sources}
+        counts={counts}
+      />
 
-      <div className="space-y-8">
-        <FindingsFilter
-          currentSource={source}
-          currentSort={sort}
-          sources={topic.sources}
-          counts={counts}
-        />
-
-        <FindingsList
-          key={`${source}-${sort}`}
-          initialFindings={findings}
-          initialNextCursor={nextCursor}
-          topicId={id}
-          sourceType={source as FindingSource | "ALL"}
-          sort={sort as "newest" | "oldest" | "relevance"}
-        />
-      </div>
+      <FindingsList
+        key={`${source}-${sort}`}
+        initialFindings={findings}
+        initialNextCursor={nextCursor}
+        topicId={id}
+        sourceType={source as FindingSource | "ALL"}
+        sort={sort as "newest" | "oldest" | "relevance"}
+      />
     </div>
   );
 }

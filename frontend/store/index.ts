@@ -1,7 +1,7 @@
-import { create } from "zustand";
-import { persist, createJSONStorage } from "zustand/middleware";
-import { useShallow } from "zustand/shallow";
 import type { Article } from "@/types/article";
+import { create } from "zustand";
+import { createJSONStorage, persist } from "zustand/middleware";
+import { useShallow } from "zustand/shallow";
 
 // ─── Feed slice ───────────────────────────────────────────────────────────────
 interface FeedSlice {
@@ -72,24 +72,26 @@ export interface CustomSource {
   enabled: boolean;
 }
 
-export interface SettingsState {
-  theme: Theme;
-  colorTheme: ColorTheme;
-  isSidebarCollapsed: boolean;
+export interface DbSettings {
   feedDefaultCategory: string;
+  feedDefaultRegion: string;
   feedDefaultSort: string;
   articlesPerPage: number;
-  compactMode: boolean;
-  showBiasBadges: boolean;
-  showSentiment: boolean;
   defaultAiModel: string;
   responseStyle: ResponseStyle;
   favoriteCategories: string[];
   hiddenCategories: string[];
-  extraCategories: string[];
   homePageMode: HomePageMode;
   hasOnboardedSources: boolean;
 }
+
+export interface SettingsState {
+  theme: Theme;
+  colorTheme: ColorTheme;
+  isSidebarCollapsed: boolean;
+}
+
+export type AllSettings = SettingsState & DbSettings;
 
 interface SettingsActions {
   setSetting: <K extends keyof SettingsState>(
@@ -153,19 +155,6 @@ export const useAppStore = create<AppStore>()(
       theme: "system",
       colorTheme: "maia",
       isSidebarCollapsed: false,
-      feedDefaultCategory: "all",
-      feedDefaultSort: "newest",
-      articlesPerPage: 20,
-      compactMode: false,
-      showBiasBadges: true,
-      showSentiment: true,
-      defaultAiModel: "groq/compound",
-      responseStyle: "concise",
-      favoriteCategories: [],
-      hiddenCategories: [],
-      extraCategories: [],
-      homePageMode: "continuous",
-      hasOnboardedSources: false,
       setSetting: (key, value) => set((state) => ({ ...state, [key]: value })),
     }),
     {
@@ -176,19 +165,6 @@ export const useAppStore = create<AppStore>()(
         theme: state.theme,
         colorTheme: state.colorTheme,
         isSidebarCollapsed: state.isSidebarCollapsed,
-        feedDefaultCategory: state.feedDefaultCategory,
-        feedDefaultSort: state.feedDefaultSort,
-        articlesPerPage: state.articlesPerPage,
-        compactMode: state.compactMode,
-        showBiasBadges: state.showBiasBadges,
-        showSentiment: state.showSentiment,
-        defaultAiModel: state.defaultAiModel,
-        responseStyle: state.responseStyle,
-        favoriteCategories: state.favoriteCategories,
-        hiddenCategories: state.hiddenCategories,
-        extraCategories: state.extraCategories,
-        homePageMode: state.homePageMode,
-        hasOnboardedSources: state.hasOnboardedSources,
       }),
     },
   ),
@@ -229,19 +205,6 @@ export const useSettings = () => {
       theme: s.theme,
       colorTheme: s.colorTheme,
       isSidebarCollapsed: s.isSidebarCollapsed,
-      feedDefaultCategory: s.feedDefaultCategory,
-      feedDefaultSort: s.feedDefaultSort,
-      articlesPerPage: s.articlesPerPage,
-      compactMode: s.compactMode,
-      showBiasBadges: s.showBiasBadges,
-      showSentiment: s.showSentiment,
-      defaultAiModel: s.defaultAiModel,
-      responseStyle: s.responseStyle,
-      favoriteCategories: s.favoriteCategories,
-      hiddenCategories: s.hiddenCategories,
-      extraCategories: s.extraCategories,
-      homePageMode: s.homePageMode,
-      hasOnboardedSources: s.hasOnboardedSources,
     })),
   );
   const setSetting = useAppStore((s) => s.setSetting);

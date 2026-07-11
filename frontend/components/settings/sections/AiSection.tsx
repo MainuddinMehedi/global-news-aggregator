@@ -11,7 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { MODEL_REGISTRY } from "@/lib/ai/modelRegistry";
-import type { ResponseStyle, SettingsState } from "@/store";
+import type { ResponseStyle, AllSettings } from "@/store";
 
 const ALLOWED_AI_MODELS = ["groq/compound", "gemini-3.1-flash-lite", "gemma-4-26b-a4b-it"];
 
@@ -20,7 +20,7 @@ interface AiSectionProps {
     defaultAiModel: string;
     responseStyle: ResponseStyle;
   };
-  onSettingChange: <K extends keyof SettingsState>(key: K, value: SettingsState[K]) => void;
+  onSettingChange: <K extends keyof AllSettings>(key: K, value: AllSettings[K]) => void;
 }
 
 export default function AiSection({ settings, onSettingChange }: AiSectionProps) {

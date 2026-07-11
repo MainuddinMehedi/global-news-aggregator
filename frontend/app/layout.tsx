@@ -1,18 +1,18 @@
-import { Providers } from "@/components/providers/theme-provider";
+import LoginModal from "@/components/auth/LoginModal";
+import OnBoarding from "@/components/auth/OnBoarding";
+import ChatFAB from "@/components/chat/layout/ChatFAB";
+import FloatingChat from "@/components/chat/layout/FloatingChat";
+import Navbar from "@/components/layout/Navbar";
+import Sidebar from "@/components/layout/Sidebar";
+import SidebarWrapper from "@/components/layout/SidebarWrapper";
 import { AuthProvider } from "@/components/providers/auth-provider";
+import { Providers } from "@/components/providers/theme-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import type { Metadata } from "next";
 import { Figtree, Inter, JetBrains_Mono } from "next/font/google";
 import { Suspense } from "react";
 import "./globals.css";
-import Navbar from "@/components/layout/Navbar";
-import Sidebar from "@/components/layout/Sidebar";
-import SidebarWrapper from "@/components/layout/SidebarWrapper";
-import ChatFAB from "@/components/chat/layout/ChatFAB";
-import FloatingChat from "@/components/chat/layout/FloatingChat";
-import OnboardingModal from "@/components/auth/OnboardingModal";
-import LoginModal from "@/components/auth/LoginModal";
 
 import { Toaster } from "@/components/ui/sonner";
 
@@ -91,13 +91,14 @@ export default function RootLayout({
               </TooltipProvider>
 
               {/* Global chat sidebar — available on every page */}
-              <Suspense fallback={null}>
-                <ChatFAB />
-                <FloatingChat />
-              </Suspense>
+              {/* Since these are not using anything like searchParam or cockies that breaks static rendering, the use of suspense is not required here. */}
+              <ChatFAB />
+              <FloatingChat />
 
               <LoginModal />
-              <OnboardingModal />
+              <Suspense fallback={null}>
+                <OnBoarding />
+              </Suspense>
 
               <Toaster />
             </Providers>

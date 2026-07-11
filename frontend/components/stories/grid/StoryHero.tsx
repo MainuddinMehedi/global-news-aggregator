@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import { ImpactBadge } from "@/components/stories/widgets/ImpactBadge";
+import { ImpactBadge } from "@/components/stories/ImpactBadge";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Clock01Icon, Earth, TradeUpIcon } from "@hugeicons/core-free-icons";
 import { SourceAvatarStack } from "@/components/ui/SourceAvatar";
@@ -54,9 +54,9 @@ export default function StoryHero({ story, sources, origins }: StoryHeroProps) {
         {story.title}
       </h1>
 
-      <div className="bg-muted/15 rounded-3xl p-6 md:p-8 border border-border/50 backdrop-blur-sm space-y-5">
-        {/* Regions Row */}
-        <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-6 pb-5 border-b border-border/20 last:border-0 last:pb-0">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
+        {/* Regions Box */}
+        <div className="bg-muted/15 rounded-3xl p-6 border border-border/50 backdrop-blur-sm flex flex-col gap-2 md:gap-4">
           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground w-40 shrink-0 flex items-center gap-2">
             <span className="w-2 h-px bg-border" />
             Regions
@@ -64,20 +64,22 @@ export default function StoryHero({ story, sources, origins }: StoryHeroProps) {
           <div className="flex flex-wrap gap-2">
             {story.regions && story.regions.length > 0 ? (
               story.regions.map((r) => (
-                <Badge key={r} variant="secondary" className="px-3 py-1 rounded-lg text-xs font-semibold">
+                <Badge
+                  key={r}
+                  variant="secondary"
+                  className="px-3 py-1 rounded-lg text-xs font-semibold"
+                >
                   {r}
                 </Badge>
               ))
             ) : (
-              <span className="text-sm text-muted-foreground">
-                Global Context
-              </span>
+              <span className="text-sm text-muted-foreground">Global Context</span>
             )}
           </div>
         </div>
 
-        {/* Themes Row */}
-        <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-6 pb-5 border-b border-border/20 last:border-0 last:pb-0">
+        {/* Themes Box */}
+        <div className="bg-muted/15 rounded-3xl p-6 border border-border/50 backdrop-blur-sm flex flex-col gap-2 md:gap-4">
           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground w-40 shrink-0 flex items-center gap-2">
             <span className="w-2 h-px bg-border" />
             Themes
@@ -85,7 +87,11 @@ export default function StoryHero({ story, sources, origins }: StoryHeroProps) {
           <div className="flex flex-wrap gap-2">
             {story.themes && story.themes.length > 0 ? (
               story.themes.map((t) => (
-                <Badge key={t} variant="secondary" className="px-3 py-1 rounded-lg text-xs font-semibold">
+                <Badge
+                  key={t}
+                  variant="secondary"
+                  className="px-3 py-1 rounded-lg text-xs font-semibold"
+                >
                   {t}
                 </Badge>
               ))
@@ -95,8 +101,8 @@ export default function StoryHero({ story, sources, origins }: StoryHeroProps) {
           </div>
         </div>
 
-        {/* Reporting Origins Row */}
-        <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-6 pb-5 border-b border-border/20 last:border-0 last:pb-0">
+        {/* Reporting Origins Box */}
+        <div className="bg-muted/15 rounded-3xl p-6 border border-border/50 backdrop-blur-sm flex flex-col gap-2 md:gap-4">
           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground w-40 shrink-0 flex items-center gap-2">
             <span className="w-2 h-px bg-border" />
             Reporting Origins
@@ -104,7 +110,11 @@ export default function StoryHero({ story, sources, origins }: StoryHeroProps) {
           <div className="flex flex-wrap gap-2">
             {origins && origins.length > 0 ? (
               origins.map((o) => (
-                <Badge key={o} variant="outline" className="px-3 py-1 rounded-lg text-xs font-semibold text-muted-foreground">
+                <Badge
+                  key={o}
+                  variant="outline"
+                  className="px-3 py-1 rounded-lg text-xs font-semibold text-muted-foreground"
+                >
                   {o}
                 </Badge>
               ))
@@ -114,8 +124,8 @@ export default function StoryHero({ story, sources, origins }: StoryHeroProps) {
           </div>
         </div>
 
-        {/* Intelligence Sources Row */}
-        <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-6 pb-5 border-b border-border/20 last:border-0 last:pb-0">
+        {/* Intelligence Sources Box */}
+        <div className="bg-muted/15 rounded-3xl p-6 border border-border/50 backdrop-blur-sm flex flex-col gap-2 md:gap-4">
           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground w-40 shrink-0 flex items-center gap-2">
             <span className="w-2 h-px bg-border" />
             Intelligence Sources
@@ -128,14 +138,12 @@ export default function StoryHero({ story, sources, origins }: StoryHeroProps) {
                   {sources.length} {sources.length === 1 ? "Source" : "Sources"}
                 </span>
                 <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider hidden sm:inline-block">
-                  ({sources.map(s => s.name).join(", ")})
+                  ({sources.map((s) => s.name).join(", ")})
                 </span>
               </div>
             </div>
           ) : (
-            <span className="text-sm text-muted-foreground">
-              Sources pending
-            </span>
+            <span className="text-sm text-muted-foreground">Sources pending</span>
           )}
         </div>
       </div>

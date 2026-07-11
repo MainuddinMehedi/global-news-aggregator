@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { type UIMessage } from "ai";
-import { getHostname, getUrlPath, formatPublishedDate } from "@/lib/utils";
+import { getHostname, getUrlPath, formatPublishedDate } from "@/utils/formatters";
 import {
   type SourceItem,
   isSourceResourcePart,

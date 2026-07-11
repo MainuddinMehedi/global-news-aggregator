@@ -1,11 +1,5 @@
 "use client";
 
-import { HugeiconsIcon } from "@hugeicons/react";
-import {
-  Delete02Icon,
-  Search01Icon,
-} from "@hugeicons/core-free-icons";
-import { cn } from "@/lib/utils";
 import { RelativeTime } from "@/components/ui/RelativeTime";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,8 +10,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useState, useMemo } from "react";
+import { cn } from "@/lib/utils";
+import {
+  Alert02Icon,
+  Delete02Icon,
+  Search01Icon,
+} from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import { format, isToday, isYesterday, parseISO } from "date-fns";
+import { useMemo, useState } from "react";
 
 export type ChatSessionListItem = {
   id: string;
@@ -35,6 +36,7 @@ type ChatHistoryPanelProps = {
   loading?: boolean;
   onSelectSession: (id: string) => void;
   onDeleteSession: (id: string) => void;
+  isGuest?: boolean;
   className?: string;
 };
 
@@ -44,6 +46,7 @@ export default function ChatHistoryPanel({
   loading,
   onSelectSession,
   onDeleteSession,
+  isGuest,
   className,
 }: ChatHistoryPanelProps) {
   const [searchQuery, setSearchQuery] = useState("");
@@ -161,6 +164,22 @@ export default function ChatHistoryPanel({
           </div>
         )}
       </div>
+
+      {/* Guest Warning (Sticky Footer) */}
+      {isGuest && (
+        <div className="p-3 mb-1 shrink-0 bg-background/95 backdrop-blur-sm relative z-10">
+          <div className="flex items-center gap-2.5 p-3 rounded-xl bg-warning/10 border border-warning/20 shadow-sm">
+            <HugeiconsIcon
+              icon={Alert02Icon}
+              className="w-4 h-4 text-warning shrink-0"
+            />
+            <p className="text-[11px] leading-relaxed text-warning/90">
+              Guest chats are cleared after 24 hours. Sign in to save them
+              permanently.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Delete Confirmation Dialog */}
       <Dialog

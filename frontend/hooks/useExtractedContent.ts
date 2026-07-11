@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 const STORAGE_PREFIX = "extracted:";
 const INDEX_KEY = "extracted:index";
@@ -103,45 +103,59 @@ export function useExtractedContent({
   enabled = true,
   initialContent,
 }: UseExtractedContentOptions) {
-  const [content, setContent] = useState<string | null>(() => {
-    if (initialContent) return initialContent;
-    if (typeof window === "undefined") return null;
-    return readFromCache(url)?.content ?? null;
-  });
+  const [content, setContent] = useState<string | null>(initialContent || null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [source, setSource] = useState<string>(() => {
-    if (typeof window === "undefined") return "";
-    return readFromCache(url)?.source ?? "";
-  });
+  const [source, setSource] = useState<string>("");
 
-  const extract = useCallback(async (force = false) => {
+  // Hydrate from cache on the client-side to prevent SSR mismatch
+  useEffect(() => {
+    if (initialContent) return;
+
     const cached = readFromCache(url);
-    if (cached && !force) {
+    if (cached) {
       setContent(cached.content);
       setSource(cached.source);
-      setError(null);
-      return;
     }
+  }, [url, initialContent]);
 
-    setLoading(true);
-    setError(null);
-    try {
-      const fetchUrl = force 
-        ? `/api/extract?url=${encodeURIComponent(url)}&force=true`
-        : `/api/extract?url=${encodeURIComponent(url)}`;
-      const res = await fetch(fetchUrl);
-      if (!res.ok) throw new Error("Failed to extract");
-      const data = await res.json();
-      setContent(data.content);
-      setSource(data.source || "");
-      writeToCache(url, data.content, data.source || "");
-    } catch {
-      setError("Failed to extract content. Try viewing the original instead.");
-    } finally {
-      setLoading(false);
-    }
-  }, [url]);
+  const extract = useCallback(
+    async (force = false) => {
+      const cached = readFromCache(url);
+
+      if (cached && !force) {
+        setContent(cached.content);
+        setSource(cached.source);
+        setError(null);
+        return;
+      }
+
+      setLoading(true);
+      setError(null);
+
+      try {
+        const fetchUrl = force
+          ? `/api/extract?url=${encodeURIComponent(url)}&force=true`
+          : `/api/extract?url=${encodeURIComponent(url)}`;
+
+        const res = await fetch(fetchUrl);
+        if (!res.ok) throw new Error("Failed to extract");
+
+        const data = await res.json();
+
+        setContent(data.content);
+        setSource(data.source || "");
+        writeToCache(url, data.content, data.source || "");
+      } catch {
+        setError(
+          "Failed to extract content. Try viewing the original instead.",
+        );
+      } finally {
+        setLoading(false);
+      }
+    },
+    [url],
+  );
 
   const reExtract = useCallback(() => extract(true), [extract]);
 
@@ -151,7 +165,9 @@ export function useExtractedContent({
     }
   }, [enabled, content, extract]);
 
-  const isCached = !!initialContent || (typeof window !== "undefined" && !!readFromLocalCache(url));
+  const isCached =
+    !!initialContent ||
+    (typeof window !== "undefined" && !!readFromLocalCache(url));
 
   return { content, loading, error, source, extract, reExtract, isCached };
 }

@@ -1,101 +1,152 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useSession } from "next-auth/react";
-import { useSettings } from "@/store";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { BUILTIN_SOURCES } from "@/lib/constants";
-import { HugeiconsIcon } from "@hugeicons/react";
 import { saveUserSettingsAction } from "@/app/actions/settings";
-import { CheckListIcon, Settings02Icon } from "@hugeicons/core-free-icons";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
+import {
+  Analytics01Icon,
+  ArrowRight01Icon,
+  CheckmarkCircle02Icon,
+  Globe02Icon,
+  Search01Icon,
+} from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { useState } from "react";
 import { toast } from "sonner";
 
-export default function OnboardingModal() {
-  const { data: session, status } = useSession();
-  const { settings, setSetting } = useSettings();
-  const [isOpen, setIsOpen] = useState(false);
+export default function OnboardingModal({
+  defaultOpen,
+  currentSettings,
+}: {
+  defaultOpen: boolean;
+  currentSettings: any;
+}) {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
+  const [slide, setSlide] = useState(0);
 
-  // Open the modal if the user is authenticated and hasn't onboarded yet
-  useEffect(() => {
-    if (status === "authenticated" && !settings.hasOnboardedSources) {
-      setIsOpen(true);
-    }
-  }, [status, settings.hasOnboardedSources]);
+  const handleComplete = () => {
+    if (!currentSettings) return;
 
-  const handleChoice = (useDefaults: boolean) => {
-    const newSettings = { ...settings, hasOnboardedSources: true } as any;
-    if (useDefaults) {
-      newSettings.hasOnboardedSources = true;
-      setSetting("hasOnboardedSources", true);
-      toast.success("Global news sources active in your pipeline.");
-    } else {
-      const allBuiltinUrls = BUILTIN_SOURCES.map((s) => s.url);
-      newSettings.disabledBuiltinSources = allBuiltinUrls;
-      setSetting("hasOnboardedSources", true);
-      toast.success("Ready for you to add your own sources.");
-    }
+    // TODO: In the future, we will add a step to collect Topic Preferences here
+    // before saving and completing onboarding.
+    const newSettings = { ...currentSettings, hasOnboardedSources: true };
 
     // Sync onboarding settings to the database immediately
-    saveUserSettingsAction(newSettings)
-      .catch((err) => console.error("Failed to sync onboarding settings:", err));
+    saveUserSettingsAction(newSettings).catch((err) =>
+      console.error("Failed to sync onboarding settings:", err),
+    );
 
+    toast.success("Welcome to Global News!");
     setIsOpen(false);
   };
 
+  const handleOpenChange = (open: boolean) => {
+    if (!open) {
+      handleComplete();
+    } else {
+      setIsOpen(true);
+    }
+  };
 
+  const slides = [
+    {
+      title: "Global Perspective",
+      description:
+        "We ingest and deduplicate news from a curated list of trusted global sources so you see the whole picture without the noise.",
+      icon: Globe02Icon,
+    },
+    {
+      title: "AI Intelligence",
+      description:
+        "Our ML models instantly analyze every article for political bias, sentiment, and semantic themes, grouping them into actionable clusters.",
+      icon: Analytics01Icon,
+    },
+    {
+      title: "Surveillance Mode",
+      description:
+        "Want to track a specific subject, add a custom RSS feed, or receive digests? Use the advanced Locked Topics feature to put our AI on surveillance duty.",
+      icon: Search01Icon,
+    },
+  ];
+
+  const currentSlide = slides[slide];
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      {/* Remove the close button entirely if we want to force them to choose, 
-          but usually it's fine to let them click outside which acts as 'skip',
-          however if they skip, `hasOnboardedSources` stays false so it'll pop up again.
-          Let's force a choice by omitting the close button or preventing close on interact outside.
-      */}
-      <DialogContent 
-        className="max-w-md"
-        onInteractOutside={(e) => e.preventDefault()}
-        onEscapeKeyDown={(e) => e.preventDefault()}
-      >
-        <DialogHeader>
-          <DialogTitle className="text-2xl font-bold">Welcome to Global News!</DialogTitle>
-          <DialogDescription className="text-base pt-2">
-            Before we build your feed, how would you like to set up your news sources?
-          </DialogDescription>
-        </DialogHeader>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+      <DialogContent className="max-w-md sm:max-w-lg p-0 overflow-hidden bg-card border-border/50 shadow-2xl">
+        <div className="flex flex-col h-[400px]">
+          {/* Top visual area */}
+          <div className="flex-1 bg-muted/30 relative flex flex-col items-center justify-center p-8 text-center overflow-hidden">
+            {/* Background decorative blob */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-primary/10 rounded-full blur-3xl" />
 
-        <div className="grid gap-4 py-4">
-          <Button 
-            variant="outline" 
-            className="h-auto p-4 justify-start text-left flex gap-4 hover:bg-muted/50"
-            onClick={() => handleChoice(true)}
-          >
-            <div className="bg-primary/10 p-2 rounded-full shrink-0">
-              <HugeiconsIcon icon={CheckListIcon} className="w-6 h-6 text-primary" />
-            </div>
-            <div>
-              <div className="font-semibold text-lg">Use Default Sources</div>
-              <div className="text-sm text-muted-foreground whitespace-normal">
-                Start with a curated list of global news sources (Al Jazeera, UN News, TechCrunch, etc.).
+            <div className="relative z-10 flex flex-col items-center gap-6">
+              <div className="w-20 h-20 bg-background rounded-2xl shadow-sm border border-border/50 flex items-center justify-center">
+                <HugeiconsIcon
+                  icon={currentSlide.icon}
+                  className="w-10 h-10 text-primary"
+                />
+              </div>
+              <div className="space-y-2 max-w-[280px]">
+                <h2 className="text-2xl font-bold tracking-tight">
+                  {currentSlide.title}
+                </h2>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  {currentSlide.description}
+                </p>
               </div>
             </div>
-          </Button>
+          </div>
 
-          <Button 
-            variant="outline" 
-            className="h-auto p-4 justify-start text-left flex gap-4 hover:bg-muted/50"
-            onClick={() => handleChoice(false)}
-          >
-            <div className="bg-primary/10 p-2 rounded-full shrink-0">
-              <HugeiconsIcon icon={Settings02Icon} className="w-6 h-6 text-primary" />
+          {/* Bottom action area */}
+          <div className="p-6 bg-background border-t border-border/50 flex items-center justify-between shrink-0">
+            {/* Slide indicators */}
+            <div className="flex items-center gap-1.5">
+              {slides.map((_, i) => (
+                <div
+                  key={i}
+                  className={cn(
+                    "w-2 h-2 rounded-full transition-all duration-300",
+                    i === slide ? "w-4 bg-primary" : "bg-muted-foreground/30",
+                  )}
+                />
+              ))}
             </div>
-            <div>
-              <div className="font-semibold text-lg">Start Fresh</div>
-              <div className="text-sm text-muted-foreground whitespace-normal">
-                Don't add any sources yet. I will manually add my own specific RSS feeds.
-              </div>
+
+            {/* Action buttons */}
+            <div className="flex items-center gap-2">
+              {slide > 0 && (
+                <Button
+                  variant="ghost"
+                  onClick={() => setSlide((s) => s - 1)}
+                  className="text-muted-foreground"
+                >
+                  Back
+                </Button>
+              )}
+              {slide < slides.length - 1 ? (
+                <Button
+                  onClick={() => setSlide((s) => s + 1)}
+                  className="min-w-[100px] flex items-center gap-2"
+                >
+                  Next
+                  <HugeiconsIcon icon={ArrowRight01Icon} className="w-4 h-4" />
+                </Button>
+              ) : (
+                <Button
+                  onClick={handleComplete}
+                  className="min-w-[120px] flex items-center gap-2"
+                >
+                  Get Started
+                  <HugeiconsIcon
+                    icon={CheckmarkCircle02Icon}
+                    className="w-4 h-4"
+                  />
+                </Button>
+              )}
             </div>
-          </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

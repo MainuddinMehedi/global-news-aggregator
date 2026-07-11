@@ -1,6 +1,6 @@
-import { ProcessedArticle, RawArticle, Category } from "@news/db";
 import { Article } from "@/types/article";
-import { getPublisherRegion } from "@/lib/utils";
+import { getPublisherRegion } from "@/utils/regions";
+import { Category, ProcessedArticle, RawArticle } from "@news/db";
 
 export interface ProcessedArticleWithRaw extends ProcessedArticle {
   rawArticle: RawArticle;
@@ -10,11 +10,13 @@ export interface ProcessedArticleWithRaw extends ProcessedArticle {
 /**
  * Maps a processed article (with its joined rawArticle and categories) to the frontend Article model.
  */
-export function mapProcessedArticleToArticle(article: ProcessedArticleWithRaw): Article {
+export function mapProcessedArticleToArticle(
+  article: ProcessedArticleWithRaw,
+): Article {
   if (!article) {
     throw new Error("Cannot map null or undefined article");
   }
-  
+
   const raw = article.rawArticle;
   if (!raw) {
     throw new Error("Raw article data is missing; cannot perform mapping");
@@ -24,9 +26,10 @@ export function mapProcessedArticleToArticle(article: ProcessedArticleWithRaw): 
     id: article.id,
     title: raw.title,
     source: raw.source,
-    publishedAt: raw.publishedAt instanceof Date 
-      ? raw.publishedAt.toISOString() 
-      : String(raw.publishedAt),
+    publishedAt:
+      raw.publishedAt instanceof Date
+        ? raw.publishedAt.toISOString()
+        : String(raw.publishedAt),
     contentSnippet: raw.contentSnippet,
     extractedContent: raw.extractedContent ?? null,
     biasNote: article.biasNote ?? null,

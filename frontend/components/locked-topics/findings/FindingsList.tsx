@@ -1,14 +1,14 @@
 "use client";
 
-import { useCallback, useState } from "react";
-import { useIntersectionObserver } from "@/hooks/useIntersectionObserver";
-import { TopicFinding, FindingSource } from "@/types/lockedTopic";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { RefreshIcon } from "@hugeicons/core-free-icons";
-import { Button } from "@/components/ui/button";
 import { FindingCard } from "@/components/locked-topics/findings/FindingCard";
-import { FindingSkeleton } from "@/components/locked-topics/findings/FindingSkeleton";
 import { FindingDetailsModal } from "@/components/locked-topics/findings/FindingDetailsModal";
+import { FindingSkeleton } from "@/components/locked-topics/findings/FindingSkeleton";
+import { Button } from "@/components/ui/button";
+import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
+import { FindingSource, TopicFinding } from "@/types/lockedTopic";
+import { RefreshIcon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { useCallback, useState } from "react";
 
 interface FindingsListProps {
   initialFindings: TopicFinding[];
@@ -25,45 +25,26 @@ export default function FindingsList({
   sourceType,
   sort,
 }: FindingsListProps) {
-  const [findings, setFindings] = useState(initialFindings);
-  const [cursor, setCursor] = useState(initialNextCursor);
-  const [isLoading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [selectedFinding, setSelectedFinding] = useState<TopicFinding | null>(
     null,
   );
 
-  const fetchNextPage = useCallback(async () => {
-    if (!cursor || isLoading || error) return;
-    setLoading(true);
-
-    try {
-      const params = new URLSearchParams({
-        source: sourceType,
-        sort,
-        cursor,
-      });
-
-      const res = await fetch(
-        `/api/locked-topics/${topicId}/findings?${params}`,
-      );
-
-      if (!res.ok) throw new Error("Failed to fetch");
-
-      const { findings: next, nextCursor } = await res.json();
-
-      setFindings((prev) => [...prev, ...next]);
-      setCursor(nextCursor);
-    } catch (err) {
-      console.error("Failed to load more findings:", err);
-      setError("Failed to load more findings.");
-    } finally {
-      setLoading(false);
-    }
-  }, [cursor, isLoading, error, topicId, sourceType, sort]);
-
-  // intersection observer
-  const sentinelRef = useIntersectionObserver(fetchNextPage, !error, "300px");
+  const {
+    items: findings,
+    setItems: setFindings,
+    isLoading,
+    error,
+    cursor,
+    sentinelRef,
+    handleRetry,
+  } = useInfiniteScroll<TopicFinding>({
+    endpoint: `/api/locked-topics/${topicId}/findings`,
+    queryParams: { source: sourceType, sort },
+    initialItems: initialFindings,
+    initialCursor: initialNextCursor,
+    dataKey: "findings",
+    fetchDependencies: [topicId, sourceType, sort],
+  });
 
   const handleDeleteFinding = useCallback(
     async (findingId: string) => {
@@ -87,13 +68,8 @@ export default function FindingsList({
         console.error("Error deleting finding:", err);
       }
     },
-    [topicId, selectedFinding],
+    [topicId, selectedFinding, setFindings],
   );
-
-  const handleRetry = () => {
-    setError(null);
-    setTimeout(() => fetchNextPage(), 0);
-  };
 
   if (findings.length === 0 && !isLoading) {
     return (

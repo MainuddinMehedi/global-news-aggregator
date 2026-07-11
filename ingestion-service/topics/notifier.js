@@ -49,6 +49,11 @@ export async function processNotifications(topic, findings) {
       continue;
     }
 
+    if (topic.notifyMode === "DIGEST") {
+      // Skip emitting immediate alerts. The digest worker will pick up unread findings later.
+      continue;
+    }
+
     try {
       await emitNotification({
         userId: topic.userId,

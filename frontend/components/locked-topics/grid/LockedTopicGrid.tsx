@@ -1,11 +1,10 @@
-import { LockedTopic, TopicFinding } from "@/types/lockedTopic";
 import LockedTopicCard from "@/components/locked-topics/grid/LockedTopicCard";
+import CreateTopicModal from "@/components/locked-topics/modals/CreateTopicModal/CreateTopicModal";
 import { Button } from "@/components/ui/button";
-import { HugeiconsIcon } from "@hugeicons/react";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { LockedTopic, TopicFinding } from "@/types/lockedTopic";
 import { Add01Icon, Task01Icon } from "@hugeicons/core-free-icons";
-
-import CreateTopicModal from "@/components/locked-topics/modals/CreateTopicModal";
+import { HugeiconsIcon } from "@hugeicons/react";
 
 interface LockedTopicGridProps {
   topics: LockedTopic[];

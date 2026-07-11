@@ -1,20 +1,30 @@
 "use client";
 
+import { normalizeError } from "@/lib/chat/errors";
+import { createSessionTitle } from "@/lib/chat/messages";
+import type { ContextItem } from "@/types/chat";
 import { useChat } from "@ai-sdk/react";
 import type { UIMessage } from "ai";
 import { useCallback, useRef } from "react";
 import { toast } from "sonner";
-import { normalizeError } from "@/lib/chat/errors";
-import { createSessionTitle } from "@/lib/chat/messages";
-import type { ContextItem } from "@/types/chat";
 
 interface UseChatFlowProps {
   sessionId?: string;
-  onSessionCreated?: (id: string, session?: { id: string; title: string; model: string; responseMode: string; createdAt: string; updatedAt: string }) => void;
+  onSessionCreated?: (
+    id: string,
+    session?: {
+      id: string;
+      title: string;
+      model: string;
+      responseMode: string;
+      createdAt: string;
+      updatedAt: string;
+    },
+  ) => void;
   contexts: ContextItem[];
   selectedModel: string;
-  adaptiveThinking: boolean;
   responseMode: "concise" | "descriptive";
+  adaptiveThinking?: boolean;
 }
 
 export function useChatFlow({
@@ -22,8 +32,8 @@ export function useChatFlow({
   onSessionCreated,
   contexts,
   selectedModel,
-  adaptiveThinking,
   responseMode,
+  adaptiveThinking,
 }: UseChatFlowProps) {
   const sendingRef = useRef(false);
 
@@ -124,10 +134,10 @@ export function useChatFlow({
           {
             body: {
               model: selectedModel,
-              adaptiveThinking,
               sessionId: targetSessionId,
               responseMode,
               contexts,
+              adaptiveThinking,
             },
           },
         );
@@ -138,14 +148,7 @@ export function useChatFlow({
         sendingRef.current = false;
       }
     },
-    [
-      adaptiveThinking,
-      contexts,
-      ensureSession,
-      responseMode,
-      selectedModel,
-      sendMessage,
-    ],
+    [contexts, ensureSession, responseMode, selectedModel, sendMessage],
   );
 
   return {

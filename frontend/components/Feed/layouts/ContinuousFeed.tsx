@@ -1,14 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { useIntersectionObserver } from "@/hooks/useIntersectionObserver";
 import ArticleCard from "@/components/articles/ArticleCard";
-import { ArticleFeedLoadingGrid } from "@/components/Feed/FeedSkeleton";
-import { Article } from "@/types/article";
-import { useSetArticleCount } from "@/store";
-import { getGroupingKey, formatGroupingKey } from "@/lib/helpers/dateUtils";
-import { buildFeedQueryParams } from "@/lib/helpers/feedUtils";
 import { PaginationError } from "@/components/Feed/PaginationError";
+import { ArticleFeedLoadingGrid } from "@/components/skeletons/home/ArticleFeedSkeleton";
+import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
+import { formatGroupingKey, getGroupingKey } from "@/lib/helpers/dateUtils";
+import { useSetArticleCount } from "@/store";
+import { Article } from "@/types/article";
+import { useEffect } from "react";
 
 interface ContinuousFeedProps {
   initialArticles: Article[];
@@ -17,7 +16,7 @@ interface ContinuousFeedProps {
   sort: string;
   search: string;
   region: string;
-  origin: string;
+  srcOrigin: string;
   type: string;
   story: string;
   bias: string;
@@ -31,16 +30,47 @@ export default function ContinuousFeed({
   sort,
   search,
   region,
-  origin,
+  srcOrigin,
   type,
   story,
   bias,
   scope,
 }: ContinuousFeedProps) {
-  const [articles, setArticles] = useState(initialArticles);
-  const [cursor, setCursor] = useState(initialCursor);
-  const [isLoading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    items: articles,
+    isLoading,
+    error,
+    cursor,
+    sentinelRef,
+    handleRetry,
+  } = useInfiniteScroll<Article>({
+    endpoint: "/api/articles",
+    queryParams: {
+      category,
+      sort,
+      search,
+      region,
+      srcOrigin,
+      type,
+      story,
+      bias,
+      scope,
+    },
+    initialItems: initialArticles,
+    initialCursor,
+    dataKey: "articles",
+    fetchDependencies: [
+      category,
+      sort,
+      search,
+      region,
+      srcOrigin,
+      type,
+      story,
+      bias,
+      scope,
+    ],
+  });
 
   const setArticleCount = useSetArticleCount();
 
@@ -62,70 +92,6 @@ export default function ContinuousFeed({
       groups.push({ key, articles: [article] });
     }
   });
-
-  const fetchNextPage = useCallback(async () => {
-    // Prevent fetching if already loading or if there's an active error
-    if (!cursor || isLoading || error) return;
-    setLoading(true);
-
-    try {
-      const params = buildFeedQueryParams({
-        category,
-        sort,
-        search,
-        region,
-        origin,
-        type,
-        story,
-        bias,
-        scope,
-        cursor,
-      });
-
-      const res = await fetch(`/api/articles?${params}`);
-
-      if (!res.ok) throw new Error("Failed to fetch");
-
-      const { articles: next, nextCursor } = await res.json();
-
-      setArticles((prev) => [...prev, ...next]);
-      setCursor(nextCursor);
-    } catch (err) {
-      console.error("Failed to load more articles:", err);
-
-      setError(
-        err instanceof Error
-          ? `Failed to load more articles: ${err.message}`
-          : "An unexpected error occurred.",
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, [
-    cursor,
-    isLoading,
-    error,
-    category,
-    sort,
-    search,
-    region,
-    origin,
-    type,
-    story,
-    bias,
-    scope,
-  ]);
-
-  // Intersection observer logic
-  const sentinelRef = useIntersectionObserver(fetchNextPage, !error, "200px");
-
-  // Pagination fetch retry logic
-  const handleRetry = () => {
-    setError(null);
-    setTimeout(() => {
-      fetchNextPage();
-    }, 0);
-  };
 
   return (
     <div className="flex flex-col gap-8">

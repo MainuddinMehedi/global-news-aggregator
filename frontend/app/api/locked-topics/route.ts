@@ -1,11 +1,12 @@
-import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/auth";
+import { generateQueryEmbedding } from "@/lib/ai/embeddings";
 import prisma from "@/lib/prisma";
 import { revalidateTag } from "next/cache";
-import { generateQueryEmbedding } from "@/lib/ai/embeddings";
-import { auth } from "@/auth";
+import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
   const session = await auth();
+
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -46,11 +47,12 @@ export async function POST(req: NextRequest) {
     try {
       const intentString = `${displayName}\n\n${aiQuerySummary}\n\n${aiRefinedQuery}`;
       const embeddingVector = await generateQueryEmbedding(intentString);
-      
+      const vectorStr = `[${embeddingVector.join(",")}]`;
+
       // Update the newly created topic with the embedding vector
       await prisma.$executeRaw`
         UPDATE "LockedTopic" 
-        SET "queryEmbedding" = ${embeddingVector}::vector 
+        SET "queryEmbedding" = ${vectorStr}::vector 
         WHERE id = ${topic.id}
       `;
     } catch (embErr) {

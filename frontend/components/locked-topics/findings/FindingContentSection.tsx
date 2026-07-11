@@ -1,11 +1,11 @@
 "use client";
 
-import { TopicFinding } from "@/types/lockedTopic";
-import { isYouTubeUrl } from "@/lib/locked-topics";
+import { ExtractableContent } from "@/components/locked-topics/findings/ExtractableContent";
 import { GoogleNewsContent } from "@/components/locked-topics/sources/GoogleNewsContent";
 import { RedditContent } from "@/components/locked-topics/sources/RedditContent";
 import { YouTubeContent } from "@/components/locked-topics/sources/YouTubeContent";
-import { ExtractableContent } from "@/components/locked-topics/findings/ExtractableContent";
+import { isYouTubeUrl } from "@/lib/locked-topics/api";
+import { TopicFinding } from "@/types/lockedTopic";
 
 interface FindingContentSectionProps {
   finding: TopicFinding;

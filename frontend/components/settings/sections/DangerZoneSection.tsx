@@ -30,7 +30,7 @@ export default function DangerZoneSection() {
     try {
       const res = await fetch("/api/user/delete", { method: "POST" });
       if (!res.ok) throw new Error("Failed to delete account");
-      
+
       toast.success("Account deleted successfully. Logging out...");
       signOut({ callbackUrl: "/" });
     } catch (error) {
@@ -44,8 +44,12 @@ export default function DangerZoneSection() {
     <Card className="border-destructive/30">
       <CardContent className="p-6">
         <div className="space-y-1 mb-4">
-          <h4 className="text-sm font-semibold text-destructive">Danger Zone</h4>
-          <p className="text-sm text-muted-foreground">Permanently delete your account and all associated data.</p>
+          <h4 className="text-sm font-semibold text-destructive">
+            Danger Zone
+          </h4>
+          <p className="text-sm text-muted-foreground">
+            Permanently delete your account and all associated data.
+          </p>
         </div>
         <Dialog>
           <DialogTrigger asChild>
@@ -55,16 +59,24 @@ export default function DangerZoneSection() {
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle className="text-destructive">Are you absolutely sure?</DialogTitle>
+              <DialogTitle className="text-destructive">
+                Are you absolutely sure?
+              </DialogTitle>
               <DialogDescription>
-                This action cannot be undone. This will permanently delete your account, including your saved topics, custom sources, bookmarks, and chat history.
+                This action cannot be undone. This will permanently delete your
+                account, including your saved topics, custom sources, bookmarks,
+                and chat history.
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <p className="text-sm font-medium">
-                Please type <span className="font-bold select-none text-foreground">DELETE</span> to confirm.
+                Please type{" "}
+                <span className="font-bold select-none text-foreground">
+                  DELETE
+                </span>{" "}
+                to confirm.
               </p>
-              <Input 
+              <Input
                 value={deleteConfirmText}
                 onChange={(e) => setDeleteConfirmText(e.target.value)}
                 placeholder="DELETE"
@@ -72,7 +84,11 @@ export default function DangerZoneSection() {
               />
             </div>
             <DialogFooter>
-              <Button variant="destructive" disabled={deleteConfirmText !== "DELETE" || isDeleting} onClick={handleDeleteAccount}>
+              <Button
+                variant="destructive"
+                disabled={deleteConfirmText !== "DELETE" || isDeleting}
+                onClick={handleDeleteAccount}
+              >
                 {isDeleting ? "Deleting..." : "Permanently Delete Account"}
               </Button>
             </DialogFooter>

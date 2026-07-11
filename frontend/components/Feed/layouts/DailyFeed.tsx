@@ -1,24 +1,25 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { useIntersectionObserver } from "@/hooks/useIntersectionObserver";
 import ArticleCard from "@/components/articles/ArticleCard";
-import { ArticleFeedLoadingGrid } from "@/components/Feed/FeedSkeleton";
-import { Article } from "@/types/article";
-import { useSetArticleCount } from "@/store";
-import { Button } from "@/components/ui/button";
-import { getGroupingKey, formatGroupingKey } from "@/lib/helpers/dateUtils";
-import { buildFeedQueryParams } from "@/lib/helpers/feedUtils";
 import { PaginationError } from "@/components/Feed/PaginationError";
+import { ArticleFeedLoadingGrid } from "@/components/skeletons/home/ArticleFeedSkeleton";
+import { Button } from "@/components/ui/button";
+import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
+import { formatGroupingKey } from "@/lib/helpers/dateUtils";
+import { buildFeedQueryParams } from "@/lib/helpers/feedQueryBuilder";
+import { useSetArticleCount } from "@/store";
+import { Article } from "@/types/article";
+import { useEffect, useState } from "react";
 
 interface DailyFeedProps {
   initialArticles: Article[];
   initialCursor: string | null;
+  initialDate?: string;
   category: string;
   sort: string;
   search: string;
   region: string;
-  origin: string;
+  srcOrigin: string;
   type: string;
   story: string;
   bias: string;
@@ -28,11 +29,12 @@ interface DailyFeedProps {
 export default function DailyFeed({
   initialArticles,
   initialCursor,
+  initialDate,
   category,
   sort,
   search,
   region,
-  origin,
+  srcOrigin,
   type,
   story,
   bias,
@@ -40,100 +42,56 @@ export default function DailyFeed({
 }: DailyFeedProps) {
   const setArticleCount = useSetArticleCount();
 
-  const [isLoading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [activeDate, setActiveDate] = useState(
+    () => initialDate || new Date().toISOString().split("T")[0],
+  );
 
-  // Initialize state based on the newest date in the initial articles
-  const [{ currentDate, articles, cursor }, setFeedState] = useState(() => {
-    if (initialArticles.length === 0) {
-      return {
-        currentDate: new Date().toISOString().split("T")[0],
-        articles: [],
-        cursor: null,
-      };
-    }
-
-    // Find the grouping key (YYYY-MM-DD) of the very first (newest) article
-    const firstArticleKey = getGroupingKey(initialArticles[0].publishedAt);
-
-    // Filter to keep ONLY the articles from this newest date
-    const dateArticles = initialArticles.filter(
-      (a) => getGroupingKey(a.publishedAt) === firstArticleKey,
-    );
-
-    // If we kept all 20, there might be more for this day, so use initialCursor.
-    // If we kept less than 20, the rest were older days, meaning this day is fully exhausted.
-    const dateCursor =
-      dateArticles.length === initialArticles.length ? initialCursor : null;
-
-    return {
-      currentDate: firstArticleKey,
-      articles: dateArticles,
-      cursor: dateCursor,
-    };
+  const {
+    items: articles,
+    setItems: setArticles,
+    cursor,
+    setCursor,
+    isLoading,
+    setLoading,
+    error,
+    setError,
+    sentinelRef,
+    fetchNextPage,
+  } = useInfiniteScroll<Article>({
+    endpoint: "/api/articles",
+    queryParams: {
+      category,
+      sort,
+      search,
+      region,
+      srcOrigin,
+      type,
+      story,
+      bias,
+      scope,
+      date: activeDate,
+    },
+    initialItems: initialArticles,
+    initialCursor: initialCursor,
+    dataKey: "articles",
+    fetchDependencies: [
+      category,
+      sort,
+      search,
+      region,
+      srcOrigin,
+      type,
+      story,
+      bias,
+      scope,
+      activeDate,
+    ],
   });
 
   // Keep the store in sync with the live article list
   useEffect(() => {
     setArticleCount(articles.length);
   }, [articles.length, setArticleCount]);
-
-  const fetchNextPage = useCallback(async () => {
-    // Prevent fetching if already loading, error, or if this day is fully loaded
-    if (!cursor || isLoading || error) return;
-    setLoading(true);
-
-    try {
-      const params = buildFeedQueryParams({
-        category,
-        sort,
-        search,
-        region,
-        origin,
-        type,
-        story,
-        bias,
-        scope,
-        cursor,
-        date: currentDate,
-      });
-
-      const res = await fetch(`/api/articles?${params}`);
-      if (!res.ok) throw new Error("Failed to fetch");
-
-      const { articles: next, nextCursor } = await res.json();
-
-      setFeedState((prev) => ({
-        ...prev,
-        articles: [...prev.articles, ...next],
-        cursor: nextCursor,
-      }));
-    } catch (err) {
-      console.error("Failed to load more articles:", err);
-
-      setError(
-        err instanceof Error
-          ? `Failed to load more articles: ${err.message}`
-          : "An unexpected error occurred.",
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, [
-    cursor,
-    isLoading,
-    error,
-    currentDate,
-    category,
-    sort,
-    search,
-    region,
-    origin,
-    type,
-    story,
-    bias,
-    scope,
-  ]);
 
   const loadPreviousDay = async () => {
     if (isLoading) return;
@@ -142,7 +100,7 @@ export default function DailyFeed({
 
     try {
       // Calculate previous day
-      const dateObj = new Date(currentDate);
+      const dateObj = new Date(activeDate);
       dateObj.setUTCDate(dateObj.getUTCDate() - 1);
       const prevDate = dateObj.toISOString().split("T")[0];
 
@@ -151,7 +109,7 @@ export default function DailyFeed({
         sort,
         search,
         region,
-        origin,
+        srcOrigin,
         type,
         story,
         bias,
@@ -164,11 +122,9 @@ export default function DailyFeed({
 
       const { articles: next, nextCursor } = await res.json();
 
-      setFeedState({
-        currentDate: prevDate,
-        articles: next,
-        cursor: nextCursor,
-      });
+      setActiveDate(prevDate);
+      setArticles(next);
+      setCursor(nextCursor);
 
       // Scroll to top of the feed container smoothly
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -180,17 +136,10 @@ export default function DailyFeed({
     }
   };
 
-  // Intersection observer logic for within-day pagination
-  const sentinelRef = useIntersectionObserver(
-    fetchNextPage,
-    !error && cursor !== null,
-    "200px",
-  );
-
   const handleRetry = () => {
     setError(null);
     if (cursor) {
-      fetchNextPage();
+      setTimeout(() => fetchNextPage(), 0);
     } else {
       loadPreviousDay();
     }
@@ -202,7 +151,7 @@ export default function DailyFeed({
         {/* Date Header */}
         <div className="flex items-center gap-4">
           <h3 className="text-xl font-bold tracking-tight">
-            {formatGroupingKey(currentDate)}
+            {formatGroupingKey(activeDate)}
           </h3>
           <div className="h-px flex-1 bg-border/50" />
         </div>
@@ -230,7 +179,7 @@ export default function DailyFeed({
             <div className="flex flex-col items-center justify-center py-10 bg-muted/30 rounded-2xl border border-border/50">
               <p className="text-muted-foreground font-medium mb-4 text-lg">
                 You've reached the end of{" "}
-                {formatGroupingKey(currentDate).toLowerCase()}.
+                {formatGroupingKey(activeDate).toLowerCase()}.
               </p>
 
               <Button
@@ -241,9 +190,7 @@ export default function DailyFeed({
               >
                 Go to{" "}
                 {formatGroupingKey(
-                  new Date(
-                    new Date(currentDate).getTime() - 24 * 60 * 60 * 1000,
-                  )
+                  new Date(new Date(activeDate).getTime() - 24 * 60 * 60 * 1000)
                     .toISOString()
                     .split("T")[0],
                 ).toLowerCase()}

@@ -21,6 +21,7 @@
     "worker": "node ingestion-service/masterWorker.js",
     "backfill:topic-embeddings": "node ingestion-service/topics/backfillLockedTopicEmbeddings.js",
     "seed:feeds": "node prisma/seed.js",
+    "db:drop-indexes": "node prisma/drop-indexes.js",
     "db:restore-indexes": "node prisma/restore-indexes.js"
   },
   "dependencies": {
