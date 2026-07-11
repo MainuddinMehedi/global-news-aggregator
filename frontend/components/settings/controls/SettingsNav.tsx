@@ -17,59 +17,68 @@ export default function SettingsNav() {
   useEffect(() => {
     const handleScroll = () => {
       let currentSection = SETTINGS_SECTIONS[0].id;
-      let minDistance = Infinity;
 
-      SETTINGS_SECTIONS.forEach(({ id }) => {
-        const element = document.getElementById(id);
-        if (element) {
-          const rect = element.getBoundingClientRect();
-          const distance = Math.abs(rect.top - 100);
+      for (const section of SETTINGS_SECTIONS) {
+        const el = document.getElementById(section.id);
 
-          if (distance < minDistance && rect.top < window.innerHeight / 2) {
-            minDistance = distance;
-            currentSection = id;
+        if (el) {
+          const rect = el.getBoundingClientRect();
+          if (rect.top <= 300) {
+            currentSection = section.id;
+          } else {
+            break;
           }
         }
-      });
+      }
 
       setActiveSection(currentSection);
     };
 
-    window.addEventListener("scroll", handleScroll, { passive: true });
+    window.addEventListener("scroll", handleScroll, {
+      capture: true,
+      passive: true,
+    });
     // Initial check
     handleScroll();
 
-    return () => window.removeEventListener("scroll", handleScroll);
+    return () =>
+      window.removeEventListener("scroll", handleScroll, { capture: true });
   }, []);
 
   const scrollToSection = (id: string) => {
-    const element = document.getElementById(id);
+    const el = document.getElementById(id);
 
-    if (element) {
-      element.scrollIntoView({ behavior: "smooth" });
+    if (el) {
+      const scrollContainer = el.closest(".overflow-y-auto") || window;
+
+      if (scrollContainer === window) {
+        const y = el.getBoundingClientRect().top + window.scrollY - 120;
+        window.scrollTo({ top: y, behavior: "smooth" });
+      } else {
+        const container = scrollContainer as HTMLElement;
+        const containerRect = container.getBoundingClientRect();
+        const elRect = el.getBoundingClientRect();
+        const scrollTop =
+          container.scrollTop + (elRect.top - containerRect.top) - 32;
+        container.scrollTo({ top: scrollTop, behavior: "smooth" });
+      }
     }
   };
 
   return (
-    <nav className="w-full md:w-64 shrink-0 md:sticky md:top-24 space-y-1 bg-card/45 border-border/50 shadow-sm p-4 rounded-xl border">
-      <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-3 px-2">
-        Settings
-      </h3>
-      <div className="flex flex-row md:flex-col gap-1 overflow-x-auto md:overflow-visible pb-2 md:pb-0 scrollbar-hide">
-        {SETTINGS_SECTIONS.map(({ id, label }) => (
+    <nav className="w-full md:w-56 shrink-0 md:sticky md:top-24">
+      <div className="flex flex-col space-y-1">
+        {SETTINGS_SECTIONS.map((section) => (
           <button
-            key={id}
-            onClick={() => scrollToSection(id)}
-            className={`
-              text-left px-3 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap
-              ${
-                activeSection === id
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-muted-foreground hover:bg-muted/80 hover:text-foreground"
-              }
-            `}
+            key={section.id}
+            onClick={() => scrollToSection(section.id)}
+            className={`text-sm text-left px-3 py-2 rounded-md transition-all duration-200 ${
+              activeSection === section.id
+                ? "bg-muted font-medium text-foreground"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+            }`}
           >
-            {label}
+            {section.label}
           </button>
         ))}
       </div>

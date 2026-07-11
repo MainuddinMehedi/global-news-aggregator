@@ -7,11 +7,11 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { useEffect, useState } from "react";
 
 const COLOR_THEMES: { id: ColorTheme; label: string; swatch: string }[] = [
-  { id: "maia", label: "Maia", swatch: "bg-blue-500" },
-  { id: "pine", label: "Pine", swatch: "bg-emerald-500" },
-  { id: "ember", label: "Ember", swatch: "bg-orange-500" },
-  { id: "iris", label: "Iris", swatch: "bg-indigo-500" },
-  { id: "slate", label: "Slate", swatch: "bg-slate-500" },
+  { id: "maia", label: "Maia", swatch: "bg-[oklch(0.55_0.15_200)]" },
+  { id: "ember", label: "Ember", swatch: "bg-[oklch(0.65_0.18_40)]" },
+  { id: "iris", label: "Iris", swatch: "bg-[oklch(0.55_0.22_290)]" },
+  { id: "pine", label: "Pine", swatch: "bg-[oklch(0.45_0.14_160)]" },
+  { id: "slate", label: "Slate", swatch: "bg-[oklch(0.218_0.008_223.9)]" },
 ];
 
 export default function ColorThemeSelector() {
@@ -25,18 +25,18 @@ export default function ColorThemeSelector() {
 
   if (!mounted) {
     return (
-      <div className="space-y-4">
+      <div className="space-y-3">
         <div className="space-y-1">
           <Label>Color Theme</Label>
           <p className="text-sm text-muted-foreground">
-            Choose an accent color for the app.
+            Choose a color palette for the interface.
           </p>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+        <div className="flex flex-wrap gap-3">
           {[...Array(5)].map((_, i) => (
             <div
               key={i}
-              className="h-9 bg-muted/20 animate-pulse rounded-md border"
+              className="w-10 h-10 rounded-full bg-muted animate-pulse"
             />
           ))}
         </div>
@@ -45,43 +45,42 @@ export default function ColorThemeSelector() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <div className="space-y-1">
         <Label>Color Theme</Label>
         <p className="text-sm text-muted-foreground">
-          Choose an accent color for the app.
+          Choose a color palette for the interface.
         </p>
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-        {COLOR_THEMES.map((theme) => {
-          const isActive = colorTheme === theme.id;
-          return (
-            <button
-              key={theme.id}
-              onClick={() => setSetting("colorTheme", theme.id)}
-              className={`
-                flex items-center justify-between px-3 py-2 rounded-md border text-sm transition-all
-                ${
-                  isActive
-                    ? "border-primary bg-primary/10 font-medium"
-                    : "border-border hover:bg-muted"
-                }
-              `}
+      <div className="flex flex-wrap gap-3">
+        {COLOR_THEMES.map(({ id, label, swatch }) => (
+          <button
+            key={id}
+            onClick={() => setSetting("colorTheme", id)}
+            className="group flex flex-col items-center gap-1.5"
+          >
+            <div
+              className={`relative w-10 h-10 rounded-full border-2 transition-all duration-200 hover:scale-110 ${
+                colorTheme === id
+                  ? "border-foreground shadow-md"
+                  : "border-transparent hover:border-muted-foreground/30"
+              }`}
             >
-              <div className="flex items-center gap-2">
-                <span className={`w-3 h-3 rounded-full ${theme.swatch}`} />
-                <span>{theme.label}</span>
-              </div>
-              {isActive && (
-                <HugeiconsIcon
-                  icon={Check}
-                  size={14}
-                  className="text-primary"
-                />
+              <div className={`absolute inset-1 rounded-full ${swatch}`} />
+              {colorTheme === id && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <HugeiconsIcon
+                    icon={Check}
+                    className="w-4 h-4 text-white drop-shadow"
+                  />
+                </div>
               )}
-            </button>
-          );
-        })}
+            </div>
+            <span className="text-xs text-muted-foreground group-hover:text-foreground transition-colors">
+              {label}
+            </span>
+          </button>
+        ))}
       </div>
     </div>
   );
