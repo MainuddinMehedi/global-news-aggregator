@@ -91,10 +91,9 @@ export default function RootLayout({
               </TooltipProvider>
 
               {/* Global chat sidebar — available on every page */}
-              <Suspense fallback={null}>
-                <ChatFAB />
-                <FloatingChat />
-              </Suspense>
+              {/* Since these are not using anything like searchParam or cockies that breaks static rendering, the use of suspense is not required here. */}
+              <ChatFAB />
+              <FloatingChat />
 
               <LoginModal />
               <Suspense fallback={null}>
