@@ -79,8 +79,8 @@ export default function NotificationForm({
       {/* Notification Mode */}
       <div className="flex items-center justify-between">
         <div className="space-y-1">
-          <Label className="font-bold text-sm">Delivery Mode</Label>
-          <p className="text-xs text-muted-foreground">
+          <Label>Delivery Mode</Label>
+          <p className="text-sm text-muted-foreground">
             Choose how you want to receive alerts (immediate alerts vs periodic
             digests).
           </p>
@@ -90,14 +90,14 @@ export default function NotificationForm({
           onValueChange={(v) => setDigestEnabled(v === "digest")}
           disabled={isPending}
         >
-          <SelectTrigger className="w-[180px] h-9 text-xs rounded-xl font-bold">
+          <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Select mode" />
           </SelectTrigger>
-          <SelectContent className="rounded-xl">
-            <SelectItem value="alert" className="text-xs rounded-lg">
+          <SelectContent>
+            <SelectItem value="alert">
               Alert (Immediate)
             </SelectItem>
-            <SelectItem value="digest" className="text-xs rounded-lg">
+            <SelectItem value="digest">
               Digest (Periodic)
             </SelectItem>
           </SelectContent>
@@ -109,8 +109,8 @@ export default function NotificationForm({
       {/* In App Feed */}
       <div className="flex items-center justify-between">
         <div className="space-y-1">
-          <Label className="font-bold text-sm">In-App Feed Notifications</Label>
-          <p className="text-xs text-muted-foreground">
+          <Label>In-App Feed Notifications</Label>
+          <p className="text-sm text-muted-foreground">
             Show unread badge in the navigation bar and list alerts in the
             notification page.
           </p>
@@ -119,7 +119,6 @@ export default function NotificationForm({
           checked={inAppEnabled}
           disabled={isPending}
           onCheckedChange={setInAppEnabled}
-          className="cursor-pointer"
         />
       </div>
 
@@ -129,10 +128,10 @@ export default function NotificationForm({
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="space-y-1">
-            <Label className="font-bold text-sm">
+            <Label>
               Discord Channel Integration
             </Label>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               Receive real-time alerts directly in your Discord channel.
             </p>
           </div>
@@ -140,12 +139,11 @@ export default function NotificationForm({
             checked={discordEnabled}
             disabled={isPending}
             onCheckedChange={setDiscordEnabled}
-            className="cursor-pointer"
           />
         </div>
         {discordEnabled && (
           <div className="space-y-2 pt-1 animate-in fade-in slide-in-from-top-1 duration-200">
-            <Label className="text-xs font-bold text-muted-foreground">
+            <Label className="text-sm text-muted-foreground">
               Discord Webhook URL
             </Label>
             <Input
@@ -153,7 +151,7 @@ export default function NotificationForm({
               value={discordWebhook}
               disabled={isPending}
               onChange={(e) => setDiscordWebhook(e.target.value)}
-              className="max-w-md h-9 text-xs rounded-xl font-mono"
+              className="max-w-md font-mono"
             />
           </div>
         )}
@@ -165,10 +163,10 @@ export default function NotificationForm({
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="space-y-1">
-            <Label className="font-bold text-sm">
+            <Label>
               Telegram Bot Integration
             </Label>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               Get updates directly via the Telegram monitoring bot.
             </p>
           </div>
@@ -176,12 +174,11 @@ export default function NotificationForm({
             checked={telegramEnabled}
             disabled={isPending}
             onCheckedChange={setTelegramEnabled}
-            className="cursor-pointer"
           />
         </div>
         {telegramEnabled && (
           <div className="space-y-2 pt-1 animate-in fade-in slide-in-from-top-1 duration-200">
-            <Label className="text-xs font-bold text-muted-foreground">
+            <Label className="text-sm text-muted-foreground">
               Telegram Chat ID
             </Label>
             <Input
@@ -189,7 +186,7 @@ export default function NotificationForm({
               value={telegramChatId}
               disabled={isPending}
               onChange={(e) => setTelegramChatId(e.target.value)}
-              className="max-w-md h-9 text-xs rounded-xl font-mono"
+              className="max-w-md font-mono"
             />
           </div>
         )}
@@ -202,7 +199,7 @@ export default function NotificationForm({
         <Button
           onClick={handleSave}
           disabled={isPending}
-          className="text-xs font-bold px-4 py-2 rounded-xl cursor-pointer bg-primary text-primary-foreground shadow-md hover:bg-primary/95 flex items-center gap-1.5"
+          className="flex items-center gap-1.5"
         >
           <HugeiconsIcon icon={Tick01Icon} size={14} />
           Save Preferences

@@ -1,4 +1,5 @@
 import type { Article } from "@/types/article";
+import type { ColorTheme, DbSettings, Theme } from "@/types/settings";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { useShallow } from "zustand/shallow";
@@ -53,15 +54,11 @@ interface FloatingChatSlice {
   clearChatContext: () => void;
 }
 
-import type { ColorTheme, DbSettings, Theme } from "@/types/settings";
-
-export interface SettingsState {
+interface SettingsState {
   theme: Theme;
   colorTheme: ColorTheme;
   isSidebarCollapsed: boolean;
 }
-
-export type AllSettings = SettingsState & DbSettings;
 
 interface SettingsActions {
   setSetting: <K extends keyof SettingsState>(
