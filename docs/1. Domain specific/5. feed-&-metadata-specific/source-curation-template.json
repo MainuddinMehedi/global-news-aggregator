@@ -1,0 +1,128 @@
+{
+  "_templateVersion": "1.0",
+  "_instructions": "Fill one file per publisher. Fields marked [REQUIRED] must be completed before the source is considered 'established'. Fields marked [RECOMMENDED] are high-value but can be deferred. Fields marked [EVIDENCE-REQUIRED] must include a citation in the 'researchLog' section.",
+
+  "identity": {
+    "name": "Nikkei Asia",
+    "slug": "nikkei-asia",
+    "website": "https://asia.nikkei.com",
+    "publisherCountry": "Japan",
+    "sourceRegion": "Asia-Pacific",
+    "subRegion": "East Asia",
+    "language": "English",
+    "foundedYear": 1876,
+    "description": "The English-language arm of Nikkei Inc., Japan's largest financial media group. Covers business, markets, politics, and technology across Asia with a particular depth in East Asian supply chains, semiconductors, and corporate strategy."
+  },
+
+  "ownership": {
+    "ownershipType": "Commercial",
+    "owner": "Nikkei Inc.",
+    "ownershipStructure": "Privately Held",
+    "stateFunded": false,
+    "publicBroadcaster": false,
+    "parentOrganization": null,
+    "notableAcquisitions": "Acquired Financial Times in 2015"
+  },
+
+  "publisherProfile": {
+    "publisherType": "Newspaper",
+    "primaryMedium": "Digital",
+    "coverageScope": "International",
+    "originalReporting": true,
+    "wireService": false,
+    "publishesOpinion": true
+  },
+
+  "coverageGeography": {
+    "primaryCoverage": ["Japan", "East Asia"],
+    "secondaryCoverage": ["Southeast Asia", "South Asia", "Asia-Pacific"],
+    "limitedCoverage": ["Middle East", "Africa", "Latin America"]
+  },
+
+  "categoryStrengths": {
+    "strong": ["Business", "Markets", "Technology", "Supply Chains", "Trade"],
+    "moderate": ["Politics", "Diplomacy", "Environment"],
+    "weak": ["Sports", "Entertainment", "Lifestyle"]
+  },
+
+  "editorialProfile": {
+    "editorialOrientation": "Independent",
+    "politicalLeaning": "Centre",
+    "economicPerspective": "Pro-market",
+    "internationalAlignment": ["Japan", "Liberal Democracies"],
+    "knownPerspective": "Japanese business newspaper with institutional depth in Asian corporate and economic reporting. Tends to frame events through trade, investment, and market impact.",
+    "knownWeaknesses": ["Limited Middle East and Africa coverage", "Business-first framing may underweight humanitarian angles"]
+  },
+
+  "reliability": {
+    "factCheckingPolicy": true,
+    "correctionsPolicy": true,
+    "editorialIndependence": "High",
+    "mbfcRating": null,
+    "newsGuardScore": null,
+    "adFontesRating": null,
+    "rsfIndex": null,
+    "notes": "No MBFC or NewsGuard rating found for Nikkei Asia specifically. Parent company Nikkei Inc. is considered Japan's most authoritative financial publisher."
+  },
+
+  "feedConfiguration": {
+    "rssFeedUrl": "https://asia.nikkei.com/rss/feed/nar",
+    "feedType": "RSS 2.0",
+    "feedCategory": "Top News",
+    "alternateFeeds": []
+  },
+
+  "systemMapping": {
+    "_comment": "These fields map directly to the current FeedSource schema and RawArticle propagation.",
+    "sourceType": "Commercial Publisher",
+    "biasGroup": "Centrist",
+    "coverageScope": "Global"
+  },
+
+  "relationships": {
+    "syndicatesFrom": [],
+    "syndicatedTo": [],
+    "partnerOrganizations": ["Financial Times"],
+    "competitorPublishers": ["Bloomberg", "Reuters", "South China Morning Post"]
+  },
+
+  "researchLog": {
+    "researchedAt": "2026-07-12",
+    "researchedBy": "Mainuddin Mehedi",
+    "status": "ESTABLISHED",
+    "evidenceSources": [
+      {
+        "field": "owner",
+        "source": "Official website — About page",
+        "url": "https://asia.nikkei.com/About",
+        "confidence": 1.0
+      },
+      {
+        "field": "foundedYear",
+        "source": "Encyclopaedia Britannica",
+        "url": "https://www.britannica.com/topic/Nikkei-Inc",
+        "confidence": 1.0
+      },
+      {
+        "field": "ownershipStructure",
+        "source": "Official website — Corporate Info",
+        "url": "https://www.nikkei.co.jp/nikkeiinfo/en/",
+        "confidence": 0.99
+      },
+      {
+        "field": "politicalLeaning",
+        "source": "Self-assessment based on editorial sampling (30 articles) + Ad Fontes cross-reference",
+        "url": null,
+        "confidence": 0.72
+      },
+      {
+        "field": "editorialOrientation",
+        "source": "Editorial policy page + About page",
+        "url": "https://asia.nikkei.com/About",
+        "confidence": 0.90
+      }
+    ],
+    "sampleArticlesReviewed": 30,
+    "researchNotes": "Nikkei Asia is the international English edition of Nikkei Inc. It was relaunched in its current form in 2013, though the parent company dates to 1876. Coverage leans heavily toward economic and corporate Asia. The FT acquisition in 2015 gives it an unusual dual-hemisphere presence."
+  }
+}
