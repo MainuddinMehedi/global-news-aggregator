@@ -1,0 +1,39 @@
+{
+  "categories": [
+    "geopolitics",
+    "economy",
+    "business",
+    "technology",
+    "environment",
+    "security",
+    "politics",
+    "society",
+    "bangladesh",
+    "sports"
+  ],
+  "regions": [
+    "North America",
+    "Europe",
+    "Middle East",
+    "Asia-Pacific",
+    "South America",
+    "Africa",
+    "Global"
+  ],
+  "biasGroups": [
+    "Left-leaning",
+    "Right-leaning",
+    "Centrist",
+    "State-Aligned",
+    "State-Controlled",
+    "Other"
+  ],
+  "coverageScopes": ["Global", "Regional", "National", "Local"],
+  "sourceTypes": [
+    "Commercial Publisher",
+    "State Media",
+    "Independent Wire",
+    "Think Tank",
+    "Other"
+  ]
+}

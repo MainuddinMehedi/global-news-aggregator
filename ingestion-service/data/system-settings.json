@@ -1,0 +1,33 @@
+{
+  "ai_config": {
+    "primary": {
+      "model": "mistral-small-2506",
+      "provider": "mistral",
+      "tpmLimit": 2250000,
+      "rpmLimit": 60,
+      "concurrencyLimit": 5,
+      "batchSize": 10,
+      "tokenMultiplier": 1.1,
+      "maxArticleTokens": 600,
+      "maxRequestTokens": 8000,
+      "reservedOutputTokens": 1000
+    },
+    "fallback": {
+      "model": "meta-llama/llama-4-scout-17b-16e-instruct",
+      "provider": "groq",
+      "tpmLimit": 30000,
+      "rpmLimit": 28,
+      "concurrencyLimit": 1,
+      "batchSize": 5,
+      "tokenMultiplier": 1.4,
+      "maxArticleTokens": 400,
+      "maxRequestTokens": 3500,
+      "reservedOutputTokens": 800
+    },
+    "embedding": {
+      "model": "gemini-embedding-001",
+      "provider": "google"
+    },
+    "pauseAI": false
+  }
+}

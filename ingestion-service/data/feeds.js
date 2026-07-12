@@ -1,5 +1,13 @@
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 import { prisma } from "../db/prisma.js";
-import builtinFeeds from "./builtin-feeds.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const feedsPath = path.join(__dirname, "feeds.json");
+const builtinFeeds = JSON.parse(fs.readFileSync(feedsPath, "utf8"));
 
 /** Returns only feeds where `enabled` is true across all defaults or DB config. */
 export async function getActiveFeeds() {

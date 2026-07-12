@@ -1,48 +1,8 @@
-export const CANONICAL_CATEGORIES = [
-  "geopolitics",
-  "economy",
-  "business",
-  "technology",
-  "environment",
-  "security",
-  "politics",
-  "society",
-  "bangladesh",
-  "sports",
-];
+import canonicalData from "./canonical.json";
 
+export const CANONICAL_CATEGORIES = canonicalData.categories;
 export const ALL_CATEGORIES = [...CANONICAL_CATEGORIES];
-
-export const CANONICAL_REGIONS = [
-  "North America",
-  "Europe",
-  "Middle East",
-  "Asia-Pacific",
-  "South America",
-  "Africa",
-  "Global",
-];
-
-export const CANONICAL_BIAS_GROUPS = [
-  "Left-leaning",
-  "Right-leaning",
-  "Centrist",
-  "State-Aligned",
-  "State-Controlled",
-  "Other",
-];
-
-export const CANONICAL_COVERAGE_SCOPES = [
-  "Global",
-  "Regional",
-  "National",
-  "Local",
-];
-
-export const CANONICAL_SOURCE_TYPES = [
-  "Commercial Publisher",
-  "State Media",
-  "Independent Wire",
-  "Think Tank",
-  "Other",
-];
+export const CANONICAL_REGIONS = canonicalData.regions;
+export const CANONICAL_BIAS_GROUPS = canonicalData.biasGroups;
+export const CANONICAL_COVERAGE_SCOPES = canonicalData.coverageScopes;
+export const CANONICAL_SOURCE_TYPES = canonicalData.sourceTypes;

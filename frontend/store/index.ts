@@ -1,5 +1,6 @@
 import type { Article } from "@/types/article";
 import type { ColorTheme, DbSettings, Theme } from "@/types/settings";
+export type { ColorTheme, DbSettings, Theme };
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { useShallow } from "zustand/shallow";
