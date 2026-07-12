@@ -3,11 +3,10 @@
 This index serves as the entry point and mindmap for the project's documentation. The project is split into the Next.js frontend and the Node.js ESM ingestion service.
 
 # References
-(*Quick references for quick lookups*)
 
-- 
+(_Quick references for quick lookups_)
 
----
+- ***
 
 ### 📖 Table of Contents
 
@@ -121,8 +120,9 @@ These documents represent the source of truth for each major platform feature. T
    - **[Scanner Flow Audit](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/1.%20Domain%20specific/3.%20locked-topics/scanner-flow-audit.md)**: Details the ingestion orchestrator, source configuration, data persistence, and relevance scoring.
 4. **[4. Feed, Pagination, & 3-Axis Filtering](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/1.%20Domain%20specific/5.%20feed-&-metadata-specific/0.feed-filtering.md)**  
    Cursor-based infinite scroll pagination, URL query syncer, responsive layout grid, and the 3-axis filters (Event Region, Source Origin, Source Type).
-   - **[Source Curation SOP](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/1.%20Domain%20specific/5.%20feed-%26-metadata-specific/source-curation-sop.md)**: Evidence-graded research methodology for vetting publishers. Defines the 4-level evidence framework, 7-step research checklist, and quality gates.
-   - **[Source Curation Template](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/1.%20Domain%20specific/5.%20feed-%26-metadata-specific/source-curation-template.json)**: Canonical JSON template for publisher metadata profiles. Contains a filled demo for Nikkei Asia.
+   - **[Source Curation SOP](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/1.%20Domain%20specific/5.%20feed-%26-metadata-specific/source-curation-sop.md)**: Evidence-graded research methodology for vetting publishers. Defines the 4-level evidence framework, 9-step research checklist, internal taxonomy, and quality gates.
+   - **[Source Curation Template](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/1.%20Domain%20specific/5.%20feed-%26-metadata-specific/source-curation-template.json)**: Canonical JSON template for publisher metadata profiles (v2.0 — Facts/Classifications/Assessments). Contains a filled demo for Nikkei Asia.
+   - **[Publisher Metadata Field Guide](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/1.%20Domain%20specific/5.%20feed-%26-metadata-specific/publisher-metadata-field-guide.md)**: Study material explaining every metadata field — its definition, purpose, and where it surfaces in the system (UI/AI/Internal). Includes Publisher Profile Page concept and system data flow diagram.
 5. **[5. Authentication & Role-Based Access Control (RBAC)](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/1.%20Domain%20specific/auth-rbac.md)**  
    Session handling via NextAuth.js and Prisma, defining scopes for Public, Authenticated, and Admin users.
 6. **[6. Admin Dashboard](file:///home/mainu/programming/projects/automation/geopolitical-news-monitor/global-news-aggregator/docs/1.%20Domain%20specific/4.%20admin-dashboard/0.admin-dashboard.md)**  
