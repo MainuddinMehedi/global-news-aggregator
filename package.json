@@ -21,8 +21,8 @@
     "worker": "node ingestion-service/masterWorker.js",
     "backfill:topic-embeddings": "node ingestion-service/topics/backfillLockedTopicEmbeddings.js",
     "seed": "node scripts/seed.js",
-    "db:drop-indexes": "node prisma/drop-indexes.js",
-    "db:restore-indexes": "node prisma/restore-indexes.js"
+    "db:drop-indexes": "node scripts/drop-indexes.js",
+    "db:restore-indexes": "node scripts/restore-indexes.js"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.8.0",

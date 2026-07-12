@@ -89,8 +89,7 @@ ingestion-service/
 │   └── feeds.js              # RSS feed loader (DB + builtin fallback + user custom)
 │
 ├── db/                       # database
-│   ├── prisma.js             # self-contained Prisma client
-│   └── restore-indexes.js    # utility to restore custom pgvector indexes
+│   └── prisma.js             # self-contained Prisma client
 │
 ├── utils/                    # shared utilities
 │   ├── revalidateCache.js    # Next.js cache invalidation
