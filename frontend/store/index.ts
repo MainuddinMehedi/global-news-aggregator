@@ -1,4 +1,6 @@
 import type { Article } from "@/types/article";
+import type { ColorTheme, DbSettings, Theme } from "@/types/settings";
+export type { ColorTheme, DbSettings, Theme };
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { useShallow } from "zustand/shallow";
@@ -53,45 +55,11 @@ interface FloatingChatSlice {
   clearChatContext: () => void;
 }
 
-// ─── Settings slice (Persistent) ─────────────────────────────────────────────
-export type Theme = "light" | "dark" | "system";
-export type ColorTheme = "maia" | "ember" | "iris" | "pine" | "slate";
-export type ResponseStyle = "concise" | "detailed";
-
-export type HomePageMode = "continuous" | "daily";
-
-export interface CustomSource {
-  id: string;
-  name: string;
-  url: string;
-  country: string;
-  sourceOrigin: string;
-  sourceType: string;
-  biasGroup: string;
-  coverageScope: string;
-  enabled: boolean;
-}
-
-export interface DbSettings {
-  feedDefaultCategory: string;
-  feedDefaultRegion: string;
-  feedDefaultSort: string;
-  articlesPerPage: number;
-  defaultAiModel: string;
-  responseStyle: ResponseStyle;
-  favoriteCategories: string[];
-  hiddenCategories: string[];
-  homePageMode: HomePageMode;
-  hasOnboardedSources: boolean;
-}
-
-export interface SettingsState {
+interface SettingsState {
   theme: Theme;
   colorTheme: ColorTheme;
   isSidebarCollapsed: boolean;
 }
-
-export type AllSettings = SettingsState & DbSettings;
 
 interface SettingsActions {
   setSetting: <K extends keyof SettingsState>(

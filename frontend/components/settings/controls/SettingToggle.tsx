@@ -5,9 +5,10 @@ import { Switch } from "@/components/ui/switch";
 import { useSession } from "next-auth/react";
 import { startTransition, useOptimistic } from "react";
 import { toast } from "sonner";
+import type { DbSettings } from "@/types/settings";
 
 interface SettingToggleProps {
-  settingKey: string;
+  settingKey: keyof DbSettings;
   initialValue: boolean;
   disabled?: boolean;
 }

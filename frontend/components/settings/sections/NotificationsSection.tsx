@@ -20,7 +20,7 @@ export default function NotificationsSection() {
         </p>
       </div>
 
-      <Card className="bg-card/45 border-border/50 shadow-sm overflow-hidden">
+      <Card>
         <Suspense fallback={<NotificationsSectionSkeleton />}>
           <NotificationsSectionContent />
         </Suspense>

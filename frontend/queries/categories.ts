@@ -1,6 +1,6 @@
-import { cacheLife, cacheTag } from "next/cache";
+import { CANONICAL_CATEGORIES } from "@/constants/canonical";
 import prisma from "@/lib/prisma";
-import { CANONICAL_CATEGORIES } from "@/lib/constants";
+import { cacheLife, cacheTag } from "next/cache";
 
 export async function getCategories() {
   "use cache";

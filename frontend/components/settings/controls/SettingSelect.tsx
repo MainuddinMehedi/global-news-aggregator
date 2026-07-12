@@ -11,6 +11,7 @@ import {
 import { useSession } from "next-auth/react";
 import { startTransition, useOptimistic } from "react";
 import { toast } from "sonner";
+import type { DbSettings } from "@/types/settings";
 
 interface Option {
   value: string;
@@ -18,7 +19,7 @@ interface Option {
 }
 
 interface SettingSelectProps {
-  settingKey: string;
+  settingKey: keyof DbSettings;
   initialValue: string;
   options: Option[];
   placeholder?: string;

@@ -1,6 +1,6 @@
 "use client";
 
-import { CANONICAL_REGIONS } from "@/lib/constants";
+import { CANONICAL_REGIONS } from "@/constants/canonical";
 import { cn } from "@/lib/utils";
 import { useRouter, useSearchParams } from "next/navigation";
 

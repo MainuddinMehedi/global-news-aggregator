@@ -1,16 +1,44 @@
+import prisma from "@/lib/prisma";
+import { PrismaAdapter } from "@auth/prisma-adapter";
 import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
 import Nodemailer from "next-auth/providers/nodemailer";
-import { PrismaAdapter } from "@auth/prisma-adapter";
-import prisma from "@/lib/prisma";
 
 // Simple in-memory rate limiter for Magic Links (resets every hour or on server restart)
 const emailRateLimit = new Map<string, { count: number; timestamp: number }>();
 const RATE_LIMIT_MAX = 5; // Max 5 requests
 const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
 
+const adapter = PrismaAdapter(prisma);
+
 export const { handlers, signIn, signOut, auth } = NextAuth({
-  adapter: PrismaAdapter(prisma),
+  adapter: {
+    ...adapter,
+    createUser: async (user) => {
+      // Use a single transaction to prevent race conditions and null-reference errors
+      return await prisma.$transaction(async (tx) => {
+        const createdUser = await tx.user.create({
+          data: {
+            ...user,
+            settings: { onboarded: false },
+          },
+        });
+
+        // Guaranteed provisioning of default notification preferences
+        await tx.notificationPreference.create({
+          data: {
+            userId: createdUser.id,
+            inAppEnabled: true,
+            discordEnabled: false,
+            telegramEnabled: false,
+            digestEnabled: false,
+          },
+        });
+
+        return createdUser as any;
+      });
+    },
+  },
   basePath: "/api/auth",
   providers: [
     Google({
@@ -23,11 +51,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       from: process.env.EMAIL_FROM || "no-reply@example.com",
       async sendVerificationRequest(params) {
         const { identifier, url, provider, theme } = params;
-        
+
         // Rate Limiting Logic
         const now = Date.now();
         const userLimit = emailRateLimit.get(identifier);
-        
+
         if (userLimit) {
           if (now - userLimit.timestamp < RATE_LIMIT_WINDOW_MS) {
             if (userLimit.count >= RATE_LIMIT_MAX) {
@@ -47,7 +75,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         // Send the email using the default NextAuth Nodemailer implementation
         const { host } = new URL(url);
-        const transport = (await import("nodemailer")).createTransport(provider.server);
+        const transport = (await import("nodemailer")).createTransport(
+          provider.server,
+        );
         const result = await transport.sendMail({
           to: identifier,
           from: provider.from,
@@ -61,12 +91,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             </div>
           </body>`,
         });
-        
+
         const failed = result.rejected.concat(result.pending).filter(Boolean);
         if (failed.length) {
           throw new Error(`Email (${failed.join(", ")}) could not be sent`);
         }
-      }
+      },
     }),
   ],
   session: {
