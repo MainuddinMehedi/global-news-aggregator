@@ -148,10 +148,15 @@ export async function seedFeedSources() {
       "data",
       "feeds.json",
     );
-    const builtinFeeds = JSON.parse(fs.readFileSync(feedsPath, "utf8")) as Omit<
+
+    let builtinFeeds: Omit<
       FeedSource,
       "id" | "fetchFailures" | "lastFetchedAt" | "createdAt" | "updatedAt"
-    >[];
+    >[] = [];
+
+    if (fs.existsSync(feedsPath)) {
+      builtinFeeds = JSON.parse(fs.readFileSync(feedsPath, "utf8"));
+    }
 
     const existing = await prisma.feedSource.findMany({
       select: { url: true },

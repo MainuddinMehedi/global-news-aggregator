@@ -36,7 +36,13 @@ async function main() {
     __dirname,
     "../ingestion-service/data/feeds.json",
   );
-  const feedsData = JSON.parse(fs.readFileSync(feedsPath, "utf8"));
+
+  let feedsData = [];
+  if (fs.existsSync(feedsPath)) {
+    feedsData = JSON.parse(fs.readFileSync(feedsPath, "utf8"));
+  } else {
+    console.warn("⚠️  feeds.json not found. Skipping FeedSources seeding.");
+  }
 
   console.log(`📌 Seeding FeedSources (${feedsData.length})...`);
   let feedCount = 0;
