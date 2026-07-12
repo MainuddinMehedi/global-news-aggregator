@@ -1,4 +1,4 @@
-import { LRUCache } from "lru-cache";
+import LRUCache from "lru-cache";
 
 // Max 5 requests per 15 minutes per email
 const RATE_LIMIT_MAX = 5;
