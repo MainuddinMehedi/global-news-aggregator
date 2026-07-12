@@ -10,11 +10,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Filter } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 
-export default function FilterPopover({
-  defaultRegion = "all",
-}: {
-  defaultRegion?: string;
-}) {
+export default function FilterPopover() {
   return (
     <TooltipProvider>
       <Popover>
@@ -31,16 +27,16 @@ export default function FilterPopover({
 
         <PopoverContent className="w-80 p-4 rounded-2xl" align="end">
           <div className="grid grid-cols-2 gap-4 py-2">
-            {/* Event Region */}
+            {/* Source Origin */}
             <div className="space-y-2">
               <InfoTooltipLabel
-                label="Event Region"
-                tooltipText="The geographic focus or subject of the article (extracted by AI)."
+                label="Source Origin"
+                tooltipText="The geographic location where the publisher is based."
               />
               <FilterDropdown
-                label="Region"
-                paramKey="region"
-                defaultValue={defaultRegion}
+                label="Origin"
+                paramKey="srcOrigin"
+                defaultValue="all"
                 options={[
                   { label: "North America", value: "North America" },
                   { label: "Europe", value: "Europe" },

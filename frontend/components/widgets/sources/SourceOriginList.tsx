@@ -2,6 +2,7 @@
 
 import { CANONICAL_REGIONS } from "@/constants/canonical";
 import { cn } from "@/lib/utils";
+import { REGION_UI_COLORS } from "@/utils/colors";
 import { useRouter, useSearchParams } from "next/navigation";
 
 interface SourceOriginListProps {
@@ -10,17 +11,6 @@ interface SourceOriginListProps {
     counts: Record<string, number>;
   };
 }
-
-const SRC_ORIGIN_COLORS: Record<string, string> = {
-  "North America": "bg-blue-500",
-  "Middle East": "bg-amber-500",
-  "Asia-Pacific": "bg-emerald-500",
-  Europe: "bg-indigo-500",
-  "South America": "bg-orange-500",
-  Africa: "bg-yellow-500",
-  Global: "bg-purple-500",
-  Unknown: "bg-slate-400 dark:bg-slate-500",
-};
 
 export default function SourceOriginList({
   countsData,
@@ -34,7 +24,7 @@ export default function SourceOriginList({
     id: origin,
     label: origin,
     count: countsData.counts[origin] || 0,
-    dotColor: SRC_ORIGIN_COLORS[origin] || "bg-slate-400 dark:bg-slate-500",
+    dotColor: REGION_UI_COLORS[origin] || "bg-slate-400 dark:bg-slate-500",
   })).sort((a, b) => b.count - a.count);
 
   const items = [

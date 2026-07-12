@@ -1,8 +1,14 @@
 import EventRegionList from "@/components/widgets/events/EventRegionList";
 import { getContentInsights } from "@/queries/analytics/widgets";
 
-export async function EventRegionWidget() {
-  const insights = await getContentInsights();
+import { Prisma } from "@news/db/client";
+
+export async function EventRegionWidget({
+  where,
+}: {
+  where?: Prisma.ProcessedArticleWhereInput;
+}) {
+  const insights = await getContentInsights(where);
 
   if (!insights) return null;
 

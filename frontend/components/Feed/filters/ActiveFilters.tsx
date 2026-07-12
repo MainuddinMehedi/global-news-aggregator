@@ -7,17 +7,6 @@ interface ActiveFiltersProps {
   activeStoryTitle?: string;
 }
 
-const SRC_ORIGIN_LABELS: Record<string, string> = {
-  "North America": "North America",
-  "Middle East": "Middle East",
-  "Asia-Pacific": "Asia-Pacific",
-  Europe: "Europe",
-  "South America": "South America",
-  Africa: "Africa",
-  Global: "Global",
-  Unknown: "Unknown",
-};
-
 export default function ActiveFilters({
   activeStoryTitle,
 }: ActiveFiltersProps) {
@@ -32,7 +21,15 @@ export default function ActiveFilters({
   const bias = searchParams.get("bias");
   const scope = searchParams.get("scope");
 
-  if (!category && !region && !srcOrigin && !type && !story && !bias && !scope) {
+  if (
+    !category &&
+    !region &&
+    !srcOrigin &&
+    !type &&
+    !story &&
+    !bias &&
+    !scope
+  ) {
     return null;
   }
 
@@ -89,8 +86,8 @@ export default function ActiveFilters({
         )}
         {srcOrigin && (
           <FilterPill
-            label="Source Region"
-            value={SRC_ORIGIN_LABELS[srcOrigin] || srcOrigin}
+            label="Source Origin"
+            value={srcOrigin}
             onClear={() => handleClearFilter("srcOrigin")}
           />
         )}

@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { Globe, Alert01Icon, Sparkles } from "@hugeicons/core-free-icons";
 import { cn } from "@/lib/utils";
+import { REGION_UI_COLORS } from "@/utils/colors";
+import { Alert01Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { useState } from "react";
 
 interface ArticleData {
   id: string;
@@ -30,15 +31,12 @@ interface RegionAggregate {
   }[];
 }
 
-const REGION_COLORS: Record<string, string> = {
-  "North America": "bg-blue-500 shadow-blue-500/30",
-  "Europe": "bg-emerald-500 shadow-emerald-500/30",
-  "Middle East": "bg-red-500 shadow-red-500/30",
-  "Asia-Pacific": "bg-amber-500 shadow-amber-500/30",
-  "South America": "bg-purple-500 shadow-purple-500/30",
-  "Africa": "bg-pink-500 shadow-pink-500/30",
-  "Global": "bg-slate-400 shadow-slate-400/30",
-  "Unknown": "bg-gray-400 shadow-gray-400/30",
+const getRegionStyles = (origin: string) => {
+  const baseColors =
+    REGION_UI_COLORS[origin] || "bg-slate-400 dark:bg-slate-500";
+  const firstColor = baseColors.split(" ")[0];
+  const shadow = firstColor.replace("bg-", "shadow-") + "/30";
+  return `${baseColors} ${shadow}`;
 };
 
 export function PerspectiveWidget({ articles }: PerspectiveWidgetProps) {
@@ -74,10 +72,12 @@ export function PerspectiveWidget({ articles }: PerspectiveWidgetProps) {
   });
 
   // Calculate averages
-  const regionList = Object.values(aggregates).map((agg) => {
-    agg.avgSentiment = agg.avgSentiment / agg.count;
-    return agg;
-  }).sort((a, b) => b.count - a.count);
+  const regionList = Object.values(aggregates)
+    .map((agg) => {
+      agg.avgSentiment = agg.avgSentiment / agg.count;
+      return agg;
+    })
+    .sort((a, b) => b.count - a.count);
 
   if (regionList.length === 0) {
     return (
@@ -105,21 +105,38 @@ export function PerspectiveWidget({ articles }: PerspectiveWidgetProps) {
           <span className="w-8 h-px bg-border" />
           Geopolitical Perspective Gap
         </h2>
-        <Badge variant="outline" className="text-[10px] uppercase font-bold tracking-widest text-primary bg-primary/5 border-primary/20">
-          {regionList.length} Reporting {regionList.length === 1 ? "Origin" : "Origins"}
+        <Badge
+          variant="outline"
+          className="text-[10px] uppercase font-bold tracking-widest text-primary bg-primary/5 border-primary/20"
+        >
+          {regionList.length} Reporting{" "}
+          {regionList.length === 1 ? "Origin" : "Origins"}
         </Badge>
       </div>
 
       {/* Narrative Delta Alert Banner */}
       {showDeltaAlert && (
         <div className="bg-rose-500/5 rounded-2xl p-4 border border-rose-500/10 flex gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
-          <HugeiconsIcon icon={Alert01Icon} className="h-5 w-5 text-rose-500 shrink-0 mt-0.5" />
+          <HugeiconsIcon
+            icon={Alert01Icon}
+            className="h-5 w-5 text-rose-500 shrink-0 mt-0.5"
+          />
           <div className="space-y-1">
             <h4 className="text-xs font-black uppercase tracking-wider text-rose-500">
               Perspective Divergence Detected (Δ: {delta.toFixed(2)})
             </h4>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              Publishers based in <span className="font-bold text-foreground">{maxRegion.origin}</span> report with a positive bias (Avg: {maxRegion.avgSentiment.toFixed(2)}), whereas publishers based in <span className="font-bold text-rose-400">{minRegion.origin}</span> report with a negative bias (Avg: {minRegion.avgSentiment.toFixed(2)}).
+              Publishers based in{" "}
+              <span className="font-bold text-foreground">
+                {maxRegion.origin}
+              </span>{" "}
+              report with a positive bias (Avg:{" "}
+              {maxRegion.avgSentiment.toFixed(2)}), whereas publishers based in{" "}
+              <span className="font-bold text-rose-400">
+                {minRegion.origin}
+              </span>{" "}
+              report with a negative bias (Avg:{" "}
+              {minRegion.avgSentiment.toFixed(2)}).
             </p>
           </div>
         </div>
@@ -135,7 +152,7 @@ export function PerspectiveWidget({ articles }: PerspectiveWidgetProps) {
           {regionList.map((r) => {
             // map -1.0 to 1.0 to 0% to 100%
             const percentage = ((r.avgSentiment + 1) / 2) * 100;
-            const bgClass = REGION_COLORS[r.origin] || "bg-gray-400";
+            const bgClass = getRegionStyles(r.origin);
             const isSelected = selectedOrigin === r.origin;
 
             return (
@@ -150,10 +167,14 @@ export function PerspectiveWidget({ articles }: PerspectiveWidgetProps) {
                   className={cn(
                     "h-5 w-5 rounded-full border-2 border-background transition-all duration-300 flex items-center justify-center hover:scale-125 shadow-lg",
                     bgClass,
-                    isSelected ? "ring-2 ring-primary scale-125 border-primary" : "hover:ring-2 hover:ring-primary/40"
+                    isSelected
+                      ? "ring-2 ring-primary scale-125 border-primary"
+                      : "hover:ring-2 hover:ring-primary/40",
                   )}
                 >
-                  <span className="text-[7px] font-black text-white">{r.count}</span>
+                  <span className="text-[7px] font-black text-white">
+                    {r.count}
+                  </span>
                 </div>
 
                 {/* Tooltip Label */}
@@ -177,7 +198,7 @@ export function PerspectiveWidget({ articles }: PerspectiveWidgetProps) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
         {regionList.map((r) => {
           const isSelected = selectedOrigin === r.origin;
-          const bgClass = REGION_COLORS[r.origin] || "bg-gray-400";
+          const bgClass = getRegionStyles(r.origin);
 
           return (
             <div
@@ -187,11 +208,16 @@ export function PerspectiveWidget({ articles }: PerspectiveWidgetProps) {
                 "relative overflow-hidden rounded-2xl border p-4 cursor-pointer transition-all duration-300 bg-card/10",
                 isSelected
                   ? "border-primary/50 bg-primary/5 shadow-md shadow-primary/5"
-                  : "border-border/40 hover:border-border/80"
+                  : "border-border/40 hover:border-border/80",
               )}
             >
               {/* Regional Accent Bar */}
-              <div className={cn("absolute top-0 left-0 h-full w-1", bgClass.split(" ")[0])} />
+              <div
+                className={cn(
+                  "absolute top-0 left-0 h-full w-1",
+                  bgClass.split(" ")[0],
+                )}
+              />
 
               <div className="pl-2 space-y-3">
                 <div className="flex items-center justify-between">
@@ -199,16 +225,23 @@ export function PerspectiveWidget({ articles }: PerspectiveWidgetProps) {
                     <span className="text-xs font-bold text-foreground">
                       {r.origin}
                     </span>
-                    <Badge variant="outline" className="text-[8px] font-black py-0.5 px-1.5 uppercase font-mono">
+                    <Badge
+                      variant="outline"
+                      className="text-[8px] font-black py-0.5 px-1.5 uppercase font-mono"
+                    >
                       {r.count} {r.count === 1 ? "report" : "reports"}
                     </Badge>
                   </div>
-                  <span className={cn(
-                    "text-xs font-mono font-bold px-1.5 py-0.5 rounded-md",
-                    r.avgSentiment > 0.2 ? "text-emerald-500 bg-emerald-500/5 border border-emerald-500/10" :
-                    r.avgSentiment < -0.2 ? "text-red-500 bg-red-500/5 border border-red-500/10" :
-                    "text-blue-500 bg-blue-500/5 border border-blue-500/10"
-                  )}>
+                  <span
+                    className={cn(
+                      "text-xs font-mono font-bold px-1.5 py-0.5 rounded-md",
+                      r.avgSentiment > 0.2
+                        ? "text-emerald-500 bg-emerald-500/5 border border-emerald-500/10"
+                        : r.avgSentiment < -0.2
+                          ? "text-red-500 bg-red-500/5 border border-red-500/10"
+                          : "text-blue-500 bg-blue-500/5 border border-blue-500/10",
+                    )}
+                  >
                     Avg: {r.avgSentiment.toFixed(2)}
                   </span>
                 </div>

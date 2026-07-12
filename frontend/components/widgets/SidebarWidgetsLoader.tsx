@@ -1,6 +1,6 @@
 import { DiversityInsightWidget } from "@/components/analytics/DiversityInsightWidget";
 import { EventClustersWidget } from "@/components/widgets/events/EventClustersWidget";
-import { SourceOriginWidget } from "@/components/widgets/sources/SourceOriginWidget";
+import { EventRegionWidget } from "@/components/widgets/events/EventRegionWidget";
 import { resolveFeedParams } from "@/lib/helpers/feedParamsResolver";
 import { buildArticleWhereClause } from "@/queries/article/filter";
 import { getCachedUserSettings } from "@/queries/userSettings";
@@ -18,7 +18,7 @@ export async function SidebarWidgetsLoader({
 
   return (
     <>
-      <SourceOriginWidget where={where} />
+      <EventRegionWidget where={where} />
       <EventClustersWidget where={where} />
       <DiversityInsightWidget where={where} />
     </>

@@ -44,7 +44,7 @@ export default async function Filters({ searchParams }: FiltersProps) {
 
         <div className="flex items-center gap-3 shrink-0">
           <ArticleCount />
-          <FilterPopover defaultRegion={defaultRegion} />
+          <FilterPopover />
         </div>
       </div>
     </div>

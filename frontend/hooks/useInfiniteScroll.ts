@@ -18,7 +18,7 @@ export function useInfiniteScroll<T>({
   initialCursor = null,
   dataKey,
   fetchDependencies = [],
-  observerRootMargin = "200px",
+  observerRootMargin = "300px",
 }: UseInfiniteScrollOptions<T>) {
   const [items, setItems] = useState<T[]>(initialItems);
   const [cursor, setCursor] = useState<string | null>(initialCursor);
