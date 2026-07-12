@@ -30,7 +30,7 @@ export default function OnboardingModal({
 
     // TODO: In the future, we will add a step to collect Topic Preferences here
     // before saving and completing onboarding.
-    const newSettings = { ...currentSettings, hasOnboardedSources: true };
+    const newSettings = { ...currentSettings, onboarded: true };
 
     // Sync onboarding settings to the database immediately
     saveUserSettingsAction(newSettings).catch((err) =>
