@@ -3,7 +3,7 @@ import { FeedSectionSkeleton } from "@/components/skeletons/settings/FeedSection
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { CANONICAL_CATEGORIES, CANONICAL_REGIONS } from "@/lib/constants";
+import { CANONICAL_CATEGORIES, CANONICAL_REGIONS } from "@/constants/canonical";
 import { getCachedUserSettings } from "@/queries/userSettings";
 import { Suspense } from "react";
 
@@ -40,7 +40,7 @@ async function FeedSectionContent() {
         </div>
         <SettingSelect
           settingKey="homePageMode"
-          initialValue={dbSettings.homePageMode || "continuous"}
+          initialValue={dbSettings.homePageMode}
           options={[
             { value: "continuous", label: "Continuous Feed" },
             { value: "daily", label: "Daily View (Today's News)" },
@@ -60,7 +60,7 @@ async function FeedSectionContent() {
         </div>
         <SettingSelect
           settingKey="feedDefaultRegion"
-          initialValue={dbSettings.feedDefaultRegion || "all"}
+          initialValue={dbSettings.feedDefaultRegion}
           options={[
             { value: "all", label: "All Regions" },
             ...CANONICAL_REGIONS.map((region) => ({
@@ -83,7 +83,7 @@ async function FeedSectionContent() {
         </div>
         <SettingSelect
           settingKey="feedDefaultCategory"
-          initialValue={dbSettings.feedDefaultCategory || "all"}
+          initialValue={dbSettings.feedDefaultCategory}
           options={[
             { value: "all", label: "All News" },
             ...CANONICAL_CATEGORIES.map((cat) => ({
@@ -106,7 +106,7 @@ async function FeedSectionContent() {
         </div>
         <SettingSelect
           settingKey="feedDefaultSort"
-          initialValue={dbSettings.feedDefaultSort || "latest"}
+          initialValue={dbSettings.feedDefaultSort}
           options={[
             { value: "latest", label: "Latest First" },
             { value: "oldest", label: "Oldest First" },
@@ -127,7 +127,7 @@ async function FeedSectionContent() {
         </div>
         <SettingSelect
           settingKey="articlesPerPage"
-          initialValue={(dbSettings.articlesPerPage || 20).toString()}
+          initialValue={dbSettings.articlesPerPage.toString()}
           options={[
             { value: "10", label: "10" },
             { value: "20", label: "20" },

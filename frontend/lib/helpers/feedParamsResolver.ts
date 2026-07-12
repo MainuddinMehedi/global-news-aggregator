@@ -31,20 +31,20 @@ export async function resolveFeedParams(searchParams: any, userSettings: any) {
   }
 
   // 2. Resolve Active Category
-  const defaultCategory = userSettings?.feedDefaultCategory || "all";
+  const defaultCategory = userSettings.feedDefaultCategory;
   const category =
     typeof searchParams.category === "string"
       ? searchParams.category
       : defaultCategory;
 
   // 3. Resolve Sort Order (handling legacy "newest" state)
-  let defaultSort = userSettings?.feedDefaultSort || "latest";
+  let defaultSort = userSettings.feedDefaultSort;
   if (defaultSort === "newest") defaultSort = "latest";
   const sort =
     typeof searchParams.sort === "string" ? searchParams.sort : defaultSort;
 
   // 4. Resolve Region
-  const defaultRegion = userSettings?.feedDefaultRegion || "all";
+  const defaultRegion = userSettings.feedDefaultRegion;
   const region =
     typeof searchParams.region === "string"
       ? searchParams.region
@@ -67,7 +67,7 @@ export async function resolveFeedParams(searchParams: any, userSettings: any) {
     typeof searchParams.cursor === "string" ? searchParams.cursor : undefined;
 
   // 6. Resolve Date and Article Mode
-  const mode = userSettings?.homePageMode || "daily";
+  const mode = userSettings.homePageMode;
   const feedDate =
     mode === "daily"
       ? typeof searchParams.date === "string"

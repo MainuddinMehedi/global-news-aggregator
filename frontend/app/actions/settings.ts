@@ -1,7 +1,9 @@
 "use server";
 
 import { auth } from "@/auth";
+import { DEFAULT_SETTINGS } from "@/constants/settings";
 import prisma from "@/lib/prisma";
+import { DbSettings } from "@/types/settings";
 import { revalidatePath, updateTag } from "next/cache";
 
 export async function getUserSettings() {
@@ -30,10 +32,25 @@ export async function saveUserSettingsAction(settings: any) {
   updateTag("articles");
 }
 
-export async function updateSingleSettingAction(key: string, value: any) {
+export async function updateSingleSettingAction(
+  key: keyof DbSettings,
+  value: any,
+) {
   const { email, settings } = await getUserSettings();
 
-  settings[key] = value;
+  // Implement aggressive sparsity:
+  // If the incoming value exactly matches the master default, delete it from the DB settings
+  // so we don't store boilerplate JSON. Otherwise, save the new value.
+  if (
+    value === DEFAULT_SETTINGS[key] ||
+    (Array.isArray(value) &&
+      Array.isArray(DEFAULT_SETTINGS[key]) &&
+      JSON.stringify(value) === JSON.stringify(DEFAULT_SETTINGS[key]))
+  ) {
+    delete settings[key];
+  } else {
+    settings[key] = value;
+  }
 
   await prisma.user.update({
     where: { email },

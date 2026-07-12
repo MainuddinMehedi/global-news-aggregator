@@ -9,7 +9,6 @@ export const CANONICAL_CATEGORIES = [
   "society",
   "bangladesh",
   "sports",
-  "other",
 ];
 
 export const ALL_CATEGORIES = [...CANONICAL_CATEGORIES];
