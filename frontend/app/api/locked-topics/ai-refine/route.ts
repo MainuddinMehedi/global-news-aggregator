@@ -7,7 +7,7 @@ import { auth } from "@/auth";
 const PRIMARY_CONFIG = {
   baseUrl: process.env.GROQ_BASE_URL || "https://api.groq.com/openai/v1",
   apiKey: process.env.GROQ_API_KEY,
-  model: process.env.AI_UTILITY_MODEL,
+  model: process.env.AI_UTILITY_MODEL || "openai/gpt-oss-20b",
   provider: "groq",
 };
 
@@ -15,7 +15,7 @@ const PRIMARY_CONFIG = {
 const FALLBACK_CONFIG = {
   baseUrl: process.env.GEMINI_BASE_URL || "https://generativelanguage.googleapis.com/v1beta/openai",
   apiKey: process.env.GEMINI_API_KEY,
-  model: process.env.AI_UTILITY_FALLBACK_MODEL,
+  model: process.env.AI_UTILITY_FALLBACK_MODEL || "gemini-3.1-flash-lite",
   provider: "gemini",
 };
 
