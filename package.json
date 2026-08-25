@@ -7,18 +7,19 @@
     "shared/prisma-client"
   ],
   "description": "",
-  "main": "index.js",
+  "main": "ingestion-service/masterWorker.js",
   "directories": {
     "doc": "docs"
   },
   "scripts": {
+    "start": "node ingestion-service/masterWorker.js",
+    "worker": "node ingestion-service/masterWorker.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "ingest": "node ingestion-service/runIngest.js",
     "ingest:raw": "node ingestion-service/runIngest.js --skip-ai",
     "backlog": "node ingestion-service/processBacklog.js",
     "scan-topics": "node ingestion-service/scanTopics.js",
     "cluster": "node ingestion-service/runClustering.js",
-    "worker": "node ingestion-service/masterWorker.js",
     "backfill:topic-embeddings": "node ingestion-service/topics/backfillLockedTopicEmbeddings.js",
     "seed": "node scripts/seed.js",
     "db:drop-indexes": "node scripts/drop-indexes.js",
