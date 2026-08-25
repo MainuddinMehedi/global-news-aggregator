@@ -37,7 +37,7 @@ export default function OnboardingModal({
       console.error("Failed to sync onboarding settings:", err),
     );
 
-    toast.success("Welcome to Global News!");
+    toast.success("Welcome to informnt!");
     setIsOpen(false);
   };
 

@@ -29,9 +29,17 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Global News Aggregator",
+  title: {
+    default: "informnt · Geopolitical Intelligence & News Monitor",
+    template: "%s | informnt",
+  },
   description:
-    "Multi-perspective global news aggregation with AI-powered bias detection and analysis.",
+    "Multi-perspective geopolitical intelligence platform with AI-powered surveillance, bias detection, and story clustering.",
+  icons: {
+    icon: "/icon.svg",
+    shortcut: "/icon.svg",
+    apple: "/apple-icon",
+  },
 };
 
 export default function RootLayout({

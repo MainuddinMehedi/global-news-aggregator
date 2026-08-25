@@ -3,8 +3,9 @@ import ChatInterface from "@/components/chat/layout/ChatInterface";
 import { Suspense } from "react";
 
 export const metadata = {
-  title: "AI Assistant | Global News Aggregator",
-  description: "Chat with the AI assistant about global news and events.",
+  title: "AI Intelligence Analyst",
+  description:
+    "Real-time geopolitical analysis, story grounding, and topic intelligence.",
 };
 
 export default function ChatPage() {
