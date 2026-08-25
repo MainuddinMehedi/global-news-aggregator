@@ -1,15 +1,14 @@
-import MobileNavDrawer from "@/components/layout/MobileNavDrawer";
-import { SearchBar } from "@/components/layout/SearchBar";
-import { Skeleton } from "@/components/ui/skeleton";
-import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { Globe } from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
-import Link from "next/link";
-import { Suspense } from "react";
 import { auth } from "@/auth";
 import SuspensionWarning from "@/components/auth/SuspensionWarning";
-import NotificationBell from "@/components/notifications/NotificationBell";
 import LastIngestionTime from "@/components/layout/LastIngestionTime";
+import MobileNavDrawer from "@/components/layout/MobileNavDrawer";
+import { SearchBar } from "@/components/layout/SearchBar";
+import NotificationBell from "@/components/notifications/NotificationBell";
+import Logo from "@/components/ui/Logo";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
+import Link from "next/link";
+import { Suspense } from "react";
 
 export default async function Navbar() {
   const session = await auth();
@@ -23,17 +22,7 @@ export default async function Navbar() {
         <MobileNavDrawer />
 
         <Link href={"/"}>
-          <div className="flex items-center gap-3 group">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shadow-md transition-transform group-hover:scale-105">
-              <HugeiconsIcon
-                icon={Globe}
-                className="w-5 h-5 text-primary-foreground"
-              />
-            </div>
-            <span className="font-bold text-lg tracking-tight hidden sm:block text-foreground">
-              GlobalAgg<span className="text-primary">.</span>
-            </span>
-          </div>
+          <Logo />
         </Link>
       </div>
 

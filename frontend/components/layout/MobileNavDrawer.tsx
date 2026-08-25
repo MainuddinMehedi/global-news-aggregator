@@ -1,16 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import Logo from "@/components/ui/Logo";
 import {
   Sheet,
   SheetContent,
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { Button } from "@/components/ui/button";
-import { Globe, Menu01Icon } from "@hugeicons/core-free-icons";
+import { Menu01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import Link from "next/link";
+import { useState } from "react";
 import NavLinks from "./NavLinks";
 
 export default function MobileNavDrawer() {
@@ -42,15 +43,7 @@ export default function MobileNavDrawer() {
             onClick={() => setOpen(false)}
             className="flex items-center gap-3 px-1 mb-6"
           >
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shadow-md shrink-0">
-              <HugeiconsIcon
-                icon={Globe}
-                className="w-5 h-5 text-primary-foreground"
-              />
-            </div>
-            <span className="font-bold text-lg tracking-tight text-sidebar-foreground">
-              GlobalAgg<span className="text-primary">.</span>
-            </span>
+            <Logo size="sm" />
           </Link>
 
           <NavLinks alwaysFull onNavigate={() => setOpen(false)} />

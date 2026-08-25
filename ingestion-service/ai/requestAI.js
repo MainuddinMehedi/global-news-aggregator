@@ -1,6 +1,6 @@
-import { waitForCapacity, recordUsage, logHeaders } from "./rateLimiter.js";
+import { fallbackConfig, primaryConfig } from "./aiConfig.js";
+import { logHeaders, recordUsage, waitForCapacity } from "./rateLimiter.js";
 import { countTokens } from "./tokenBatcher.js";
-import { primaryConfig, fallbackConfig } from "./aiConfig.js";
 
 export async function requestAI(
   config,
@@ -25,8 +25,16 @@ export async function requestAI(
     // If no explicit token estimate is provided, use a generic safe estimate
     const tokensToWait =
       estimatedTokens ||
-      Math.ceil((countTokens(prompt) + config.reservedOutputTokens) * config.tokenMultiplier);
-    await waitForCapacity(config.provider, tokensToWait, config.tpmLimit, config.rpmLimit);
+      Math.ceil(
+        (countTokens(prompt) + config.reservedOutputTokens) *
+          config.tokenMultiplier,
+      );
+    await waitForCapacity(
+      config.provider,
+      tokensToWait,
+      config.tpmLimit,
+      config.rpmLimit,
+    );
 
     const controller = new AbortController();
     const timeout = setTimeout(
@@ -40,7 +48,7 @@ export async function requestAI(
         "Content-Type": "application/json",
         Authorization: `Bearer ${config.apiKey}`,
         "HTTP-Referer": process.env.APP_URL || "http://localhost:3000",
-        "X-Title": "Global News Aggregator", // TODO: Change this when you choose a name for your app.
+        "X-Title": "informnt",
       },
       body: JSON.stringify({
         model: config.model,

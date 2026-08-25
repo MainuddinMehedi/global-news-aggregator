@@ -88,8 +88,8 @@ export default function AnalyticsPage(props: AnalyticsProps) {
         {/* ── Footer ───────────────────────────────────────────────────── */}
         <div className="flex items-center justify-center gap-4 pt-4">
           <div className="flex-1 h-px bg-border/20" />
-          <span className="text-[9px] font-black uppercase tracking-[0.4em] text-muted-foreground/30">
-            Global News Aggregator · Intelligence Layer
+          <span className="text-[9px] font-black uppercase tracking-[0.4em] text-muted-foreground/40">
+            informnt · Geopolitical Intelligence Layer
           </span>
           <div className="flex-1 h-px bg-border/20" />
         </div>

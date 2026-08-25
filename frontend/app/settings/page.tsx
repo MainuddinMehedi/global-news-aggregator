@@ -3,7 +3,7 @@ import SettingsInterface from "@/components/settings/SettingsInterface";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Settings | Global News Aggregator",
+  title: "Settings",
   description: "Manage your preferences and app settings",
 };
 

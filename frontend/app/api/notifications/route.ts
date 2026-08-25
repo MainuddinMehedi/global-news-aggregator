@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
 import { NotificationType, Prisma } from "@news/db";
+import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
   try {
@@ -14,16 +14,22 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
 
     const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
-    const limit = Math.max(1, Math.min(100, parseInt(searchParams.get("limit") || "20", 10)));
+    const limit = Math.max(
+      1,
+      Math.min(100, parseInt(searchParams.get("limit") || "20", 10)),
+    );
     const unreadOnly = searchParams.get("unreadOnly") === "true";
-    
+
     const typeParam = searchParams.get("type");
     let type: NotificationType | undefined;
     if (typeParam) {
       if (Object.values(NotificationType).includes(typeParam as any)) {
         type = typeParam as NotificationType;
       } else {
-        return NextResponse.json({ error: "Invalid notification type" }, { status: 400 });
+        return NextResponse.json(
+          { error: "Invalid notification type" },
+          { status: 400 },
+        );
       }
     }
 
@@ -62,6 +68,9 @@ export async function GET(req: NextRequest) {
     });
   } catch (error) {
     console.error("Error fetching notifications:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
   }
 }
