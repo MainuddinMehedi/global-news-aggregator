@@ -1,10 +1,17 @@
 "use client";
 
+import { useSession } from "next-auth/react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Alert01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 
 export default function SuspensionWarning() {
+  const { data: session } = useSession();
+
+  if (session?.user?.suspended !== true) {
+    return null;
+  }
+
   return (
     <Popover>
       <PopoverTrigger asChild>

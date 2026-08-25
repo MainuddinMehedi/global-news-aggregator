@@ -1,42 +1,38 @@
 import AiButton from "@/components/articles/AiButton";
+import ArticleBackButton from "@/components/articles/ArticleBackButton";
 import ArticleViewer from "@/components/articles/ArticleViewer";
 import { SentimentBadge } from "@/components/articles/SentimentBadge";
 import { Badge } from "@/components/ui/badge";
 import { RelativeTime } from "@/components/ui/RelativeTime";
 import { Article } from "@/types/article";
 import { getEventRegionBadgeVariant } from "@/utils/analytics";
-import {
-  ArrowLeft,
-  Calendar03Icon,
-  Globe,
-  Sparkles,
-} from "@hugeicons/core-free-icons";
+import { Calendar03Icon, Globe, Sparkles } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import Link from "next/link";
+import { Suspense } from "react";
 
 interface ArticleDetailViewProps {
   article: Article;
   isModal?: boolean;
-  storySlug?: string;
 }
 
 export function ArticleDetailView({
   article,
   isModal,
-  storySlug,
 }: ArticleDetailViewProps) {
   return (
     <div
       className={`w-full space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 ${!isModal ? "mx-auto max-w-7xl 2xl:max-w-[1400px] px-4 py-8 sm:px-6 lg:px-8" : ""}`}
     >
       {!isModal && (
-        <Link
-          href={storySlug ? `/stories/${storySlug}` : "/"}
-          className="inline-flex items-center text-sm text-muted-foreground hover:text-primary transition-colors"
+        <Suspense
+          fallback={
+            <div className="inline-flex items-center text-sm text-muted-foreground">
+              <span className="w-20 h-4 bg-muted/40 rounded animate-pulse" />
+            </div>
+          }
         >
-          <HugeiconsIcon icon={ArrowLeft} className="w-4 h-4 mr-1" />
-          {storySlug ? "Go Back" : "Back to Feed"}
-        </Link>
+          <ArticleBackButton />
+        </Suspense>
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

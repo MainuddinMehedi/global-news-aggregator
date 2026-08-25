@@ -14,6 +14,7 @@ import { Figtree, Inter, JetBrains_Mono } from "next/font/google";
 import { Suspense } from "react";
 import "./globals.css";
 
+import SidebarSkeleton from "@/components/skeletons/layout/SidebarSkeleton";
 import { Toaster } from "@/components/ui/sonner";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
@@ -64,58 +65,55 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
-        {/* Blocking script: sync data-color-theme from localStorage before first paint */}
+        {/* Blocking script: sync theme and data-color-theme from localStorage before first paint */}
         <script
           suppressHydrationWarning
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var d=JSON.parse(localStorage.getItem('global-news-aggregator-settings'));if(d&&d.state&&d.state.colorTheme){document.documentElement.setAttribute('data-color-theme',d.state.colorTheme)}}catch(e){}})();`,
+            __html: `(function(){try{var t=localStorage.getItem('theme');var isDark=t==='dark'||(!t||t==='system')&&window.matchMedia('(prefers-color-scheme: dark)').matches;if(isDark){document.documentElement.classList.add('dark');}else{document.documentElement.classList.remove('dark');}var d=JSON.parse(localStorage.getItem('global-news-aggregator-settings'));if(d&&d.state&&d.state.colorTheme){document.documentElement.setAttribute('data-color-theme',d.state.colorTheme);}}catch(e){}})();`,
           }}
         />
       </head>
       <body className="bg-background text-foreground">
-        <Suspense fallback={<div className="min-h-screen bg-background" />}>
-          <AuthProvider>
-            <Providers>
-              <TooltipProvider>
-                <div className="flex flex-col h-screen">
-                  <Navbar />
+        <AuthProvider>
+          <Providers>
+            <TooltipProvider>
+              <div className="flex flex-col h-screen">
+                {/* 100% Static Shell Header */}
+                <Navbar />
 
-                  <main className="flex flex-1 overflow-hidden">
+                <main className="flex flex-1 overflow-hidden">
+                  {/* Granular Sidebar Suspense */}
+                  <Suspense fallback={<SidebarSkeleton />}>
                     <SidebarWrapper>
-                      <Suspense
-                        fallback={
-                          <div className="w-full h-full bg-card/20 animate-pulse" />
-                        }
-                      >
-                        <Sidebar />
-                      </Suspense>
+                      <Sidebar />
                     </SidebarWrapper>
+                  </Suspense>
 
-                    {/* Main Content Area */}
-                    <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-                      <div className="flex-1 min-h-0">{children}</div>
-                      {/*<Footer />*/}
-                    </div>
-                  </main>
-                </div>
-              </TooltipProvider>
+                  {/* Main Content Area */}
+                  <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
+                    <div className="flex-1 min-h-0">{children}</div>
+                    {/*<Footer />*/}
+                  </div>
+                </main>
+              </div>
 
               {/* Global chat sidebar — available on every page */}
-              {/* Since these are not using anything like searchParam or cockies that breaks static rendering, the use of suspense is not required here. */}
-              <ChatFAB />
-              <FloatingChat />
-
-              <LoginModal />
               <Suspense fallback={null}>
+                <ChatFAB />
+                <FloatingChat />
+              </Suspense>
+
+              <Suspense fallback={null}>
+                <LoginModal />
                 <OnBoarding />
               </Suspense>
 
               <Toaster />
               <Analytics />
               <SpeedInsights />
-            </Providers>
-          </AuthProvider>
-        </Suspense>
+            </TooltipProvider>
+          </Providers>
+        </AuthProvider>
       </body>
     </html>
   );
