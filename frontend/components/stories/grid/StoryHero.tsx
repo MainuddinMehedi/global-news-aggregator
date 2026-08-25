@@ -1,4 +1,3 @@
-import { Badge } from "@/components/ui/badge";
 import { ImpactBadge } from "@/components/stories/ImpactBadge";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Clock01Icon, Earth, TradeUpIcon } from "@hugeicons/core-free-icons";
@@ -50,102 +49,51 @@ export default function StoryHero({ story, sources, origins }: StoryHeroProps) {
         )}
       </div>
 
-      <h1 className="text-4xl md:text-5xl font-extrabold tracking-tighter text-foreground mb-8 leading-[1.1]">
+      <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-foreground mb-6 leading-tight">
         {story.title}
       </h1>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
-        {/* Regions Box */}
-        <div className="bg-muted/15 rounded-3xl p-6 border border-border/50 backdrop-blur-sm flex flex-col gap-2 md:gap-4">
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground w-40 shrink-0 flex items-center gap-2">
-            <span className="w-2 h-px bg-border" />
-            Regions
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {story.regions && story.regions.length > 0 ? (
-              story.regions.map((r) => (
-                <Badge
-                  key={r}
-                  variant="secondary"
-                  className="px-3 py-1 rounded-lg text-xs font-semibold"
-                >
-                  {r}
-                </Badge>
-              ))
-            ) : (
-              <span className="text-sm text-muted-foreground">Global Context</span>
-            )}
+      <div className="flex flex-col items-start gap-y-2.5 text-xs 2xl:text-sm font-bold tracking-wider text-muted-foreground pt-4 border-t border-border/40">
+        {story.regions && story.regions.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-foreground/40 font-black">/</span>
+            <span className="text-foreground/70">Regions:</span>
+            <span className="text-muted-foreground/60">
+              {story.regions.join(", ")}
+            </span>
           </div>
-        </div>
+        )}
 
-        {/* Themes Box */}
-        <div className="bg-muted/15 rounded-3xl p-6 border border-border/50 backdrop-blur-sm flex flex-col gap-2 md:gap-4">
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground w-40 shrink-0 flex items-center gap-2">
-            <span className="w-2 h-px bg-border" />
-            Themes
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {story.themes && story.themes.length > 0 ? (
-              story.themes.map((t) => (
-                <Badge
-                  key={t}
-                  variant="secondary"
-                  className="px-3 py-1 rounded-lg text-xs font-semibold"
-                >
-                  {t}
-                </Badge>
-              ))
-            ) : (
-              <span className="text-sm text-muted-foreground">General</span>
-            )}
+        {story.themes && story.themes.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-foreground/40 font-black">/</span>
+            <span className="text-foreground/70">Themes:</span>
+            <span className="text-muted-foreground/60">
+              {story.themes.join(", ")}
+            </span>
           </div>
-        </div>
+        )}
 
-        {/* Reporting Origins Box */}
-        <div className="bg-muted/15 rounded-3xl p-6 border border-border/50 backdrop-blur-sm flex flex-col gap-2 md:gap-4">
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground w-40 shrink-0 flex items-center gap-2">
-            <span className="w-2 h-px bg-border" />
-            Reporting Origins
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {origins && origins.length > 0 ? (
-              origins.map((o) => (
-                <Badge
-                  key={o}
-                  variant="outline"
-                  className="px-3 py-1 rounded-lg text-xs font-semibold text-muted-foreground"
-                >
-                  {o}
-                </Badge>
-              ))
-            ) : (
-              <span className="text-sm text-muted-foreground">Unknown</span>
-            )}
+        {sources && sources.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-foreground/40 font-black">/</span>
+            <span className="text-foreground/70">Sources:</span>
+            <SourceAvatarStack sources={sources} max={6} className="py-0.5" />
+            <span className="text-muted-foreground/60 hidden sm:inline-block">
+              ({sources.map((s) => s.name).join(", ")})
+            </span>
           </div>
-        </div>
+        )}
 
-        {/* Intelligence Sources Box */}
-        <div className="bg-muted/15 rounded-3xl p-6 border border-border/50 backdrop-blur-sm flex flex-col gap-2 md:gap-4">
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground w-40 shrink-0 flex items-center gap-2">
-            <span className="w-2 h-px bg-border" />
-            Intelligence Sources
-          </p>
-          {sources && sources.length > 0 ? (
-            <div className="flex items-center gap-4">
-              <SourceAvatarStack sources={sources} max={8} />
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-foreground">
-                  {sources.length} {sources.length === 1 ? "Source" : "Sources"}
-                </span>
-                <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider hidden sm:inline-block">
-                  ({sources.map((s) => s.name).join(", ")})
-                </span>
-              </div>
-            </div>
-          ) : (
-            <span className="text-sm text-muted-foreground">Sources pending</span>
-          )}
-        </div>
+        {origins && origins.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-foreground/40 font-black">/</span>
+            <span className="text-foreground/70">Origins:</span>
+            <span className="text-muted-foreground/60">
+              {origins.join(", ")}
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );
