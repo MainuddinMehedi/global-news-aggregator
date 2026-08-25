@@ -12,8 +12,8 @@ async function restoreIndexes() {
   console.log("🚀 Starting to restore custom pgvector indexes...");
 
   try {
-    const articleIdxSql = fs.readFileSync(path.join(__dirname, "add_embedding_index.sql"), "utf8");
-    const topicIdxSql = fs.readFileSync(path.join(__dirname, "add_locked_topic_embedding_index.sql"), "utf8");
+    const articleIdxSql = fs.readFileSync(path.join(__dirname, "../prisma/add_embedding_index.sql"), "utf8");
+    const topicIdxSql = fs.readFileSync(path.join(__dirname, "../prisma/add_locked_topic_embedding_index.sql"), "utf8");
 
     console.log("⏳ Applying ProcessedArticle embedding index...");
     await prisma.$executeRawUnsafe(articleIdxSql);

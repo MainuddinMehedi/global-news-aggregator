@@ -37,3 +37,17 @@ export const METADATA_COLORS = {
  * Fallback color for unknowns
  */
 export const DEFAULT_CHART_COLOR = "#9ca3af";
+
+/**
+ * Tailwind background classes corresponding to METADATA_COLORS.region
+ */
+export const REGION_UI_COLORS: Record<string, string> = {
+  "North America": "bg-blue-500",
+  Europe: "bg-emerald-500",
+  "Middle East": "bg-red-500",
+  "Asia-Pacific": "bg-orange-500",
+  "South America": "bg-purple-500",
+  Africa: "bg-fuchsia-500",
+  Global: "bg-gray-500",
+  Unknown: "bg-slate-400 dark:bg-slate-500",
+};

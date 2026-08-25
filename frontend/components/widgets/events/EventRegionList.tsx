@@ -1,35 +1,46 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { REGION_UI_COLORS } from "@/utils/colors";
+import { useRouter, useSearchParams } from "next/navigation";
 
 interface EventRegionListProps {
   distribution: { label: string; count: number }[];
   total: number;
 }
 
-const REGION_COLORS: Record<string, string> = {
-  "North America": "bg-blue-500",
-  Europe: "bg-emerald-500",
-  "Middle East": "bg-red-500",
-  "Asia-Pacific": "bg-fuchsia-500",
-  "South America": "bg-orange-500",
-  Africa: "bg-yellow-500",
-  Global: "bg-indigo-500",
-  Unknown: "bg-muted-foreground/10",
-};
-
-export default function EventRegionList({ distribution, total }: EventRegionListProps) {
+export default function EventRegionList({
+  distribution,
+  total,
+}: EventRegionListProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const activeRegion = searchParams.get("region");
+  const activeRegion = searchParams.get("region") ?? "all";
 
-  const handleSelect = (label: string) => {
+  const items = [
+    {
+      id: "all",
+      label: "All Regions",
+      count: total,
+      dotColor: "bg-slate-400 dark:bg-slate-500",
+    },
+    ...distribution
+      .map((item) => ({
+        id: item.label,
+        label: item.label,
+        count: item.count,
+        dotColor:
+          REGION_UI_COLORS[item.label] || "bg-slate-400 dark:bg-slate-500",
+      }))
+      .sort((a, b) => b.count - a.count),
+  ];
+
+  const handleSelect = (id: string) => {
     const params = new URLSearchParams(searchParams.toString());
-    if (activeRegion === label) {
+    if (id === "all") {
       params.delete("region");
     } else {
-      params.set("region", label);
+      params.set("region", id);
     }
     // Reset page cursor when filter changes
     params.delete("cursor");
@@ -37,35 +48,34 @@ export default function EventRegionList({ distribution, total }: EventRegionList
   };
 
   return (
-    <div className="space-y-3">
-      {distribution.map((item) => {
-        const isActive = activeRegion === item.label;
-        const colorClass = REGION_COLORS[item.label] || REGION_COLORS.Unknown;
-        
+    <div className="space-y-1">
+      {items.map((item) => {
+        const isActive = activeRegion === item.id;
         return (
           <button
-            key={item.label}
-            onClick={() => handleSelect(item.label)}
+            key={item.id}
+            onClick={() => handleSelect(item.id)}
             className={cn(
-              "w-full text-left space-y-1.5 p-2 rounded-lg transition-colors group cursor-pointer",
-              isActive ? "bg-secondary/50" : "hover:bg-muted/50"
+              "w-full flex items-center justify-between p-3 rounded-xl border transition-all text-left group cursor-pointer",
+              isActive
+                ? "bg-secondary text-secondary-foreground border-border/80 shadow-sm font-semibold"
+                : "bg-transparent border-transparent hover:bg-muted/50 text-muted-foreground hover:text-foreground",
             )}
           >
-            <div className="flex items-center justify-between text-[11px]">
-              <span className={cn("font-medium transition-colors", isActive ? "text-foreground font-bold" : "text-muted-foreground group-hover:text-foreground")}>
-                {item.label}
-              </span>
-              <span className={cn("font-mono", isActive ? "text-foreground font-bold" : "text-foreground")}>{item.count}</span>
+            <div className="flex items-center space-x-3">
+              <span className={cn("w-2 h-2 rounded-full", item.dotColor)} />
+              <span className="text-sm font-medium">{item.label}</span>
             </div>
-            <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
-              <div
-                className={cn(
-                  "h-full rounded-full transition-all duration-500",
-                  colorClass
-                )}
-                style={{ width: `${(item.count / (total || 1)) * 100}%` }}
-              />
-            </div>
+            <span
+              className={cn(
+                "text-[10px] font-mono font-bold px-2 py-0.5 rounded-full",
+                isActive
+                  ? "bg-primary/25 text-primary-foreground"
+                  : "bg-muted text-muted-foreground group-hover:bg-muted-foreground/10 group-hover:text-foreground",
+              )}
+            >
+              {item.count}
+            </span>
           </button>
         );
       })}

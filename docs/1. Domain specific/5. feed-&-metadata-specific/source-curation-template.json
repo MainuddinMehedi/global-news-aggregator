@@ -1,0 +1,143 @@
+{
+  "_template": "Copy this file for each new publisher. Rename to {slug}.json. Save to docs/2. my_notes_&_drafts/source-profiles/",
+
+  "facts": {
+    "identity": {
+      "name": "",
+      "slug": "",
+      "website": "",
+      "publisherCountry": "",
+      "language": "English",
+      "foundedYear": null,
+      "description": ""
+    },
+    "ownership": {
+      "owner": "",
+      "parentOrganization": null,
+      "stateFunded": false,
+      "ownershipNotes": ""
+    }
+  },
+
+  "classifications": {
+    "ownershipType": "",
+    "_ownershipType_values": "Commercial | State | Public Service | Cooperative | Non-profit | Academic",
+
+    "publisherType": "",
+    "_publisherType_values": "Newspaper | Wire Service | Broadcaster | Magazine | Digital Native | Government Agency",
+
+    "editorialStyle": "",
+    "_editorialStyle_values": "Straight News | Analysis | Opinion-heavy | Investigative | Mixed",
+
+    "coverageScope": "",
+    "_coverageScope_values": "Local | Regional | National | International | Global",
+
+    "originality": "",
+    "_originality_values": "Primary Reporter | Mixed | Mostly Syndicated",
+
+    "sourceRegion": "",
+    "_sourceRegion_values": "Asia-Pacific | Europe | Middle East | North America | South America | Africa | Global",
+
+    "subRegion": ""
+  },
+
+  "coverage": {
+    "primaryRegions": [],
+    "secondaryRegions": [],
+    "categoryStrengths": {
+      "strong": [],
+      "moderate": [],
+      "weak": []
+    }
+  },
+
+  "assessments": {
+    "editorialOrientation": {
+      "value": "",
+      "_values": "Independent | State-Aligned | Party-Aligned | Corporate-Aligned",
+      "evidence": "",
+      "source": "",
+      "confidence": null
+    },
+    "politicalLeaning": {
+      "value": "",
+      "_values": "Left | Centre-Left | Centre | Centre-Right | Right | State-Aligned",
+      "evidence": "",
+      "source": "",
+      "confidence": null
+    },
+    "economicPerspective": {
+      "value": "",
+      "_values": "Pro-market | Mixed | State-directed | Not applicable",
+      "evidence": "",
+      "source": "",
+      "confidence": null
+    },
+    "internationalAlignment": {
+      "value": [],
+      "evidence": "",
+      "source": "",
+      "confidence": null
+    },
+    "reliability": {
+      "value": "",
+      "_values": "High | Medium | Low",
+      "evidence": "",
+      "source": "",
+      "confidence": null
+    },
+    "externalRatings": {
+      "mbfc": null,
+      "_mbfc_values": "Left | Left-Center | Least Biased | Right-Center | Right | Pro-Science | Conspiracy-Pseudoscience | Questionable | Satire",
+      "newsGuard": null,
+      "_newsGuard_values": "0-100 score",
+      "adFontes": null,
+      "_adFontes_values": "Reliability score (0-64) and Bias score (-42 to +42)",
+      "notes": ""
+    }
+  },
+
+  "intelligence": {
+    "knownPerspective": "",
+    "knownStrengths": [],
+    "knownWeaknesses": []
+  },
+
+  "selectionRationale": "",
+
+  "feeds": [
+    {
+      "url": "",
+      "category": "",
+      "feedType": "RSS 2.0",
+      "enabled": true
+    }
+  ],
+
+  "__process__": "--- Everything below is process metadata. Fill after research is complete. ---",
+
+  "systemMapping": {
+    "sourceType": "",
+    "_sourceType_values": "Commercial Publisher | State Media | Public Broadcaster | Wire Service | Intergovernmental",
+    "biasGroup": "",
+    "_biasGroup_values": "Centrist | Left-leaning | Right-leaning | State-aligned | Pro-government",
+    "coverageScope": "",
+    "_coverageScope_values": "National | Regional | Global"
+  },
+
+  "relationships": {
+    "syndicatesFrom": [],
+    "partnerOrganizations": [],
+    "competitors": []
+  },
+
+  "research": {
+    "researchedAt": "",
+    "researchedBy": "",
+    "status": "DRAFT",
+    "_status_values": "DRAFT | ESTABLISHED | NEEDS_REVIEW",
+    "peerReviewDate": null,
+    "nextReviewDate": null,
+    "researchNotes": ""
+  }
+}

@@ -7,6 +7,9 @@ export const COUNTRY_TO_REGION = {
   "India": "Asia-Pacific",
   "China": "Asia-Pacific",
   "Japan": "Asia-Pacific",
+  "South Korea": "Asia-Pacific",
+  "Singapore": "Asia-Pacific",
+  "Australia": "Asia-Pacific",
   "USA": "North America",
   "Canada": "North America",
   "UK": "Europe",
@@ -17,6 +20,10 @@ export const COUNTRY_TO_REGION = {
   "Saudi Arabia": "Middle East",
   "Israel": "Middle East",
   "Egypt": "Middle East",
+  "Argentina": "South America",
+  "Brazil": "South America",
+  "South Africa": "Africa",
+  "Nigeria": "Africa",
   "Global": "Global",
 };
 

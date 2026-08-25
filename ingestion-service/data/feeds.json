@@ -1,5 +1,149 @@
 [
   {
+    "name": "UN News",
+    "sourceCountry": "Global",
+    "sourceType": "Independent Wire",
+    "biasGroup": "Centrist",
+    "coverageScope": "Global",
+    "url": "https://news.un.org/feed/subscribe/en/news/region/global/feed/rss.xml",
+    "enabled": true
+  },
+  {
+    "name": "Foreign Policy",
+    "sourceCountry": "USA",
+    "sourceType": "Commercial Publisher",
+    "biasGroup": "Centrist",
+    "coverageScope": "Global",
+    "url": "https://foreignpolicy.com/feed/",
+    "enabled": true
+  },
+  {
+    "name": "The Diplomat",
+    "sourceCountry": "USA",
+    "sourceType": "Commercial Publisher",
+    "biasGroup": "Centrist",
+    "coverageScope": "Regional",
+    "url": "https://thediplomat.com/feed/",
+    "enabled": true
+  },
+  {
+    "name": "BBC News World",
+    "sourceCountry": "UK",
+    "sourceType": "Commercial Publisher",
+    "biasGroup": "Centrist",
+    "coverageScope": "Global",
+    "url": "https://feeds.bbci.co.uk/news/world/rss.xml",
+    "enabled": true
+  },
+  {
+    "name": "The Guardian World",
+    "sourceCountry": "UK",
+    "sourceType": "Commercial Publisher",
+    "biasGroup": "Left-leaning",
+    "coverageScope": "Global",
+    "url": "https://www.theguardian.com/world/rss",
+    "enabled": true
+  },
+  {
+    "name": "Deutsche Welle",
+    "sourceCountry": "Germany",
+    "sourceType": "State Media",
+    "biasGroup": "Centrist",
+    "coverageScope": "Global",
+    "url": "https://rss.dw.com/rdf/rss-en-all",
+    "enabled": true
+  },
+  {
+    "name": "France 24",
+    "sourceCountry": "France",
+    "sourceType": "State Media",
+    "biasGroup": "Centrist",
+    "coverageScope": "Global",
+    "url": "https://www.france24.com/en/rss",
+    "enabled": true
+  },
+  {
+    "name": "The New York Times World",
+    "sourceCountry": "USA",
+    "sourceType": "Commercial Publisher",
+    "biasGroup": "Left-leaning",
+    "coverageScope": "Global",
+    "url": "https://rss.nytimes.com/services/xml/rss/nyt/World.xml",
+    "enabled": true
+  },
+  {
+    "name": "The Wall Street Journal World",
+    "sourceCountry": "USA",
+    "sourceType": "Commercial Publisher",
+    "biasGroup": "Right-leaning",
+    "coverageScope": "Global",
+    "url": "https://feeds.a.dj.com/rss/RSSWorldNews.xml",
+    "enabled": true
+  },
+  {
+    "name": "NPR World News",
+    "sourceCountry": "USA",
+    "sourceType": "Commercial Publisher",
+    "biasGroup": "Centrist",
+    "coverageScope": "Global",
+    "url": "https://feeds.npr.org/1004/rss.xml",
+    "enabled": true
+  },
+  {
+    "name": "Politico",
+    "sourceCountry": "USA",
+    "sourceType": "Commercial Publisher",
+    "biasGroup": "Centrist",
+    "coverageScope": "National",
+    "url": "https://rss.politico.com/politics-news.xml",
+    "enabled": true
+  },
+  {
+    "name": "TechCrunch",
+    "sourceCountry": "USA",
+    "sourceType": "Commercial Publisher",
+    "biasGroup": "Centrist",
+    "coverageScope": "Global",
+    "url": "https://techcrunch.com/feed/",
+    "enabled": true
+  },
+  {
+    "name": "CBC News World",
+    "sourceCountry": "Canada",
+    "sourceType": "State Media",
+    "biasGroup": "Centrist",
+    "coverageScope": "National",
+    "url": "https://www.cbc.ca/cmlink/rss-world",
+    "enabled": true
+  },
+  {
+    "name": "Nikkei Asia",
+    "sourceCountry": "Japan",
+    "sourceType": "Commercial Publisher",
+    "biasGroup": "Right-leaning",
+    "coverageScope": "Global",
+    "url": "https://asia.nikkei.com/rss/feed/nar",
+    "enabled": true
+  },
+  {
+    "name": "The Japan Times",
+    "sourceCountry": "Japan",
+    "sourceType": "Commercial Publisher",
+    "biasGroup": "Centrist",
+    "coverageScope": "National",
+    "url": "https://www.japantimes.co.jp/feed/",
+    "enabled": true
+  },
+  {
+    "name": "South China Morning Post",
+    "sourceCountry": "China",
+    "sourceType": "Commercial Publisher",
+    "biasGroup": "Centrist",
+    "coverageScope": "Regional",
+    "url": "https://www.scmp.com/rss/91/feed",
+    "enabled": true
+  },
+  {
     "name": "The Daily Star",
     "sourceCountry": "Bangladesh",
     "sourceType": "Commercial Publisher",
@@ -18,22 +162,40 @@
     "enabled": true
   },
   {
-    "name": "BD24 Live",
-    "sourceCountry": "Bangladesh",
+    "name": "The Hindu",
+    "sourceCountry": "India",
     "sourceType": "Commercial Publisher",
-    "biasGroup": "Centrist",
-    "coverageScope": "National",
-    "url": "https://www.bd24live.com/feed",
+    "biasGroup": "Left-leaning",
+    "coverageScope": "Regional",
+    "url": "https://www.thehindu.com/news/international/feeder/default.rss",
     "enabled": true
   },
   {
-    "name": "Jagonews24",
-    "sourceCountry": "Bangladesh",
+    "name": "The Straits Times",
+    "sourceCountry": "Singapore",
     "sourceType": "Commercial Publisher",
     "biasGroup": "Centrist",
+    "coverageScope": "Regional",
+    "url": "https://www.straitstimes.com/news/world/rss.xml",
+    "enabled": true
+  },
+  {
+    "name": "Yonhap News",
+    "sourceCountry": "South Korea",
+    "sourceType": "Independent Wire",
+    "biasGroup": "Centrist",
     "coverageScope": "National",
-    "url": "https://www.jagonews24.com/rss/rss.xml",
-    "enabled": false
+    "url": "https://en.yna.co.kr/RSS/news.xml",
+    "enabled": true
+  },
+  {
+    "name": "ABC News Australia",
+    "sourceCountry": "Australia",
+    "sourceType": "State Media",
+    "biasGroup": "Centrist",
+    "coverageScope": "Regional",
+    "url": "https://www.abc.net.au/news/feed/51120/rss.xml",
+    "enabled": true
   },
   {
     "name": "Al Jazeera",
@@ -45,21 +207,39 @@
     "enabled": true
   },
   {
-    "name": "UN News",
-    "sourceCountry": "",
-    "sourceType": "Independent Wire",
-    "biasGroup": "Centrist",
-    "coverageScope": "Global",
-    "url": "https://news.un.org/feed/subscribe/en/news/region/global/feed/rss.xml",
+    "name": "Arab News",
+    "sourceCountry": "Saudi Arabia",
+    "sourceType": "Commercial Publisher",
+    "biasGroup": "Right-leaning",
+    "coverageScope": "Regional",
+    "url": "https://www.arabnews.com/rss.xml",
     "enabled": true
   },
   {
-    "name": "TechCrunch",
-    "sourceCountry": "USA",
+    "name": "Middle East Eye",
+    "sourceCountry": "UK",
+    "sourceType": "Commercial Publisher",
+    "biasGroup": "Left-leaning",
+    "coverageScope": "Regional",
+    "url": "https://www.middleeasteye.net/rss",
+    "enabled": true
+  },
+  {
+    "name": "AllAfrica News",
+    "sourceCountry": "Global",
+    "sourceType": "Independent Wire",
+    "biasGroup": "Centrist",
+    "coverageScope": "Regional",
+    "url": "https://allafrica.com/tools/headlines/rdf/latest/headlines.rdf",
+    "enabled": true
+  },
+  {
+    "name": "Buenos Aires Times",
+    "sourceCountry": "Argentina",
     "sourceType": "Commercial Publisher",
     "biasGroup": "Centrist",
-    "coverageScope": "Global",
-    "url": "https://techcrunch.com/feed/",
+    "coverageScope": "National",
+    "url": "https://www.batimes.com.ar/feed",
     "enabled": true
   }
 ]
