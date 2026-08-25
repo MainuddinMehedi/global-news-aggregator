@@ -31,7 +31,7 @@ export async function scanTopicsLogic(topicId = null) {
       const embeddings = await prisma.$queryRaw`
         SELECT id, "queryEmbedding"::text as "queryEmbedding" 
         FROM "LockedTopic" 
-        WHERE id = ANY(${topicIds}::uuid[])
+        WHERE id = ANY(${topicIds})
       `;
       const embeddingMap = new Map(embeddings.map(e => [e.id, e.queryEmbedding]));
       for (const topic of topics) {
