@@ -15,20 +15,33 @@ export async function emitNotification({
   channels,
 }) {
   try {
-    // 1. Resolve channels from NotificationPreference if not specified
-    let resolvedChannels = channels;
-    if (!resolvedChannels || resolvedChannels.length === 0) {
-      resolvedChannels = ["IN_APP"];
-      const pref = await prisma.notificationPreference.findUnique({
-        where: { userId },
-      });
-      if (pref) {
-        if (pref.discordEnabled && pref.discordWebhook) {
+    // 1. Resolve channels from NotificationPreference if not specified or validate explicit channels
+    const pref = await prisma.notificationPreference.findUnique({
+      where: { userId },
+    });
+
+    let resolvedChannels = [];
+    if (!channels || channels.length === 0) {
+      resolvedChannels.push("IN_APP");
+      if (pref?.discordEnabled && pref?.discordWebhook) {
+        resolvedChannels.push("DISCORD");
+      }
+      if (pref?.telegramEnabled && pref?.telegramChatId) {
+        resolvedChannels.push("TELEGRAM");
+      }
+    } else {
+      // Validate requested channels against actual user configured endpoints
+      for (const ch of channels) {
+        if (ch === "IN_APP") {
+          resolvedChannels.push("IN_APP");
+        } else if (ch === "DISCORD" && pref?.discordWebhook) {
           resolvedChannels.push("DISCORD");
-        }
-        if (pref.telegramEnabled && pref.telegramChatId) {
+        } else if (ch === "TELEGRAM" && pref?.telegramChatId) {
           resolvedChannels.push("TELEGRAM");
         }
+      }
+      if (resolvedChannels.length === 0) {
+        resolvedChannels.push("IN_APP");
       }
     }
 
@@ -124,10 +137,19 @@ export async function emitAdminNotification(type, payload) {
     }
 
     // 3. Resolve Channels
+    const adminDiscordWebhook =
+      config.discordWebhook ||
+      process.env.ADMIN_DISCORD_WEBHOOK ||
+      process.env.DISCORD_WEBHOOK_URL;
+    const adminTelegramChatId =
+      config.telegramChatId || process.env.ADMIN_TELEGRAM_CHAT_ID;
+    const botToken = process.env.TELEGRAM_BOT_TOKEN;
+
     const channels = [];
     if (config.inAppEnabled) channels.push("IN_APP");
-    if (config.discordEnabled) channels.push("DISCORD");
-    if (config.telegramEnabled) channels.push("TELEGRAM");
+    if (config.discordEnabled && adminDiscordWebhook) channels.push("DISCORD");
+    if (config.telegramEnabled && adminTelegramChatId && botToken)
+      channels.push("TELEGRAM");
 
     if (channels.length === 0) return;
 

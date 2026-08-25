@@ -50,8 +50,16 @@ export async function processDeliveryBatch() {
 
       if (isAdmin) {
         const config = configMap.get(notification.type);
-        if (channel === 'DISCORD') targetWebhook = config?.discordWebhook;
-        if (channel === 'TELEGRAM') targetChatId = config?.telegramChatId;
+        if (channel === 'DISCORD') {
+          targetWebhook =
+            config?.discordWebhook ||
+            process.env.ADMIN_DISCORD_WEBHOOK ||
+            process.env.DISCORD_WEBHOOK_URL;
+        }
+        if (channel === 'TELEGRAM') {
+          targetChatId =
+            config?.telegramChatId || process.env.ADMIN_TELEGRAM_CHAT_ID;
+        }
       } else {
         const pref = prefMap.get(notification.userId);
         if (channel === 'DISCORD') targetWebhook = pref?.discordWebhook;
