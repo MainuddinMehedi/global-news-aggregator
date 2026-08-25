@@ -9,8 +9,7 @@
  * Output: { findings: Array, metadata: {} }
  */
 
-import { prisma } from "../../db/prisma.js";
-import { Prisma } from "@news/db";
+import { prisma, Prisma } from "../../db/prisma.js";
 import { getPrismaWhere } from "../utils/parseQuery.js";
 import { formatSinceDate } from "../utils/formatSinceDate.js";
 import { SCANNER_CONFIG } from "../scannerConfig.js";
