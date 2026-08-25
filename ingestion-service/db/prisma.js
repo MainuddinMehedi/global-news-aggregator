@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { PrismaPg } from "@prisma/adapter-pg";
-import { PrismaClient } from "@news/db";
+import { PrismaClient, Prisma } from "../../shared/prisma-client/index.js";
 import pg from "pg";
 
 // Initialize a pg pool with the database connection string
@@ -13,3 +13,5 @@ const adapter = new PrismaPg(pool);
 
 // Export a singleton instance of the Prisma Client
 export const prisma = new PrismaClient({ adapter });
+export { Prisma };
+export default prisma;
