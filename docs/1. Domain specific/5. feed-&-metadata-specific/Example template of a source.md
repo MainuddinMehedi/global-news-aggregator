@@ -1,0 +1,139 @@
+```json
+{
+  "_meta": {
+    "templateVersion": "2.0",
+    "instructions": "One file per publisher. Structured as Facts → Classifications → Assessments. Assessments carry per-field evidence. Feeds are a separate array (multiple feeds per publisher). Read the Field Guide before filling this template.",
+    "fieldGuide": "docs/1. Domain specific/5. feed-&-metadata-specific/publisher-metadata-field-guide.md"
+  },
+
+  "facts": {
+    "identity": {
+      "name": "Nikkei Asia",
+      "slug": "nikkei-asia",
+      "website": "https://asia.nikkei.com",
+      "publisherCountry": "Japan",
+      "language": "English",
+      "foundedYear": 1876,
+      "description": "The English-language international arm of Nikkei Inc., Japan's largest financial media group. Covers business, markets, politics, and technology across Asia with particular depth in East Asian supply chains, semiconductors, and corporate strategy."
+    },
+    "ownership": {
+      "owner": "Nikkei Inc.",
+      "parentOrganization": null,
+      "stateFunded": false,
+      "ownershipNotes": "Nikkei Inc. is privately held — one of the few major financial media companies globally that is not publicly listed. Acquired the Financial Times in 2015, giving it an unusual dual-hemisphere presence. Although commercially owned, Nikkei has deep institutional ties to Japanese industry and financial circles."
+    }
+  },
+
+  "classifications": {
+    "ownershipType": "Commercial",
+    "publisherType": "Newspaper",
+    "editorialStyle": "Analysis",
+    "coverageScope": "International",
+    "originality": "Primary Reporter",
+    "sourceRegion": "Asia-Pacific",
+    "subRegion": "East Asia"
+  },
+
+  "coverage": {
+    "primaryRegions": ["Japan", "East Asia"],
+    "secondaryRegions": ["Southeast Asia", "South Asia", "Asia-Pacific"],
+    "categoryStrengths": {
+      "strong": ["Business", "Markets", "Technology", "Supply Chains", "Trade"],
+      "moderate": ["Politics", "Diplomacy", "Environment"],
+      "weak": ["Sports", "Entertainment", "Lifestyle"]
+    }
+  },
+
+  "assessments": {
+    "editorialOrientation": {
+      "value": "Independent",
+      "evidence": "Editorial policy page declares editorial independence. No observable pattern of self-censorship or alignment with government positions. Coverage of Japan-China tensions includes critical perspectives on Japanese policy.",
+      "source": "Official website (About/Editorial Policy) + article sampling",
+      "confidence": 0.9
+    },
+    "politicalLeaning": {
+      "value": "Centre",
+      "evidence": "Coverage is generally centrist with a pro-business lean on economic matters. Does not consistently favor any political party. Economic reporting assumes market-oriented frameworks.",
+      "source": "Self-assessed from 30-article sample. No MBFC or Ad Fontes rating available for Nikkei Asia specifically.",
+      "confidence": 0.72
+    },
+    "economicPerspective": {
+      "value": "Pro-market",
+      "evidence": "Reporting consistently frames events through market impact, investment implications, and corporate strategy. Trade liberalization is generally presented positively. This is consistent with its identity as a financial newspaper.",
+      "source": "Article sampling (30 articles across business, trade, and policy sections)",
+      "confidence": 0.85
+    },
+    "internationalAlignment": {
+      "value": ["Japan", "Liberal Democracies"],
+      "evidence": "Coverage of US-Japan alliance is generally positive. Quad and Indo-Pacific cooperation framed constructively. Coverage of China is critical but measured — not hostile, but consistently framed from a Japanese/allied perspective.",
+      "source": "Article sampling — 10 articles on Japan-China relations, 5 on Quad/Indo-Pacific",
+      "confidence": 0.75
+    },
+    "reliability": {
+      "value": "High",
+      "evidence": "Established institutional publisher since 1876. Maintains corrections policy. Original reporting with named sources. Owns the Financial Times. No documented instances of fabrication or systemic inaccuracy.",
+      "source": "Official website + institutional reputation",
+      "confidence": 0.9
+    },
+    "externalRatings": {
+      "mbfc": null,
+      "newsGuard": null,
+      "adFontes": null,
+      "notes": "No dedicated external rating found for Nikkei Asia. Parent company Nikkei Inc. is widely regarded as Japan's most authoritative financial publisher."
+    }
+  },
+
+  "intelligence": {
+    "knownPerspective": "Japanese financial newspaper with institutional depth in Asian corporate and economic reporting. Tends to frame geopolitical events through their trade, investment, and market impact rather than through humanitarian or ideological lenses. Reporting on China is detailed and frequent but consistently viewed through a Japanese/allied strategic perspective.",
+    "knownStrengths": [
+      "Asian business strategy",
+      "Semiconductor industry",
+      "Supply chain analysis",
+      "Japanese corporate governance",
+      "East Asian trade policy"
+    ],
+    "knownWeaknesses": [
+      "Limited Middle East and Africa coverage",
+      "Minimal humanitarian or conflict-zone reporting",
+      "Business-first framing may underweight social and humanitarian angles"
+    ]
+  },
+
+  "selectionRationale": "Nikkei Asia was selected because it provides original English-language reporting on Asian business, technology, trade, and supply chains with analytical depth that wire services don't match. It complements Reuters (wire, breadth) and SCMP (China-focused) with focused Japanese and broader East Asian economic intelligence.",
+
+  "feeds": [
+    {
+      "url": "https://asia.nikkei.com/rss/feed/nar",
+      "category": "Top News",
+      "feedType": "RSS 2.0",
+      "enabled": true
+    }
+  ],
+
+  "relationships": {
+    "syndicatesFrom": [],
+    "partnerOrganizations": ["Financial Times"],
+    "competitors": [
+      "Bloomberg Asia",
+      "Reuters Asia",
+      "South China Morning Post"
+    ]
+  },
+
+  "systemMapping": {
+    "_comment": "Maps to current FeedSource schema fields. Will become unnecessary after Publisher/Feed schema migration.",
+    "sourceType": "Commercial Publisher",
+    "biasGroup": "Centrist",
+    "coverageScope": "Global"
+  },
+
+  "research": {
+    "researchedAt": "2026-07-12",
+    "researchedBy": "Mainuddin Mehedi",
+    "status": "ESTABLISHED",
+    "peerReviewDate": null,
+    "nextReviewDate": null,
+    "researchNotes": "Nikkei Asia is the international English edition of Nikkei Inc. It was relaunched in its current digital-first form around 2013, though the parent company dates to 1876. The FT acquisition in 2015 makes Nikkei Inc. one of the few media companies with authoritative coverage across both Asia and Europe. Coverage leans heavily toward economic and corporate Asia. The publisher is paywalled for most content, but the RSS feed provides article titles and summaries that are sufficient for ingestion."
+  }
+}
+```

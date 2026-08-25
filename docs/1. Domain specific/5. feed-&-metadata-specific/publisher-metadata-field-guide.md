@@ -14,7 +14,7 @@ Every field is annotated with **where it surfaces** in the system:
 
 | Tag             | Meaning                                                                                 |
 | --------------- | --------------------------------------------------------------------------------------- |
-| 🖥️ **UI**       | Visible to users — appears on article cards, filters, or the Publisher Profile page     |
+| 🖥️ **UI**      | Visible to users — appears on article cards, filters, or the Publisher Profile page     |
 | 🤖 **AI**       | Fed into AI enrichment prompts, clustering weights, or relevance scoring                |
 | ⚙️ **Internal** | Used by the ingestion pipeline, data layer, or admin tooling — never shown to end users |
 
